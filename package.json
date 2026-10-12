@@ -1,0 +1,18 @@
+{
+  "name": "openvision",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenVision local-profile IDE running editable recovered JavaScript with a compiled Electron host.",
+  "scripts": {
+    "start": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File start-openvision.ps1",
+    "test:desktop": "node --test desktop/local-workbench.test.mjs",
+    "verify:desktop": "node desktop/verify.mjs",
+    "control-plane": "node src/server.mjs",
+    "check": "node --check src/config.mjs && node --check src/rea.mjs && node --check src/server.mjs",
+    "smoke": "node test/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

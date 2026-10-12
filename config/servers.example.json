@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "servers": {
+    "rea": {
+      "kind": "mcp",
+      "enabled": true,
+      "command": "${REA_NODE_PATH}",
+      "args": [
+        "${REA_ROOT}/scripts/rea.mjs",
+        "mcp"
+      ],
+      "env": {
+        "GHIDRA_INSTALL_DIR": "${GHIDRA_INSTALL_DIR}",
+        "JAVA_HOME": "${JAVA_HOME}"
+      }
+    }
+  },
+  "apis": [],
+  "ai": {
+    "enabled": false,
+    "baseUrl": "https://api.openai.com/v1",
+    "model": "gpt-4o-mini",
+    "apiKeyEnv": "OPENVISION_AI_API_KEY",
+    "timeoutMs": 60000
+  }
+}

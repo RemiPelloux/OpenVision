@@ -1,0 +1,14 @@
+---
+description: Work on OpenVision desktop source and preserve REA Evidence semantics
+alwaysApply: true
+---
+
+# OpenVision workflow
+
+- Use the `rea` MCP server in Cursor for reverse-engineering operations.
+- The desktop launcher runs recovered editable JavaScript through the compiled Electron host. The optional legacy control plane has separate health endpoints at `http://127.0.0.1:4317/api/doctor` and `/api/capabilities`.
+- Preserve REA Evidence IDs, provenance, provider identity, limitations, and unknowns.
+- Do not claim runtime behavior from static evidence.
+- For a new target, identify the target path and choose the narrowest REA operation first.
+- Configure desktop AI providers in OpenVision Settings > Models. Provider metadata belongs to the isolated profile; API keys belong to the workbench secret-storage service. The legacy control plane uses the ignored `config/servers.json` file.
+- Never put credentials, local profiles, recovered application files or compiled runtime binaries in source-controlled files.

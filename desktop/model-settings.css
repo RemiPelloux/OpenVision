@@ -1,0 +1,25 @@
+.openvision-model-settings { color:var(--vscode-foreground); width:100%; margin:20px 0; font-size:13px; }
+.openvision-provider { border-top:1px solid var(--vscode-panel-border); padding:16px 0; }
+.openvision-provider-header,.openvision-model-row,.openvision-model-actions { display:flex; gap:8px; align-items:center; }
+.openvision-provider-header { margin-bottom:12px; flex-wrap:wrap; }
+.openvision-provider-header h3,.openvision-model-title { flex:1; min-width:100px; margin:0; }
+.openvision-model-title { display:flex; flex-direction:column; gap:3px; overflow-wrap:anywhere; }
+.openvision-model-title small { color:var(--vscode-descriptionForeground); font-size:12px; }
+.openvision-model-row { min-height:42px; border-top:1px solid var(--vscode-panel-border); padding:4px 0; }
+.openvision-model-settings input[type=checkbox],.openvision-model-dialog input[type=checkbox] { accent-color:#38a169; }
+.openvision-model-settings button,.openvision-model-dialog button { border:1px solid var(--vscode-button-border,transparent); border-radius:4px; padding:6px 10px; color:var(--vscode-button-foreground); background:var(--vscode-button-background); cursor:pointer; }
+.openvision-model-settings button:has(img) { padding:6px; background:transparent; min-width:28px; min-height:28px; }
+.openvision-model-settings button img { width:16px; height:16px; filter:invert(.65); display:block; }
+.openvision-model-settings button:hover,.openvision-model-dialog button:hover { background:var(--vscode-button-hoverBackground); }
+.openvision-model-settings :disabled,.openvision-model-dialog :disabled { opacity:.5; cursor:wait; }
+.openvision-active-provider { display:flex; align-items:center; gap:16px; margin:12px 0; flex-wrap:wrap; }
+.openvision-model-settings select,.openvision-model-dialog input:not([type=checkbox]) { background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border,var(--vscode-panel-border)); border-radius:3px; padding:8px; min-width:0; }
+.openvision-model-settings select { min-width:180px; max-width:100%; }
+.openvision-model-status { color:var(--vscode-descriptionForeground); min-height:18px; overflow-wrap:anywhere; }
+.openvision-model-dialog { width:440px; max-width:calc(100vw - 48px); border:1px solid var(--vscode-panel-border); border-radius:6px; padding:24px; background:var(--vscode-editor-background); color:var(--vscode-foreground); }
+.openvision-model-dialog::backdrop { background:#0008; }
+.openvision-model-dialog h2 { font-size:18px; margin:0 0 18px; }
+.openvision-model-dialog form { display:grid; gap:14px; }
+.openvision-model-dialog label { display:flex; flex-direction:column; gap:6px; font-size:13px; }
+.openvision-model-dialog label:has(input[type=checkbox]) { flex-direction:row; align-items:center; }
+.openvision-model-actions { justify-content:flex-end; }

@@ -1,0 +1,20 @@
+data/
+logs/
+*.local.json
+node_modules/
+runtime/
+backups/
+electron-host/
+source/
+build/
+tooling/node_modules/
+
+# Machine-specific configuration and generated workspace state.
+/config/servers.json
+/*.code-workspace
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.p12

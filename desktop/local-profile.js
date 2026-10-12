@@ -1,0 +1,64 @@
+const storageKey = 'openvision.local-profile.v1';
+let profile;
+try { profile = JSON.parse(localStorage.getItem(storageKey)); } catch {}
+if (!profile?.id || typeof profile.name !== 'string') profile = { id: crypto.randomUUID(), name: 'Local Profile' };
+localStorage.setItem(storageKey, JSON.stringify(profile));
+
+function editProfile() {
+  const dialog = document.createElement('dialog');
+  dialog.className = 'openvision-profile-dialog';
+  const heading = document.createElement('h2');
+  heading.textContent = 'Local Profile';
+  const label = document.createElement('label');
+  label.textContent = 'Display Name';
+  const input = document.createElement('input');
+  input.value = profile.name;
+  input.maxLength = 40;
+  label.append(input);
+  const save = document.createElement('button');
+  save.textContent = 'Save';
+  save.onclick = () => {
+    profile.name = input.value.trim() || 'Local Profile';
+    localStorage.setItem(storageKey, JSON.stringify(profile));
+    for (const name of document.querySelectorAll('.openvision-local-profile span')) name.textContent = profile.name;
+    dialog.close();
+  };
+  const cancel = document.createElement('button');
+  cancel.textContent = 'Cancel';
+  cancel.onclick = () => dialog.close();
+  dialog.append(heading, label, cancel, save);
+  dialog.addEventListener('close', () => dialog.remove(), { once: true });
+  document.body.append(dialog);
+  dialog.showModal();
+  input.focus();
+}
+
+function createButton() {
+  const button = document.createElement('button');
+  button.className = 'openvision-local-profile';
+  button.title = 'Local Profile';
+  const image = document.createElement('img');
+  image.src = new URL('./openvision-logo.png', import.meta.url).href;
+  image.alt = '';
+  const name = document.createElement('span');
+  name.textContent = profile.name;
+  button.append(image, name);
+  button.onclick = editProfile;
+  return button;
+}
+
+window.openvisionLocalProfile = { open: editProfile, createButton,
+  logo: new URL('./openvision-logo.png', import.meta.url).href,
+  get name() { return profile.name; } };
+
+async function mount() {
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const titlebar = document.querySelector('.part.titlebar .titlebar-right') ?? document.querySelector('.part.titlebar');
+    if (titlebar) {
+      titlebar.prepend(createButton());
+      return;
+    }
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+}
+void mount();

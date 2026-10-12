@@ -1,0 +1,41 @@
+.openvision-local-profile {
+  position: relative;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  max-width: 180px;
+  margin: 3px 8px;
+  padding: 0 6px;
+  color: var(--vscode-titleBar-activeForeground);
+  background: transparent;
+  border: 0;
+  font: 12px sans-serif;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+.openvision-local-profile img { width: 20px; height: 20px; border-radius: 4px; }
+.openvision-local-profile span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.openvision-profile-settings { padding: 16px 0; border-bottom: 1px solid var(--vscode-widget-border, #444); }
+.openvision-profile-settings h3 { font-size: 14px; margin: 0 0 12px; }
+.openvision-profile-settings .openvision-local-profile { margin: 0; }
+.monaco-workbench .part.titlebar .window-appicon {
+  background-image: url('./openvision-logo.png') !important;
+  background-size: 20px 20px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+}
+.openvision-profile-dialog {
+  min-width: 280px;
+  padding: 20px;
+  border: 1px solid var(--vscode-widget-border, #555);
+  border-radius: 6px;
+  color: var(--vscode-foreground, #ddd);
+  background: var(--vscode-editor-background, #202020);
+  font: 13px sans-serif;
+}
+.openvision-profile-dialog h2 { margin: 0 0 16px; font-size: 16px; }
+.openvision-profile-dialog label { display: grid; gap: 6px; margin-bottom: 16px; }
+.openvision-profile-dialog input { padding: 8px; color: inherit; background: #303030; border: 1px solid #666; }
+.openvision-profile-dialog button { margin-right: 8px; padding: 6px 12px; cursor: pointer; }
