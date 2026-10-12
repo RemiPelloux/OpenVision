@@ -1,8 +1,6 @@
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent $PSScriptRoot
-. (Join-Path $root 'enter-rea.ps1')
+$preparedNode = Join-Path (Split-Path -Parent $PSScriptRoot) '.tools\node-v24.18.0-win-x64\node.exe'
+$nodePath = if ($env:OPENVISION_NODE_PATH) { $env:OPENVISION_NODE_PATH } elseif (Test-Path -LiteralPath $preparedNode) { $preparedNode } else { (Get-Command node -ErrorAction Stop).Source }
 $env:OPENVISION_APP_NAME = 'OpenVision'
-& $env:REA_NODE_PATH (Join-Path $PSScriptRoot 'desktop\build-source.mjs')
-if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-& $env:REA_NODE_PATH (Join-Path $PSScriptRoot 'desktop\launch.mjs') @args
+& $nodePath (Join-Path $PSScriptRoot 'desktop\start.mjs') @args
 exit $LASTEXITCODE

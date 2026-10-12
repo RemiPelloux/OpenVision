@@ -1,4 +1,4 @@
-import { lstat, readdir, readFile, realpath } from 'node:fs/promises';
+import { lstat, readdir, readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { isAbsolute, relative, resolve, join, sep } from 'node:path';
@@ -36,18 +36,7 @@ export async function safeDestination(base, path) {
       if ((await lstat(current)).isSymbolicLink()) throw new Error(`Import cannot write through a symbolic link: ${current}`);
     } catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
-  // Check existing ancestors above the base as well.
-  let parent = base;
-  for (;;) {
-    try {
-      if (resolve(await realpath(parent)).toLowerCase() !== resolve(parent).toLowerCase())
-        throw new Error(`Import destination has a redirected ancestor: ${parent}`);
-      break;
-    } catch (error) { if (error.code !== 'ENOENT') throw error; }
-    const next = resolve(parent, '..');
-    if (next === parent) break;
-    parent = next;
-  }
+  // The selected base owns the boundary; system ancestors such as macOS /var may be aliases.
 }
 
 export async function tree(path) {

@@ -11,73 +11,140 @@ are local build inputs excluded from Git. A fresh clone needs those inputs befor
 it can launch. Original TypeScript and native source have not been reconstructed;
 complete feature parity and measured performance improvements are not claimed.
 
-## Quick Start: Prepared Workspace
+## Run An Already Prepared Build
 
-On the machine where OpenVision has already been assembled:
-
-1. Open the `openvision` folder.
-2. Double-click **`start-openvision.cmd`**.
-3. Open your project with **File > Open Folder**.
-
-Or run from the `openvision` folder in PowerShell:
+On Windows, double-click **`start-openvision.cmd`**, or run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start-openvision.ps1
 ```
 
-From the parent `REA` folder instead:
+On macOS or Linux:
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\openvision\start-openvision.ps1
+```sh
+sh ./start-openvision.sh
 ```
 
-The launcher applies the customizations and starts `electron-host/OpenVision.exe`
-with isolated settings and extensions. It opens the generated
-`OpenVision.code-workspace`, containing Playground, OpenVision Source, and
-OpenVision Tools. The sample project lives alongside REA under
-`OpenVision Projects/Playground`. Existing sample files are preserved.
+On any supported system, with the configured Node toolchain:
 
-To apply main-process changes or imported extensions, close all OpenVision
-windows and run the launcher again.
+```sh
+npm start
+```
 
-## Setup From A Clone
+Run these commands from `openvision`. The launcher builds the customizations and
+opens a native host with isolated settings and extensions. Use **File > Open
+Folder** for your project. The generated starter workspace contains Playground,
+OpenVision Source, and OpenVision Tools. New checkouts create Playground next to
+the checkout under `OpenVision Projects/Playground`. Existing workspace project
+paths and sample files are preserved.
 
-The current build targets **Windows x64** and expects this local layout:
+Close every OpenVision window and relaunch after main-process changes or
+extension imports. `OPENVISION_NODE_PATH` selects an existing Node executable for
+the shell/PowerShell launchers. Windows also detects the prepared parent REA
+runtime when available.
+
+## Platforms And Prerequisites
+
+| System | Native host | Cursor User directory |
+| --- | --- | --- |
+| Windows x64 / ARM64 | `electron-host/OpenVision.exe` | `%APPDATA%\\Cursor\\User` |
+| macOS Intel / Apple Silicon | `electron-host/OpenVision.app/Contents/MacOS/OpenVision` | `~/Library/Application Support/Cursor/User` |
+| Linux x64 / ARM64, glibc | `electron-host/openvision` | `${XDG_CONFIG_HOME:-~/.config}/Cursor/User` |
+
+Use **Node.js 24.18.0** and its npm, Git, a same-platform/architecture Cursor
+installation, and the locked tooling dependencies. These are prerequisites;
+OpenVision does not install or upgrade Node, npm, system libraries, or RE
+providers. Linux also needs the desktop libraries required by its native
+Electron runtime, a graphical session, and an available Chromium sandbox.
+macOS uses its system `plutil` and `codesign` tools.
+
+The Windows editor has been exercised locally. Automated platform checks cover
+configuration import/restore, binary identity, executable copying, native icons,
+and macOS fixture signing. **Those checks are not full editor verification on
+macOS/Linux.** Native editor, extensions, AI gateway, and Tab behavior require
+testing with the actual recovered application on each target. Source patch
+anchors are currently verified against Cursor **3.21.13**; a different bundle
+may fail preparation rather than accept uncertain patches.
+
+Do not copy a Windows `electron-host`, native addons, installed extensions, or
+generated workspace to another OS. Prepare a new build there. The builder checks
+native executable format/architecture and rejects mismatched recovery inputs.
+Target-specific extension packages from another OS are rejected during import.
+
+## Prepare A New Native Build
+
+A clone can be prepared without the Windows REA folder. Run in the checkout:
+
+```sh
+git clone https://github.com/RemiPelloux/OpenVision.git
+cd OpenVision
+npm ci --prefix tooling
+```
+
+Access to the private repository is required. Then select the **installation
+directory**, not the Cursor User/settings directory.
+
+macOS:
+
+```sh
+npm run prepare:desktop -- --installation "/Applications/Cursor.app"
+npm start
+```
+
+Linux, for a typical Debian/RPM installation:
+
+```sh
+npm run prepare:desktop -- --installation "/usr/share/cursor"
+npm start
+```
+
+For an extracted AppImage, select the directory containing `cursor` and
+`resources/app`, typically `squashfs-root/usr/share/cursor`. The preparation
+command does not mount or install AppImages.
+
+Windows:
+
+```powershell
+npm run prepare:desktop -- --installation "$env:LOCALAPPDATA\Programs\cursor"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\start-openvision.ps1
+```
+
+Preparation reads the installed application, snapshots its files and internal
+symlinks, preserves Unix executable modes, and formats the bundles used by the
+customizations. It verifies expected source owners before producing manifests.
+The installed Cursor is unchanged. Outputs live in ignored `build/recovery`;
+an existing recovery directory is never overwritten. A failed preparation is
+retained for inspection.
+
+The build copies native dependencies from that snapshot and places the editable
+application in `source/app`. Windows/Linux link `electron-host/resources/app`
+to that source; macOS links `OpenVision.app/Contents/Resources/app`. macOS gets
+an OpenVision plist/icon and an ad-hoc development signature, preserving existing
+entitlements. This is not a notarized distribution. Linux keeps the Chromium
+sandbox enabled and uses its namespace sandbox when the copied setuid helper
+cannot serve as a root-owned helper.
+
+### Existing REA Recovery Inputs
+
+The original prepared REA layout remains accepted:
 
 ```text
 REA/
-  enter-rea.ps1
-  .tools/node-v24.18.0-win-x64/node.exe
   cursor/
-    artifacts/installation/                 # Preserved installed application
-    readable/app/                          # Recovered readable JavaScript
+    artifacts/installation/
+    readable/app/
     reports/installation-manifest.json
     reports/readability.json
-  openvision/                              # This repository
+  openvision/
     desktop/
-    tooling/package.json
-    tooling/package-lock.json
+    tooling/
 ```
 
-Clone into a prepared REA workspace:
-
-```powershell
-# Run in your prepared REA folder.
-git clone https://github.com/RemiPelloux/OpenVision.git openvision
-. .\enter-rea.ps1
-npm ci --prefix .\openvision\tooling
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\openvision\start-openvision.ps1
-```
-
-Access to the private repository is required. `enter-rea.ps1` selects the prepared
-Node/npm toolchain; `npm ci` installs only locked OpenVision tooling dependencies.
-These commands do not recover Cursor or install IDA/Ghidra. Recovery inputs must
-already exist from your local REA investigation of the installed application.
-
-First assembly copies the recovery inputs into `source/app`, prepares the native
-host in `electron-host`, applies branding, and creates a directory junction from
-`electron-host/resources/app` to `source/app`. Subsequent launches reuse the
-editable build. An incomplete build causes an error so its files can be inspected.
+Recovery selection is: explicit **`OPENVISION_RECOVERY_DIR`**, then a completed
+local `build/recovery`, then `../cursor`. The environment override is used by
+both preparation and assembly. Use separate checkouts for different platforms.
+Subsequent launches reuse the editable build. Partial builds are retained and
+reported as errors.
 
 ## Import Your Cursor Configuration
 
@@ -112,7 +179,9 @@ Workspace settings can override user settings.
 
 | Location | Default path |
 | --- | --- |
-| Cursor preferences | `%APPDATA%\Cursor\User` |
+| Windows Cursor preferences | `%APPDATA%\Cursor\User` |
+| macOS Cursor preferences | `~/Library/Application Support/Cursor/User` |
+| Linux Cursor preferences | `$XDG_CONFIG_HOME/Cursor/User`, defaulting to `~/.config/Cursor/User` |
 | Cursor extensions | `%USERPROFILE%\.cursor\extensions` |
 | OpenVision preferences | `openvision\data\local\User` |
 | OpenVision extensions | `openvision\data\local-extensions` |
@@ -182,6 +251,15 @@ If PowerShell blocks scripts, invoke
 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\import-cursor.ps1`
 and append the same arguments.
 
+On macOS/Linux, use `sh ./import-cursor.sh` with those arguments, or use
+`npm run import:cursor -- --apply` on any OS. For example:
+
+```sh
+sh ./import-cursor.sh --categories settings,keybindings
+sh ./import-cursor.sh --apply
+sh ./import-cursor.sh --restore "./backups/cursor-import/<import-id>"
+```
+
 ## Projects, Editing, And Execution
 
 Use **File > Open Folder** or **Add Folder to Workspace**. Explorer opens by
@@ -241,6 +319,9 @@ Agent routing; real-provider inference requires your endpoint and key.
 | Path | Purpose |
 | --- | --- |
 | `desktop/build-source.mjs` | Assembly and customization entry point |
+| `desktop/platform.mjs`, `native-identity.mjs` | Platform layout, native architecture and profile paths |
+| `desktop/prepare-source.mjs`, `recovery-snapshot.mjs`, `source-assembly.mjs` | Native input capture, recovery and assembly |
+| `desktop/native-assets.mjs` | macOS icon, plist and development signing |
 | `desktop/local-workbench.mjs`, `cloud-features.mjs` | Local profile and cloud UI patches |
 | `desktop/model-settings.js`, `model-providers.js`, `model-http.mjs` | Provider UI, storage, native discovery |
 | `desktop/cursor-import.mjs`, `import-json.mjs`, `import-files.mjs`, `import-extensions.mjs` | Import plan, parsing, paths, native extension registry format |
@@ -262,25 +343,36 @@ changes; main-process/native IPC changes require a full restart.
 Recovered files, binaries, profiles, credentials, logs, generated workspaces,
 and dependencies are ignored by Git. Recovery evidence in `../cursor` is a
 separate preserved input. The earlier dashboard under `src/` has its separate
-`start-control-plane.ps1`; the main launcher opens the IDE.
+`start-control-plane.ps1`; the main launcher opens the IDE. That legacy dashboard
+is outside the desktop portability checks.
 
 ### Verification
 
 From `openvision`:
 
-```powershell
-. ..\enter-rea.ps1
-& $env:REA_NODE_PATH --test desktop/cursor-import.test.mjs desktop/local-workbench.test.mjs desktop/model-providers.test.mjs
-& $env:REA_NODE_PATH desktop/build-source.mjs
+Portable checks need only the checkout and locked tooling, on any OS:
 
-# Temporary loopback debugging port for desktop verification.
-.\start-openvision.ps1 --inspect-preview
-& $env:REA_NODE_PATH desktop/verify-import.mjs
-& $env:REA_NODE_PATH desktop/verify-models.mjs
+```sh
+npm ci --prefix tooling
+npm run check:desktop
+npm run test:portable
 ```
 
-Bundle tests require recovery inputs. Desktop verification requires
-`playwright-core` in the parent REA workspace. Import tests use temporary
+`.github/workflows/portability.yml` runs these on Windows, Linux, and two macOS
+runner versions. Tests execute a copied real Node host on each system and sign
+a native fixture on macOS. Fixture execution does not establish recovered IDE
+compatibility. The following live-editor checks still need local recovery inputs:
+
+```sh
+node --test desktop/local-workbench.test.mjs desktop/model-providers.test.mjs
+npm start -- --inspect-preview
+node desktop/verify-import.mjs
+node desktop/verify-models.mjs
+```
+
+Bundle tests use the preserved recovery bundles under `../cursor/readable/app`.
+The pinned desktop verification client is installed with the tooling; it connects
+to the running app without downloading a browser. Import tests use temporary
 profiles and cover JSONC, conflicts, extension paths, unchanged credential
 storage, repeat imports, backups, rollback, and newer-edit protection.
 `verify-import.mjs` checks actual UI import/restore with a temporary fixture.
@@ -292,8 +384,12 @@ does not request a debugging port.
 
 | Symptom | Action |
 | --- | --- |
-| Missing manifests, runtime, or `enter-rea.ps1` | Restore the prepared REA layout; a clone alone is insufficient |
-| Missing tooling dependency | Source `enter-rea.ps1`, then `npm ci --prefix tooling` |
+| Missing manifests or native runtime | Prepare native inputs with `prepare:desktop`, or supply the existing REA recovery layout |
+| No prepared REA folder | Use `prepare:desktop` with the same-platform Cursor installation, then `npm start` |
+| Different native platform/architecture | Prepare a new native snapshot on the target; do not copy generated builds between systems |
+| Linux sandbox startup error | Check user-namespace policy or use a correctly installed root-owned Chromium sandbox helper; the launcher never adds `--no-sandbox` |
+| macOS signature or Gatekeeper error | Check the signing command's diagnostics and local development execution policy; this build is not notarized |
+| Missing tooling dependency | Select Node 24.18.0, then run `npm ci --prefix tooling` |
 | Incomplete build or missing patch anchor | Preserve files and compare recovery version/customization owners before rebuilding |
 | Import has no IPC handler | Close every OpenVision window and relaunch |
 | Cursor profile not found | Enter its actual User directory; portable/custom profiles differ |

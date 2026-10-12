@@ -1,4 +1,4 @@
-import { chromium } from 'playwright-core';
+import { chromium } from '../tooling/browser.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

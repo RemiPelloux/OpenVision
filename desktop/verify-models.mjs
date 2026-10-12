@@ -1,7 +1,8 @@
-import { chromium } from 'playwright-core';
+import { chromium } from '../tooling/browser.mjs';
 import { createServer } from 'node:http';
 import { readFile, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
 
 const record = JSON.parse(await readFile(new URL('../logs/desktop-launch.json', import.meta.url), 'utf8'));
 const requests = [];
@@ -82,10 +83,10 @@ try {
   await provider.getByText('My Custom Coder', { exact: true }).waitFor();
   const images = await settings.locator('img').evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0));
   assert.equal(images, true);
-  await page.screenshot({ path: new URL('../logs/custom-model-settings-tested.png', import.meta.url).pathname.replace(/^\/(\w:)/, '$1') });
+  await page.screenshot({ path: fileURLToPath(new URL('../logs/custom-model-settings-tested.png', import.meta.url)) });
   await page.locator('.tabs-container .tab').filter({ hasText: 'main.js' }).first().click();
   await page.getByRole('button', { name: 'New Agent', exact: true }).first().click();
-  await page.getByText(/^(openvision-test-code|My Custom Coder)$/).filter({ visible: true }).first().click();
+  await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
   await page.getByText('My Custom Coder', { exact: true }).last().waitFor();
   await page.getByText('My Custom Coder', { exact: true }).last().click();
   await page.keyboard.press('Escape');

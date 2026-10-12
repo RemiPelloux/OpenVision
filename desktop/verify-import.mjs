@@ -1,4 +1,4 @@
-import { chromium } from 'playwright-core';
+import { chromium } from '../tooling/browser.mjs';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { restoreImport } from './import-transaction.mjs';
 import { parseConfiguration } from './import-json.mjs';
+import { cursorLocations } from './platform.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const launch = JSON.parse(await readFile(join(root, 'logs/desktop-launch.json'), 'utf8'));
@@ -40,7 +41,7 @@ try {
   await page.getByRole('button', { name: 'Import from Cursor', exact: true }).click();
   const dialog = page.locator('.openvision-import-dialog');
   await dialog.getByLabel('Cursor User directory', { exact: true }).waitFor();
-  assert.equal(await dialog.getByLabel('Cursor User directory', { exact: true }).inputValue(), join(process.env.APPDATA, 'Cursor/User'));
+  assert.equal(await dialog.getByLabel('Cursor User directory', { exact: true }).inputValue(), cursorLocations().user);
   await dialog.getByLabel('Cursor User directory', { exact: true }).fill(join(fixture, 'User'));
   await dialog.getByLabel('Cursor extensions directory', { exact: true }).fill(join(fixture, 'extensions'));
   for (const label of ['Keyboard shortcuts', 'User tasks']) await dialog.getByLabel(label, { exact: true }).uncheck();

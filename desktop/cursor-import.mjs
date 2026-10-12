@@ -1,14 +1,13 @@
 import { readdir, lstat } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { cursorLocations } from './platform.mjs';
 import { join, resolve, relative, sep } from 'node:path';
-import { extensionRecord } from './import-extensions.mjs';
+import { extensionRecord, assertExtensionPlatform } from './import-extensions.mjs';
 import { mergeSettings, mergeKeybindings, parseConfiguration, protectedSettings } from './import-json.mjs';
 import { optionalFile, digest, fileHash, inside, tree, safeDestination } from './import-files.mjs';
 
 export const categories = ['settings', 'keybindings', 'snippets', 'tasks', 'extensions'];
-export function defaults(root) {
-  return { root, user: join(process.env.APPDATA || join(homedir(), 'AppData/Roaming'), 'Cursor/User'),
-    extensions: join(homedir(), '.cursor/extensions'), categories, overwrite: true };
+export function defaults(root, context) {
+  return { root, ...cursorLocations(context), categories, overwrite: true };
 }
 
 export async function cursorProfiles(user) {
@@ -95,6 +94,7 @@ async function importExtensions(plan) {
     const input = extensionPath(plan.options.extensions, entry);
     const existing = registry.findIndex(item => item.identifier.id.toLowerCase() === entry.identifier.id.toLowerCase());
     if (existing >= 0 && !plan.options.overwrite) continue;
+    assertExtensionPlatform(entry);
     const info = await lstat(input);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Invalid extension directory: ${input}`);
     const output = join(directory, entry.relativeLocation);

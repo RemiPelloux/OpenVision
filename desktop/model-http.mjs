@@ -1,14 +1,12 @@
 import { ipcMain, net } from 'electron';
 import { normalizeBaseUrl, parseModels } from './openvision-model-providers.js';
+import { assertWorkbenchSender } from '../../../desktop/workbench-sender.mjs';
 
 const channel = 'vscode:openvision-discover-models';
-const expectedPath = new URL('./vs/code/electron-sandbox/workbench/workbench.html', import.meta.url).pathname.toLowerCase();
+const expected = new URL('./vs/code/electron-sandbox/workbench/workbench.html', import.meta.url);
 
 ipcMain.handle(channel, async (event, configuration) => {
-  const sender = new URL(event.senderFrame.url);
-  if (event.senderFrame !== event.sender.mainFrame || sender.protocol !== 'vscode-file:' ||
-      sender.hostname !== 'vscode-app' || decodeURIComponent(sender.pathname).toLowerCase() !== decodeURIComponent(expectedPath))
-    throw new Error('Model discovery is available only to the OpenVision workbench.');
+  assertWorkbenchSender(event, expected);
   try {
     if (!configuration || typeof configuration.url !== 'string' || typeof configuration.key !== 'string')
       throw new Error('Invalid provider connection.');

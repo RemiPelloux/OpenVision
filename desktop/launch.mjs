@@ -1,18 +1,22 @@
 import { spawn } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import net from 'node:net';
+import { loadRuntime } from './source-assembly.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
+import { projectPaths } from './project-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const executable = join(root, 'electron-host/OpenVision.exe');
-const manifest = JSON.parse(await readFile(join(root, 'build/source-build.json'), 'utf8'));
-if (manifest.name !== 'OpenVision') throw new Error('Unrecognized desktop runtime');
+const { layout } = await loadRuntime(root);
+const executable = layout.executable;
+const project = await projectPaths(root);
 const argumentsList = [
   '--user-data-dir', join(root, 'data/local'), '--extensions-dir', join(root, 'data/local-extensions'),
   '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
-  join(root, 'OpenVision.code-workspace'), resolve(root, '../../OpenVision Projects/Playground/src/main.js')
+  project.workspace, join(project.project, 'src/main.js')
 ];
+if (process.platform === 'linux') argumentsList.unshift(...await linuxSandboxArguments(layout.host));
 let debugPort;
 if (process.argv.includes('--inspect-preview')) {
   const probe = net.createServer();

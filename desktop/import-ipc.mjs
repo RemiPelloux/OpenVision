@@ -3,16 +3,15 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { defaults, cursorProfiles, planImport, summarize } from '../../../desktop/cursor-import.mjs';
 import { applyImport, restoreImport } from '../../../desktop/import-transaction.mjs';
+import { assertWorkbenchSender } from '../../../desktop/workbench-sender.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
-const expectedPath = new URL('./vs/code/electron-sandbox/workbench/workbench.html', import.meta.url).pathname.toLowerCase();
+const expected = new URL('./vs/code/electron-sandbox/workbench/workbench.html', import.meta.url);
 const previews = new Map();
 let busy = false;
 
 ipcMain.handle('vscode:openvision-cursor-import', async (event, request) => {
-  const sender = new URL(event.senderFrame.url);
-  if (event.senderFrame !== event.sender.mainFrame || sender.protocol !== 'vscode-file:' || sender.hostname !== 'vscode-app' ||
-      decodeURIComponent(sender.pathname).toLowerCase() !== decodeURIComponent(expectedPath)) throw new Error('Import requires the OpenVision workbench.');
+  assertWorkbenchSender(event, expected);
   if (busy) return { ok: false, error: 'Another import operation is running.' };
   busy = true;
   try {

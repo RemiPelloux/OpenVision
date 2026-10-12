@@ -49,7 +49,8 @@ export async function productBranding(app) {
   Object.assign(data, { nameShort: 'OpenVision', nameLong: 'OpenVision', applicationName: 'openvision',
     dataFolderName: '.openvision-local', win32MutexName: 'openvision-local', win32DirName: 'OpenVision',
     win32NameVersion: 'OpenVision', win32RegValueName: 'OpenVision', win32AppUserModelId: 'Local.OpenVision.Source',
-    win32ShellNameShort: 'OpenVision', urlProtocol: 'openvision-local' });
+    win32ShellNameShort: 'OpenVision', urlProtocol: 'openvision-local',
+    darwinBundleIdentifier: 'local.openvision.source', linuxIconName: 'openvision' });
   delete data.updateUrl;
   delete data.backupUpdateUrl;
   delete data.checksums;

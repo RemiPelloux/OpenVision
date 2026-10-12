@@ -1,6 +1,7 @@
-import { sharp, rcedit, parse, parseFragment, serialize } from '../tooling/dependencies.mjs';
-import { copyFile, readFile, writeFile } from 'node:fs/promises';
+import { sharp, parse, parseFragment, serialize } from '../tooling/dependencies.mjs';
+import { copyFile, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
+import { installMacAssets } from './native-assets.mjs';
 
 function ico(images) {
   const header = Buffer.alloc(6 + images.length * 16);
@@ -36,13 +37,17 @@ function find(node, tag) {
 }
 
 export async function sourceAssets(options) {
-  const { root, app, executable } = options;
+  const { root, app, executable, layout } = options;
+  const platform = layout?.platform ?? process.platform;
   const png = await logo(root);
-  const images = await Promise.all([16, 32, 48, 64, 128, 256].map(async size => ({ size,
-    png: await sharp(png).resize(size, size).png().toBuffer() })));
   const icon = join(app, 'resources/win32/code.ico');
-  await writeFile(icon, ico(images));
-  for (const size of [70, 150]) await sharp(png).resize(size, size).toFile(join(app, `resources/win32/code_${size}x${size}.png`));
+  if (platform === 'win32') {
+    const images = await Promise.all([16, 32, 48, 64, 128, 256].map(async size => ({ size,
+      png: await sharp(png).resize(size, size).png().toBuffer() })));
+    await mkdir(dirname(icon), { recursive: true });
+    await writeFile(icon, ico(images));
+    for (const size of [70, 150]) await sharp(png).resize(size, size).toFile(join(app, `resources/win32/code_${size}x${size}.png`));
+  }
   const htmlPath = join(app, 'out/vs/code/electron-sandbox/workbench/workbench.html');
   const directory = dirname(htmlPath);
   await writeFile(join(directory, 'openvision-logo.png'), png);
@@ -54,7 +59,15 @@ export async function sourceAssets(options) {
     append(head, node);
   append(find(document, 'body'), parseFragment('<script type="module" src="./openvision-local-profile.js"></script>').childNodes[0]);
   await writeFile(htmlPath, serialize(document));
-  await rcedit(executable, { icon, 'version-string': {
-    ProductName: 'OpenVision', FileDescription: 'OpenVision Source IDE', OriginalFilename: 'OpenVision.exe',
-    InternalName: 'OpenVision', CompanyName: 'OpenVision Local' } });
+  if (platform === 'win32') {
+    const { rcedit } = await import('../tooling/node_modules/rcedit/lib/index.js');
+    await rcedit(executable, { icon, 'version-string': {
+      ProductName: 'OpenVision', FileDescription: 'OpenVision Source IDE', OriginalFilename: 'OpenVision.exe',
+      InternalName: 'OpenVision', CompanyName: 'OpenVision Local' } });
+  } else if (platform === 'darwin') await installMacAssets(layout, png);
+  else {
+    const linuxIcon = join(app, 'resources/linux/code.png');
+    await mkdir(dirname(linuxIcon), { recursive: true });
+    await writeFile(linuxIcon, png);
+  }
 }
