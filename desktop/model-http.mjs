@@ -31,8 +31,7 @@ ipcMain.handle(channel, async (event, configuration) => {
     let body;
     try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); }
     catch { return { ok: false, error: 'The provider returned invalid JSON.' }; }
-    const models = parseModels(body);
-    return { ok: true, data: models.map(model => ({ id: model.id })) };
+    return { ok: true, data: parseModels(body) };
   } catch (error) {
     const known = error.message === 'The model list exceeds the supported response size (4 MiB).' ||
       error.message.startsWith('The provider ');

@@ -90,6 +90,25 @@ The active connection and enabled-model count remain visible. **Add Model**
 accepts an exact server ID when discovery is unavailable. Refresh preserves
 manual models, names, and enabled states.
 
+In the Agent model picker, open the model's options to choose **Reasoning**.
+The native submenu remembers each model's selection. It uses discovered
+capabilities first, with documented defaults for known Codex Easy models:
+
+| Model family | Reasoning choices |
+| --- | --- |
+| GPT 6 / 5.6 models listed by Codex Easy | Low, Medium, High, Extra High, Max |
+| DeepSeek Flash / V4 Pro | Off, Low, High, Max |
+| Grok 4.6 / 4.7 | Low, Medium, High, Extra High |
+
+DeepSeek maps the compatibility alias **Ultra** to **Max**; they represent the
+same effort. Unknown models only show choices declared by their provider.
+Agent submissions resolve the selected model's saved URL and key for each
+request, including immediately after startup.
+
+Capability references: [Codex Easy configuration](https://docs.codex-everywhere.com/integrations/opencode),
+[DeepSeek thinking modes](https://api-docs.deepseek.com/guides/thinking_mode),
+[Grok reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning).
+
 API keys use local workbench secret storage. They are excluded from provider
 metadata, this README, and Git. The repository does not ship an API key. Model
 listing alone does not establish image input, reasoning, tool use, or every

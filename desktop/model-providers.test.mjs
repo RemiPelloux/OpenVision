@@ -86,9 +86,66 @@ test('Codex Easy GPT models use their configured Cursor-style reasoning variants
     [{ value: 'low', displayName: 'Low' }, { value: 'medium', displayName: 'Medium' },
       { value: 'high', displayName: 'High' }, { value: 'xhigh', displayName: 'Extra High' }, { value: 'max', displayName: 'Max' }]);
   assert.equal(model.variants[3].displayName, 'GPT-6.1 Sol · Extra High');
+  for (const url of ['https://codex-easy.ai.evil.test/v1', 'https://example.test/codex-easy.ai'])
+    assert.equal(catalog([{ id: 'gpt-6.1-sol', name: 'Sol', enabled: true }], { url })[0].supportsThinking, false);
 });
 
-test('combined catalog groups providers and routes selection to its provider', async () => {
+test('discovery metadata survives normalization at both IPC boundaries', () => {
+  const models = parseModels({ data: [{ id: 'deepseek-test', capabilities: {
+    reasoning_effort: [{ id: 'ultra', value: 'provider-ultra', label: 'Ultra' }],
+    context_length: 100000, max_output_tokens: 8192, supports_vision: false,
+  } }] });
+  assert.deepEqual(parseModels({ data: models }), models);
+  const row = catalog(models)[0];
+  assert.deepEqual(row.parameterDefinitions[0].parameterType.enumParameter.values,
+    [{ value: 'provider-ultra', displayName: 'Ultra' }]);
+  assert.deepEqual(row.legacySlugs, []);
+  const unsupported = parseModels({ data: [{ id: 'gpt-6-astra', capabilities: { reasoning_effort: [] } }] });
+  assert.equal(catalog(unsupported, { url: 'https://codex-easy.ai/v1' })[0].supportsThinking, false,
+    'An explicit provider declaration overrides the documented fallback');
+});
+
+test('known provider models use different reasoning menus and default to high', () => {
+  const models = ['gpt-6-astra', 'deepseek-flash', 'deepseek-v4-pro', 'grok-4.7', 'unknown']
+    .map(id => ({ id, name: id, enabled: true }));
+  const rows = catalog(models, { url: 'https://codex-easy.ai/v1' });
+  const choices = row => row.parameterDefinitions[0]?.parameterType.enumParameter.values.map(value => value.value) ?? [];
+  assert.deepEqual(rows.map(choices), [
+    ['low', 'medium', 'high', 'xhigh', 'max'], ['none', 'low', 'high', 'max'],
+    ['none', 'low', 'high', 'max'], ['low', 'medium', 'high', 'xhigh'], [],
+  ]);
+  for (const row of rows.slice(0, -1))
+    assert.equal(row.variants.find(variant => variant.isDefaultNonMaxConfig).parameterValues[0].value, 'high');
+});
+
+test('capability refresh preserves disabled models and does not retry known absence', async () => {
+  const services = bridge();
+  let requests = 0;
+  services.request = async () => { requests++; return { data: [{ id: 'plain' }, { id: 'disabled' }] }; };
+  const providers = new ModelProviders(services);
+  const provider = await providers.save({ name: 'Local', url: 'http://localhost:1234/v1', key: '' });
+  await providers.updateModels(provider.id, [{ id: 'plain', name: 'Plain', enabled: true },
+    { id: 'disabled', name: 'Disabled', enabled: false }]);
+  await providers.discoverMissingCapabilities();
+  await providers.discoverMissingCapabilities();
+  assert.equal(requests, 1);
+  assert.equal(provider.models[1].enabled, false);
+  assert.equal(provider.models[1].name, 'Disabled');
+  assert.deepEqual(allCatalog(services.storage).map(model => model.name), ['plain']);
+});
+
+test('capability refresh reports a provider failure and retains models', async () => {
+  const services = bridge();
+  services.request = async () => { throw new Error('Model discovery failed (HTTP 503)'); };
+  const providers = new ModelProviders(services);
+  const provider = await providers.save({ name: 'Local', url: 'http://localhost:1234/v1', key: '' });
+  await providers.updateModels(provider.id, [{ id: 'plain', name: 'Plain', enabled: true }]);
+  await assert.rejects(providers.discoverMissingCapabilities(), /HTTP 503/);
+  assert.equal(provider.models[0].id, 'plain');
+  assert.equal(provider.capabilitiesDiscovered, false);
+});
+
+test('combined catalog groups providers while retaining the default connection', async () => {
   const services = bridge();
   const providers = new ModelProviders(services);
   await providers.ready;
@@ -104,7 +161,7 @@ test('combined catalog groups providers and routes selection to its provider', a
   services.ai.modelConfigService.setModelConfig('composer', { modelName: 'deepseek-v4-pro' });
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(services.settings.openAIBaseUrl, 'https://example.test/v1');
-  assert.equal(providers.state.activeId, deepseek.id);
+  assert.equal(providers.state.activeId, grok.id, 'Selection must not race a global credential switch');
 });
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} custom model integration owns settings and polling and is idempotent`, async () => {
@@ -113,6 +170,20 @@ for (const variant of ['desktop', 'glass']) {
     assert.equal(customModels(text, variant), text);
     assert.ok(text.includes('openvisionMountModels(node, bridge)'));
     assert.ok(text.includes('openvisionCatalog(this.storageService)'));
+    const start = text.indexOf('computeAvailableDefaultModels() {');
+    const method = text.slice(start, text.indexOf('getAvailableDefaultModels() {', start)).trim();
+    const mapper = method.match(/openvisionCatalog\(this.storageService\)\.map\(([\w$]+)\)/)[1];
+    const compute = new Function(variant === 'desktop' ? 'zc' : 'Rl', 'openvisionCatalog', mapper,
+      `return function ${method};`)({ localMode: true }, allCatalog, model => model);
+    const services = bridge();
+    services.storage.store('openvision.model-providers.v1', JSON.stringify({ version: 1, activeId: 'ce', providers: [
+      { id: 'ce', name: 'CE', url: 'https://codex-easy.ai/v1', models: [{ id: 'deepseek-v4-pro', name: 'DeepSeek', enabled: true }] },
+    ] }));
+    const startupModels = compute.call({ storageService: services.storage, reactiveStorageService: {
+      availableModelsCatalogRevision() {}, applicationUserPersistentStorage: { availableDefaultModels2: [{ name: 'stale' }] },
+    } });
+    assert.equal(startupModels[0].name, 'deepseek-v4-pro');
+    assert.equal(startupModels[0].parameterDefinitions[0].id, 'reasoning');
     assert.ok(text.includes('/* OpenVision local provider ownership */'));
     assert.throws(() => customModels(recovered.replace('children: "Configure gateway"', 'children: "Changed"'), variant), /anchor missing/);
   });

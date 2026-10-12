@@ -131,7 +131,8 @@ export function mountModels(container, bridge) {
     ui.actions.append(save);
     ui.form.onsubmit = async event => {
       event.preventDefault();
-      const next = { id: id.value.trim(), name: name.value.trim() || id.value.trim(), enabled: model?.enabled ?? true, manual: true };
+      const next = { ...(model?.id === id.value.trim() ? model : {}),
+        id: id.value.trim(), name: name.value.trim() || id.value.trim(), enabled: model?.enabled ?? true, manual: true };
       if (!next.id) return;
       if (provider.models.some(item => item !== model && item.id === next.id)) {
         ui.status.textContent = 'This model ID already exists.'; return;
@@ -206,7 +207,7 @@ export function mountModels(container, bridge) {
     actions.append(button('Add Codex Easy', () => providerDialog(undefined, { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })),
       button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })), add);
     heading.append(element('h3', 'Custom Providers'), actions);
-    const label = element('label', 'Active Provider (model requests use this provider key)', 'openvision-active-provider');
+    const label = element('label', 'Default connection · Agent uses each model’s provider', 'openvision-active-provider');
     const select = element('select');
     select.setAttribute('aria-label', 'Active Provider');
     const none = element('option', 'Select a provider'); none.value = ''; select.append(none);

@@ -1,3 +1,4 @@
+import { fallbackReasoningValues } from './model-reasoning.js';
 const storageKey = 'openvision.model-providers.v1';
 const secretKey = id => `openvision.provider.${id}`;
 
@@ -24,14 +25,17 @@ export function parseModels(body) {
 
 function parseCapabilities(item) {
   const source = item.capabilities && typeof item.capabilities === 'object' ? item.capabilities : item;
-  const values = source.reasoning_effort ?? source.reasoning_efforts ?? item.reasoning_effort ?? item.reasoning_efforts ??
+  const values = source.reasoningEffortValues ?? source.reasoning_effort ?? source.reasoning_efforts ?? item.reasoning_effort ?? item.reasoning_efforts ??
     (item.variants && typeof item.variants === 'object' ? Object.keys(item.variants) : undefined);
   const reasoning = normalizeReasoningValues(values);
   const capabilities = {};
-  if (reasoning.length) capabilities.reasoningEffortValues = reasoning;
-  if (Number.isFinite(source.context_length)) capabilities.contextLength = source.context_length;
-  if (Number.isFinite(source.max_output_tokens)) capabilities.maxOutputTokens = source.max_output_tokens;
-  if (typeof source.supports_vision === 'boolean') capabilities.supportsVision = source.supports_vision;
+  if (Array.isArray(values)) capabilities.reasoningEffortValues = reasoning;
+  const context = source.contextLength ?? source.context_length ?? item.limit?.context;
+  const output = source.maxOutputTokens ?? source.max_output_tokens ?? item.limit?.output;
+  const vision = source.supportsVision ?? source.supports_vision;
+  if (Number.isFinite(context) && context > 0) capabilities.contextLength = context;
+  if (Number.isFinite(output) && output > 0) capabilities.maxOutputTokens = output;
+  if (typeof vision === 'boolean') capabilities.supportsVision = vision;
   return Object.keys(capabilities).length ? capabilities : undefined;
 }
 
@@ -48,7 +52,7 @@ function normalizeReasoningValues(values) {
 }
 
 const reasoningLabels = {
-  none: 'None', auto: 'Auto', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High',
+  none: 'Off', auto: 'Auto', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High',
   xhigh: 'Extra High', 'extra-high': 'Extra High', max: 'Max', ultra: 'Ultra',
 };
 function reasoningParameter(values) {
@@ -58,27 +62,22 @@ function reasoningParameter(values) {
 }
 
 function modelReasoning(model) {
-  return Array.isArray(model.capabilities?.reasoningEffortValues) ? model.capabilities.reasoningEffortValues : [];
+  return Array.isArray(model.capabilities?.reasoningEffortValues) ? model.capabilities.reasoningEffortValues : undefined;
 }
 
-const codexEasyReasoning = new Set([
-  'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-luna',
-  'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna',
-]);
 function configuredReasoning(model, provider) {
-  if (!provider.url?.includes('codex-everywhere.com') && !provider.url?.includes('codex-easy.ai')) return [];
-  if (!codexEasyReasoning.has(model.id)) return [];
-  return ['low', 'medium', 'high', 'xhigh', 'max'].map(id => ({ id, value: id }));
+  return (fallbackReasoningValues(provider.url, model.id) ?? []).map(id => ({ id, value: id }));
 }
 
 function catalogModel(model, provider, namedModelSectionIndex) {
   const declared = modelReasoning(model);
-  const reasoning = declared.length ? declared : configuredReasoning(model, provider);
-  const variants = reasoning.map((item, index) => {
+  const reasoning = declared ?? configuredReasoning(model, provider);
+  const defaultEffort = reasoning.find(item => item.id === 'high') ?? reasoning[0];
+  const variants = reasoning.map(item => {
     const label = item.label ?? reasoningLabels[item.id] ?? item.id;
     return { parameterValues: [{ id: 'reasoning', value: item.value ?? item.id }], displayName: `${model.name} · ${label}`,
       displayNameOutsidePicker: `${model.name} · ${label}`, isMaxMode: false,
-      isDefaultNonMaxConfig: index === 0, isDefaultMaxConfig: index === 0 };
+      isDefaultNonMaxConfig: item === defaultEffort, isDefaultMaxConfig: item === defaultEffort };
   });
   return {
     supportsThinking: reasoning.length > 0,
@@ -91,7 +90,7 @@ function catalogModel(model, provider, namedModelSectionIndex) {
     providerId: provider.id,
     supportsMaxMode: false, supportsNonMaxMode: true,
     supportsImages: model.capabilities?.supportsVision ?? false,
-    idAliases: [], cloudAgentEffortModes: [], modelPickerBadges: [],
+    idAliases: [], legacySlugs: [], cloudAgentEffortModes: [], modelPickerBadges: [],
   };
 }
 
@@ -121,43 +120,13 @@ export class ModelProviders {
   constructor(bridge) {
     this.bridge = bridge;
     this.state = readState(bridge.storage.get(storageKey, -1));
-    this.modelOwners = new Map();
-    this.routeModelSelection();
     this.ready = this.state.activeId ? this.activate(this.state.activeId).catch(() => {}) : Promise.resolve();
   }
 
   allModels() {
-    this.modelOwners.clear();
-    const models = [];
-    for (const [section, provider] of this.state.providers.entries()) {
-      for (const model of catalog(provider.models, provider, section)) {
-        if (this.modelOwners.has(model.name)) continue;
-        this.modelOwners.set(model.name, provider.id);
-        models.push(model);
-      }
-    }
-    return models;
+    return stateCatalog(this.state);
   }
 
-  routeModelSelection() {
-    const service = this.bridge.ai.modelConfigService;
-    if (!service || service.__openvisionRouting) return;
-    const original = service.setModelConfig?.bind(service);
-    const originalForComposer = service.setModelConfigForComposer?.bind(service);
-    const route = (args, invoke) => {
-      const config = args.find(value => value && typeof value === 'object' && typeof value.modelName === 'string');
-      const owner = config && this.modelOwners.get(config.modelName);
-      const result = invoke();
-      if (owner && owner !== this.state.activeId && !this.routing) {
-        queueMicrotask(() => this.activate(owner).catch(() => {}));
-      }
-      return result;
-    };
-    if (original) service.setModelConfig = (...args) => route(args, () => original(...args));
-    if (originalForComposer) service.setModelConfigForComposer = (...args) =>
-      route(args, () => originalForComposer(...args));
-    service.__openvisionRouting = true;
-  }
   async persist() {
     this.bridge.storage.store(storageKey, JSON.stringify(this.state), -1, 1);
     await this.bridge.storage.flush();
@@ -166,7 +135,8 @@ export class ModelProviders {
     url = normalizeBaseUrl(url);
     name = name.trim() || new URL(url).hostname;
     const previous = this.state.providers.find(provider => provider.id === id);
-    const provider = { id: previous?.id ?? crypto.randomUUID(), name, url, models: previous?.models ?? [] };
+    const provider = { id: previous?.id ?? crypto.randomUUID(), name, url, models: previous?.models ?? [],
+      capabilitiesDiscovered: previous?.url === url && previous.capabilitiesDiscovered === true };
     if (key !== undefined) await this.bridge.secrets.set(secretKey(provider.id), key.trim());
     if (previous) this.state.providers[this.state.providers.indexOf(previous)] = provider;
     else this.state.providers.push(provider);
@@ -182,19 +152,23 @@ export class ModelProviders {
     const old = new Map(provider.models.map(model => [model.id, model]));
     provider.models = discovered.map(model => {
       const previous = old.get(model.id);
-      return previous ? { ...previous, ...model, name: previous.name || model.name, manual: previous.manual } : model;
+      return previous ? { ...previous, ...model, enabled: previous.enabled,
+        name: previous.name || model.name, manual: previous.manual } : model;
     });
     for (const model of old.values())
       if (model.manual && !provider.models.some(item => item.id === model.id)) provider.models.push(model);
+    provider.capabilitiesDiscovered = true;
     await this.persist();
-    if (this.state.activeId === id) await this.activate(id);
+    this.publishModels();
     return provider.models;
   }
   async discoverMissingCapabilities() {
     const pending = this.state.providers
-      .filter(provider => provider.models.some(model => model.enabled && !model.capabilities?.reasoningEffortValues))
+      .filter(provider => !provider.capabilitiesDiscovered && provider.models.some(model => model.enabled))
       .map(provider => this.discover(provider.id));
-    await Promise.allSettled(pending);
+    const results = await Promise.allSettled(pending);
+    const failures = results.filter(result => result.status === 'rejected');
+    if (failures.length) throw new Error(`${failures.length} provider refresh(es) failed: ${failures.map(result => result.reason.message).join('; ')}`);
   }
   get(id) {
     const provider = this.state.providers.find(item => item.id === id);
@@ -204,7 +178,7 @@ export class ModelProviders {
   async updateModels(id, models) {
     this.get(id).models = models;
     await this.persist();
-    if (this.state.activeId === id) await this.activate(id);
+    this.publishModels();
   }
   async activate(id) {
     const provider = id ? this.get(id) : null;
@@ -213,7 +187,12 @@ export class ModelProviders {
     const set = (...args) => this.bridge.reactive.setApplicationUserPersistentStorage(...args);
     set('openAIBaseUrl', provider?.url ?? '');
     set('useOpenAIKey', !!provider);
-    this.routing = true;
+    this.publishModels();
+    this.state.activeId = id;
+    await this.persist();
+  }
+  publishModels() {
+    const set = (...args) => this.bridge.reactive.setApplicationUserPersistentStorage(...args);
     const models = this.allModels();
     set('availableDefaultModels2', models);
     set('availableAPIKeyModels', models.map(model => model.name));
@@ -228,13 +207,11 @@ export class ModelProviders {
     }
     this.bridge.ai.handleAvailableModelsChange();
     this.bridge.reactive.manualSave();
-    this.state.activeId = id;
-    this.routing = false;
-    await this.persist();
   }
   async remove(id) {
-    if (this.state.activeId === id) await this.activate(null);
     this.state.providers = this.state.providers.filter(item => item.id !== id);
+    if (this.state.activeId === id) await this.activate(null);
+    else this.publishModels();
     await this.persist();
     await this.bridge.secrets.delete(secretKey(id));
   }
@@ -245,8 +222,19 @@ export function activeModelIds(storage) {
 }
 
 export function allCatalog(storage) {
-  const state = readState(storage.get(storageKey, -1));
+  return stateCatalog(readState(storage.get(storageKey, -1)));
+}
+
+function stateCatalog(state) {
   const seen = new Set();
   return state.providers.flatMap((provider, section) => catalog(provider.models, provider, section))
     .filter(model => !seen.has(model.name) && seen.add(model.name));
+}
+
+export async function requestProvider(storage, secrets, modelId) {
+  if (typeof modelId !== 'string' || !modelId) return undefined;
+  const state = readState(storage.get(storageKey, -1));
+  const provider = state.providers.find(provider => provider.models.some(model => model.enabled && model.id === modelId));
+  if (!provider) return undefined;
+  return { baseUrl: provider.url, apiKey: await secrets.get(secretKey(provider.id)) ?? '' };
 }

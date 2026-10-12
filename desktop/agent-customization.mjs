@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { cachedFile } from './build-cache.mjs';
 import { fileHash, digest } from './import-files.mjs';
+import { customizeAgentReasoning } from './agent-reasoning-customization.mjs';
 
 const marker = '/* OpenVision Agent streaming and catalog ownership v1 */';
 const options = { ecmaVersion: 'latest', sourceType: 'script' };
@@ -69,4 +70,27 @@ export async function installAgentRuntime(root) {
     await writeFile(path, after);
   });
   console.log(`Agent stream and catalog: ${changed ? 'verified' : 'unchanged (cached)'}`);
+  await installReasoningRuntime(root);
+}
+
+async function installReasoningRuntime(root) {
+  const helper = join(root, 'desktop/model-reasoning.js');
+  const recipe = digest(JSON.stringify(await Promise.all([
+    fileHash(join(root, 'desktop/agent-reasoning-customization.mjs')), fileHash(helper),
+    fileHash(join(root, 'tooling/package-lock.json')),
+  ])));
+  for (const kind of ['host', 'exec']) {
+    const relative = `extensions/cursor-agent-${kind}/dist/main.js`;
+    const path = join(root, 'source/app', relative);
+    await copyFile(helper, join(dirname(path), 'openvision-model-reasoning.mjs'));
+    await cachedFile({ path, marker: join(root, `build/cache/agent-${kind}-reasoning.json`), recipe }, async () => {
+      const before = await readFile(path, 'utf8');
+      const after = customizeAgentReasoning(before, kind);
+      if (before === after) return;
+      const backup = join(root, 'backups/agent-reasoning', relative);
+      await mkdir(dirname(backup), { recursive: true });
+      await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
+      await writeFile(path, after);
+    });
+  }
 }

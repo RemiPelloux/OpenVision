@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 const modules = new Map([
   ['/model-settings.js', 'model-settings.js'],
   ['/openvision-model-providers.js', 'model-providers.js'],
+  ['/model-reasoning.js', 'model-reasoning.js'],
 ]);
 const server = createServer(async (request, response) => {
   const file = modules.get(request.url);
@@ -27,7 +28,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}`);
   const mountMs = await page.evaluate(async () => {
     const { mountModels } = await import('/model-settings.js');
-    const state = { version: 1, activeId: null, providers: [{ id: 'fixture', name: 'Fixture',
+    const state = { version: 1, activeId: null, providers: [{ id: 'fixture', name: 'Fixture', capabilitiesDiscovered: true,
       url: 'http://example.test/v1', models: Array.from({ length: 10000 }, (_, index) => ({
         id: `model-${index}`, name: `Model ${index}`, enabled: true,
       })) }] };
@@ -36,7 +37,8 @@ try {
     mountModels(document.querySelector('main'), { storage: {
       get: () => JSON.stringify(state),
       store: (_key, value) => { window.saved = JSON.parse(value); }, flush: async () => {},
-    } });
+    }, reactive: { setApplicationUserPersistentStorage() {}, manualSave() {} },
+    ai: { modelConfigService: { setModelConfig() {} }, handleAvailableModelsChange() {} } });
     return performance.now() - start;
   });
   const rows = page.locator('.openvision-model-row');
