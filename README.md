@@ -56,7 +56,7 @@ upgrade system software.
 
 Each platform needs its own native build. Windows preparation and live editor
 workflows are verified locally. **macOS/Linux runtime execution remains
-unverified:** the configured CI jobs were blocked by GitHub account billing.
+unverified.** Verification runs locally; GitHub Actions is disabled for this repository.
 macOS uses system signing tools; Linux needs its desktop libraries, a graphical
 session, and a working Chromium sandbox. See [platform details](docs/native-runtime.md).
 
@@ -170,8 +170,8 @@ Portable tests cover import/restore, paths, executable identity, native copies,
 icons, and supported-platform fixtures. Live checks use temporary local fixtures
 and remove their test providers. They need a prepared editor. Verification
 screenshots and reports stay in ignored `logs`. Ordinary launch has no debugging
-port. The [CI matrix](.github/workflows/portability.yml) targets Windows, Linux,
-and two macOS runner versions; fixtures do not establish full editor parity.
+port. Run the portable checks locally on each target operating system; fixture
+checks do not establish full editor parity. This repository has no GitHub Actions workflows.
 
 ## Troubleshooting
 

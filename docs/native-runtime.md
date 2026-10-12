@@ -43,9 +43,9 @@ helper is unusable; it does not add `--no-sandbox`.
 
 The Windows editor, preparation, assembly, model routing, and import/restore
 have been exercised. macOS/Linux live editor execution remains unverified.
-GitHub prevented CI jobs from starting because of account billing/spending
-limits. The matrix is configured; passing local tests is not evidence of those
-native editor launches.
+GitHub Actions is disabled for this repository. Run the portable checks locally
+on each target operating system. Passing fixture tests is not evidence of native
+editor launches.
 
 ## Existing Recovery
 
