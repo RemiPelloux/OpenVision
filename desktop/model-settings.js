@@ -206,7 +206,7 @@ export function mountModels(container, bridge) {
     actions.append(button('Add Codex Easy', () => providerDialog(undefined, { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })),
       button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })), add);
     heading.append(element('h3', 'Custom Providers'), actions);
-    const label = element('label', 'Active Provider', 'openvision-active-provider');
+    const label = element('label', 'Active Provider (model requests use this provider key)', 'openvision-active-provider');
     const select = element('select');
     select.setAttribute('aria-label', 'Active Provider');
     const none = element('option', 'Select a provider'); none.value = ''; select.append(none);
@@ -223,4 +223,15 @@ export function mountModels(container, bridge) {
     if (busy) for (const control of container.querySelectorAll('button,input,select')) control.disabled = true;
   }
   render();
+  void providers.ready.then(async () => {
+    if (!container.isConnected) return;
+    status.textContent = 'Refreshing model capabilities…';
+    await providers.discoverMissingCapabilities();
+    if (container.isConnected) {
+      status.textContent = 'Model capabilities are up to date.';
+      render();
+    }
+  }).catch(error => {
+    if (container.isConnected) status.textContent = `Capability refresh skipped: ${error.message}`;
+  });
 }

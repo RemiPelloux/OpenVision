@@ -23,7 +23,7 @@ if (process.argv.includes('--inspect-preview')) {
   await new Promise(resolve => probe.listen(0, '127.0.0.1', resolve));
   debugPort = probe.address().port;
   await new Promise(resolve => probe.close(resolve));
-  argumentsList.unshift(`--remote-debugging-port=${debugPort}`, '--remote-debugging-address=127.0.0.1');
+  argumentsList.unshift(`--remote-debugging-port=${debugPort}`, '--remote-debugging-address=127.0.0.1', '--remote-allow-origins=*');
 }
 const environment = { ...process.env };
 delete environment.ELECTRON_RUN_AS_NODE;

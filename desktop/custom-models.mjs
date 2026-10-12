@@ -29,7 +29,21 @@ function localModelSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
-  if (text.includes(marker)) return localModelSettings(text, variant);
+  if (text.includes(marker)) {
+    // Upgrade the first catalog integration so existing editable builds also retain
+    // provider metadata (reasoning tiers, vision and grouped display names).
+    if (text.includes('openvisionActiveModelIds')) {
+      text = text.replace(
+        'import {activeModelIds as openvisionActiveModelIds} from "../code/electron-sandbox/workbench/openvision-model-providers.js";',
+        'import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";',
+      );
+      const old = /async getModels\(([\w$]+)\) \{ return \{models: openvisionActiveModelIds\(this\.storageService\)\}; \}/g;
+      const matches = [...text.matchAll(old)];
+      if (matches.length !== 1) throw new Error('API-key model list owner missing or ambiguous');
+      text = text.replace(old, `async getModels($1) { const catalog = openvisionCatalog(this.storageService); const models = catalog.map(model => model.name); this.reactiveStorageService.setApplicationUserPersistentStorage("availableDefaultModels2", catalog); this.reactiveStorageService.setApplicationUserPersistentStorage("availableAPIKeyModels", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderModelIds", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderAgentModelIds", models); this._didChangeAvailableModels?.(); return {models}; }`);
+    }
+    return localModelSettings(text, variant);
+  }
   const previousMarker = '/* OpenVision custom model settings v1 */';
   const upgrading = text.includes(previousMarker);
   const component = owner(text, upgrading ? previousMarker : 'children: "Configure gateway"');
@@ -54,10 +68,10 @@ export function customModels(text, variant) {
   const anchor = /async getModels\(([\w$]+)\) \{\s+return \{ models: \[\] \};\s+\}/g;
   const matches = [...text.matchAll(anchor)];
   if (matches.length !== 1) throw new Error('API-key model list owner missing or ambiguous');
-  text = text.replace(anchor, `async getModels($1) { return {models: openvisionActiveModelIds(this.storageService)}; }`);
+  text = text.replace(anchor, `async getModels($1) { const catalog = openvisionCatalog(this.storageService); const models = catalog.map(model => model.name); this.reactiveStorageService.setApplicationUserPersistentStorage("availableDefaultModels2", catalog); this.reactiveStorageService.setApplicationUserPersistentStorage("availableAPIKeyModels", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderModelIds", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderAgentModelIds", models); this._didChangeAvailableModels?.(); return {models}; }`);
   text = localModelSettings(text, variant);
   return `import {mountModels as openvisionMountModels} from "../code/electron-sandbox/workbench/openvision-model-settings.js";\n` +
-    `import {activeModelIds as openvisionActiveModelIds} from "../code/electron-sandbox/workbench/openvision-model-providers.js";\n` + text;
+    `import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";\n` + text;
 }
 
 export async function installModelSettings(root) {
