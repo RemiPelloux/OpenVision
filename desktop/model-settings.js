@@ -1,6 +1,7 @@
 import { ModelProviders } from './openvision-model-providers.js';
 
 const icons = { plus: 'plus', refresh: 'refresh-cw', edit: 'pencil', remove: 'trash-2' };
+const modelsPerPage = 40;
 function element(tag, text, className) {
   const node = document.createElement(tag);
   if (text) node.textContent = text;
@@ -64,14 +65,24 @@ export function mountModels(container, bridge) {
     const option = element('option', text); option.value = value; filter.append(option);
   }
   const list = element('div', '', 'openvision-provider-list');
+  const pages = new Map();
+  let renderFrame;
   const matches = model => (filter.value !== 'enabled' || model.enabled) &&
     `${model.name} ${model.id}`.toLowerCase().includes(search.value.trim().toLowerCase());
   function renderProviders() {
     list.replaceChildren(...providers.state.providers.map(providerRow));
     if (busy) for (const control of list.querySelectorAll('button,input')) control.disabled = true;
   }
-  search.oninput = renderProviders;
-  filter.onchange = renderProviders;
+  function scheduleFilter() {
+    pages.clear();
+    if (renderFrame !== undefined) return;
+    renderFrame = requestAnimationFrame(() => {
+      renderFrame = undefined;
+      if (container.isConnected) renderProviders();
+    });
+  }
+  search.oninput = scheduleFilter;
+  filter.onchange = scheduleFilter;
   async function run(action) {
     if (busy) return;
     busy = true;
@@ -164,12 +175,30 @@ export function mountModels(container, bridge) {
     section.append(header);
     if (!provider.models.length) section.append(element('p', 'No models configured.', 'openvision-model-status'));
     const visible = provider.models.filter(matches);
-    for (const model of visible) section.append(modelRow(provider, model));
+    const page = Math.min(pages.get(provider.id) ?? 0, Math.max(0, Math.ceil(visible.length / modelsPerPage) - 1));
+    const offset = page * modelsPerPage;
+    for (const model of visible.slice(offset, offset + modelsPerPage)) section.append(modelRow(provider, model));
+    if (visible.length > modelsPerPage) {
+      const navigation = element('nav', '', 'openvision-model-actions');
+      navigation.setAttribute('aria-label', `${provider.name} model pages`);
+      const move = delta => {
+        pages.set(provider.id, page + delta);
+        renderProviders();
+        const active = [...list.querySelectorAll('nav')].find(node => node.getAttribute('aria-label') === `${provider.name} model pages`);
+        active?.querySelector('button:not(:disabled)')?.focus();
+      };
+      const previous = button('Previous', () => move(-1)); previous.disabled = page === 0;
+      const next = button('Next', () => move(1)); next.disabled = offset + modelsPerPage >= visible.length;
+      navigation.append(previous, element('span', `${offset + 1}–${Math.min(offset + modelsPerPage, visible.length)} of ${visible.length}`), next);
+      section.append(navigation);
+    }
     if (provider.models.length && !visible.length) section.append(element('p', 'No matching models.', 'openvision-empty-models'));
     return section;
   }
   function render() {
     container.replaceChildren();
+    search.disabled = busy;
+    filter.disabled = busy;
     const heading = element('div', '', 'openvision-provider-header');
     const add = button('Add Provider', () => providerDialog());
     add.className = 'openvision-primary';

@@ -4,12 +4,26 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { safeDestination, fileHash, inside } from './import-files.mjs';
 import { summarize } from './cursor-import.mjs';
 
-async function atomicWrite(path, data) {
+export async function replaceFile(temporary, path, { expectedHash, renameFile = rename } = {}) {
+  const retries = 5;
+  for (let attempt = 0; ; attempt++) {
+    if (expectedHash !== undefined && await fileHash(path) !== expectedHash)
+      throw new Error(`File changed during atomic replacement: ${path}`);
+    try { await renameFile(temporary, path); return; }
+    catch (error) {
+      if (attempt === retries || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code)) throw error;
+      // Windows scanners briefly open the extension registry without delete sharing.
+      await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)));
+    }
+  }
+}
+
+async function atomicWrite(path, data, expectedHash) {
   await mkdir(dirname(path), { recursive: true });
   const temporary = `${path}.openvision-${randomUUID()}.tmp`;
   try {
     await writeFile(temporary, data, { flag: 'wx' });
-    await rename(temporary, path);
+    await replaceFile(temporary, path, { expectedHash });
   } finally { await rm(temporary, { force: true }); }
 }
 
@@ -21,13 +35,13 @@ async function checkFiles(root, changes, hashField) {
   }
 }
 
-async function atomicCopy(path, source, expectedHash) {
+async function atomicCopy(path, source, expectedHash, beforeHash) {
   await mkdir(dirname(path), { recursive: true });
   const temporary = `${path}.openvision-${randomUUID()}.tmp`;
   try {
     await copyFile(source, temporary, 1);
     if (await fileHash(temporary) !== expectedHash) throw new Error(`Source changed since preview or backup: ${source}`);
-    await rename(temporary, path);
+    await replaceFile(temporary, path, { expectedHash: beforeHash });
   } finally { await rm(temporary, { force: true }); }
 }
 
@@ -50,8 +64,8 @@ export async function applyImport(plan) {
   try {
     for (const change of plan.changes) {
       await checkFiles(plan.root, [change], 'before');
-      if (change.data) await atomicWrite(change.path, change.data);
-      else await atomicCopy(change.path, change.source, change.after);
+      if (change.data) await atomicWrite(change.path, change.data, change.before);
+      else await atomicCopy(change.path, change.source, change.after, change.before);
       written.push(change.path);
     }
     manifest.status = 'complete';
@@ -98,7 +112,7 @@ export async function restoreImport(root, input) {
   }
   for (const change of pending) {
     await checkFiles(root, [change], 'after');
-    if (change.source) await atomicCopy(change.path, change.source, change.before);
+    if (change.source) await atomicCopy(change.path, change.source, change.before, change.after);
     else await rm(change.path);
   }
   manifest.status = 'restored';

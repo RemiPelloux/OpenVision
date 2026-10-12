@@ -169,6 +169,10 @@ been reconstructed, and performance gains are not claimed without measurements.
 See the [performance review](docs/performance.md) for measured savings, tradeoffs,
 and remaining runtime issues.
 
+The recovery boundary and native coverage are recorded in
+[Recovery and product control](docs/recovery-status.md). It lists which
+representations are editable and which native or hosted pieces remain unknown.
+
 ## Verify
 
 ```sh

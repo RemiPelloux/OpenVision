@@ -86,6 +86,17 @@ The next review priorities are:
 3. Provider search rebuilds all matching model rows per keystroke. Current
    catalogs are small; measure a large catalog before introducing virtualization.
 
-These issues are recorded rather than bundled into the memory changes because
-they involve separate runtime ownership and behavior decisions. GitHub Actions
-remains disabled; all checks in this pass ran locally.
+The extension checksum issue is now addressed at the source-assembly boundary:
+the local manifest is regenerated from the assembled extension files and the
+existing runtime verification remains enabled. This establishes local build
+consistency, not vendor signature authenticity. The launcher and native/source
+coverage limitations remain as described in [Recovery and product control](recovery-status.md).
+
+The workbench already batches streamed text at a 16 ms frame boundary and
+virtualizes transcript rows. OpenVision adds cancellation cleanup for discarded
+generations so pending drain waiters and timers are released immediately. Model
+settings independently mount at most 40 provider rows and search the full
+catalog. A 10,000-model browser fixture mounted 40 rows while preserving all
+models and saved state.
+
+GitHub Actions remains disabled; all checks in this pass ran locally.

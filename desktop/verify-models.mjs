@@ -85,7 +85,7 @@ try {
   assert.equal(images, true);
   await page.screenshot({ path: fileURLToPath(new URL('../logs/custom-model-settings-tested.png', import.meta.url)) });
   await page.locator('.tabs-container .tab').filter({ hasText: 'main.js' }).first().click();
-  await page.getByRole('button', { name: 'New Agent', exact: true }).first().click();
+  await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+L`);
   await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
   await page.getByText('My Custom Coder', { exact: true }).last().waitFor();
   await page.getByText('My Custom Coder', { exact: true }).last().click();
@@ -111,7 +111,7 @@ try {
     models_in_agent_picker: true, icons_loaded: images, requests, errors,
     selected_model_inference_with_local_fixture: true,
     openai_preset: true, clear_key_and_http_error: true,
-    live_provider_inference: 'Not exercised; no user endpoint or key supplied',
+    live_provider_inference: 'Not exercised; verification uses an isolated local endpoint',
   }, null, 2));
   console.log('Verified native discovery, secret storage, manual models, persistence, picker, and selected-model inference.');
 } finally {

@@ -15,7 +15,7 @@
 .openvision-provider-meta { display: flex; align-items: center; gap: 10px; margin-top: 5px; color: var(--vscode-descriptionForeground); font-size: 11px; }
 .openvision-active-badge { color: var(--vscode-foreground); display: inline-flex; align-items: center; gap: 5px; }
 .openvision-active-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ov-accent); }
-.openvision-model-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 30px 30px; gap: 8px; align-items: center; min-height: 52px; box-sizing: border-box; border-top: 1px solid var(--vscode-panel-border, #393e3f); padding: 7px 4px; transition: background 140ms ease; }
+.openvision-model-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 30px 30px; gap: 8px; align-items: center; min-height: 52px; box-sizing: border-box; border-top: 1px solid var(--vscode-panel-border, #393e3f); padding: 7px 4px; transition: background 140ms ease; content-visibility: auto; contain-intrinsic-size: 52px; }
 .openvision-model-row:hover { background: var(--vscode-list-hoverBackground, #ffffff08); }
 .openvision-model-row[data-enabled=false] .openvision-model-title { color: var(--vscode-descriptionForeground); }
 .openvision-model-settings input[type=checkbox], .openvision-model-dialog input[type=checkbox] { accent-color: #38bfa9; width: 15px; height: 15px; margin: 0; cursor: pointer; }
