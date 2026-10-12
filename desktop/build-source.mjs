@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { customizeLocalWorkbench } from './local-workbench.mjs';
+import { installLocalProfile } from './local-workbench.mjs';
 import { projectWorkspace } from './project-workspace.mjs';
 import { installModelSettings } from './custom-models.mjs';
 import { installCursorImport } from './install-import.mjs';
@@ -11,6 +11,7 @@ import { platformLayout } from './platform.mjs';
 import { signMacBundle } from './native-assets.mjs';
 import { fileHash } from './import-files.mjs';
 import { sourceAssets } from './source-assets.mjs';
+import { customizeBundles } from './bundle-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -27,7 +28,8 @@ if (await exists(marker)) {
 await mkdir(join(root, 'build'), { recursive: true });
 const layout = platformLayout(root);
 await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
-await customizeLocalWorkbench(root);
+await customizeBundles(root);
+await installLocalProfile(root);
 await installModelSettings(root);
 await installCursorImport(root);
 const settings = join(root, 'data/local/User/settings.json');

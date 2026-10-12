@@ -43,6 +43,7 @@ export async function importCursor() {
 
 async function populate(view) {
   const { options, profiles } = await invoke({ action: 'defaults' });
+  if (!view.dialog.open) return;
   const user = field(view.form, 'Cursor User directory', options.user);
   if (profiles.length > 1) {
     const label = element('label', 'Cursor profile');
@@ -73,14 +74,20 @@ async function populate(view) {
   view.controls.prepend(preview, apply, restore);
   let token;
   let backup;
-  view.form.oninput = () => { token = undefined; apply.disabled = true; view.details.textContent = ''; };
+  function release() {
+    if (token) void invoke({ action: 'release', token }).catch(console.error);
+    token = undefined;
+    apply.disabled = true;
+  }
+  view.dialog.addEventListener('close', release, { once: true });
+  view.form.oninput = () => { release(); view.details.textContent = ''; };
   view.status.textContent = 'Ready';
   async function run(action) {
     for (const button of view.controls.querySelectorAll('button')) button.disabled = true;
     view.form.inert = true;
     view.status.textContent = 'Working...';
     try { await action(); }
-    catch (error) { view.status.textContent = error.message; token = undefined; }
+    catch (error) { view.status.textContent = error.message; release(); }
     finally {
       view.form.inert = false;
       for (const button of view.controls.querySelectorAll('button')) button.disabled = false;
@@ -88,9 +95,12 @@ async function populate(view) {
     }
   }
   preview.onclick = () => run(async () => {
+    release();
     const result = await invoke({ action: 'preview', options: { ...options, user: user.value, extensions: extensions.value,
       categories: [...choices].filter(([, input]) => input.checked).map(([name]) => name), overwrite: overwrite.checked } });
-    token = result.files ? result.token : undefined;
+    token = result.token;
+    if (!view.dialog.open || !result.files) release();
+    if (!view.dialog.open) return;
     view.status.textContent = `${result.files} files to import (${(result.bytes / 1024 / 1024).toFixed(1)} MiB)`;
     view.details.textContent = Object.entries(result.counts).map(([key, count]) => `${categoryLabels[key]}: ${count} files`).join('\n') +
       `\n\nFrom: ${result.source}\nTo: ${result.destination}` + (result.missing.length ? `\n\nNot found:\n${result.missing.join('\n')}` : '') +
@@ -105,6 +115,7 @@ async function populate(view) {
     view.details.textContent = backup ? `Backup: ${backup}` : 'Everything is already imported.';
   });
   restore.onclick = () => run(async () => {
+    release();
     const result = await invoke({ action: 'restore', backup });
     restore.hidden = true;
     token = undefined;

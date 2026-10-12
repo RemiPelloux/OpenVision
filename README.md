@@ -24,8 +24,10 @@ sh ./start-openvision.sh
 ```
 
 The launcher opens **OpenVision** with its own preferences and extensions. Open
-your project with **File > Open Folder**. The starter workspace includes
-Playground, OpenVision Source, and OpenVision Tools.
+your project with **File > Open Folder**. New starter workspaces include only
+Playground, keeping application internals out of everyday project indexing.
+Open **OpenVision Development.code-workspace** when editing the application itself.
+Existing workspace folders are preserved during builds.
 
 ## First Setup
 
@@ -104,6 +106,12 @@ The starter project has **Playground: Run**, **Playground: Test**, and a Node
 debugger configuration. Other projects provide their own runtimes, tasks, and
 debugger extensions. Git integration uses your installed Git.
 
+For lower memory use, JavaScript/TypeScript defaults to one language server
+(`js/ts.tsserver.useSyntaxServer: "never"`). Autocomplete, types, and diagnostics
+share that server; folding and symbols may wait behind heavy type-checking.
+Set it to `"auto"` in Settings to restore the separate syntax server.
+Explicit existing language-server preferences are preserved.
+
 The title-bar profile button edits your local display name. Cloud-agent entry
 points and hosted account/billing controls are disabled. Settings and profile
 dialogs use short transitions, with reduced-motion preferences respected.
@@ -152,15 +160,21 @@ limits are described in [Import Details](docs/native-runtime.md#import-settings)
 
 Make durable changes in `desktop` and `assets`, then relaunch. SVG branding is
 converted into Windows ICO, macOS ICNS, and Linux PNG assets during the build.
+Unchanged workbench bundles use a content-hash cache to avoid repeated parsing
+and large temporary allocations on launch. Editing a bundle or its customization
+code invalidates the cache; deleting `build/cache` forces revalidation.
 **Developer: Reload Window** reloads renderer changes; main-process and native
 asset changes need a full restart. Original TypeScript/native source has not
 been reconstructed, and performance gains are not claimed without measurements.
+See the [performance review](docs/performance.md) for measured savings, tradeoffs,
+and remaining runtime issues.
 
 ## Verify
 
 ```sh
 npm run check:desktop
 npm run test:portable
+npm run test:desktop
 npm start -- --inspect-preview
 node desktop/verify-import.mjs
 node desktop/verify-models.mjs

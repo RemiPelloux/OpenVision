@@ -44,13 +44,16 @@ test('project is ready', () => {
   const initialWorkspace = {
     folders: [
       { name: 'Playground', path: project },
-      { name: 'OpenVision Source', path: join(root, 'source/app') },
-      { name: 'OpenVision Tools', path: join(root, 'desktop') },
     ],
     settings: { 'files.watcherExclude': { '**/node_modules/**': true },
       'search.exclude': { '**/node_modules': true, '**/*.map': true },
       'git.openRepositoryInParentFolders': 'never' },
   };
+  await create(join(root, 'OpenVision Development.code-workspace'), JSON.stringify({
+    folders: [{ name: 'OpenVision Source', path: join(root, 'source/app') },
+      { name: 'OpenVision Tools', path: join(root, 'desktop') }],
+    settings: initialWorkspace.settings,
+  }, null, 2) + '\n');
   await create(paths.workspace, JSON.stringify(initialWorkspace, null, 2) + '\n');
   const workspacePath = paths.workspace;
   const workspace = paths.configuration ?? initialWorkspace;
@@ -87,6 +90,10 @@ test('project is ready', () => {
     'workbench.activityBar.location': 'default', 'workbench.sideBar.location': 'left',
     'breadcrumbs.enabled': true, 'window.restoreWindows': 'one',
     'cursor.windowSwitcher.sidebarHoverCollapsed': false };
+  const syntaxKeys = ['js/ts.tsserver.useSyntaxServer', 'typescript.tsserver.useSyntaxServer',
+    'typescript.tsserver.useSeparateSyntaxServer'];
+  const singleServer = !syntaxKeys.some(key => key in settings || key in workspace.settings);
+  if (singleServer) enhancements[syntaxKeys[0]] = 'never';
   let changed = false;
   for (const [key, value] of Object.entries(enhancements)) {
     if (key in settings) continue;
@@ -95,7 +102,8 @@ test('project is ready', () => {
     changed = true;
   }
   if (changed) {
-    const backup = join(root, 'backups/local-profile/explorer-settings.json');
+    const backup = join(root, singleServer ? 'backups/performance/single-language-server-settings.json'
+      : 'backups/local-profile/explorer-settings.json');
     await mkdir(dirname(backup), { recursive: true });
     await copyFile(settingsPath, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
     await writeFile(settingsPath, settingsText);

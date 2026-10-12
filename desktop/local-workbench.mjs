@@ -1,11 +1,8 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
-import { dirname, join } from 'node:path';
-import { disableCloudFeatures } from './cloud-features.mjs';
+import { join } from 'node:path';
 
 const parserOptions = { ecmaVersion: 'latest', sourceType: 'module' };
-const sha256 = text => createHash('sha256').update(text).digest('hex');
 
 function uniqueIndex(text, anchor) {
   const index = text.indexOf(anchor);
@@ -151,32 +148,12 @@ async function languageBranding(root, app) {
   await writeFile(path, after);
 }
 
-export async function customizeLocalWorkbench(root) {
+export async function installLocalProfile(root) {
   const app = join(root, 'source/app');
-  const records = [];
-  for (const variant of ['desktop', 'glass']) {
-    const relative = `out/vs/workbench/workbench.${variant}.main.js`;
-    const path = join(app, relative);
-    const before = await readFile(path, 'utf8');
-    const local = localWorkbench(before, variant);
-    const cloud = disableCloudFeatures(local.text);
-    const result = { text: cloud.text, patches: [...local.patches, ...cloud.patches] };
-    if (before === result.text) continue;
-    const backup = join(root, 'backups/local-profile', relative);
-    await mkdir(dirname(backup), { recursive: true });
-    await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
-    await writeFile(path, result.text);
-    records.push({ path: relative, before_sha256: sha256(before), after_sha256: sha256(result.text),
-      patches: result.patches.map(({ reason, start, end }) => ({ reason, start, end })) });
-  }
+  await mkdir(join(root, 'backups/local-profile'), { recursive: true });
   const workbench = join(app, 'out/vs/code/electron-sandbox/workbench');
   for (const extension of ['js', 'css'])
     await copyFile(join(root, `desktop/local-profile.${extension}`), join(workbench, `openvision-local-profile.${extension}`));
   await copyFile(join(root, 'desktop/import-ui.js'), join(workbench, 'openvision-import-ui.js'));
   await languageBranding(root, app);
-  if (records.length) {
-    await writeFile(join(root, 'build/local-profile.json'), JSON.stringify({ records,
-      changed_at: new Date().toISOString(), cloud_authentication: 'No cloud tokens or entitlement granted' }, null, 2) + '\n');
-    console.log('Applied local profile and onboarding changes to recovered workbench source');
-  }
 }

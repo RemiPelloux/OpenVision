@@ -86,15 +86,4 @@ export async function installModelSettings(root) {
     await copyFile(htmlPath, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
     await writeFile(htmlPath, html.replace('</head>', '<link rel="stylesheet" href="./openvision-model-settings.css"></head>'));
   }
-  for (const variant of ['desktop', 'glass']) {
-    const relative = `out/vs/workbench/workbench.${variant}.main.js`;
-    const path = join(app, relative);
-    const before = await readFile(path, 'utf8');
-    const after = customModels(before, variant);
-    if (before === after) continue;
-    const backup = join(root, 'backups/custom-models', relative);
-    await mkdir(dirname(backup), { recursive: true });
-    await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
-    await writeFile(path, after);
-  }
 }

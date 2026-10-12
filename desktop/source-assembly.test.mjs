@@ -84,9 +84,22 @@ test('fresh checkout creates a writable sibling project and uses the active Node
   const result = await projectWorkspace(root);
   assert.equal(result.project, join(base, 'OpenVision Projects/Playground'));
   const workspace = JSON.parse(await readFile(result.workspace, 'utf8'));
+  assert.deepEqual(workspace.folders, [{ name: 'Playground', path: result.project }]);
+  const development = JSON.parse(await readFile(join(root, 'OpenVision Development.code-workspace'), 'utf8'));
+  assert.deepEqual(development.folders.map(folder => folder.name), ['OpenVision Source', 'OpenVision Tools']);
   assert.ok(workspace.tasks.tasks.every(task => task.command === process.execPath));
   assert.equal(workspace.launch.configurations[0].runtimeExecutable, process.execPath);
   assert.ok((await readFile(settings, 'utf8')).startsWith('// Local preferences'));
+  assert.match(await readFile(settings, 'utf8'), /"js\/ts.tsserver.useSyntaxServer": "never"/);
+  workspace.folders.push({ name: 'User project', path: join(base, 'my-project') });
+  await writeFile(result.workspace, JSON.stringify(workspace));
+  await projectWorkspace(root);
+  assert.deepEqual(JSON.parse(await readFile(result.workspace, 'utf8')).folders, workspace.folders);
+  await writeFile(settings, '{"typescript.tsserver.useSyntaxServer":"auto"}');
+  await projectWorkspace(root);
+  const preferences = JSON.parse(await readFile(settings, 'utf8'));
+  assert.equal(preferences['typescript.tsserver.useSyntaxServer'], 'auto');
+  assert.equal(preferences['js/ts.tsserver.useSyntaxServer'], undefined);
 });
 
 test('workspace-selected project paths remain the single source for build and launch', async t => {
