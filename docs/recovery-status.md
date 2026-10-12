@@ -51,6 +51,10 @@ hashes establish local-build consistency, not upstream vendor authenticity.
 
 ## Unfinished product work
 
+See the [feature gap audit](feature-gap-audit.md) for measured recovery
+percentages, feature-by-feature limitations, the native file checklist, and
+acceptance gates for an independently buildable OpenVision product.
+
 Full native source recovery, an independent native rebuild, replacement of
 unavailable hosted services, and complete feature parity remain unfinished.
 Third-party completion, tool use, vision and reasoning protocols require

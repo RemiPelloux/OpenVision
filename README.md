@@ -191,6 +191,8 @@ and remaining runtime issues.
 The recovery boundary and native coverage are recorded in
 [Recovery and product control](docs/recovery-status.md). It lists which
 representations are editable and which native or hosted pieces remain unknown.
+The [feature gap audit](docs/feature-gap-audit.md) gives measured recovery
+percentages and the remaining work for each major feature.
 
 ## Verify
 
