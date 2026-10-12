@@ -58,10 +58,12 @@ providers. Linux also needs the desktop libraries required by its native
 Electron runtime, a graphical session, and an available Chromium sandbox.
 macOS uses its system `plutil` and `codesign` tools.
 
-The Windows editor has been exercised locally. Automated platform checks cover
-configuration import/restore, binary identity, executable copying, native icons,
-and macOS fixture signing. **Those checks are not full editor verification on
-macOS/Linux.** Native editor, extensions, AI gateway, and Tab behavior require
+The Windows editor and native preparation have been exercised locally. The
+portable suite passes on Windows; the macOS signing test is skipped there. The
+configured CI matrix covers configuration import/restore, binary identity,
+executable copying, native icons, and macOS fixture signing, but its first run
+was blocked before execution by GitHub account billing/spending limits.
+**macOS/Linux execution is not yet verified.** Native editor, extensions, AI gateway, and Tab behavior require
 testing with the actual recovered application on each target. Source patch
 anchors are currently verified against Cursor **3.21.13**; a different bundle
 may fail preparation rather than accept uncertain patches.
@@ -182,9 +184,9 @@ Workspace settings can override user settings.
 | Windows Cursor preferences | `%APPDATA%\Cursor\User` |
 | macOS Cursor preferences | `~/Library/Application Support/Cursor/User` |
 | Linux Cursor preferences | `$XDG_CONFIG_HOME/Cursor/User`, defaulting to `~/.config/Cursor/User` |
-| Cursor extensions | `%USERPROFILE%\.cursor\extensions` |
-| OpenVision preferences | `openvision\data\local\User` |
-| OpenVision extensions | `openvision\data\local-extensions` |
+| Cursor extensions | `~/.cursor/extensions` (Windows: `%USERPROFILE%\.cursor\extensions`) |
+| OpenVision preferences | `<checkout>/data/local/User` |
+| OpenVision extensions | `<checkout>/data/local-extensions` |
 
 Named profiles are listed by directory ID. Selecting one imports its preferences
 into OpenVision's current local profile; it does not recreate Cursor's profile
@@ -199,7 +201,7 @@ Account tokens, subscriptions, cookies, chat history, workspace state, extension
 secret storage, extension enable/disable state, and Cursor databases are excluded. OpenVision's saved AI
 providers and keys remain in its own storage.
 
-Cursor-global MCP, rules, agents, and skills under `%USERPROFILE%\.cursor` are
+Cursor-global MCP, rules, agents, and skills under `~/.cursor` are
 not copied by this importer. Some recovered customization services still use
 that original global location. Project-local `.cursor` paths are retained.
 Complete isolation of global customization services is not implemented.
