@@ -10,10 +10,11 @@ function editProfile() {
   const dialog = document.createElement('dialog');
   dialog.className = 'openvision-profile-dialog';
   const heading = document.createElement('h2');
-  heading.textContent = 'Local Profile';
+  heading.textContent = 'OpenVision Profile';
   const label = document.createElement('label');
   label.textContent = 'Display Name';
   const input = document.createElement('input');
+  input.setAttribute('aria-label', 'Display Name');
   input.value = profile.name;
   input.maxLength = 40;
   label.append(input);
@@ -40,7 +41,7 @@ function createButton() {
   button.className = 'openvision-local-profile';
   button.title = 'Local Profile';
   const image = document.createElement('img');
-  image.src = new URL('./openvision-logo.png', import.meta.url).href;
+  image.src = new URL('./openvision-logo.svg', import.meta.url).href;
   image.alt = '';
   const name = document.createElement('span');
   name.textContent = profile.name;
@@ -50,7 +51,7 @@ function createButton() {
 }
 
 window.openvisionLocalProfile = { open: editProfile, createButton, importCursor,
-  logo: new URL('./openvision-logo.png', import.meta.url).href,
+  logo: new URL('./openvision-logo.svg', import.meta.url).href,
   get name() { return profile.name; } };
 
 async function mount() {

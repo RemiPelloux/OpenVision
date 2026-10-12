@@ -4,7 +4,6 @@ import { platformLayout } from './platform.mjs';
 import { nativeIdentity, assertNativeHost } from './native-identity.mjs';
 import { fileHash, inside } from './import-files.mjs';
 import { enableLocalMode, productBranding } from './source-branding.mjs';
-import { sourceAssets } from './source-assets.mjs';
 
 export const exists = path => lstat(path).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error; });
 
@@ -73,7 +72,6 @@ export async function assembleSource(root, recovery) {
   await rename(join(native, layout.installationExecutable), layout.executable);
   const app = join(root, 'source/app');
   await productBranding(app);
-  await sourceAssets({ root, app, executable: layout.executable, layout });
   await mkdir(dirname(layout.appLink), { recursive: true });
   await symlink(app, layout.appLink, process.platform === 'win32' ? 'junction' : 'dir');
   return { name: 'OpenVision', mode: 'local', platform: process.platform, arch: process.arch,

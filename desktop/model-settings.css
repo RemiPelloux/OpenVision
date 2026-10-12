@@ -1,25 +1,51 @@
-.openvision-model-settings { color:var(--vscode-foreground); width:100%; margin:20px 0; font-size:13px; }
-.openvision-provider { border-top:1px solid var(--vscode-panel-border); padding:16px 0; }
-.openvision-provider-header,.openvision-model-row,.openvision-model-actions { display:flex; gap:8px; align-items:center; }
-.openvision-provider-header { margin-bottom:12px; flex-wrap:wrap; }
-.openvision-provider-header h3,.openvision-model-title { flex:1; min-width:100px; margin:0; }
-.openvision-model-title { display:flex; flex-direction:column; gap:3px; overflow-wrap:anywhere; }
-.openvision-model-title small { color:var(--vscode-descriptionForeground); font-size:12px; }
-.openvision-model-row { min-height:42px; border-top:1px solid var(--vscode-panel-border); padding:4px 0; }
-.openvision-model-settings input[type=checkbox],.openvision-model-dialog input[type=checkbox] { accent-color:#38a169; }
-.openvision-model-settings button,.openvision-model-dialog button { border:1px solid var(--vscode-button-border,transparent); border-radius:4px; padding:6px 10px; color:var(--vscode-button-foreground); background:var(--vscode-button-background); cursor:pointer; }
-.openvision-model-settings button:has(img) { padding:6px; background:transparent; min-width:28px; min-height:28px; }
-.openvision-model-settings button img { width:16px; height:16px; filter:invert(.65); display:block; }
-.openvision-model-settings button:hover,.openvision-model-dialog button:hover { background:var(--vscode-button-hoverBackground); }
-.openvision-model-settings :disabled,.openvision-model-dialog :disabled { opacity:.5; cursor:wait; }
-.openvision-active-provider { display:flex; align-items:center; gap:16px; margin:12px 0; flex-wrap:wrap; }
-.openvision-model-settings select,.openvision-model-dialog input:not([type=checkbox]) { background:var(--vscode-input-background); color:var(--vscode-input-foreground); border:1px solid var(--vscode-input-border,var(--vscode-panel-border)); border-radius:3px; padding:8px; min-width:0; }
-.openvision-model-settings select { min-width:180px; max-width:100%; }
-.openvision-model-status { color:var(--vscode-descriptionForeground); min-height:18px; overflow-wrap:anywhere; }
-.openvision-model-dialog { width:440px; max-width:calc(100vw - 48px); border:1px solid var(--vscode-panel-border); border-radius:6px; padding:24px; background:var(--vscode-editor-background); color:var(--vscode-foreground); }
-.openvision-model-dialog::backdrop { background:#0008; }
-.openvision-model-dialog h2 { font-size:18px; margin:0 0 18px; }
-.openvision-model-dialog form { display:grid; gap:14px; }
-.openvision-model-dialog label { display:flex; flex-direction:column; gap:6px; font-size:13px; }
-.openvision-model-dialog label:has(input[type=checkbox]) { flex-direction:row; align-items:center; }
-.openvision-model-actions { justify-content:flex-end; }
+.openvision-model-settings {
+  --ov-accent: #57dfca;
+  width: 100%; min-width: 0; margin: 20px 0; color: var(--vscode-foreground); font-size: 13px;
+  animation: ov-enter 180ms ease-out;
+}
+.openvision-provider { border-top: 1px solid var(--vscode-panel-border, #393e3f); padding: 20px 0; }
+.openvision-provider-header, .openvision-model-actions { display: flex; align-items: center; gap: 8px; }
+.openvision-provider-header { flex-wrap: wrap; margin-bottom: 16px; }
+.openvision-provider-header h3 { flex: 1 1 180px; font-size: 15px; font-weight: 600; margin: 0; }
+.openvision-provider-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+.openvision-model-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.openvision-provider-header > .openvision-model-title { flex-basis: 160px; }
+.openvision-model-title strong { font-size: 14px; font-weight: 600; }
+.openvision-model-title small { color: var(--vscode-descriptionForeground, #aaa); font-size: 11px; }
+.openvision-provider-meta { display: flex; align-items: center; gap: 10px; margin-top: 5px; color: var(--vscode-descriptionForeground); font-size: 11px; }
+.openvision-active-badge { color: var(--vscode-foreground); display: inline-flex; align-items: center; gap: 5px; }
+.openvision-active-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ov-accent); }
+.openvision-model-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 30px 30px; gap: 8px; align-items: center; min-height: 52px; box-sizing: border-box; border-top: 1px solid var(--vscode-panel-border, #393e3f); padding: 7px 4px; transition: background 140ms ease; }
+.openvision-model-row:hover { background: var(--vscode-list-hoverBackground, #ffffff08); }
+.openvision-model-row[data-enabled=false] .openvision-model-title { color: var(--vscode-descriptionForeground); }
+.openvision-model-settings input[type=checkbox], .openvision-model-dialog input[type=checkbox] { accent-color: #38bfa9; width: 15px; height: 15px; margin: 0; cursor: pointer; }
+.openvision-model-settings button, .openvision-model-dialog button { font: inherit; min-height: 32px; border: 1px solid var(--vscode-widget-border, #444); border-radius: 5px; padding: 6px 10px; color: var(--vscode-foreground); background: transparent; cursor: pointer; transition: background 140ms ease, border-color 140ms ease, transform 100ms ease; }
+.openvision-model-settings button:has(img) { padding: 6px; width: 30px; height: 30px; min-height: 30px; flex-shrink: 0; border-color: transparent; }
+.openvision-model-settings button img { width: 16px; height: 16px; filter: invert(.7); display: block; }
+.vs .openvision-model-settings button img { filter: none; }
+.openvision-model-settings button:hover, .openvision-model-dialog button:hover { background: var(--vscode-list-hoverBackground, #ffffff0c); border-color: var(--vscode-focusBorder, #57dfca); }
+.openvision-model-settings button:active, .openvision-model-dialog button:active { transform: translateY(1px); }
+.openvision-model-settings .openvision-primary, .openvision-model-dialog .openvision-primary { color: #102420; background: #57dfca; border-color: #57dfca; font-weight: 600; }
+.openvision-model-settings .openvision-primary:hover, .openvision-model-dialog .openvision-primary:hover { background: #80ead9; }
+.openvision-model-settings :disabled, .openvision-model-dialog :disabled { opacity: .45; cursor: wait; }
+.openvision-active-provider { display: flex; align-items: center; gap: 16px; margin: 16px 0 6px; flex-wrap: wrap; }
+.openvision-model-settings select, .openvision-model-settings input[type=search], .openvision-model-dialog input:not([type=checkbox]) { font: inherit; background: var(--vscode-input-background, #222728); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border, var(--vscode-widget-border, #444)); border-radius: 5px; padding: 8px 10px; min-width: 0; height: 34px; box-sizing: border-box; }
+.openvision-model-settings select { min-width: 150px; max-width: 100%; }
+.openvision-active-provider select { min-width: 190px; }
+.openvision-model-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px; margin: 8px 0 14px; }
+.openvision-model-toolbar input { width: 100%; }
+.openvision-model-status { color: var(--vscode-descriptionForeground); min-height: 18px; margin: 4px 0 12px; font-size: 11px; overflow-wrap: anywhere; }
+.openvision-model-settings[data-busy=true] > .openvision-model-status { color: #38bfa9; }
+.openvision-empty-models { padding: 20px 0; color: var(--vscode-descriptionForeground); }
+.openvision-model-dialog { box-sizing: border-box; width: 440px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow: auto; border: 1px solid var(--vscode-widget-border, #444); border-radius: 8px; padding: 24px; background: var(--vscode-editor-background, #202424); color: var(--vscode-foreground); box-shadow: 0 18px 60px #0005; font: 13px var(--vscode-font-family, system-ui, sans-serif); }
+.openvision-model-dialog[open] { animation: ov-enter 180ms ease-out; }
+.openvision-model-dialog::backdrop { background: #0007; }
+.openvision-model-dialog h2 { font-size: 17px; margin: 0 0 22px; font-weight: 600; }
+.openvision-model-dialog form { display: grid; gap: 16px; }
+.openvision-model-dialog label { display: flex; flex-direction: column; gap: 7px; font-size: 12px; }
+.openvision-model-dialog .openvision-checkbox-field { flex-direction: row; justify-content: space-between; align-items: center; }
+.openvision-model-actions { justify-content: flex-end; margin-top: 20px; }
+.openvision-model-settings :focus-visible, .openvision-model-dialog :focus-visible { outline: 2px solid var(--vscode-focusBorder, #38bfa9); outline-offset: 2px; }
+@keyframes ov-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 420px) { .openvision-model-toolbar { grid-template-columns: minmax(0, 1fr); } .openvision-model-toolbar select { width: 100%; } }
+@media (prefers-reduced-motion: reduce) { .openvision-model-settings, .openvision-model-dialog[open] { animation: none; } .openvision-model-settings *, .openvision-model-dialog * { transition: none; } }

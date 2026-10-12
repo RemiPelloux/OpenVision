@@ -64,8 +64,8 @@ try {
   const provider = settings.locator('section').filter({ hasText: name });
   await provider.getByText('openvision-test-code', { exact: true }).first().waitFor();
   assert.equal(requests[0].url, '/v1/models'); assert.equal(requests[0].authorized, true);
-  const providerId = await settings.getByRole('combobox').locator('option').filter({ hasText: name }).getAttribute('value');
-  await settings.getByRole('combobox').selectOption(providerId);
+  const providerId = await settings.getByRole('combobox', { name: 'Active Provider' }).locator('option').filter({ hasText: name }).getAttribute('value');
+  await settings.getByRole('combobox', { name: 'Active Provider' }).selectOption(providerId);
   await provider.getByRole('button', { name: 'Add Model', exact: true }).click();
   await page.getByLabel('Model ID', { exact: true }).fill('manual-coder');
   await page.getByLabel('Display Name', { exact: true }).fill('My Custom Coder');
@@ -77,7 +77,7 @@ try {
   await page.waitForTimeout(4000);
   await openModels();
   await settings.getByText('My Custom Coder', { exact: true }).waitFor();
-  assert.equal(await settings.getByRole('combobox').inputValue(), providerId);
+  assert.equal(await settings.getByRole('combobox', { name: 'Active Provider' }).inputValue(), providerId);
   await provider.getByRole('button', { name: 'Discover Models', exact: true }).click();
   await settings.getByText('Saved', { exact: true }).waitFor();
   await provider.getByText('My Custom Coder', { exact: true }).waitFor();
@@ -121,7 +121,7 @@ try {
     const settings = page.locator('.openvision-model-settings');
     const provider = settings.locator('section').filter({ hasText: name });
     if (await provider.count()) {
-      await settings.getByRole('combobox').selectOption(originalActive || '');
+      await settings.getByRole('combobox', { name: 'Active Provider' }).selectOption(originalActive || '');
       await settings.getByText('Saved', { exact: true }).waitFor();
       await provider.getByRole('button', { name: 'Remove Provider', exact: true }).click();
       await provider.waitFor({ state: 'detached' });

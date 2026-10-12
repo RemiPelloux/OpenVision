@@ -10,6 +10,7 @@ import { assembleSource, exists, loadRuntime } from './source-assembly.mjs';
 import { platformLayout } from './platform.mjs';
 import { signMacBundle } from './native-assets.mjs';
 import { fileHash } from './import-files.mjs';
+import { sourceAssets } from './source-assets.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -24,6 +25,8 @@ if (await exists(marker)) {
 } else manifest = await assembleSource(root, recovery);
 
 await mkdir(join(root, 'build'), { recursive: true });
+const layout = platformLayout(root);
+await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
 await customizeLocalWorkbench(root);
 await installModelSettings(root);
 await installCursorImport(root);
@@ -34,7 +37,6 @@ if (!await exists(settings)) {
 }
 await mkdir(join(root, 'data/local-extensions'), { recursive: true });
 await projectWorkspace(root);
-const layout = platformLayout(root);
 if (process.platform === 'darwin') await signMacBundle(layout.bundle);
 if (manifest) {
   manifest.executable_sha256 = await fileHash(layout.executable);

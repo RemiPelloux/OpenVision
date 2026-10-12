@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: npm start [-- --inspect-preview]\nBuild and launch the native OpenVision desktop. Prepare same-platform Cursor inputs with npm run prepare:desktop -- --installation PATH.');
+  console.log('Usage: npm start [-- --inspect-preview]\nBuild and launch OpenVision. Prepare native inputs with npm run prepare:desktop; see docs/native-runtime.md.');
   process.exit(0);
 }
 

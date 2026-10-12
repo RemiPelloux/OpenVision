@@ -27,6 +27,7 @@ function field(form, title, value = '', type = 'text', placeholder = '') {
   Object.assign(input, { value, type, placeholder });
   input.setAttribute('aria-label', title);
   if (type === 'password') input.autocomplete = 'new-password';
+  if (type === 'checkbox') label.className = 'openvision-checkbox-field';
   label.append(input);
   form.append(label);
   return input;
@@ -54,6 +55,23 @@ export function mountModels(container, bridge) {
   try { providers = new ModelProviders(bridge); }
   catch { container.append(element('p', 'Saved provider configuration could not be loaded.')); return; }
   let busy = false;
+  const search = element('input');
+  search.type = 'search'; search.placeholder = 'Search models';
+  search.setAttribute('aria-label', 'Search models');
+  const filter = element('select');
+  filter.setAttribute('aria-label', 'Show models');
+  for (const [value, text] of [['all', 'All models'], ['enabled', 'Enabled models']]) {
+    const option = element('option', text); option.value = value; filter.append(option);
+  }
+  const list = element('div', '', 'openvision-provider-list');
+  const matches = model => (filter.value !== 'enabled' || model.enabled) &&
+    `${model.name} ${model.id}`.toLowerCase().includes(search.value.trim().toLowerCase());
+  function renderProviders() {
+    list.replaceChildren(...providers.state.providers.map(providerRow));
+    if (busy) for (const control of list.querySelectorAll('button,input')) control.disabled = true;
+  }
+  search.oninput = renderProviders;
+  filter.onchange = renderProviders;
   async function run(action) {
     if (busy) return;
     busy = true;
@@ -74,6 +92,7 @@ export function mountModels(container, bridge) {
     const discover = field(ui.form, 'Discover Models', '', 'checkbox');
     discover.checked = !provider;
     const save = button('Save', () => ui.form.requestSubmit());
+    save.className = 'openvision-primary';
     ui.actions.append(save);
     ui.form.onsubmit = async event => {
       event.preventDefault();
@@ -96,7 +115,9 @@ export function mountModels(container, bridge) {
     const id = field(ui.form, 'Model ID', model?.id, 'text', 'Exact model ID from your provider');
     id.required = true;
     const name = field(ui.form, 'Display Name', model?.name);
-    ui.actions.append(button('Save', () => ui.form.requestSubmit()));
+    const save = button('Save', () => ui.form.requestSubmit());
+    save.className = 'openvision-primary';
+    ui.actions.append(save);
     ui.form.onsubmit = async event => {
       event.preventDefault();
       const next = { id: id.value.trim(), name: name.value.trim() || id.value.trim(), enabled: model?.enabled ?? true, manual: true };
@@ -105,7 +126,8 @@ export function mountModels(container, bridge) {
         ui.status.textContent = 'This model ID already exists.'; return;
       }
       try {
-        await providers.updateModels(provider.id, [...provider.models.filter(item => item !== model), next]);
+        const models = model ? provider.models.map(item => item === model ? next : item) : [...provider.models, next];
+        await providers.updateModels(provider.id, models);
         ui.node.close(); render();
       } catch (error) { ui.status.textContent = error.message; }
     };
@@ -113,6 +135,7 @@ export function mountModels(container, bridge) {
   }
   function modelRow(provider, model) {
     const row = element('div', '', 'openvision-model-row');
+    row.dataset.enabled = String(model.enabled);
     const toggle = element('input');
     toggle.type = 'checkbox'; toggle.checked = model.enabled;
     toggle.setAttribute('aria-label', `Enable ${model.name}`);
@@ -130,21 +153,30 @@ export function mountModels(container, bridge) {
     const header = element('div', '', 'openvision-provider-header');
     const title = element('div', '', 'openvision-model-title');
     title.append(element('strong', provider.name), element('small', provider.url));
+    const meta = element('div', '', 'openvision-provider-meta');
+    if (providers.state.activeId === provider.id) meta.append(element('span', 'Active', 'openvision-active-badge'));
+    meta.append(element('span', `${provider.models.filter(model => model.enabled).length} / ${provider.models.length} enabled`));
+    title.append(meta);
     header.append(title, button('Discover Models', () => run(() => providers.discover(provider.id)), 'refresh'),
       button('Add Model', () => modelDialog(provider), 'plus'),
       button('Edit Provider', () => providerDialog(provider), 'edit'),
       button('Remove Provider', () => run(() => providers.remove(provider.id)), 'remove'));
     section.append(header);
     if (!provider.models.length) section.append(element('p', 'No models configured.', 'openvision-model-status'));
-    for (const model of provider.models) section.append(modelRow(provider, model));
+    const visible = provider.models.filter(matches);
+    for (const model of visible) section.append(modelRow(provider, model));
+    if (provider.models.length && !visible.length) section.append(element('p', 'No matching models.', 'openvision-empty-models'));
     return section;
   }
   function render() {
     container.replaceChildren();
     const heading = element('div', '', 'openvision-provider-header');
-    heading.append(element('h3', 'Custom Providers'),
-      button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })),
-      button('Add Provider', () => providerDialog()));
+    const add = button('Add Provider', () => providerDialog());
+    add.className = 'openvision-primary';
+    const actions = element('div', '', 'openvision-provider-actions');
+    actions.append(button('Add Codex Easy', () => providerDialog(undefined, { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })),
+      button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })), add);
+    heading.append(element('h3', 'Custom Providers'), actions);
     const label = element('label', 'Active Provider', 'openvision-active-provider');
     const select = element('select');
     select.setAttribute('aria-label', 'Active Provider');
@@ -154,8 +186,11 @@ export function mountModels(container, bridge) {
     }
     select.value = providers.state.activeId ?? '';
     select.onchange = () => run(() => providers.activate(select.value || null));
-    label.append(select); container.append(heading, label, status);
-    for (const provider of providers.state.providers) container.append(providerRow(provider));
+    const toolbar = element('div', '', 'openvision-model-toolbar');
+    toolbar.append(search, filter);
+    label.append(select); container.append(heading, label, status, toolbar, list);
+    container.dataset.busy = String(busy);
+    renderProviders();
     if (busy) for (const control of container.querySelectorAll('button,input,select')) control.disabled = true;
   }
   render();
