@@ -18,6 +18,7 @@ for (const variant of ['desktop', 'glass']) {
     assert.equal(patches.filter(patch => patch.reason === 'local agent composer').length, 2);
     assert.ok(text.includes(originalAuth), 'Cloud authentication implementation must remain intact');
     assert.ok(text.includes('openvision-profile-settings'));
+    assert.ok(text.includes('children: "Import from Cursor"'));
     const cloud = disableCloudFeatures(text);
     assert.ok(cloud.patches.some(patch => patch.reason === 'cloud settings navigation'));
     assert.ok(cloud.patches.some(patch => patch.reason === 'cloud command and menu registration'));

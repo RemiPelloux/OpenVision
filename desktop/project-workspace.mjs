@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile, copyFile, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
+import { parseConfiguration, setSetting } from './import-json.mjs';
 
 const exists = path => stat(path).then(() => true, () => false);
 
@@ -65,7 +66,8 @@ test('project is ready', () => {
     await writeFile(workspacePath, JSON.stringify(workspace, null, 2) + '\n');
   }
   const settingsPath = join(root, 'data/local/User/settings.json');
-  const settings = JSON.parse(await readFile(settingsPath, 'utf8'));
+  let settingsText = await readFile(settingsPath, 'utf8');
+  const settings = parseConfiguration(settingsText);
   const enhancements = { 'explorer.compactFolders': false, 'explorer.sortOrder': 'foldersNestsFiles',
     'explorer.autoReveal': true, 'explorer.openEditors.visible': 6,
     'workbench.tree.indent': 16, 'workbench.tree.renderIndentGuides': 'always',
@@ -77,12 +79,13 @@ test('project is ready', () => {
   for (const [key, value] of Object.entries(enhancements)) {
     if (key in settings) continue;
     settings[key] = value;
+    settingsText = setSetting(settingsText, key, value);
     changed = true;
   }
   if (changed) {
     const backup = join(root, 'backups/local-profile/explorer-settings.json');
     await copyFile(settingsPath, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
-    await writeFile(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+    await writeFile(settingsPath, settingsText);
   }
   return { project, workspace: join(root, 'OpenVision.code-workspace') };
 }

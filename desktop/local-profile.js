@@ -1,3 +1,5 @@
+import { importCursor } from './openvision-import-ui.js';
+
 const storageKey = 'openvision.local-profile.v1';
 let profile;
 try { profile = JSON.parse(localStorage.getItem(storageKey)); } catch {}
@@ -47,7 +49,7 @@ function createButton() {
   return button;
 }
 
-window.openvisionLocalProfile = { open: editProfile, createButton,
+window.openvisionLocalProfile = { open: editProfile, createButton, importCursor,
   logo: new URL('./openvision-logo.png', import.meta.url).href,
   get name() { return profile.name; } };
 

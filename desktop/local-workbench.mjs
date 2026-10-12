@@ -67,7 +67,13 @@ function settingsProfile(text, local) {
     ${jsx}("button", {className: "openvision-local-profile", title: "Edit Local Profile",
       onClick: () => window.openvisionLocalProfile?.open(), children: [
         ${jsx}("img", {src: window.openvisionLocalProfile?.logo, alt: ""}),
-        ${jsx}("span", {children: window.openvisionLocalProfile?.name ?? "Local Profile"})]})]});`;
+        ${jsx}("span", {children: window.openvisionLocalProfile?.name ?? "Local Profile"})]}),
+    ${jsx}("button", {className: "openvision-import-cursor", onClick: () => window.openvisionLocalProfile?.importCursor(),
+      children: "Import from Cursor"})]});`;
+  const previous = owner.body.body.find(node => node.type === 'IfStatement' &&
+    text.slice(node.start, node.end).includes('className: "openvision-profile-settings"'));
+  if (previous) return text.slice(previous.start, previous.end) === guard ? [] :
+    [{ start: previous.start, end: previous.end, after: guard, reason: 'account settings' }];
   return bodyGuard(text, owner.body, guard, 'account settings');
 }
 
@@ -166,6 +172,7 @@ export async function customizeLocalWorkbench(root) {
   const workbench = join(app, 'out/vs/code/electron-sandbox/workbench');
   for (const extension of ['js', 'css'])
     await copyFile(join(root, `desktop/local-profile.${extension}`), join(workbench, `openvision-local-profile.${extension}`));
+  await copyFile(join(root, 'desktop/import-ui.js'), join(workbench, 'openvision-import-ui.js'));
   await languageBranding(root, app);
   if (records.length) {
     await writeFile(join(root, 'build/local-profile.json'), JSON.stringify({ records,

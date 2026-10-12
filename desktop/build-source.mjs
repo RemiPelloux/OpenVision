@@ -8,6 +8,8 @@ import { sourceAssets } from './source-assets.mjs';
 import { customizeLocalWorkbench } from './local-workbench.mjs';
 import { projectWorkspace } from './project-workspace.mjs';
 import { installModelSettings } from './custom-models.mjs';
+import { installCursorImport } from './install-import.mjs';
+import { localSettings } from './import-json.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const investigation = resolve(root, '../cursor');
@@ -75,12 +77,9 @@ if (await exists(marker)) {
 
 await customizeLocalWorkbench(root);
 await installModelSettings(root);
+await installCursorImport(root);
 
 const settings = join(root, 'data/local/User/settings.json');
-if (!await exists(settings)) await json(settings, {
-  'window.title': 'OpenVision - ${rootName}${separator}${activeEditorShort}',
-  'workbench.startupEditor': 'none', 'update.mode': 'none', 'extensions.autoUpdate': false,
-  'telemetry.telemetryLevel': 'off', 'cursor.general.disableHttp2': true
-});
+if (!await exists(settings)) await json(settings, localSettings);
 await mkdir(join(root, 'data/local-extensions'), { recursive: true });
 await projectWorkspace(root);

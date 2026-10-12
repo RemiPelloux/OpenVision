@@ -39,3 +39,17 @@
 .openvision-profile-dialog label { display: grid; gap: 6px; margin-bottom: 16px; }
 .openvision-profile-dialog input { padding: 8px; color: inherit; background: #303030; border: 1px solid #666; }
 .openvision-profile-dialog button { margin-right: 8px; padding: 6px 12px; cursor: pointer; }
+.openvision-import-cursor { margin: 12px 0 0 16px; padding: 6px 12px; cursor: pointer; }
+.openvision-import-dialog { width: 600px; max-width: calc(100vw - 48px); max-height: calc(100vh - 48px); overflow: auto; box-sizing: border-box; }
+.openvision-import-dialog input:not([type="checkbox"]), .openvision-import-dialog select { width: 100%; min-width: 0; box-sizing: border-box; }
+.openvision-import-dialog .openvision-import-checkbox { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.openvision-import-categories { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 16px; }
+.openvision-import-dialog pre { max-height: 180px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.openvision-import-dialog p { overflow-wrap: anywhere; }
+.openvision-import-dialog button:disabled { opacity: .5; cursor: default; }
+.openvision-import-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.openvision-import-dialog button, .openvision-import-cursor { color: var(--vscode-button-foreground, #fff); background: var(--vscode-button-background, #256c5c); border: 1px solid transparent; border-radius: 4px; font: inherit; }
+.openvision-import-dialog button:hover, .openvision-import-cursor:hover { background: var(--vscode-button-hoverBackground, #35806d); }
+.openvision-import-dialog input[type="checkbox"] { accent-color: var(--vscode-button-background, #256c5c); }
+.openvision-import-dialog :focus-visible { outline: 1px solid var(--vscode-focusBorder, #58a891); outline-offset: 2px; }
+@media (max-width: 520px) { .openvision-import-categories { grid-template-columns: 1fr; } .openvision-import-dialog button { margin-bottom: 8px; } }
