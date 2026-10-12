@@ -109,6 +109,9 @@ Capability references: [Codex Easy configuration](https://docs.codex-everywhere.
 [DeepSeek thinking modes](https://api-docs.deepseek.com/guides/thinking_mode),
 [Grok reasoning](https://docs.x.ai/developers/model-capabilities/text/reasoning).
 
+Subagent model overrides retain explicit reasoning choices and saved model
+preferences through the same model-capability validator.
+
 API keys use local workbench secret storage. They are excluded from provider
 metadata, this README, and Git. The repository does not ship an API key. Model
 listing alone does not establish image input, reasoning, tool use, or every
@@ -134,6 +137,12 @@ Explicit existing language-server preferences are preserved.
 The title-bar profile button edits your local display name. Cloud-agent entry
 points and hosted account/billing controls are disabled. Settings and profile
 dialogs use short transitions, with reduced-motion preferences respected.
+
+In **Customize > Rules**, user rules are saved in the local OpenVision profile
+and included in local Agent context. Creating, editing and removing them does
+not require a cloud account. Generated notes are kept in their workspace.
+See [local rules and reasoning implementation](docs/rea-local-rules.md) for
+migration, verification and remaining limits.
 
 ## Import Settings
 

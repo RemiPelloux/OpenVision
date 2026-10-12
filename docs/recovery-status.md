@@ -40,7 +40,9 @@ recompilability, or runtime parity.
 The build applies durable, checked transformations to the recovered workbench,
 Agent host and Agent execution modules. OpenVision owns its local profile UI,
 branding, provider settings, model discovery, request relay, context invalidation,
-and local import tools. Native host binaries and addons are still required from
+local user-rule persistence, and local import tools. The
+[REA follow-up](rea-local-rules.md) records the rule service replacement and
+subagent parameter fix. Native host binaries and addons are still required from
 matching platform inputs. The source tree is under `source/app`; build-time
 customizations are under `desktop`.
 

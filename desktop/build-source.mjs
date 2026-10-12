@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installLocalProfile } from './local-workbench.mjs';
@@ -38,6 +38,8 @@ const integrity = await buildExtensionIntegrity(root);
 console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 await installLocalProfile(root);
 await installModelSettings(root);
+await copyFile(join(root, 'desktop/local-rules.js'),
+  join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js'));
 await installCursorImport(root);
 const settings = join(root, 'data/local/User/settings.json');
 if (!await exists(settings)) {

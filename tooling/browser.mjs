@@ -1,1 +1,1 @@
-export { chromium } from 'playwright-core';
+export { chromium, _electron } from 'playwright-core';

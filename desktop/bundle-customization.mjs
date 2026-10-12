@@ -7,6 +7,8 @@ import { disableCloudFeatures } from './cloud-features.mjs';
 import { customModels } from './custom-models.mjs';
 import { customizeStream } from './stream-customization.mjs';
 import { requestProviderRouting } from './provider-routing.mjs';
+import { localUserRules } from './rules-customization.mjs';
+import { subagentModelParameters } from './subagent-model-customization.mjs';
 
 async function customize(root, variant) {
   const relative = `out/vs/workbench/workbench.${variant}.main.js`;
@@ -15,7 +17,8 @@ async function customize(root, variant) {
   const local = localWorkbench(before, variant);
   const cloud = disableCloudFeatures(local.text);
   const stream = customizeStream(customModels(cloud.text, variant));
-  const after = requestProviderRouting(stream.text, variant);
+  const providers = requestProviderRouting(stream.text, variant);
+  const after = localUserRules(subagentModelParameters(providers, variant), variant);
   if (before === after) return;
   const backup = join(root, 'backups/bundle-customizations', relative);
   await mkdir(dirname(backup), { recursive: true });
@@ -32,6 +35,7 @@ export async function customizeBundles(root) {
     'desktop/local-workbench.mjs', 'desktop/cloud-features.mjs', 'desktop/custom-models.mjs', 'desktop/model-picker.mjs',
     'desktop/stream-customization.mjs',
     'desktop/provider-routing.mjs',
+    'desktop/rules-customization.mjs', 'desktop/subagent-model-customization.mjs',
     'tooling/dependencies.mjs', 'tooling/package-lock.json'];
   const hashes = [];
   for (const file of dependencies) {

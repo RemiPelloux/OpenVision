@@ -4,6 +4,11 @@ Audit date: **12 October 2026**. Product baseline: commit
 `27f3a3cceeb80c31200bff48b5152dfdbef972f1`. Original input: **Cursor 3.21.13,
 Windows**, with VS Code version field `1.128.0`.
 
+Subsequent implementation: the [REA local-rules follow-up](rea-local-rules.md)
+replaces cloud-backed user-rule persistence and fixes discarded subagent model
+parameters. The measurements below remain the original recovery snapshot;
+native decompilation coverage has not increased in that follow-up.
+
 ## Where the product stands
 
 **OpenVision is runnable on the verified Windows setup, but it is not a fully
