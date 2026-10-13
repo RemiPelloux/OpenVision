@@ -2,8 +2,9 @@
 
 These checks contacted the three saved Codex Easy connections at
 `https://codex-easy.ai/v1`, using each provider's own stored credential. They
-establish direct API behavior for specific synthetic requests. They do not prove
-native Agent rendering, history, branching, subagents or complete model support.
+establish direct API behavior for specific synthetic requests. Separate native
+Windows Agent checks below exercise selection, rendering and Read continuation.
+Neither set establishes history, branching, subagents or complete model support.
 
 ## Observed matrix
 
@@ -25,8 +26,55 @@ establish that every DeepSeek model or every reasoning payload is unsupported.
 The existing fallback menu includes values that are **not live-verified** for
 this connection, and the tested values failed here. No saved provider URL, key,
 model enablement or reasoning selection was silently changed to hide a failure.
-The next gate is to establish the upstream contract and verify the native
-request/replay path, then correct capability handling at its producer.
+The native request path has now passed the Read check with effort omitted.
+The direct probe's failing continuation has a different request shape; its failure
+does not establish a native Agent defect. The full upstream effort contract remains
+unverified.
+
+## Native Windows Read and provider default
+
+OpenVision now offers **Provider default** alongside each model's explicit tiers.
+This is a local selection, removed before the upstream request. Both recovered
+Agent encoders omit `reasoning_effort` and `reasoning.effort`, preserving unrelated
+reasoning options. **Off** still sends `none`; explicit High remains High.
+Fresh selections use Provider default; saved explicit preferences are preserved.
+No retry silently changes the selected tier.
+
+The native verifier creates a disposable project with an unopened file containing
+a unique token. It selects the model in the native picker and asks the Agent to
+Read the file. Success requires that token in the tool continuation, the provider's
+assistant stream and the visible answer, with the file unchanged and owned host
+cleanup confirmed. Real inference goes through a loopback relay that forwards
+request bodies unchanged and swaps transport authentication in memory. Its
+`/models` response mirrors saved capability hints; it does not prove live discovery
+or direct real-URL selection in the native UI.
+
+| Native run suffix | Choice and result |
+| --- | --- |
+| `3RahMB` | DeepSeek V4 Flash, Provider default: initial and Read continuation HTTP 200, 4,297 ms + 3,246 ms. Wire effort absent; returned model `deepseek-flash`. |
+| `CtRGE9` | GPT 6.1 Sol, Provider default: initial and Read continuation HTTP 200, 7,802 ms + 4,587 ms. Wire effort absent. |
+| `yVytrk` | Grok 4.7, Provider default: initial and Read continuation HTTP 200, 4,776 ms + 3,279 ms. Wire effort absent. |
+| `69hfq1` | DeepSeek V4 Flash, High: wire `reasoning_effort: high`, initial HTTP 400. |
+| `f373Ht` | Earlier DeepSeek success with wire effort absent despite a High UI label: relay capability format was wrong. This is not evidence for High; the catalog format was corrected before the later runs. |
+
+Each suffix names `logs/live-agent-verification-<suffix>/result.json`. These owned
+hosts exited with code 0. Earlier UI setup failures `pRCs9B` and `QkfY4P` made no
+provider request and remain local evidence.
+
+```sh
+npm run verify:agent:live -- --live --model deepseek-v4-flash
+npm run verify:agent:live -- --live --model gpt-6.1-sol
+npm run verify:agent:live -- --live --model grok-4.7
+```
+
+This opt-in runner consumes real quota. Without `--live` it prints help. The
+default reasoning selection is Provider default; `--reasoning high` verifies that
+explicit value, including failures. The relay permits at most six inference
+requests, 60 seconds each and 4 MiB per request/response. It does not rewrite the
+native token limit. Reports contain sanitized request metadata, not full prompts,
+keys or reasoning text. Six offline HTTP tests verify unchanged forwarding,
+authentication, marker evidence, redaction and cancellation/cleanup of active
+connections. They do not establish live provider cancellation.
 
 ## Run locally
 
@@ -87,6 +135,7 @@ Six offline verifier tests cover fragmented SSE/UTF-8, private reasoning replay,
 malformed/oversized streams, invalid tool calls, key redaction, missing catalog
 models and real HTTP timeout/socket closure. Those fixtures validate the probe;
 they add no live-provider support claims. Live cancellation, retries, full native
-Agent flows, all reasoning tiers, other models, images, autocomplete and native
-macOS/Linux remain open. OV-102/OV-203 remain Partial and the 42-story denominator
+Agent flows beyond the Read checks, all reasoning tiers, other models, images,
+autocomplete and native macOS/Linux remain open. Only Windows is available for
+native testing at present. OV-102/OV-203 remain Partial and the 42-story denominator
 is unchanged. No GitHub Actions are used.

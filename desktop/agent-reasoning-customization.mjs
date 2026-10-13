@@ -1,4 +1,5 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { providerDefaultReasoning } from './model-reasoning.js';
 
 const marker = '/* OpenVision per-model reasoning transport v1 */';
 const options = { ecmaVersion: 'latest', sourceType: 'script' };
@@ -21,7 +22,7 @@ function replaceOnce(text, before, after) {
 }
 
 export function customizeAgentReasoning(text, kind) {
-  if (text.includes(marker)) return text;
+  if (text.includes(marker)) return providerDefault(text, kind);
   if (kind === 'exec') {
     text = replaceOwner(text, 'function Zxe(e) {', body => replaceOnce(body,
       'defaultOpenAICompatibleEndpoint: e.defaultOpenAICompatibleEndpoint,\n                configuredEffortValues: e.configuredEffortValues,',
@@ -40,7 +41,28 @@ export function customizeAgentReasoning(text, kind) {
       '})(s, e),', '})(s, {...e, configuredEffortValues: openvisionEfforts}),'));
     text = replaceOwner(text, 'function RMe(e, t, r, n = !1) {', allowExplicitNone);
   } else throw new Error(`Unknown reasoning transport kind: ${kind}`);
-  return `${marker}\n${text}`;
+  return providerDefault(`${marker}\n${text}`, kind);
+}
+
+function providerDefault(text, kind) {
+  const defaultMarker = '/* OpenVision provider default reasoning v1 */';
+  if (text.includes(defaultMarker)) return text;
+  const owners = { exec: ['function Xxe(e) {', 'a', 'tEe'], host: ['function RMe(e, t, r, n = !1) {', 'n', 'PMe'] };
+  const owner = owners[kind];
+  if (!owner) throw new Error(`Unknown reasoning transport kind: ${kind}`);
+  const [anchor, value, isObject] = owner;
+  const before = `if (void 0 === ${value}) return;`;
+  return `${defaultMarker}\n` + replaceOwner(text, anchor, body => replaceOnce(body, before,
+    `if (${value} === ${JSON.stringify(providerDefaultReasoning)}) {
+      delete e.reasoning_effort;
+      if (${isObject}(e.reasoning)) {
+        const {effort: _omitted, ...rest} = e.reasoning;
+        if (Object.keys(rest).length) e.reasoning = rest;
+        else delete e.reasoning;
+      }
+      return;
+    }
+    ${before}`));
 }
 
 function allowExplicitNone(text) {

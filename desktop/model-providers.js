@@ -1,4 +1,4 @@
-import { fallbackReasoningValues } from './model-reasoning.js';
+import { fallbackReasoningValues, providerDefaultReasoning } from './model-reasoning.js';
 const storageKey = 'openvision.model-providers.v1';
 const secretKey = id => `openvision.provider.${id}`;
 const routeSnapshots = new WeakMap();
@@ -58,7 +58,7 @@ const reasoningLabels = {
   xhigh: 'Extra High', 'extra-high': 'Extra High', max: 'Max', ultra: 'Ultra',
 };
 function reasoningParameter(values) {
-  return { id: 'reasoning', name: 'Reasoning', markdownTooltip: 'Controls how much reasoning effort the model uses.',
+  return { id: 'reasoning', name: 'Reasoning', markdownTooltip: 'Provider default leaves reasoning to your server. Other choices request an explicit effort.',
     parameterType: { enumParameter: { values: values.map(item => ({ value: item.value ?? item.id, displayName: item.label ?? reasoningLabels[item.id] ?? item.id })) } },
     isCycleableByHotkey: true };
 }
@@ -73,8 +73,9 @@ function configuredReasoning(model, provider) {
 
 function catalogModel(model, provider, namedModelSectionIndex) {
   const declared = modelReasoning(model);
-  const reasoning = declared ?? configuredReasoning(model, provider);
-  const defaultEffort = reasoning.find(item => item.id === 'high') ?? reasoning[0];
+  const efforts = declared ?? configuredReasoning(model, provider);
+  const reasoning = efforts.length ? [{ id: providerDefaultReasoning, label: 'Provider default' }, ...efforts] : [];
+  const defaultEffort = reasoning[0];
   const variants = reasoning.map(item => {
     const label = item.label ?? reasoningLabels[item.id] ?? item.id;
     return { parameterValues: [{ id: 'reasoning', value: item.value ?? item.id }], displayName: `${model.name} · ${label}`,

@@ -15,6 +15,8 @@ must be fully Verified; Partial receives no credit. This measures acceptance
 stories, not recovered source, working code, effort or original-product parity.
 The script rejects added, removed or duplicate IDs until the baseline is reviewed.
 Platform and independent-build gates remain required.
+The user confirmed that only Windows is currently available for native testing.
+macOS/Linux checks remain unverified and retain their acceptance gates.
 
 | Area | Established evidence | Remaining gate |
 | --- | --- | --- |
@@ -121,10 +123,13 @@ The 42-story denominator is unchanged.
 13 October live-provider follow-up (owner: OpenVision):
 [direct API evidence](live-provider-compatibility.md) establishes GPT 6.1 Sol and
 Grok 4.7 streamed tool roundtrips with low reasoning, and DeepSeek V4 Flash plain
-streaming with the reasoning field omitted. DeepSeek tool continuation and tested
-reasoning requests return HTTP 400; an initial Grok continuation returned HTTP
-429. These are recorded failures, not removed gates. Native provider workflows,
-retry/stop/history/branching and the full reasoning matrix remain open. OV-102
+streaming with the reasoning field omitted. The direct DeepSeek tool continuation
+fixture returned HTTP 400, but the native Agent Read continuation now passes with
+the explicit Provider default choice for DeepSeek, GPT 6.1 Sol and Grok 4.7.
+Native DeepSeek High still returned HTTP 400; an
+initial direct Grok continuation returned HTTP 429. These are recorded failures,
+not removed gates. The compatibility report distinguishes each tested payload.
+Native retry/stop/history/branching and the full reasoning matrix remain open. OV-102
 and OV-203 retain Partial status.
 
 ## Sprint 2 — Complete provider settings and model interaction

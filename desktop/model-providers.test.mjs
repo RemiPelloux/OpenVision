@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { ModelProviders, normalizeBaseUrl, parseModels, catalog, activeModelIds, allCatalog } from './model-providers.js';
 import { customModels } from './custom-models.mjs';
+import { providerDefaultReasoning } from './model-reasoning.js';
+
+const defaultChoice = { value: providerDefaultReasoning, displayName: 'Provider default' };
+const variantFor = (model, value) => model.variants.find(item => item.parameterValues[0].value === value);
 
 function bridge() {
   const storage = new Map(), secrets = new Map(), settings = {}, selected = [];
@@ -71,8 +75,8 @@ test('discovery preserves reasoning capabilities for the model picker', async ()
   const model = services.settings.availableDefaultModels2[0];
   assert.equal(model.supportsThinking, true);
   assert.deepEqual(model.parameterDefinitions[0].parameterType.enumParameter.values,
-    [{ value: 'low', displayName: 'Low' }, { value: 'medium', displayName: 'Medium' }, { value: 'high', displayName: 'High' }]);
-  assert.deepEqual(model.variants[1].parameterValues, [{ id: 'reasoning', value: 'medium' }]);
+    [defaultChoice, { value: 'low', displayName: 'Low' }, { value: 'medium', displayName: 'Medium' }, { value: 'high', displayName: 'High' }]);
+  assert.deepEqual(variantFor(model, 'medium').parameterValues, [{ id: 'reasoning', value: 'medium' }]);
   assert.equal(model.supportsImages, true);
   assert.deepEqual(parseModels({ data: [{ id: 'x', capabilities: { reasoning_effort: ['low'] } }] })[0].capabilities.reasoningEffortValues,
     [{ id: 'low', value: 'low' }]);
@@ -83,9 +87,9 @@ test('Codex Easy GPT models use their configured Cursor-style reasoning variants
     { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })[0];
   assert.equal(model.supportsThinking, true);
   assert.deepEqual(model.parameterDefinitions[0].parameterType.enumParameter.values,
-    [{ value: 'low', displayName: 'Low' }, { value: 'medium', displayName: 'Medium' },
+    [defaultChoice, { value: 'low', displayName: 'Low' }, { value: 'medium', displayName: 'Medium' },
       { value: 'high', displayName: 'High' }, { value: 'xhigh', displayName: 'Extra High' }, { value: 'max', displayName: 'Max' }]);
-  assert.equal(model.variants[3].displayName, 'GPT-6.1 Sol · Extra High');
+  assert.equal(variantFor(model, 'xhigh').displayName, 'GPT-6.1 Sol · Extra High');
   for (const url of ['https://codex-easy.ai.evil.test/v1', 'https://example.test/codex-easy.ai'])
     assert.equal(catalog([{ id: 'gpt-6.1-sol', name: 'Sol', enabled: true }], { url })[0].supportsThinking, false);
 });
@@ -98,24 +102,24 @@ test('discovery metadata survives normalization at both IPC boundaries', () => {
   assert.deepEqual(parseModels({ data: models }), models);
   const row = catalog(models)[0];
   assert.deepEqual(row.parameterDefinitions[0].parameterType.enumParameter.values,
-    [{ value: 'provider-ultra', displayName: 'Ultra' }]);
+    [defaultChoice, { value: 'provider-ultra', displayName: 'Ultra' }]);
   assert.deepEqual(row.legacySlugs, []);
   const unsupported = parseModels({ data: [{ id: 'gpt-6-astra', capabilities: { reasoning_effort: [] } }] });
   assert.equal(catalog(unsupported, { url: 'https://codex-easy.ai/v1' })[0].supportsThinking, false,
     'An explicit provider declaration overrides the documented fallback');
 });
 
-test('known provider models use different reasoning menus and default to high', () => {
+test('known provider models retain different tiers with an explicit provider default', () => {
   const models = ['gpt-6-astra', 'deepseek-flash', 'deepseek-v4-pro', 'grok-4.7', 'unknown']
     .map(id => ({ id, name: id, enabled: true }));
   const rows = catalog(models, { url: 'https://codex-easy.ai/v1' });
   const choices = row => row.parameterDefinitions[0]?.parameterType.enumParameter.values.map(value => value.value) ?? [];
   assert.deepEqual(rows.map(choices), [
-    ['low', 'medium', 'high', 'xhigh', 'max'], ['none', 'low', 'high', 'max'],
-    ['none', 'low', 'high', 'max'], ['low', 'medium', 'high', 'xhigh'], [],
+    [providerDefaultReasoning, 'low', 'medium', 'high', 'xhigh', 'max'], [providerDefaultReasoning, 'none', 'low', 'high', 'max'],
+    [providerDefaultReasoning, 'none', 'low', 'high', 'max'], [providerDefaultReasoning, 'low', 'medium', 'high', 'xhigh'], [],
   ]);
   for (const row of rows.slice(0, -1))
-    assert.equal(row.variants.find(variant => variant.isDefaultNonMaxConfig).parameterValues[0].value, 'high');
+    assert.equal(row.variants.find(variant => variant.isDefaultNonMaxConfig).parameterValues[0].value, providerDefaultReasoning);
 });
 
 test('capability refresh preserves disabled models and does not retry known absence', async () => {

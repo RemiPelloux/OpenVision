@@ -121,7 +121,11 @@ manual models, names, and enabled states.
 
 In the Agent model picker, open the model's options to choose **Reasoning**.
 The native submenu remembers each model's selection. It uses discovered
-capabilities first, with documented defaults for known Codex Easy models:
+capabilities first, with compatibility hints for known Codex Easy models:
+
+**Provider default** leaves the effort field out of the request so your server
+chooses its own behavior. New selections default to this option; existing explicit
+choices are preserved. It is distinct from **Off**, which sends `none`.
 
 | Model family | Reasoning choices |
 | --- | --- |
@@ -129,8 +133,10 @@ capabilities first, with documented defaults for known Codex Easy models:
 | DeepSeek Flash / V4 Pro | Off, Low, High, Max |
 | Grok 4.6 / 4.7 | Low, Medium, High, Extra High |
 
-DeepSeek maps the compatibility alias **Ultra** to **Max**; they represent the
-same effort. Unknown models only show choices declared by their provider.
+The table lists explicit tiers in addition to Provider default. These tiers are
+not all live-verified. DeepSeek V4 Flash Read works with Provider default on the
+tested connection; explicit High returned HTTP 400. Unknown models only show
+tiers declared by their provider. Provider default appears when tiers exist.
 Agent submissions resolve the selected model's saved URL and key for each
 request, including immediately after startup.
 
@@ -187,7 +193,7 @@ See [local rules and reasoning implementation](docs/rea-local-rules.md) for
 migration, verification and remaining limits.
 
 The [live provider matrix](docs/live-provider-compatibility.md) records tested
-GPT/Grok tool roundtrips and the remaining DeepSeek reasoning/tool failures.
+GPT/Grok tool roundtrips, native Read checks, and remaining reasoning failures.
 For an opt-in check using a saved connection, run
 `npm run verify:providers:live -- --live --model gpt-6.1-sol`. This sends small
 synthetic requests and consumes provider quota; it does not send project files.

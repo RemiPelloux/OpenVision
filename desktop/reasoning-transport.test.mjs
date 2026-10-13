@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
-import { fallbackReasoningValues, requestReasoningValues } from './model-reasoning.js';
+import { fallbackReasoningValues, requestReasoningValues, providerDefaultReasoning } from './model-reasoning.js';
 import { customizeAgentReasoning } from './agent-reasoning-customization.mjs';
 import { requestProviderRouting } from './provider-routing.mjs';
 import { requestProvider } from './model-providers.js';
@@ -97,6 +97,18 @@ test('recovered Agent request encoder preserves declared tiers in Responses and 
     apiType: 'openai_compatible', openAICompatibleEndpoint: 'responses', configuredEffortValues: ['none', 'low', 'high', 'max'] });
   await fetch('https://fixture.invalid/v1', { body: JSON.stringify({ reasoning: { effort: 'xhigh' } }) });
   assert.equal(requests.at(-1).reasoning, undefined);
+  for (const endpoint of ['responses', 'chat_completions']) {
+    const defaultFetch = factory({ modelId: 'deepseek-v4-flash', modelParameters: [{ id: 'reasoning', value: providerDefaultReasoning }],
+      apiType: 'openai_compatible', openAICompatibleEndpoint: endpoint, configuredEffortValues: [] });
+    for (const reasoning of [{ effort: 'high', summary: 'auto' }, { effort: 'high' }]) {
+      await defaultFetch('https://fixture.invalid/v1', { body: JSON.stringify({ model: 'deepseek-v4-flash', reasoning, reasoning_effort: 'high', stream: true }) });
+      const payload = requests.at(-1);
+      assert.equal(payload.reasoning_effort, undefined);
+      assert.deepEqual(payload.reasoning, reasoning.summary ? { summary: 'auto' } : undefined);
+      assert.equal(payload.stream, true);
+      assert.ok(!JSON.stringify(payload).includes(providerDefaultReasoning));
+    }
+  }
 });
 
 test('recovered host reasoning patch is compatible with the prepared artifact', async t => {
@@ -109,4 +121,15 @@ test('recovered host reasoning patch is compatible with the prepared artifact', 
   });
   const result = encode({ body: '{}' }, [{ id: 'reasoning', value: 'none' }], ['none', 'high']);
   assert.equal(JSON.parse(result.body).reasoning.effort, 'none');
+  for (const reasoning of [{ effort: 'high', summary: 'auto' }, { effort: 'high' }]) {
+    const result = encode({ body: JSON.stringify({ reasoning, reasoning_effort: 'high', stream: true }) },
+      [{ id: 'reasoning', value: providerDefaultReasoning }], []);
+    const payload = JSON.parse(result.body);
+    assert.deepEqual(payload.reasoning, reasoning.summary ? { summary: 'auto' } : undefined);
+    assert.equal(payload.reasoning_effort, undefined);
+    assert.equal(payload.stream, true);
+    assert.ok(!result.body.includes(providerDefaultReasoning));
+  }
+  assert.equal(JSON.parse(encode({ body: '{}' }, [{ id: 'reasoning', value: 'high' }], ['high']).body).reasoning.effort, 'high');
+  assert.equal(encode({ body: 'malformed' }, [{ id: 'reasoning', value: providerDefaultReasoning }], []).body, 'malformed');
 });

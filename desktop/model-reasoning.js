@@ -4,7 +4,10 @@ const gptModels = new Set([
   'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna',
 ]);
 
-// Explicit documented capabilities only; /models declarations take precedence.
+// Local UI intent, never an upstream effort value.
+export const providerDefaultReasoning = 'openvision-provider-default';
+
+// Compatibility hints; individual tiers require live verification. Declarations take precedence.
 export function fallbackReasoningValues(baseUrl, modelId) {
   let hostname;
   try { hostname = new URL(baseUrl).hostname; } catch { return undefined; }
