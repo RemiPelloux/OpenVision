@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -16,7 +16,7 @@ const project = join(directory, 'primary');
 const secondary = join(directory, 'secondary');
 await Promise.all([mkdir(join(profile, 'User'), { recursive: true }),
   mkdir(join(project, '.vscode'), { recursive: true }), mkdir(secondary)]);
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...localSettings,
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never',
   'task.allowAutomaticTasks': 'off', 'window.restoreWindows': 'all',
   'files.hotExit': 'onExitAndWindowClose', 'terminal.integrated.enablePersistentSessions': false }));

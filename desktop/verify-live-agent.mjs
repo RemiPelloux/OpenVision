@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { createLiveAgentRelay } from './live-agent-relay.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
@@ -34,7 +34,7 @@ try {
 const directory = await mkdtemp(join(root, 'logs/live-agent-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...localSettings, 'git.openRepositoryInParentFolders': 'never' }));
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'git.openRepositoryInParentFolders': 'never' }));
 const marker = `OPENVISION_READ_${randomUUID().replaceAll('-', '')}`;
 const file = join(project, 'probe.txt'); await writeFile(file, marker + '\n');
 if (process.platform === 'win32') {

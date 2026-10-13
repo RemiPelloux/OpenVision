@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { probeProvider } from './live-provider-probe.mjs';
@@ -56,7 +56,7 @@ const { layout } = await loadRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/live-provider-verification-'));
 const profile = join(directory, 'profile');
 await mkdir(join(profile, 'User'), { recursive: true });
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify(localSettings));
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verificationSettings));
 // Windows safeStorage binds encrypted values to the profile's DPAPI-wrapped key.
 // Copy only that encrypted key into our disposable profile, then remove it after exit.
 let copiedEncryptionKey = false;

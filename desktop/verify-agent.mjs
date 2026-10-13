@@ -7,7 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { createAgentEditFixture } from './verify-agent-edits.mjs';
@@ -23,7 +23,7 @@ await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/agent-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...localSettings,
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'git.openRepositoryInParentFolders': 'never' }));
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });

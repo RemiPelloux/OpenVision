@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -14,7 +14,7 @@ await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/completion-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...localSettings,
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never',
   'editor.autoIndent': 'none', 'editor.autoClosingBrackets': 'never', 'editor.formatOnType': false }));
 const file = join(project, 'completion.js');

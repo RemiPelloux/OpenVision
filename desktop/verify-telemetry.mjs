@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -15,7 +15,7 @@ const profile = join(directory, 'profile');
 const project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true });
 await mkdir(project);
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify(localSettings));
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verificationSettings));
 await writeFile(join(profile, 'argv.json'), '{"enable-crash-reporter":false}');
 await writeFile(join(project, 'hello.js'), 'console.log("OpenVision telemetry verification");\n');
 const netLog = join(directory, 'chromium-netlog.json');

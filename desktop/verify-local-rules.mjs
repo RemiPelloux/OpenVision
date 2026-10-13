@@ -4,7 +4,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { platformLayout, linuxSandboxArguments } from './platform.mjs';
-import { localSettings } from './import-json.mjs';
+import { verificationSettings } from './verification-profile.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const layout = platformLayout(root);
@@ -13,7 +13,7 @@ const profile = await mkdtemp(join(root, 'logs/local-rules-verification-'));
 const project = join(profile, 'project');
 await mkdir(join(profile, 'User'), {recursive:true});
 await mkdir(project);
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify({...localSettings, 'git.openRepositoryInParentFolders':'never'}));
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify({...verificationSettings, 'git.openRepositoryInParentFolders':'never'}));
 await writeFile(join(project, 'readme.txt'), 'OpenVision local rules verification\n');
 const original = 'OpenVision fixture rule: use descriptive names.';
 const edited = 'OpenVision fixture rule: verify changed behavior.';
