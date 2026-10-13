@@ -8,15 +8,21 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
-The accepted **95% local feature verification** target uses the fixed 42-story
+The accepted **80% local feature verification** target uses the fixed 42-story
 baseline in [feature-acceptance.json](feature-acceptance.json). Run
-`npm run status:features` for the current counts. At least **40 of 42** stories
+`npm run status:features` for the current counts. At least **34 of 42** stories
 must be fully Verified; Partial receives no credit. This measures acceptance
 stories, not recovered source, working code, effort or original-product parity.
 The script rejects added, removed or duplicate IDs until the baseline is reviewed.
 Platform and independent-build gates remain required.
 The user confirmed that only Windows is currently available for native testing.
 macOS/Linux checks remain unverified and retain their acceptance gates.
+
+On 13 October the user changed the target from 95% to 80% and requested a fully
+usable product plus estimates for missing functions. Baseline version 2 changes
+only the target; all 42 IDs and their acceptance gates are retained. See the
+[remaining work and estimates](remaining-work-estimates.md) for sequencing,
+conditional ETAs and the usability release gate.
 
 | Area | Established evidence | Remaining gate |
 | --- | --- | --- |
@@ -324,6 +330,14 @@ STDIO process closes. A subsequent operation waits for the existing lifecycle to
 reconnect; the failed operation is not replayed. The linked report distinguishes
 original failure evidence, final build evidence and unresolved provider/platform
 gates. This does not promote an acceptance story or change the denominator.
+
+13 October 2026, OV-201/OV-202 retention follow-up (owner: OpenVision):
+[Saved-model discovery retention](model-catalog-retention.md) keeps models absent
+from a successful catalog response, with visible unlisted status. Native Windows
+evidence covers malformed/empty/reduced catalogs, inference using a retained
+model, normal restart, key replacement, custom names, disabled state and explicit
+removal. Duplicate IDs across providers and the remaining UI/provider/platform
+gates stay open. No story is promoted; the user's revised target is 34 of 42.
 
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a

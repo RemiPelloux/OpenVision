@@ -1,10 +1,13 @@
 # OpenVision release claims and verification matrix
 
 Baseline date: 13 October 2026. This is a development build with incomplete release
-acceptance, not a claim of 95% parity. The fixed denominator remains the 42 stories
-in [feature-acceptance.json](feature-acceptance.json); at least 40 must be fully
+acceptance. The fixed denominator remains the 42 stories
+in [feature-acceptance.json](feature-acceptance.json); at least 34 must be fully
 Verified. The [sprint ledger](completion-sprints.md) owns each story's status and
 full acceptance clauses. A successful cell below is limited to its named workflow.
+The target was changed by the user to 80% on 13 October; requirements were not
+removed. [Remaining-work estimates](remaining-work-estimates.md) record the
+usability release gate, dependencies and conditional ETAs.
 
 ## Input and build identity
 

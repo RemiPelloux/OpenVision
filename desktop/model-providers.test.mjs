@@ -63,6 +63,33 @@ test('malformed discovery leaves configured models available', async () => {
   assert.throws(() => parseModels({ models: [] }), /compatible/);
 });
 
+test('empty and reduced discovery retain saved choices across restart and recover listed status', async () => {
+  const services = bridge(), providers = new ModelProviders(services);
+  const provider = await providers.save({ name: 'Fixture', url: 'https://example.test/v1', key: 'test-secret' });
+  await providers.discover(provider.id);
+  await providers.updateModels(provider.id, [
+    { ...provider.models[0], name: 'My saved choice' },
+    { id: 'disabled', name: 'Disabled', enabled: false },
+    { id: 'manual', name: 'Manual', enabled: true, manual: true },
+  ]);
+  services.request = async () => ({ data: [] });
+  await providers.discover(provider.id);
+  assert.equal(provider.models.length, 3);
+  assert.ok(provider.models.every(model => model.discoveryStatus === 'unlisted'));
+  const restarted = new ModelProviders(services);
+  await restarted.ready;
+  assert.deepEqual(restarted.state.providers[0].models, provider.models);
+  assert.deepEqual(restarted.allModels().map(model => model.name), ['gpt-test', 'manual']);
+  services.request = async () => ({ data: [{ id: 'gpt-test', name: 'New server label' }, { id: 'new-model' }] });
+  await restarted.discover(provider.id);
+  const models = restarted.get(provider.id).models;
+  assert.deepEqual(models.map(model => [model.id, model.discoveryStatus]),
+    [['gpt-test', 'listed'], ['new-model', 'listed'], ['disabled', 'unlisted'], ['manual', 'unlisted']]);
+  assert.equal(models[0].name, 'My saved choice');
+  assert.equal(models[2].enabled, false);
+  assert.equal(models[3].manual, true);
+});
+
 test('discovery preserves reasoning capabilities for the model picker', async () => {
   const services = bridge();
   services.request = async () => ({ data: [{ id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', capabilities: {

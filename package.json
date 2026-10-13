@@ -38,7 +38,8 @@
     "smoke": "node test/smoke.mjs",
     "benchmark:models": "node --expose-gc desktop/benchmark-models.mjs",
     "benchmark:context": "node --expose-gc desktop/benchmark-context.mjs",
-    "verify:model-menu": "node desktop/verify-model-menu.mjs"
+    "verify:model-menu": "node desktop/verify-model-menu.mjs",
+    "verify:catalog-retention": "node desktop/verify-catalog-retention.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

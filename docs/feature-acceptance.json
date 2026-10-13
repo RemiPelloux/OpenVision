@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "targetPercent": 95,
+  "version": 2,
+  "targetPercent": 80,
   "measure": "Fully verified acceptance stories from completion-sprints.md; no partial credit",
   "excluded": ["Original accounts, signup and billing", "Hosted cloud agents", "Vendor telemetry collection"],
   "requiredStoryIds": [

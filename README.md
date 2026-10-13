@@ -29,6 +29,10 @@ Playground, keeping application internals out of everyday project indexing.
 Open **OpenVision Development.code-workspace** when editing the application itself.
 Existing workspace folders are preserved during builds.
 
+Release work targets **80% of the fixed 42 acceptance stories**, plus a usable
+development workflow. Current evidence, missing functions and conditional ETAs
+are in [remaining work and estimates](docs/remaining-work-estimates.md).
+
 ## Telemetry
 
 OpenVision disables built-in usage analytics, Sentry reporting, crash uploads,
@@ -117,7 +121,9 @@ Completions. Model availability comes from the server and your account.
 Search by model name or ID, filter to enabled models, and edit display names.
 The active connection and enabled-model count remain visible. **Add Model**
 accepts an exact server ID when discovery is unavailable. Refresh preserves
-manual models, names, and enabled states.
+all saved models, names, and enabled states. Models absent from a successful
+catalog response stay selectable and show **Not in latest catalog** in settings;
+their availability still depends on the provider. Remove unwanted entries explicitly.
 
 In the Agent model picker, open the model's options to choose **Reasoning**.
 The native submenu remembers each model's selection. It uses discovered

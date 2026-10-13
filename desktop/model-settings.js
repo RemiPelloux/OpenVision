@@ -171,6 +171,11 @@ export function mountModels(container, bridge) {
       provider.models.map(item => item === model ? { ...item, enabled: toggle.checked } : item)));
     const title = element('div', '', 'openvision-model-title');
     title.append(element('span', model.name), element('small', model.id));
+    if (model.discoveryStatus === 'unlisted') {
+      const availability = element('small', 'Not in latest catalog', 'openvision-model-availability');
+      availability.title = 'This saved model is still selectable. The provider did not list it in its latest discovery response.';
+      title.append(availability);
+    }
     row.append(toggle, title, button(`Edit ${model.name}`, () => modelDialog(provider, model), 'edit'),
       button(`Remove ${model.name}`, () => run(() => providers.updateModels(provider.id,
         provider.models.filter(item => item !== model))), 'remove'));

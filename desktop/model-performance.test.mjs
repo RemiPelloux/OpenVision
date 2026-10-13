@@ -79,7 +79,9 @@ test('batch discovery bounds active requests, coalesces callers and persists/pub
   await first;
   assert.equal(requests, 8); assert.equal(peak, 3);
   assert.equal(f.counts.writes, 1); assert.equal(f.counts.publications, 1); assert.equal(f.counts.secrets, 8);
-  assert.equal(activeModelIds(f.bridge.storage).length, 8);
+  assert.equal(activeModelIds(f.bridge.storage).length, 16, 'Discovery retains the eight saved IDs alongside new entries');
+  assert.equal(f.providers.state.providers.flatMap(provider => provider.models)
+    .filter(model => model.discoveryStatus === 'unlisted').length, 8);
   await f.providers.discoverMissingCapabilities();
   assert.equal(requests, 8); assert.equal(f.counts.writes, 1);
 });
@@ -114,7 +116,8 @@ test('concurrent explicit discovery shares work and rejects stale provider respo
   await f.providers.save({ id: 'p', name: 'Moved', url: 'https://moved.test/v1' });
   changed.resolve({ data: [{ id: 'stale' }] });
   await assert.rejects(stale, /changed during discovery/);
-  assert.deepEqual(allCatalog(f.bridge.storage).map(m => m.name), ['new']);
+  assert.deepEqual(allCatalog(f.bridge.storage).map(m => m.name), ['new', 'p']);
+  assert.equal(f.providers.get('p').models[1].discoveryStatus, 'unlisted');
 });
 
 test('provider replacement during secret lookup cannot dispatch to the old endpoint', async () => {

@@ -196,10 +196,11 @@ export class ModelProviders {
     provider.models = discovered.map(model => {
       const previous = old.get(model.id);
       return previous ? { ...previous, ...model, enabled: previous.enabled,
-        name: previous.name || model.name, manual: previous.manual } : model;
+        name: previous.name || model.name, manual: previous.manual, discoveryStatus: 'listed' }
+        : { ...model, discoveryStatus: 'listed' };
     });
     for (const model of old.values())
-      if (model.manual && !found.has(model.id)) provider.models.push(model);
+      if (!found.has(model.id)) provider.models.push({ ...model, discoveryStatus: 'unlisted' });
     provider.capabilitiesDiscovered = true;
   }
   discoverMissingCapabilities() {
