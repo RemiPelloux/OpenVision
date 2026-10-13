@@ -202,6 +202,12 @@ The recovery boundary and native coverage are recorded in
 representations are editable and which native or hosted pieces remain unknown.
 The [feature gap audit](docs/feature-gap-audit.md) gives measured recovery
 percentages and the remaining work for each major feature.
+The [completion sprint ledger](docs/completion-sprints.md) organizes that work
+into 10 sprints with user stories, dependencies and acceptance evidence.
+The [autocomplete investigation](docs/rea-autocomplete-contract.md) records the
+latest protocol findings and cancellation fixes.
+The [MCP investigation](docs/rea-mcp-contract.md) records the recovered
+transport routing and the remaining local server lifecycle checks.
 
 ## Verify
 

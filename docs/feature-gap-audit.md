@@ -9,6 +9,13 @@ replaces cloud-backed user-rule persistence and fixes discarded subagent model
 parameters. The measurements below remain the original recovery snapshot;
 native decompilation coverage has not increased in that follow-up.
 
+Execution planning now lives in the [completion sprint ledger](completion-sprints.md).
+The [autocomplete follow-up](rea-autocomplete-contract.md) documents the next REA
+scope and guarded request/response cancellation boundaries. These changes do not
+alter the native recovery denominator or establish a working Tab backend.
+The [MCP follow-up](rea-mcp-contract.md) records the recovered transport map and
+does not treat hosted account or cloud-agent RPCs as required local features.
+
 ## Where the product stands
 
 **OpenVision is runnable on the verified Windows setup, but it is not a fully

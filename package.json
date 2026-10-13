@@ -12,7 +12,7 @@
     "import:settings": "node desktop/import-cli.mjs",
     "check:desktop": "node desktop/check.mjs",
     "test:portable": "node --test desktop/platform.test.mjs desktop/native-identity.test.mjs desktop/native-assets.test.mjs desktop/source-assembly.test.mjs desktop/cursor-import.test.mjs desktop/branding.test.mjs",
-    "test:desktop": "node --test desktop/local-workbench.test.mjs desktop/model-providers.test.mjs desktop/model-picker.test.mjs desktop/reasoning-transport.test.mjs desktop/build-cache.test.mjs desktop/import-preview.test.mjs desktop/extension-integrity.test.mjs desktop/agent-runtime.test.mjs desktop/context-customization.test.mjs desktop/stream-customization.test.mjs desktop/import-replacement.test.mjs desktop/local-rules.test.mjs desktop/subagent-model-customization.test.mjs",
+    "test:desktop": "node --test desktop/local-workbench.test.mjs desktop/model-providers.test.mjs desktop/model-picker.test.mjs desktop/reasoning-transport.test.mjs desktop/build-cache.test.mjs desktop/import-preview.test.mjs desktop/extension-integrity.test.mjs desktop/agent-runtime.test.mjs desktop/context-customization.test.mjs desktop/stream-customization.test.mjs desktop/import-replacement.test.mjs desktop/local-rules.test.mjs desktop/subagent-model-customization.test.mjs desktop/completion-cancellation.test.mjs",
     "verify:desktop": "node desktop/verify.mjs",
     "verify:local-rules": "node desktop/verify-local-rules.mjs",
     "control-plane": "node src/server.mjs",
