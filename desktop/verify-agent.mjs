@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { release } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { localSettings } from './import-json.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
+import { fileHash } from './import-files.mjs';
+import { createAgentEditFixture } from './verify-agent-edits.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -17,7 +21,14 @@ await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...localSettings,
   'git.openRepositoryInParentFolders': 'never' }));
 const file = join(project, 'hello.js');
-await writeFile(file, 'export const answer = 42;\n');
+const edits = await createAgentEditFixture({ directory, project });
+const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+  platform: process.platform, arch: process.arch, osRelease: release(), node: process.version,
+  hashes: Object.fromEntries(await Promise.all([
+    ['host', layout.executable], ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
+    ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
+  ].map(async ([name, path]) => [name, { path, sha256: await fileHash(path) }]))) };
+await writeFile(join(directory, 'identity.json'), JSON.stringify(identity, null, 2));
 const requests = [], errors = [], canceled = Promise.withResolvers(), entered = Promise.withResolvers();
 let phase = 'reply';
 let readToolObserved = false;
@@ -29,14 +40,21 @@ const server = createServer(async (request, response) => {
   if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end(); }
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
   const payload = JSON.parse(Buffer.concat(chunks));
+  if (!requests.length) await writeFile(join(directory, 'tool-schemas.json'), JSON.stringify(payload.tools, null, 2));
   requests.push({ phase, model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
     stream: payload.stream, messageCount: payload.messages?.length, tools: payload.tools?.map(tool => tool.function?.name),
+    resumedHistory: phase === 'resume' ? payload.messages?.some(message => message.role === 'user' &&
+      JSON.stringify(message.content).includes('Preserve unrelated.txt.')) : undefined,
     auxiliaryPrompt: payload.tools?.length ? undefined : payload.messages });
   response.writeHead(200, { 'Content-Type': 'text/event-stream' });
   const event = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({
     id: 'fixture-response', object: 'chat.completion.chunk', model: payload.model,
     choices: [{ index: 0, delta, finish_reason }],
   })}\n\n`);
+  if (phase === 'edit') {
+    edits.respond(payload, event);
+    response.end('data: [DONE]\n\n'); return;
+  }
   if (phase === 'read') {
     const toolResult = payload.messages?.findLast(message => message.role === 'tool');
     if (toolResult) {
@@ -53,7 +71,8 @@ const server = createServer(async (request, response) => {
     }
     response.end('data: [DONE]\n\n'); return;
   }
-  event({ role: 'assistant', content: phase === 'reply' ? 'OpenVision isolated stream verified.' : 'OpenVision cancellation pending.' });
+  event({ role: 'assistant', content: phase === 'reply' ? 'OpenVision isolated stream verified.' :
+    phase === 'resume' ? 'OpenVision restored conversation verified.' : 'OpenVision cancellation pending.' });
   if (phase === 'slow') {
     response.on('close', () => canceled.resolve());
     entered.resolve(); return;
@@ -61,19 +80,35 @@ const server = createServer(async (request, response) => {
   event({}, 'stop'); response.end('data: [DONE]\n\n');
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-let app;
-try {
+let app, page;
+const ownedHostExits = [];
+const result = { checkedAt: new Date().toISOString(), identity, platform: process.platform, requests, errors, success: false };
+async function closeOwnedApp() {
+  if (!app) return;
+  const child = app.process(), window = app.windows()[0];
+  const closing = app.close();
+  // Only this verifier's disposable app can be closed here.
+  await window?.getByText('Quit Anyway', { exact: true }).click({ timeout: 5000 }).catch(() => {});
+  await closing;
+  assert.ok(child.exitCode !== null || child.signalCode !== null, 'Owned Electron host must terminate');
+  ownedHostExits.push({ pid: child.pid, exitCode: child.exitCode, signalCode: child.signalCode });
+  app = undefined;
+}
+async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'),
       '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
       '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, file] });
-  const page = await app.firstWindow();
+  page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
   await page.waitForTimeout(8000);
+}
+try {
+  await launch();
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
   const settings = page.locator('.openvision-model-settings');
@@ -88,7 +123,7 @@ try {
   await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
   await page.getByText('fixture-agent', { exact: true }).last().click();
   await page.keyboard.press('Escape');
-  const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  let input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   await input.fill('Reply with OpenVision isolated stream verified. Do not use tools.');
   await input.press('Enter');
   await page.getByText('OpenVision isolated stream verified.', { exact: true }).first().waitFor({ timeout: 45000 });
@@ -98,6 +133,9 @@ try {
   await input.fill('Read hello.js and report its contents. Do not modify files.'); await input.press('Enter');
   await page.getByText('OpenVision file read verified.', { exact: true }).first().waitFor({ timeout: 30000 });
   assert.equal(readToolObserved, true, 'Agent must return the actual fixture file through its tool continuation');
+  for (const action of ['Undo All', 'Keep All']) {
+    phase = 'edit'; await edits.verifyReview(page, action);
+  }
   phase = 'slow';
   await input.fill('Reply slowly. Do not use tools.'); await input.press('Enter');
   await Promise.race([entered.promise, new Promise((_, reject) => {
@@ -112,17 +150,29 @@ try {
     const timer = setTimeout(() => reject(new Error('Upstream request was not canceled')), 10000); timer.unref();
   })]);
   const cancellationMs = Math.round(performance.now() - started);
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  await closeOwnedApp();
+  await launch();
+  await page.getByText('OpenVision multi-file edits 2 ready for review.', { exact: true }).first().waitFor();
+  await edits.assertKeptFiles();
+  phase = 'resume';
+  input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  await input.fill('Continue the restored conversation with a short confirmation.'); await input.press('Enter');
+  await page.getByText('OpenVision restored conversation verified.', { exact: true }).first().waitFor({ timeout: 30000 });
+  assert.equal(requests.filter(request => request.phase === 'resume').length, 1);
+  assert.equal(requests.at(-1).resumedHistory, true, 'Continued request must retain prior user context after process restart');
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
   assert.deepEqual(errors, []);
   await page.screenshot({ path: join(directory, 'agent.png') });
-  const result = { checkedAt: new Date().toISOString(), platform: process.platform, requests, errors,
+  Object.assign(result, { success: true,
     authenticatedNativeStream: true, singleAgentSubmitRequest: true, noAuxiliaryTitleRequest: true,
     nativeReadToolContinuation: readToolObserved,
+    nativeMultiFileEdits: true, rejectAllRestoresFiles: true, keepAllPreservesEdits: true, unrelatedFilePreserved: true,
+    conversationRestartResume: true, keptEditsSurviveRestart: true,
     upstreamCancellation: true, cancellationMs,
-    scope: 'Fresh profile and controlled HTTP fixture. External providers, edit/command tools, branch/reload remain unverified.' };
-  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
-  console.log(JSON.stringify({ ...result, directory }, null, 2));
+    scope: 'Fresh Windows profile and controlled HTTP fixture. External providers, command tools, branching, descendant process cleanup and other platforms remain unverified.' });
 } catch (error) {
+  result.failure = error.stack;
   const page = app?.windows()[0];
   if (page) {
     await page.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
@@ -131,12 +181,14 @@ try {
   await writeFile(join(directory, 'requests.json'), JSON.stringify({ requests, errors }, null, 2));
   console.error('Agent verification evidence:', directory); throw error;
 } finally {
-  server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
-  if (app) {
-    const page = app.windows()[0];
-    const closing = app.close();
-    // Only this verifier's disposable app can be closed here.
-    await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 5000 }).catch(() => {});
-    await closing;
+  try {
+    server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+    await closeOwnedApp();
+  } catch (error) {
+    result.success = false; result.cleanupFailure = error.stack; throw error;
+  } finally {
+    result.ownedHostExits = ownedHostExits;
+    await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
+    console.log(JSON.stringify({ ...result, directory }, null, 2));
   }
 }

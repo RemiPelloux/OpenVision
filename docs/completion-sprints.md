@@ -107,9 +107,14 @@ visible and block that provider's support claim. Establish performance baselines
 now, then repeat them only for changes or unresolved regressions.
 
 13 October Windows fixture: [native Agent evidence](rea-agent-runtime.md) proves
-authenticated stream display, a real Read tool continuation and upstream Stop
-(164 ms in the final local run). Local titles eliminate the auxiliary naming
-request. External providers and the remaining OV-102/103 clauses are unverified.
+authenticated stream display, real Read and multi-file StrReplace continuations,
+confirmed rejection restoring both originals, keeping both changes and preserving
+an unrelated file. A full app restart retains the conversation, credentials and
+kept edits; a subsequent request includes prior user context. Upstream Stop takes
+152 ms in the final loopback run. Local titles eliminate the auxiliary naming
+request. OV-102/103 stay Partial: external providers, branching, command approval,
+running-tool cancellation and the other untested clauses remain gates. The
+42-story denominator is unchanged.
 
 ## Sprint 2 — Complete provider settings and model interaction
 
