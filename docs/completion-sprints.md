@@ -8,13 +8,21 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+The accepted **95% local feature verification** target uses the fixed 42-story
+baseline in [feature-acceptance.json](feature-acceptance.json). Run
+`npm run status:features` for the current counts. At least **40 of 42** stories
+must be fully Verified; Partial receives no credit. This measures acceptance
+stories, not recovered source, working code, effort or original-product parity.
+The script rejects added, removed or duplicate IDs until the baseline is reviewed.
+Platform and independent-build gates remain required.
+
 | Area | Established evidence | Remaining gate |
 | --- | --- | --- |
 | Desktop and local identity | Windows editor, OpenVision branding and local profile observed | Clean preparation, all windows/dialogs and session restoration |
 | Providers and models | Custom URL/key, discovery, manual IDs and fixture inference; grouped selector and reasoning transport implemented | Real-provider streams, tools, reasoning capabilities and full picker interaction |
 | Local user rules | Native Windows create/edit/delete and persistence across process restart verified | Live Agent consumption and comprehensive profile isolation |
 | Subagent reasoning | Recovered selection callback now retains explicit/saved parameters in both workbench variants; boundary tests pass | Live subagent request and provider acceptance |
-| Last local validation | 52 desktop tests; 23 portable tests with one macOS-only skip; syntax/build and native rules UI checks passed | These results do not cover every story below |
+| Last local validation | Desktop, completion/profile and telemetry checks pass; syntax/build, bounded 10,000-model UI and native autocomplete/project/Agent fixtures pass | [Agent evidence](rea-agent-runtime.md), [project evidence](rea-project-workflows.md), [autocomplete evidence](rea-custom-autocomplete.md); these do not cover every story below |
 | Native recovery | PE metadata for 52/52 files; pseudocode for 1/52 files and its 626 identified procedures | 51/52 files lack pseudocode; native source rebuild unproven |
 | WASM recovery | 15/15 distinct payloads decoded to WAT; complete REA records for 10/15 | Five complete records and independently buildable source/binding verification |
 | Platform coverage | Windows native checks; portable preparation fixtures | Real macOS/Linux launch and workflow evidence |
@@ -98,6 +106,11 @@ Sprint exit: core loop evidence exists per supported provider; failures remain
 visible and block that provider's support claim. Establish performance baselines
 now, then repeat them only for changes or unresolved regressions.
 
+13 October Windows fixture: [native Agent evidence](rea-agent-runtime.md) proves
+authenticated stream display, a real Read tool continuation and upstream Stop
+(164 ms in the final local run). Local titles eliminate the auxiliary naming
+request. External providers and the remaining OV-102/103 clauses are unverified.
+
 ## Sprint 2 — Complete provider settings and model interaction
 
 Outcome: usable model selection with capabilities owned by the provider contract.
@@ -140,6 +153,11 @@ Outcome: complete everyday editor workflows with incremental filesystem behavior
 Sprint exit: publish the tested language/shell/debugger matrix and unresolved
 limits; a rendered editor or command declaration does not close a workflow.
 
+13 October Windows follow-up: [native project workflow evidence](rea-project-workflows.md)
+proves Unicode edit/save/undo/redo, search across two roots and a configured Node
+process task with the expected working directory/environment. OV-401–403 remain
+Partial; the untested clauses above remain release gates.
+
 ## Sprint 5 — Build local project intelligence
 
 Outcome: understood, incremental indexing and useful retrieval without hidden uploads.
@@ -161,8 +179,8 @@ Outcome: a tested completion contract, separate from chat model discovery.
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
 | OV-601 / Verified | As a maintainer, I can explain the completion request and result contracts. | REA StreamCpp client; OV-101 | [Autocomplete contract findings](rea-autocomplete-contract.md) records request context, streaming events, replacement ranges, prediction data, cancellation and required server behavior with source Evidence IDs. Recovered client facts remain separate from unverified server assumptions. |
-| OV-602 / Planned | As a developer, my configured completion backend offers useful suggestions. | OV-601; OV-201 | Implement/validate compatible adapter; test empty/partial/malformed results, unsupported backends and credential routing. Live fixture demonstrates suggestion generation; a Chat Completions URL alone is insufficient. |
-| OV-603 / Planned | As a developer, accepting a suggestion never corrupts my edits. | OV-602; OV-402 | Test whole/partial accept, multi-line ranges, Unicode, indentation, undo, cursor movement and typing during requests. Reject stale document versions; cancel superseded requests and measure actual upstream cancellation. |
+| OV-602 / Partial | As a developer, my configured completion backend offers useful suggestions. | OV-601; OV-201 | Custom Chat Completions adapter implemented; selected authenticated local HTTP fixture produces native Windows suggestions. See [implementation and limits](rea-custom-autocomplete.md). Remaining: complete empty/partial/malformed and unsupported-backend matrix, live provider compatibility and suggestion quality. |
+| OV-603 / Partial | As a developer, accepting a suggestion never corrupts my edits. | OV-602; OV-402 | Native Windows single/multiline Unicode Tab accept/save/undo verified; focused tests cover CRLF/Unicode, stale versions/cursors, cancellation and real HTTP abort. See [evidence](rea-custom-autocomplete.md). Remaining: native partial acceptance, typing during requests, measured cancellation/latency and platform matrix. |
 | OV-604 / Planned | As a developer, next-edit predictions are understandable and fast. | OV-603; OV-503 | Explicit supported prediction contract or documented release-scope decision. Verify navigation/range correctness and stale results; record first/subsequent suggestion latency and acceptance quality on fixed workloads. |
 
 Sprint exit: advertise only supported completion modes. Preserve the separate

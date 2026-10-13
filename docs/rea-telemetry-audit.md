@@ -67,6 +67,12 @@ that Chromium capture was the extension-control metadata endpoint
 `https://api2.cursor.sh/extensions-control`, which is not a telemetry submission.
 The check is not an offline-mode guarantee.
 
+The 13 October follow-up `logs/telemetry-verification-2BWaPL/result.json` repeated
+the 65-second Windows edit/idle check after the autocomplete and MCP changes:
+Sentry remained disabled with zero buffered events, crash uploads remained off,
+and the same sole extension-control URL appeared with no telemetry match. The
+process-tree and platform limits below still apply.
+
 Local application logs still contain onboarding, missing remote-tunnel setup,
 MCP authentication, browser-integration and shutdown diagnostics. The telemetry
 change preserves local diagnostics; a clean page-error list does not mean every

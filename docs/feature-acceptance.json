@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "targetPercent": 95,
+  "measure": "Fully verified acceptance stories from completion-sprints.md; no partial credit",
+  "excluded": ["Original accounts, signup and billing", "Hosted cloud agents", "Vendor telemetry collection"],
+  "requiredStoryIds": [
+    "OV-101", "OV-102", "OV-103", "OV-104", "OV-105",
+    "OV-201", "OV-202", "OV-203", "OV-204",
+    "OV-301", "OV-302", "OV-303", "OV-304",
+    "OV-401", "OV-402", "OV-403", "OV-404",
+    "OV-501", "OV-502", "OV-503", "OV-504",
+    "OV-601", "OV-602", "OV-603", "OV-604",
+    "OV-701", "OV-702", "OV-703", "OV-704",
+    "OV-801", "OV-802", "OV-803", "OV-804",
+    "OV-901", "OV-902", "OV-903", "OV-904",
+    "OV-1001", "OV-1002", "OV-1003", "OV-1004", "OV-1005"
+  ]
+}

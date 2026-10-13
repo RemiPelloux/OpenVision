@@ -7,6 +7,8 @@ const modules = new Map([
   ['/model-settings.js', 'model-settings.js'],
   ['/openvision-model-providers.js', 'model-providers.js'],
   ['/model-reasoning.js', 'model-reasoning.js'],
+  ['/openvision-completion-provider.js', 'completion-provider.js'],
+  ['/model-providers.js', 'model-providers.js'],
 ]);
 const server = createServer(async (request, response) => {
   const file = modules.get(request.url);
@@ -35,14 +37,27 @@ try {
     window.saved = state;
     const start = performance.now();
     mountModels(document.querySelector('main'), { storage: {
-      get: () => JSON.stringify(state),
-      store: (_key, value) => { window.saved = JSON.parse(value); }, flush: async () => {},
+      get: key => key === 'openvision.model-providers.v1' ? JSON.stringify(window.saved) : window.completionModel,
+      store: (key, value) => {
+        if (key === 'openvision.model-providers.v1') window.saved = JSON.parse(value);
+        else window.completionModel = value;
+      }, flush: async () => {},
     }, reactive: { setApplicationUserPersistentStorage() {}, manualSave() {} },
     ai: { modelConfigService: { setModelConfig() {} }, handleAvailableModelsChange() {} } });
     return performance.now() - start;
   });
   const rows = page.locator('.openvision-model-row');
   assert.equal(await rows.count(), 40);
+  const completion = page.getByRole('combobox', { name: 'Tab autocomplete model' });
+  const completionSearch = page.getByRole('searchbox', { name: 'Search autocomplete models' });
+  assert.equal(await completion.locator('option').count(), 41);
+  await completionSearch.fill('model-9876');
+  assert.equal(await completion.locator('option').count(), 2);
+  await completion.selectOption('model-9876');
+  assert.equal(await page.evaluate(() => window.completionModel), 'model-9876');
+  await completionSearch.fill('');
+  assert.equal(await completion.inputValue(), 'model-9876', 'Filtering preserves the selected model');
+  assert.equal(await completion.locator('option').count(), 42);
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   assert.equal(await rows.first().locator('small').innerText(), 'model-40');
   const search = page.getByRole('searchbox', { name: 'Search models' });
@@ -60,7 +75,8 @@ try {
   await page.getByRole('checkbox', { name: 'Enable Model 0', exact: true }).waitFor();
   assert.equal(await rows.count(), 40);
   assert.deepEqual(errors, []);
-  const result = { models: 10000, maximum_mounted_rows: 40, search_and_pagination: true,
+  const result = { models: 10000, maximum_mounted_rows: 40, maximum_autocomplete_options: 42,
+    autocomplete_search_selection_preserved: true, search_and_pagination: true,
     saved_all_models: true, mount_ms: mountMs, browser: browser.version(), checked_at: new Date().toISOString() };
   await mkdir(new URL('../logs/', import.meta.url), { recursive: true });
   await writeFile(new URL('../logs/model-list-verification.json', import.meta.url), JSON.stringify(result, null, 2));

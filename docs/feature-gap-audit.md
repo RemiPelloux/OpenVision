@@ -12,7 +12,10 @@ native decompilation coverage has not increased in that follow-up.
 Execution planning now lives in the [completion sprint ledger](completion-sprints.md).
 The [autocomplete follow-up](rea-autocomplete-contract.md) documents the next REA
 scope and guarded request/response cancellation boundaries. These changes do not
-alter the native recovery denominator or establish a working Tab backend.
+alter the native recovery denominator. The subsequent
+[custom autocomplete adapter](rea-custom-autocomplete.md) adds a working native
+Windows Tab path with a controlled local backend; live provider compatibility
+remains separate.
 The [MCP follow-up](rea-mcp-contract.md) records the recovered transport map and
 does not treat hosted account or cloud-agent RPCs as required local features.
 

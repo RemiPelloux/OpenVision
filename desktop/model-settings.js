@@ -1,4 +1,5 @@
 import { ModelProviders } from './openvision-model-providers.js';
+import { completionControl } from './openvision-completion-provider.js';
 
 const icons = { plus: 'plus', refresh: 'refresh-cw', edit: 'pencil', remove: 'trash-2' };
 const modelsPerPage = 40;
@@ -218,7 +219,7 @@ export function mountModels(container, bridge) {
     select.onchange = () => run(() => providers.activate(select.value || null));
     const toolbar = element('div', '', 'openvision-model-toolbar');
     toolbar.append(search, filter);
-    label.append(select); container.append(heading, label, status, toolbar, list);
+    label.append(select); container.append(heading, label, completionControl(document, bridge, providers), status, toolbar, list);
     container.dataset.busy = String(busy);
     renderProviders();
     if (busy) for (const control of container.querySelectorAll('button,input,select')) control.disabled = true;

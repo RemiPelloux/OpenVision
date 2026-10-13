@@ -58,6 +58,17 @@ hashes establish local-build consistency, not upstream vendor authenticity.
 
 ## Unfinished product work
 
+The [custom autocomplete adapter](rea-custom-autocomplete.md) now routes bounded
+nearby code to a selected provider and uses native Tab acceptance/undo, verified
+on Windows with a local HTTP fixture. [Global MCP configuration](rea-profile-isolation.md)
+now follows the OpenVision data directory. [Project workflow checks](rea-project-workflows.md)
+cover Unicode save/undo/redo, multi-root search and a configured native task.
+
+The agreed 95% local-feature target is tracked by `npm run status:features` against
+the fixed [42-story acceptance baseline](feature-acceptance.json). At least 40
+stories must be fully verified. Individual passing assertions and partial stories
+do not increase that score. This work does not change native decompilation totals.
+
 See the [feature gap audit](feature-gap-audit.md) for measured recovery
 percentages, feature-by-feature limitations, the native file checklist, and
 acceptance gates for an independently buildable OpenVision product.

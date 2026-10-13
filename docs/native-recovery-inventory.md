@@ -73,6 +73,49 @@ The separate inventory has 22 WASM file paths representing 15 distinct payloads.
 All 15 were validated and decoded to WAT; 10 have complete REA records.
 WAT decoding is not original-source recovery or proof of behavioral parity.
 
+The [13 October follow-up](rea-wasm-follow-up.md) rechecked all 15 original
+payload and WAT hashes, traced the two embedded HTTP-parser byte strings to
+their exact `.wasm` counterparts, and identified the missing build inputs.
+All five missing complete records were retried: four still hit REA's producer
+deadline and esbuild exceeds its input profile. Complete-record coverage
+therefore remains 10/15; the decoded-WAT coverage remains 15/15.
+
+## Native build provenance follow-up
+
+On 13 October, the nearest shipped `package.json` was inspected for all 30
+`.node` paths in the 52-PE inventory. These paths map to 25 distinct package
+name/version pairs. Twenty-five paths have a declared repository URL in their
+nearest manifest. None of the 30 nearest package directories contains
+`binding.gyp`; four contain a `src` directory, which alone does not establish
+the presence of native implementation source. These counts describe package
+metadata, not successful native rebuilds or confirmed binary ancestry.
+
+Priority dependencies for an independent build include:
+
+| Component | Shipped package/version | Remaining build question |
+| --- | --- | --- |
+| Terminal | `node-pty@1.1.0-beta42` | Match Electron ABI, platform toolchain, PTY implementations and bundled Windows console helpers |
+| Filesystem notifications | `@parcel/watcher@2.5.1-cursor` | Recover the downstream changes as well as the named upstream source |
+| Policy notifications | `@anysphere/policy-watcher@1.3.2-cursor.2` | Establish the downstream source delta and local policy contract |
+| Agent syntax parsing | `tree-sitter@0.21.1`, `tree-sitter-bash@0.21.0` | Recover exact native binding inputs and reconcile the two shipped Bash addon layouts |
+| Agent database | `better-sqlite3@12.11.1` | Pin the matching SQLite amalgamation, compile options and Node/Electron ABI |
+| Process inventory | `cursor-proclist@1.0.0` | Reconstruct native implementation behind the observed JavaScript exports and validate process/memory behavior |
+| Chunking and retrieval | `@anysphere/tree-chunk-napi@0.0.0`, `@anysphere/file-service@0.0.0` | Package versions do not identify source commits; native reconstruction or tested replacements remain required |
+
+The process-list wrapper exposes `cursor_proclist_scan_async` and
+`cursor_proclist_system_memory`. Its documented process tuples include PID,
+parent PID, name, extension ID, CPU time, memory, arguments, owner agent ID and
+request ID. Its memory wrapper documents a native result on macOS and fallback
+elsewhere. These are shipped wrapper observations, not native runtime tests.
+They supply an acceptance contract for a future replacement; the existing
+626-procedure pseudocode result does not itself satisfy that contract.
+
+Full local package paths and SHA-256 identities are in ignored
+`build/wasm-follow-up/native-provenance.json`; its report digest is recorded in
+the WASM follow-up. The native reconstruction count is unchanged: one addon
+has pseudocode results, and zero of the 52 listed PE files has an established
+independent source rebuild in this recovery pass.
+
 ## Source identity
 
 Source: local recovery `native/inventory.json` (ignored evidence, not shipped

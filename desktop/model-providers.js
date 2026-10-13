@@ -231,10 +231,16 @@ function stateCatalog(state) {
     .filter(model => !seen.has(model.name) && seen.add(model.name));
 }
 
-export async function requestProvider(storage, secrets, modelId) {
+export function requestProviderRoute(storage, modelId) {
   if (typeof modelId !== 'string' || !modelId) return undefined;
   const state = readState(storage.get(storageKey, -1));
   const provider = state.providers.find(provider => provider.models.some(model => model.enabled && model.id === modelId));
   if (!provider) return undefined;
-  return { baseUrl: provider.url, apiKey: await secrets.get(secretKey(provider.id)) ?? '' };
+  return { providerId: provider.id, baseUrl: provider.url };
+}
+
+export async function requestProvider(storage, secrets, modelId) {
+  const route = requestProviderRoute(storage, modelId);
+  if (!route) return undefined;
+  return { baseUrl: route.baseUrl, apiKey: await secrets.get(secretKey(route.providerId)) ?? '' };
 }

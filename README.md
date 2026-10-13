@@ -137,8 +137,21 @@ preferences through the same model-capability validator.
 API keys use local workbench secret storage. They are excluded from provider
 metadata, this README, and Git. The repository does not ship an API key. Model
 listing alone does not establish image input, reasoning, tool use, or every
-Agent capability. Tab autocomplete has a separate protocol and is not verified
-by a successful chat request.
+Agent capability.
+
+For code suggestions, select **Tab autocomplete model** in Models settings.
+It starts **Off**. Choose a fast enabled model supporting Chat Completions; nearby
+code is sent to that model's saved URL using its saved key. Press **Tab** to accept
+a suggestion and use normal **Undo** to revert it. This supports code insertions;
+predictive jumps are not implemented. Native Windows acceptance/undo is verified
+with a local endpoint; external-provider compatibility remains unverified.
+See [autocomplete details and checks](docs/rea-custom-autocomplete.md).
+
+Chat titles are generated locally from the first message, saving a separate AI
+request. User subagents and global MCP configuration live inside OpenVision's
+data directory (`data/local/User/agents` and `data/local/User/mcp.json` with the
+standard launcher). Skills/plugins have additional roots still under review;
+see [customization scope](docs/rea-subagent-isolation.md).
 
 ## Projects And Execution
 
