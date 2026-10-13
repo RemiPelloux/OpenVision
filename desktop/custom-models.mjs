@@ -3,6 +3,7 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { localModelPicker } from './model-picker.mjs';
 import { readableModelMenu } from './model-picker-layout.mjs';
+import { strictModelSelection } from './model-selection-customization.mjs';
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
@@ -33,6 +34,7 @@ function localModelSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  text = strictModelSelection(text, variant);
   text = text.replace('import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
   text = completeSelectionMigration(text, variant);
   text = savedReasoningPreferences(text, variant);

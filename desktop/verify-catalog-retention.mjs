@@ -148,6 +148,8 @@ try {
   assert.equal(await provider().getByText('Not in latest catalog', { exact: true }).count(), 2);
   await provider().getByRole('checkbox', { name: 'Enable My Alpha', exact: true }).waitFor();
   await infer('replacement'); result.replacedKeyUsed = true;
+  await closeApp(); await launch(); await settings();
+  await infer('replacement-restart'); result.replacedKeySurvivesRestart = true;
   await settings();
   await provider().getByRole('button', { name: 'Remove gamma', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('.openvision-model-settings')?.dataset.busy === 'false');

@@ -6,6 +6,30 @@ establish direct API behavior for specific synthetic requests. Separate native
 Windows Agent checks below exercise selection, rendering and Read continuation.
 Neither set establishes history, branching, subagents or complete model support.
 
+## Latest recheck after provider selection changes
+
+These results supersede any blanket success interpretation of the older runs.
+All inference below reached the real saved Codex Easy URL with its saved key.
+No saved provider settings were changed.
+
+| Local run suffix | Result |
+| --- | --- |
+| Direct `7uPiBv` | All three live catalogs HTTP 200. GPT 6.1 Sol and DeepSeek V4 Flash passed the plain SSE exact-reply test with effort omitted. Grok 4.7 returned HTTP 200 and a complete stream but refused the requested phrase; its semantic check failed. |
+| Native `Ry9gep` | GPT 6.1 Sol, Provider default: native Read and visible file-token answer passed; two HTTP 200 requests, 4,593 ms and 5,411 ms. |
+| Native `PyU9tO` | DeepSeek V4 Flash, Provider default: initial native Agent request failed with HTTP 400 / `upstream_error`, 1,344 ms. No Read continuation occurred. This contradicts the earlier success as a reliable compatibility claim; cause unresolved. |
+| Native `iGrWN2` | Grok 4.7, Provider default: actual Read continuation and visible file-token answer passed; three HTTP 200 requests, 5,179 ms, 3,901 ms and 6,001 ms. |
+| Native `vF10zV` | GPT 6.1 Sol, High: native Read and visible file-token answer passed; both requests carried `reasoning_effort: high`, HTTP 200, 6,178 ms and 4,358 ms. |
+
+Direct records are `logs/live-provider-verification-<suffix>/result.json`;
+native records are `logs/live-agent-verification-<suffix>/result.json`.
+All five owned test hosts exited 0. The native workbench digest was
+`abd2eda32dbb4f68e60c93baa86850a264826a2d2418a735549588894c171962`.
+The native verifier now uses the provider-scoped model row and native Reasoning
+submenu; wire-effort assertions remain mandatory. Native runs still use the
+unchanged-body relay described below, with a simulated catalog only.
+The separate lifecycle tests use simulated inference and must not be counted as
+additional live-model successes.
+
 ## Observed matrix
 
 All three `/models` requests returned HTTP 200. Their catalogs contained 11 GPT/

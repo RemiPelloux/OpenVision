@@ -80,3 +80,6 @@ scan the catalog, and bulk compatibility maps iterate saved preferences only.
 All 23 affected model tests and the native menu/upgrade workflow passed again
 after this refinement. A bounded scan of the routing fixture application logs
 found neither fixture transport key.
+The later [native selection lifecycle](provider-selection-lifecycle.md) found
+and fixed an upstream silent fallback when disabling the selected model. That
+report supersedes the disabled/deleted scope of these earlier boundary tests.

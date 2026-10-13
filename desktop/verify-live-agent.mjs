@@ -75,7 +75,17 @@ try {
   await page.keyboard.press('ControlOrMeta+w');
   await page.keyboard.press('ControlOrMeta+Shift+l');
   await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
-  await page.getByText(`${model} · ${reasoning === 'default' ? 'Provider default' : 'High'}`, { exact: true }).last().click(); await page.keyboard.press('Escape');
+  const menu = page.getByTestId('model-picker-menu').filter({ visible: true });
+  const row = menu.locator('[data-model-picker-item-name]').filter({ hasText: model });
+  assert.equal(await row.count(), 1, 'Select the unique saved probe model');
+  await row.click(); await page.keyboard.press('Escape');
+  if (reasoning !== 'default') {
+    await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
+    await row.hover();
+    await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
+    await page.getByText('High', { exact: true }).filter({ visible: true }).last().click();
+    await page.keyboard.press('Escape');
+  }
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   await input.fill('Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
   await input.press('Enter');
