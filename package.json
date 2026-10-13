@@ -32,6 +32,8 @@
     "test:agent-relay": "node --test desktop/live-agent-relay.test.mjs",
     "verify:project": "node desktop/verify-project.mjs",
     "verify:agent": "node desktop/verify-agent.mjs",
+    "benchmark:native": "node desktop/verify-agent.mjs --baseline",
+    "test:native-baseline": "node --test desktop/native-baseline.test.mjs",
     "smoke": "node test/smoke.mjs",
     "benchmark:models": "node --expose-gc desktop/benchmark-models.mjs",
     "benchmark:context": "node --expose-gc desktop/benchmark-context.mjs"

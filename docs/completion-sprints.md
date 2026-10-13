@@ -98,7 +98,7 @@ the first execution priority; source inspection alone cannot close these stories
 
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
-| OV-101 / Planned | As a maintainer, I can see exactly what the release claims. | Current audit | Pin feature/provider/platform/architecture matrices, fixtures and original input digest; record exclusions and unknowns. Capture startup, idle memory, request counts and cancellation baselines with reproducible workloads. |
+| OV-101 / Verified | As a maintainer, I can see exactly what the release claims. | Current audit | Pin feature/provider/platform/architecture matrices, fixtures and original input digest; record exclusions and unknowns. Capture startup, idle memory, request counts and cancellation baselines with reproducible workloads. |
 | OV-102 / Partial | As a developer, I can chat with my configured model reliably. | OV-101; provider routing | Live GPT, DeepSeek and Grok through configured endpoints: stream, retry, timeout, stop, reload history and branch conversation. Record actual model/request identity and sanitized results; no duplicate submit after retry. |
 | OV-103 / Partial | As a developer, I can ask Agent to change a project and control the result. | OV-102 | Disposable project: read/search, propose multi-file edits, apply/reject/undo, approve/deny a command, cancel a running tool, restart and resume. Verify expected diff, unchanged unrelated files and owned process cleanup. |
 | OV-104 / Partial | As a developer, my subagent uses my chosen model and reasoning. | OV-102; delivered parameter fix | Test explicit/saved/inherit/disabled choices in native UI; inspect outgoing parent/subagent requests and actual provider acceptance. Unsupported values fail clearly; retries and tool continuations retain valid settings. |
@@ -107,6 +107,18 @@ the first execution priority; source inspection alone cannot close these stories
 Sprint exit: core loop evidence exists per supported provider; failures remain
 visible and block that provider's support claim. Establish performance baselines
 now, then repeat them only for changes or unresolved regressions.
+
+13 October OV-101 follow-up (owner: OpenVision): [release claims](release-claims.md)
+pins the feature/provider/platform/architecture matrices, fixtures and exclusions;
+[native baseline](native-performance-baseline.md) records the measurement scope.
+The original executable matched
+its retained inventory digest; original manifests and all fixture/runtime inputs
+are pinned in `logs/agent-verification-FkFzEi/result.json`. The native Windows
+fixture passed and recorded fresh/restart startup, eight memory samples, 16
+expected inference requests, zero auxiliary title requests, stream Stop 65 ms and
+command Stop 164 ms. Both owned hosts exited 0. Every OV-101 baseline clause is
+now evidenced in the linked matrices/report; no other story is promoted by those
+measurements. The denominator remains 42; fully Verified stories increase to 3.
 
 13 October Windows fixture: [native Agent evidence](rea-agent-runtime.md) proves
 authenticated stream display, real Read and multi-file StrReplace continuations,

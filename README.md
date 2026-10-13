@@ -194,6 +194,10 @@ migration, verification and remaining limits.
 
 The [live provider matrix](docs/live-provider-compatibility.md) records tested
 GPT/Grok tool roundtrips, native Read checks, and remaining reasoning failures.
+The [release claims](docs/release-claims.md) distinguish tested workflows from
+open release gates. The [native performance baseline](docs/native-performance-baseline.md)
+records startup, process memory, request counts and cancellation; run
+`npm run benchmark:native` to repeat its disposable Windows fixture.
 For an opt-in check using a saved connection, run
 `npm run verify:providers:live -- --live --model gpt-6.1-sol`. This sends small
 synthetic requests and consumes provider quota; it does not send project files.

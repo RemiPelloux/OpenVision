@@ -12,9 +12,13 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { createAgentEditFixture } from './verify-agent-edits.mjs';
 import { createAgentCommandFixture } from './verify-agent-commands.mjs';
+import { memorySample, requestMeasurement, baselineIdentity } from './native-baseline.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { layout } = await loadRuntime(root);
+const { layout, manifest } = await loadRuntime(root);
+const measureBaseline = process.argv.includes('--baseline');
+if (measureBaseline) assert.equal(process.platform, 'win32', 'The process-memory baseline currently requires Windows');
+const baseline = measureBaseline ? { ...await baselineIdentity(manifest), launches: [], samples: [] } : undefined;
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/agent-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
@@ -48,9 +52,10 @@ const server = createServer(async (request, response) => {
   }
   if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end(); }
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
-  const payload = JSON.parse(Buffer.concat(chunks));
+  const body = Buffer.concat(chunks), payload = JSON.parse(body);
   if (!requests.length) await writeFile(join(directory, 'tool-schemas.json'), JSON.stringify(payload.tools, null, 2));
   requests.push({ phase, model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
+    ...(measureBaseline ? { measurement: requestMeasurement(body, payload) } : {}),
     stream: payload.stream, messageCount: payload.messages?.length, tools: payload.tools?.map(tool => tool.function?.name),
     resumedHistory: phase === 'resume' ? payload.messages?.some(message => message.role === 'user' &&
       JSON.stringify(message.content).includes('Preserve unrelated.txt.')) : undefined,
@@ -96,18 +101,25 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app, page;
 const ownedHostExits = [];
 const result = { checkedAt: new Date().toISOString(), identity, platform: process.platform, requests, errors, success: false };
+if (measureBaseline) result.baseline = baseline;
+async function sample(label) {
+  if (measureBaseline) result.baseline.samples.push(await memorySample(app, label));
+}
 async function closeOwnedApp() {
   if (!app) return;
   const child = app.process(), window = app.windows()[0];
+  const exited = new Promise(resolve => child.once('exit', resolve));
   const closing = app.close();
   // Only this verifier's disposable app can be closed here.
   await window?.getByText('Quit Anyway', { exact: true }).click({ timeout: 5000 }).catch(() => {});
   await closing;
+  if (child.exitCode === null && child.signalCode === null) await exited;
   assert.ok(child.exitCode !== null || child.signalCode !== null, 'Owned Electron host must terminate');
   ownedHostExits.push({ pid: child.pid, exitCode: child.exitCode, signalCode: child.signalCode });
   app = undefined;
 }
 async function launch() {
+  const started = performance.now();
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'),
@@ -118,10 +130,16 @@ async function launch() {
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  if (measureBaseline) result.baseline.launches.push({ kind: ownedHostExits.length ? 'same-profile restart' : 'fresh profile',
+    readyMs: Math.round(performance.now() - started), readyDefinition: 'Native local-profile titlebar visible; excludes the subsequent eight-second settle interval' });
   await page.waitForTimeout(8000);
 }
 try {
   await launch();
+  await sample('fresh-idle-after-eight-second-settle');
+  if (measureBaseline) {
+    await page.waitForTimeout(10000); await sample('fresh-idle-after-eighteen-second-settle');
+  }
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
   const settings = page.locator('.openvision-model-settings');
@@ -142,6 +160,7 @@ try {
   await page.getByText('OpenVision isolated stream verified.', { exact: true }).first().waitFor({ timeout: 45000 });
   assert.equal(requests.filter(request => request.tools?.length).length, 1, 'One submit must produce one Agent inference request');
   assert.equal(requests.length, 1, 'Local chat titles must not create an auxiliary inference request');
+  await sample('after-first-agent-reply');
   phase = 'read';
   await input.fill('Read hello.js and report its contents. Do not modify files.'); await input.press('Enter');
   await page.getByText('OpenVision file read verified.', { exact: true }).first().waitFor({ timeout: 30000 });
@@ -158,6 +177,7 @@ try {
     const timer = setTimeout(() => reject(new Error('Slow request not observed')), 30000); timer.unref();
   })]);
   await page.getByText('OpenVision cancellation pending.', { exact: true }).first().waitFor();
+  await sample('active-provider-stream-before-stop');
   await writeFile(join(directory, 'streaming-controls.json'), JSON.stringify(await page.locator('button,[role=button]').evaluateAll(
     elements => elements.map(element => ({ label: element.getAttribute('aria-label'), title: element.getAttribute('title'), text: element.textContent }))), null, 2));
   const started = performance.now();
@@ -167,8 +187,13 @@ try {
   })]);
   const cancellationMs = Math.round(performance.now() - started);
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  await sample('after-stop');
+  if (measureBaseline) {
+    await page.waitForTimeout(10000); await sample('after-stop-idle-ten-seconds');
+  }
   await closeOwnedApp();
   await launch();
+  await sample('restarted-idle-after-eight-second-settle');
   await page.getByText('OpenVision cancellation pending.', { exact: true }).first().waitFor();
   await edits.assertKeptFiles();
   phase = 'resume';
@@ -177,6 +202,7 @@ try {
   await page.getByText('OpenVision restored conversation verified.', { exact: true }).first().waitFor({ timeout: 30000 });
   assert.equal(requests.filter(request => request.phase === 'resume').length, 1);
   assert.equal(requests.at(-1).resumedHistory, true, 'Continued request must retain prior user context after process restart');
+  await sample('after-resumed-agent-reply');
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
   assert.deepEqual(errors, []);
   await page.screenshot({ path: join(directory, 'agent.png') });
