@@ -1,0 +1,47 @@
+/* Keep the native menu's selection, search, focus and parameter controls. */
+.ui-model-picker__menu:has(.openvision-provider-title) {
+  max-width: calc(100vw - 24px) !important;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 12px 36px #0005;
+}
+.openvision-provider-title {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .025em;
+}
+.ui-model-picker__menu:has(.openvision-provider-title) [data-component="menu-row"] {
+  min-height: 34px;
+  border-radius: 6px;
+}
+.ui-model-picker__menu:has(.openvision-provider-title) [data-model-picker-item-name] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+.ui-model-picker__menu:has(.openvision-provider-title) [data-model-picker-item-name] > :first-child {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.ui-model-picker__menu:has(.openvision-provider-title) [data-model-picker-item-name] > span {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 1;
+  color: var(--vscode-descriptionForeground);
+  border: 1px solid var(--vscode-widget-border, #ffffff20);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.ui-model-picker__menu:has(.openvision-provider-title) [data-component="menu-row"][data-focused="true"] {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}

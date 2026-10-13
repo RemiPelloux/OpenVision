@@ -2,6 +2,7 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { localModelPicker } from './model-picker.mjs';
+import { readableModelMenu } from './model-picker-layout.mjs';
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
@@ -32,6 +33,7 @@ function localModelSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  text = readableModelMenu(text, variant);
   text = localModelPicker(text, variant);
   text = startupCatalog(text, variant);
   if (text.includes(marker)) {
@@ -96,7 +98,7 @@ function startupCatalog(text, variant) {
 export async function installModelSettings(root) {
   const app = join(root, 'source/app');
   const workbench = join(app, 'out/vs/code/electron-sandbox/workbench');
-  for (const name of ['model-settings.js', 'model-settings.css', 'model-providers.js'])
+  for (const name of ['model-settings.js', 'model-settings.css', 'model-providers.js', 'model-picker.css'])
     await copyFile(join(root, 'desktop', name), join(workbench, `openvision-${name}`));
   await copyFile(join(root, 'desktop/model-http.mjs'), join(app, 'out/openvision-model-http.js'));
   await copyFile(join(root, 'desktop/model-providers.js'), join(app, 'out/openvision-model-providers.js'));
@@ -115,10 +117,12 @@ export async function installModelSettings(root) {
     await copyFile(join(root, `tooling/node_modules/lucide-static/icons/${name}.svg`), join(workbench, `openvision-${name}.svg`));
   const htmlPath = join(workbench, 'workbench.html');
   const html = await readFile(htmlPath, 'utf8');
-  if (!html.includes('openvision-model-settings.css')) {
+  const missingStyles = ['model-settings', 'model-picker'].filter(name => !html.includes(`openvision-${name}.css`));
+  if (missingStyles.length) {
     const backup = join(root, 'backups/custom-models/workbench.html');
     await mkdir(dirname(backup), { recursive: true });
     await copyFile(htmlPath, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
-    await writeFile(htmlPath, html.replace('</head>', '<link rel="stylesheet" href="./openvision-model-settings.css"></head>'));
+    await writeFile(htmlPath, html.replace('</head>', missingStyles.map(name =>
+      `<link rel="stylesheet" href="./openvision-${name}.css">`).join('') + '</head>'));
   }
 }

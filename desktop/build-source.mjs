@@ -23,6 +23,8 @@ import { installSubagentPathIsolation } from './subagent-paths.mjs';
 import { installLocalChatTitles } from './local-chat-title.mjs';
 import { installOwnedShellProcesses } from './agent-process-customization.mjs';
 import { installLazyMcpChannels } from './mcp-lazy-customization.mjs';
+import { installMcpAttemptCleanup } from './mcp-attempt-customization.mjs';
+import { installMcpCancellation } from './mcp-cancel-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -42,6 +44,8 @@ await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.exe
 await customizeBundles(root);
 await installProfilePathIsolation(root);
 await installLazyMcpChannels(root);
+await installMcpAttemptCleanup(root);
+await installMcpCancellation(root);
 await installSubagentPathIsolation(root);
 await installAgentRuntime(root);
 await installOwnedShellProcesses(root);

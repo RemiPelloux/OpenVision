@@ -33,7 +33,7 @@ async function customize(root, variant) {
 
 export async function customizeBundles(root) {
   const dependencies = ['desktop/bundle-customization.mjs', 'desktop/build-cache.mjs', 'desktop/import-files.mjs',
-    'desktop/local-workbench.mjs', 'desktop/cloud-features.mjs', 'desktop/custom-models.mjs', 'desktop/model-picker.mjs',
+    'desktop/local-workbench.mjs', 'desktop/cloud-features.mjs', 'desktop/custom-models.mjs', 'desktop/model-picker.mjs', 'desktop/model-picker-layout.mjs',
     'desktop/stream-customization.mjs',
     'desktop/provider-routing.mjs',
     'desktop/rules-customization.mjs', 'desktop/subagent-model-customization.mjs',

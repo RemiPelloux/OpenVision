@@ -300,6 +300,23 @@ Both stories remain Partial: native STDIO, OAuth, reconnect/timeout/failed clean
 multi-window behavior, idle disposal, long-session growth and other platforms
 still need evidence. The 42-story denominator and 3 Verified stories are unchanged.
 
+13 October 2026, OV-303/OV-1003 lifecycle follow-up (owner: OpenVision):
+[MCP transport ownership and cancellation](rea-mcp-lifecycle.md) fixes late
+transport attachment leaking abandoned STDIO children and propagates Stop across
+the shared-process IPC request to the SDK. Native HTTP and STDIO evidence covers
+approval/denial, real output, cancellation, continued calls and configured restart;
+STDIO shutdown verifies all fixture children exit. Reconnect failures, timeouts,
+OAuth, native failed cleanup, multi-window/remote behavior and platform/long-session
+gates remain open. Both stories remain Partial.
+
+13 October 2026, OV-202/OV-203 UI follow-up (owner: OpenVision):
+[native model menu](model-menu-verification.md) adds provider headings/counts and
+separates model names from reasoning badges. Windows fixture evidence covers
+search, keyboard selection, empty results and the reasoning submenu. This does
+not establish live-provider reasoning acceptance, accessibility completeness or
+bounded Agent-picker rendering at 10,000 models. Both stories remain Partial.
+No accepted story was removed or promoted; three of 42 remain fully Verified.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

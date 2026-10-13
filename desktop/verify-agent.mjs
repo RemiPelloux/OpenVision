@@ -29,7 +29,8 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });
 const commands = await createAgentCommandFixture({ directory, project });
-const mcp = process.argv.includes('--mcp') ? await createAgentMcpFixture({ directory, profile }) : undefined;
+const verifyMcp = process.argv.includes('--mcp') || process.argv.includes('--mcp-stdio');
+let mcp;
 const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   platform: process.platform, arch: process.arch, osRelease: release(), node: process.version,
   hashes: Object.fromEntries(await Promise.all([
@@ -37,8 +38,11 @@ const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: roo
     ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
     ['commandFixture', join(root, 'desktop/verify-agent-commands.mjs')],
     ['commandLifecycle', join(root, 'desktop/verify-command-lifecycle.mjs')],
-    ...(mcp ? [['mcpFixture', join(root, 'desktop/verify-agent-mcp.mjs')],
-      ['mcpServer', join(root, 'desktop/verify-mcp-server.mjs')]] : []),
+    ...(verifyMcp ? [['mcpFixture', join(root, 'desktop/verify-agent-mcp.mjs')],
+      ['mcpProcess', join(root, 'source/app/out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js')],
+      ['mcpExtension', join(root, 'source/app/extensions/cursor-mcp/dist/main.js')],
+      ['mcpServer', join(root, 'desktop/verify-mcp-server.mjs')], ['mcpProtocol', join(root, 'desktop/verify-mcp-protocol.mjs')],
+      ['mcpStdio', join(root, 'desktop/verify-mcp-stdio.mjs')], ['mcpStdioChild', join(root, 'desktop/verify-mcp-stdio-child.mjs')]] : []),
     ['agentExec', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
     ['ownedShell', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-owned-shell.cjs')],
@@ -109,7 +113,6 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app, page;
 const ownedHostExits = [];
 const result = { checkedAt: new Date().toISOString(), identity, platform: process.platform, requests, errors, success: false };
-if (mcp) result.mcp = mcp.results;
 if (measureBaseline) result.baseline = baseline;
 async function sample(label) {
   if (measureBaseline) result.baseline.samples.push(await memorySample(app, label));
@@ -144,6 +147,10 @@ async function launch() {
   await page.waitForTimeout(8000);
 }
 try {
+  if (verifyMcp) {
+    mcp = await createAgentMcpFixture({ directory, profile, stdio: process.argv.includes('--mcp-stdio') });
+    result.mcp = mcp.results;
+  }
   await launch();
   await sample('fresh-idle-after-eight-second-settle');
   if (measureBaseline) {
@@ -241,7 +248,8 @@ try {
   try {
     const failures = [];
     for (const cleanup of [async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); },
-      () => commands.dispose(), closeOwnedApp, ...(mcp ? [() => mcp.dispose()] : [])]) {
+      () => commands.dispose(), closeOwnedApp,
+      ...(mcp ? [() => mcp.verifyShutdown(), () => mcp.dispose()] : [])]) {
       try { await cleanup(); } catch (error) { failures.push(error); }
     }
     if (failures.length) throw new AggregateError(failures, 'Native Agent verification cleanup failed');

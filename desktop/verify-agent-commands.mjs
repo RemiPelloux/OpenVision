@@ -40,7 +40,10 @@ export async function createAgentCommandFixture({ directory, project }) {
       await writeFile(join(directory, `command-${mode}-controls.txt`), await page.locator('body').innerText());
       await page.screenshot({ path: join(directory, `command-${mode}.png`) });
       const action = mode === 'deny' ? 'Skip' : 'Run';
-      await page.getByText(action, { exact: true }).filter({ visible: true }).last().click();
+      const button = page.getByRole('button', { name: action, exact: true }).filter({ visible: true });
+      await writeFile(join(directory, `command-${mode}-accessibility.txt`), await page.locator('body').ariaSnapshot());
+      assert.equal(await button.count(), 1, 'Use the active command approval button');
+      await button.click();
       if (mode === 'slow') {
         const stop = await lifecycle.verifyStop(page);
         await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
