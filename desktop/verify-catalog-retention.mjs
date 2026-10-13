@@ -94,7 +94,7 @@ async function infer(label) {
   const trigger = page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first();
   await trigger.click();
   const menu = page.getByTestId('model-picker-menu').filter({ visible: true });
-  await menu.locator('[data-model-picker-item-name="gamma"]').click();
+  await menu.locator('[data-model-picker-item-name$=":gamma"]').click();
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   await input.fill(`Reply with Catalog ${label} verified. Do not use tools.`); await input.press('Enter');
   await page.getByText(`Catalog ${label} verified.`, { exact: true }).first().waitFor({ timeout: 45000 });

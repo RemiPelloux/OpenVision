@@ -4,6 +4,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 
 const modules = new Map([
+  ['/model-identity.js', 'model-identity.js'],
   ['/model-settings.js', 'model-settings.js'],
   ['/openvision-model-providers.js', 'model-providers.js'],
   ['/model-reasoning.js', 'model-reasoning.js'],
@@ -54,11 +55,11 @@ try {
   await completionSearch.fill('model-9876');
   await page.waitForFunction(() => document.querySelector('select[aria-label="Tab autocomplete model"]')?.options.length === 2);
   assert.equal(await completion.locator('option').count(), 2);
-  await completion.selectOption('model-9876');
-  assert.equal(await page.evaluate(() => window.completionModel), 'model-9876');
+  await completion.selectOption('openvision-model:fixture:model-9876');
+  assert.equal(await page.evaluate(() => window.completionModel), 'openvision-model:fixture:model-9876');
   await completionSearch.fill('');
   await page.waitForFunction(() => document.querySelector('select[aria-label="Tab autocomplete model"]')?.options.length === 42);
-  assert.equal(await completion.inputValue(), 'model-9876', 'Filtering preserves the selected model');
+  assert.equal(await completion.inputValue(), 'openvision-model:fixture:model-9876', 'Filtering preserves the selected model');
   assert.equal(await completion.locator('option').count(), 42);
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   assert.equal(await rows.first().locator('small').innerText(), 'model-40');

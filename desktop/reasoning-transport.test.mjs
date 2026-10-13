@@ -20,12 +20,12 @@ test('reasoning defaults are model-specific, endpoint-specific and subordinate t
 });
 
 test('provider credentials are resolved per request even before settings mount', async () => {
-  const input = 'class Service { async getLocalAgentProviderConfig(e, t) { return "old"; } async getLocalInferenceProviderConfig() { return "old"; } } const service = new Service();';
+  const input = 'class Service { async getLocalAgentProviderConfig(e, t) { return "old"; } async getLocalInferenceProviderConfig() { return "old"; } async runLocalAgentInExtensionHost(u) { return {baseUrl: u.baseUrl, apiKey: u.apiKey,}; } } const service = new Service();';
   const output = requestProviderRouting(input, 'desktop');
   assert.equal(requestProviderRouting(output, 'desktop'), output);
   const calls = [];
   const service = runInNewContext(output.replace(/^import .*;$/m, '') + '\nservice;', {
-    K6e: 'secret-storage', openvisionRequestProvider: async (_storage, _secret, id) => {
+    K6e: 'secret-storage', openvisionAgentProvider: async (_storage, _secret, id) => {
       calls.push(id);
       return { baseUrl: `https://${id}.example.test/v1`, apiKey: `${id}-key` };
     },
@@ -51,7 +51,7 @@ test('simultaneous models retain their own saved provider keys without global ac
   assert.equal(configs[2].apiKey, '', 'An empty provider key must never fall back to another provider');
   assert.equal(await requestProvider(storage, secrets, 'unknown'), undefined);
   providers[1].models[0].enabled = false;
-  assert.equal(await requestProvider(storage, secrets, 'deepseek'), undefined);
+  await assert.rejects(requestProvider(storage, secrets, 'deepseek'), /unavailable/);
 });
 
 async function recoveredBundle(kind) {

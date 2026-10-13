@@ -1,4 +1,5 @@
 import { fallbackReasoningValues, providerDefaultReasoning } from './model-reasoning.js';
+import { modelSelectionId, parseModelSelection } from './model-identity.js';
 const storageKey = 'openvision.model-providers.v1';
 const secretKey = id => `openvision.provider.${id}`;
 const routeSnapshots = new WeakMap();
@@ -72,6 +73,7 @@ function configuredReasoning(model, provider) {
 }
 
 function catalogModel(model, provider, namedModelSectionIndex) {
+  const selectionId = modelSelectionId(provider.id, model.id);
   const declared = modelReasoning(model);
   const efforts = declared ?? configuredReasoning(model, provider);
   const reasoning = efforts.length ? [{ id: providerDefaultReasoning, label: 'Provider default' }, ...efforts] : [];
@@ -79,13 +81,13 @@ function catalogModel(model, provider, namedModelSectionIndex) {
   const variants = reasoning.map(item => {
     const label = item.label ?? reasoningLabels[item.id] ?? item.id;
     return { parameterValues: [{ id: 'reasoning', value: item.value ?? item.id }], displayName: `${model.name} · ${label}`,
-      displayNameOutsidePicker: `${model.name} · ${label}`, isMaxMode: false,
+      displayNameOutsidePicker: item.id === providerDefaultReasoning ? model.name : `${model.name} · ${label}`, isMaxMode: false,
       isDefaultNonMaxConfig: item === defaultEffort, isDefaultMaxConfig: item === defaultEffort };
   });
   return {
     supportsThinking: reasoning.length > 0,
     parameterDefinitions: reasoning.length ? [reasoningParameter(reasoning)] : [], variants,
-    name: model.id, serverModelName: model.id,
+    name: selectionId, serverModelName: selectionId,
     clientDisplayName: provider.name ? `${provider.name} · ${model.name}` : model.name,
     inputboxShortModelName: model.name, defaultOn: true, supportsAgent: true,
     namedModelSectionIndex,
@@ -95,10 +97,6 @@ function catalogModel(model, provider, namedModelSectionIndex) {
     supportsImages: model.capabilities?.supportsVision ?? false,
     idAliases: [], legacySlugs: [], cloudAgentEffortModes: [], modelPickerBadges: [],
   };
-}
-
-export function catalog(models, provider = {}, namedModelSectionIndex = 0) {
-  return models.filter(model => model.enabled).map(model => catalogModel(model, provider, namedModelSectionIndex));
 }
 
 function readState(text) {
@@ -136,12 +134,13 @@ export class ModelProviders {
     const models = [];
     let count = 0, active;
     for (const { model, provider } of enabledEntries(this.state)) {
+      const selectionId = modelSelectionId(provider.id, model.id);
       const name = provider.name ? `${provider.name} · ${model.name}` : model.name;
       const matches = !query || `${model.id} ${name}`.toLowerCase().includes(query);
       if (matches) count++;
-      if (model.id !== selected && (!matches || models.length >= limit)) continue;
-      const row = { name: model.id, clientDisplayName: name, providerId: provider.id, tagline: provider.name };
-      if (model.id === selected) active = row;
+      if (selectionId !== selected && (!matches || models.length >= limit)) continue;
+      const row = { name: selectionId, clientDisplayName: name, providerId: provider.id, tagline: provider.name };
+      if (selectionId === selected) active = row;
       if (matches && models.length < limit) models.push(row);
     }
     if (active && !models.includes(active)) models.unshift(active);
@@ -253,17 +252,24 @@ export class ModelProviders {
     set('localProviderAgentModelIds', models.map(model => model.name));
     const selected = this.bridge.ai.modelConfigService.getModelConfig?.('composer');
     if (!models.some(model => model.name === selected?.modelName)) {
-      const modelName = models[0]?.name ?? 'default';
-      this.bridge.ai.modelConfigService.setModelConfig('composer', {
-        modelName, selectedModels: [{ modelId: modelName, parameters: [] }], maxMode: false,
-      });
+      const snapshot = routingSnapshot(this.bridge.storage);
+      const legacy = snapshot.routes.get(snapshot.aliases.get(selected?.modelName));
+      if (legacy || !selected?.modelName || selected.modelName === 'default') {
+        const modelName = legacy?.selectionId ?? models[0]?.name ?? 'default';
+        this.bridge.ai.modelConfigService.setModelConfig('composer', {
+          ...selected, modelName, selectedModels: [{ modelId: modelName,
+            parameters: legacy ? selected?.selectedModels?.[0]?.parameters ?? [] : [] }], maxMode: selected?.maxMode ?? false,
+        });
+      }
     }
     this.bridge.ai.handleAvailableModelsChange();
     this.bridge.reactive.manualSave();
   }
   async remove(id) {
     this.state.providers = this.state.providers.filter(item => item.id !== id);
-    if (this.state.activeId === id) await this.activate(null);
+    if (this.state.activeId === id) this.state.activeId = null;
+    await this.persist();
+    if (!this.state.activeId) await this.activate(null);
     else this.publishModels();
     await this.persist();
     await this.bridge.secrets.delete(secretKey(id));
@@ -271,23 +277,46 @@ export class ModelProviders {
 }
 
 export function activeModelIds(storage) {
-  return [...routingSnapshot(storage).keys()];
+  return [...routingSnapshot(storage).routes.keys()];
 }
 
 export function allCatalog(storage) {
   return stateCatalog(readState(storage.get(storageKey, -1)));
 }
 
+export function modelPreference(storage, preferences, id) {
+  if (preferences[id]) return preferences[id];
+  const selected = parseModelSelection(id);
+  if (!selected || !preferences[selected.modelId]) return undefined;
+  const snapshot = routingSnapshot(storage);
+  if (snapshot.aliases.get(selected.modelId) !== id || !snapshot.routes.has(id)) return undefined;
+  return { ...preferences[selected.modelId], modelId: id };
+}
+
+export function modelPreferences(storage, preferences) {
+  if (!Object.keys(preferences).length) return preferences;
+  const result = { ...preferences }, snapshot = routingSnapshot(storage);
+  for (const [id, value] of Object.entries(preferences)) {
+    const canonical = snapshot.aliases.get(id);
+    if (snapshot.routes.has(canonical) && !result[canonical]) result[canonical] = { ...value, modelId: canonical };
+  }
+  return result;
+}
+
 function stateCatalog(state) {
-  return Array.from(enabledEntries(state), ({ model, provider, section }) => catalogModel(model, provider, section));
+  const counts = new Map();
+  for (const provider of state.providers) for (const model of provider.models)
+    counts.set(model.id, (counts.get(model.id) ?? 0) + 1);
+  return Array.from(enabledEntries(state), ({ model, provider, section }) => ({
+    ...catalogModel(model, provider, section),
+    legacySlugs: counts.get(model.id) === 1 ? [model.id] : [],
+  }));
 }
 
 function* enabledEntries(state) {
-  const seen = new Set();
   for (const [section, provider] of state.providers.entries()) {
     for (const model of provider.models) {
-      if (!model.enabled || seen.has(model.id)) continue;
-      seen.add(model.id);
+      if (!model.enabled) continue;
       yield { model, provider, section };
     }
   }
@@ -296,25 +325,57 @@ function* enabledEntries(state) {
 function routingSnapshot(storage) {
   const text = storage.get(storageKey, -1);
   const previous = routeSnapshots.get(storage);
-  if (previous && previous.text === text) return previous.routes;
+  if (previous && previous.text === text) return previous;
   routeSnapshots.delete(storage);
-  const state = readState(text), routes = new Map();
+  const state = readState(text), routes = new Map(), aliases = new Map();
   for (const provider of state.providers) {
-    const route = Object.freeze({ providerId: provider.id, baseUrl: provider.url });
-    for (const model of provider.models)
-      if (model.enabled && !routes.has(model.id)) routes.set(model.id, route);
+    for (const model of provider.models) {
+      const selectionId = modelSelectionId(provider.id, model.id);
+      if (model.enabled) routes.set(selectionId, Object.freeze({ providerId: provider.id,
+        baseUrl: provider.url, modelId: model.id, selectionId }));
+      aliases.set(model.id, aliases.has(model.id) ? null : selectionId);
+    }
   }
-  routeSnapshots.set(storage, { text, routes });
-  return routes;
+  const snapshot = { text, routes, aliases };
+  routeSnapshots.set(storage, snapshot);
+  return snapshot;
 }
 
 export function requestProviderRoute(storage, modelId) {
   if (typeof modelId !== 'string' || !modelId) return undefined;
-  return routingSnapshot(storage).get(modelId);
+  const { routes, aliases } = routingSnapshot(storage);
+  if (parseModelSelection(modelId)) return routes.get(modelId);
+  if (aliases.get(modelId) === null)
+    throw new Error('This model is offered by multiple providers. Select its provider in the model picker.');
+  return routes.get(aliases.get(modelId));
 }
 
 export async function requestProvider(storage, secrets, modelId) {
   const route = requestProviderRoute(storage, modelId);
-  if (!route) return undefined;
-  return { baseUrl: route.baseUrl, apiKey: await secrets.get(secretKey(route.providerId)) ?? '' };
+  if (!route) {
+    if (parseModelSelection(modelId) || routingSnapshot(storage).aliases.has(modelId)) throw new Error('The selected model or provider is unavailable. Select an enabled model in OpenVision settings.');
+    return undefined;
+  }
+  const snapshot = routingSnapshot(storage), apiKey = await secrets.get(secretKey(route.providerId)) ?? '';
+  if (routingSnapshot(storage) !== snapshot) throw new Error('Provider settings changed before dispatch. Try again.');
+  return { baseUrl: route.baseUrl, modelId: route.modelId, apiKey };
+}
+
+export async function requestAgentProvider(storage, secrets, modelId) {
+  const route = requestProviderRoute(storage, modelId);
+  if (!route) {
+    if (parseModelSelection(modelId) || routingSnapshot(storage).aliases.has(modelId)) throw new Error('The selected model or provider is unavailable. Select an enabled model in OpenVision settings.');
+    return undefined;
+  }
+  const snapshot = routingSnapshot(storage), grouped = new Map();
+  for (const item of snapshot.routes.values()) {
+    if (!grouped.has(item.providerId)) grouped.set(item.providerId, { id: item.providerId, baseUrl: item.baseUrl, modelIds: [], legacyModelIds: [] });
+    grouped.get(item.providerId).modelIds.push(item.modelId);
+    if (snapshot.aliases.get(item.modelId) === item.selectionId) grouped.get(item.providerId).legacyModelIds.push(item.modelId);
+  }
+  const openvisionProviders = await Promise.all([...grouped.values()].map(async provider =>
+    ({ ...provider, apiKey: await secrets.get(secretKey(provider.id)) ?? '' })));
+  if (routingSnapshot(storage) !== snapshot) throw new Error('Provider settings changed before dispatch. Try again.');
+  const selected = openvisionProviders.find(provider => provider.id === route.providerId);
+  return { baseUrl: selected.baseUrl, apiKey: selected.apiKey, modelId: route.modelId, openvisionProviders };
 }

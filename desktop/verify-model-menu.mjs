@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, writeFile, copyFile } from 'node:fs/promises';
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -62,9 +62,9 @@ try {
   await page.screenshot({ path: join(directory, 'grouped-menu.png') });
   const search = menu.locator('input').first();
   await search.fill('grok');
-  await menu.locator('[data-model-picker-item-name="grok-4.7"]').waitFor();
+  await menu.locator('[data-model-picker-item-name="openvision-model:grok:grok-4.7"]').waitFor();
   assert.equal(await menu.locator('[data-model-picker-item-name]').count(), 1);
-  await page.waitForFunction(() => document.querySelector('[data-model-picker-item-name="grok-4.7"]')
+  await page.waitForFunction(() => document.querySelector('[data-model-picker-item-name="openvision-model:grok:grok-4.7"]')
     ?.closest('[data-component="menu-row"]')?.getAttribute('data-focused') === 'true');
   await search.press('Enter');
   await menu.waitFor({ state: 'hidden' });
@@ -75,9 +75,9 @@ try {
   await menu.getByText(/No models found/).waitFor();
   result.emptySearch = true;
   await menu.locator('input').first().fill('');
-  await menu.locator('[data-model-picker-item-name="gpt-6.1-sol"]').click();
+  await menu.locator('[data-model-picker-item-name="openvision-model:gpt:gpt-6.1-sol"]').click();
   await trigger.click();
-  const row = menu.locator('[data-model-picker-item-name="gpt-6.1-sol"]');
+  const row = menu.locator('[data-model-picker-item-name="openvision-model:gpt:gpt-6.1-sol"]');
   await row.hover();
   await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
   await page.getByText('Extra High', { exact: true }).filter({ visible: true }).last().waitFor();
@@ -87,18 +87,34 @@ try {
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   if (!await menu.isVisible()) await trigger.click();
-  await menu.locator('[data-model-picker-item-name="gpt-6.1-sol"]').getByText('Extra High', { exact: true }).waitFor();
+  await menu.locator('[data-model-picker-item-name="openvision-model:gpt:gpt-6.1-sol"]').getByText('Extra High', { exact: true }).waitFor();
   result.reasoningSelection = true;
   await app.close(); app = undefined;
+  // Exercise an upgrade of a real saved native profile, with its initialization
+  // state intact, by restoring only the previous version's raw selection IDs.
+  const dbPath = join(profile, 'User/globalStorage/state.vscdb');
+  await copyFile(dbPath, join(directory, 'before-legacy-upgrade.vscdb'));
+  const upgrade = new DatabaseSync(dbPath);
+  const key = 'src.vs.platform.reactivestorage.browser.reactiveStorageServiceImpl.persistentStorage.applicationUser';
+  const stored = JSON.parse(String(upgrade.prepare('SELECT value FROM ItemTable WHERE key = ?').get(key).value));
+  function legacy(value) {
+    if (typeof value === 'string' && value.startsWith('openvision-model:')) return decodeURIComponent(value.split(':')[2]);
+    if (Array.isArray(value)) return value.map(legacy);
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([key, item]) => [legacy(key), legacy(item)]));
+    return value;
+  }
+  upgrade.prepare('UPDATE ItemTable SET value = ? WHERE key = ?').run(JSON.stringify(legacy(stored)), key);
+  upgrade.close();
   await launch();
   await page.keyboard.press('ControlOrMeta+Shift+l');
   trigger = page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first();
   menu = page.getByTestId('model-picker-menu').filter({ visible: true });
   await trigger.waitFor({ timeout: 60000 });
   await trigger.click();
-  await menu.locator('[data-model-picker-item-name="gpt-6.1-sol"]').getByText('Extra High', { exact: true }).waitFor();
+  await menu.locator('[data-model-picker-item-name="openvision-model:gpt:gpt-6.1-sol"]').getByText('Extra High', { exact: true }).waitFor();
   result.reasoningPersistsAfterRestart = true;
-  await menu.locator('[data-model-picker-item-name="deepseek-v4-pro"]').hover();
+  result.legacyReasoningRetained = true;
+  await menu.locator('[data-model-picker-item-name="openvision-model:deepseek:deepseek-v4-pro"]').hover();
   await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
   await page.getByText('Off', { exact: true }).filter({ visible: true }).last().waitFor();
   assert.equal(await page.getByText('Medium', { exact: true }).filter({ visible: true }).count(), 0);

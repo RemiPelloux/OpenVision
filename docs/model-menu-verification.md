@@ -46,3 +46,21 @@ The full desktop suite includes two owner-boundary regression tests for this
 change. Native Windows evidence does not prove a native glass session, screen
 reader completeness, macOS/Linux behavior or a bounded 10,000-row Agent picker.
 OV-202/OV-203 remain Partial; the fixed acceptance denominator is unchanged.
+
+## Provider identity and upgrade follow-up
+
+`logs/model-menu-ao0LK0/result.json` verifies the same UI on the provider-specific
+selection build. It selects Extra High through the native UI, shuts down, backs
+up the disposable database, restores the prior version's raw IDs in the saved
+application state, and restarts. GPT's Extra High preference is retained;
+DeepSeek still shows its own distinct choices. The default choice now displays
+only the model name in the closed selector to avoid a truncated “Provider
+default” suffix. The [identity report](provider-model-identity.md) covers routing.
+
+Earlier probes inserted partial settings into a never-initialized profile and
+observed a default choice instead of the seeded effort. The same failure occurred
+with current canonical IDs (`tN66tH`); it was not specific to migration. These
+records remain retained. The final verifier uses a profile actually saved by the
+native application. Run `9wZJ68` also recorded a native renderer access violation
+at startup; a subsequent isolated run passed. Its cause remains unestablished and
+the broader startup/crash-recovery acceptance gate remains open.

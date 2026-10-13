@@ -6,7 +6,7 @@ import { readableModelMenu } from './model-picker-layout.mjs';
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
-const catalogImport = 'import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";';
+const catalogImport = 'import {allCatalog as openvisionCatalog, modelPreference as openvisionModelPreference, modelPreferences as openvisionModelPreferences} from "../code/electron-sandbox/workbench/openvision-model-providers.js";';
 const catalogPoller = `async getModels($1) { const catalog = openvisionCatalog(this.storageService); const models = catalog.map(model => model.name); this.reactiveStorageService.setApplicationUserPersistentStorage("availableDefaultModels2", catalog); this.reactiveStorageService.setApplicationUserPersistentStorage("availableAPIKeyModels", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderModelIds", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderAgentModelIds", models); this._didChangeAvailableModels?.(); return {models}; }`;
 function owner(text, anchor) {
   const index = text.indexOf(anchor);
@@ -33,6 +33,9 @@ function localModelSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  text = text.replace('import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
+  text = completeSelectionMigration(text, variant);
+  text = savedReasoningPreferences(text, variant);
   text = readableModelMenu(text, variant);
   text = localModelPicker(text, variant);
   text = startupCatalog(text, variant);
@@ -81,6 +84,72 @@ export function customModels(text, variant) {
     catalogImport + '\n' + text;
 }
 
+function completeSelectionMigration(text, variant) {
+  const marker = '/* OpenVision migrate selection parameters with model name */';
+  if (text.includes(marker)) return text;
+  const anchor = 'migrateModelSettingsToCurrentCatalog() {';
+  const start = text.indexOf(anchor);
+  if (start < 0 || text.indexOf(anchor, start + anchor.length) !== -1) throw new Error('Model migration owner changed');
+  const node = parseExpressionAt('function ' + text.slice(start), 0, options);
+  const end = start + node.end - 'function '.length;
+  const body = text.slice(start, end);
+  const catalog = body.match(/([\w$]+) = this\.getAvailableDefaultModels\(\)/)?.[1];
+  const pattern = /\{ \.\.\.([\w$]+), modelName: ([\w$]+) \}/g;
+  if (!catalog || [...body.matchAll(pattern)].length !== 1) throw new Error('Model name migration contract changed');
+  const flag = variant === 'desktop' ? 'zc' : 'Rl';
+  const after = body.replace(pattern, (_match, config, name) => `{...${config}, modelName: ${name},
+    ${marker}
+    ...(${flag}.localMode && ${config}.selectedModels ? {selectedModels:
+      this.resolveSelectedModelsForRead(${config}.selectedModels, ${catalog})} : {})}`);
+  return text.slice(0, start) + after + text.slice(end);
+}
+
+function savedReasoningPreferences(text, variant) {
+  const marker = '/* OpenVision saved reasoning compatibility v4 */';
+  if (text.includes(marker)) return text;
+  const flag = variant === 'desktop' ? 'zc' : 'Rl';
+  const bodies = {
+    getEffectiveModelConfigForComposer: `(e) {
+      const feature = e.data.unifiedMode === 'background' ? 'background-composer' : 'composer';
+      const config = e.data.modelConfig ?? this.getModelConfig(feature);
+      if (!${flag}.localMode) return config;
+      return {...config, selectedModels: this.deriveSelectedModels(config)};
+    }`,
+    deriveSelectedModels: `(e) {
+      const selected = e.selectedModels?.length ? e.selectedModels : this.resolveSelectedModelsFromModelName(e.modelName);
+      return ${flag}.localMode ? this.resolveSelectedModelsForRead(selected, this.getAvailableDefaultModels()) : selected;
+    }`,
+    getModelParameterPreferences: `(e) {
+      ${marker}
+      const stored = this.reactiveStorageService.applicationUserPersistentStorage.aiSettings.modelParameterPreferences ?? {};
+      return ${flag}.localMode ? openvisionModelPreference(this.storageService, stored, e) : stored[e];
+    }`,
+    getAllModelParameterPreferences: `() {
+      const stored = this.reactiveStorageService.applicationUserPersistentStorage.aiSettings.modelParameterPreferences ?? {};
+      return ${flag}.localMode ? openvisionModelPreferences(this.storageService, stored) : stored;
+    }`,
+    clearModelParameterPreferences: `(e) {
+      const stored = this.reactiveStorageService.applicationUserPersistentStorage.aiSettings.modelParameterPreferences;
+      if (!stored) return;
+      const legacy = ${flag}.localMode && this.getAvailableDefaultModels().find(model => model.name === e)?.legacySlugs?.[0];
+      if (legacy && stored[legacy]) { this.setModelParameterPreferences(e, []); return; }
+      if (!stored[e]) return;
+      const remaining = {...stored}; delete remaining[e];
+      this.reactiveStorageService.setApplicationUserPersistentStorage('aiSettings', 'modelParameterPreferences',
+        Object.keys(remaining).length ? remaining : undefined);
+    }`,
+  };
+  for (const [name, body] of Object.entries(bodies)) {
+    const pattern = new RegExp(name + '\\([^)]*\\) \\{', 'g');
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length !== 1) throw new Error('Reasoning preference owner changed: ' + name);
+    const start = matches[0].index;
+    const node = parseExpressionAt('function ' + text.slice(start), 0, options);
+    text = text.slice(0, start) + name + body + text.slice(start + node.end - 'function '.length);
+  }
+  return text;
+}
+
 function startupCatalog(text, variant) {
   const marker = '/* OpenVision catalog from saved providers */';
   if (text.includes(marker)) return text;
@@ -102,6 +171,8 @@ export async function installModelSettings(root) {
     await copyFile(join(root, 'desktop', name), join(workbench, `openvision-${name}`));
   await copyFile(join(root, 'desktop/model-http.mjs'), join(app, 'out/openvision-model-http.js'));
   await copyFile(join(root, 'desktop/model-providers.js'), join(app, 'out/openvision-model-providers.js'));
+  await copyFile(join(root, 'desktop/model-identity.js'), join(workbench, 'model-identity.js'));
+  await copyFile(join(root, 'desktop/model-identity.js'), join(app, 'out/model-identity.js'));
   await copyFile(join(root, 'desktop/model-reasoning.js'), join(app, 'out/model-reasoning.js'));
   await copyFile(join(root, 'desktop/model-reasoning.js'), join(workbench, 'model-reasoning.js'));
   const mainPath = join(app, 'out/main.js');

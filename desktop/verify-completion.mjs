@@ -61,7 +61,7 @@ try {
   await page.getByLabel('API Key', { exact: true }).fill('fixture-key');
   await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await page.locator('dialog').waitFor({ state: 'detached' });
-  await settings.getByRole('combobox', { name: 'Tab autocomplete model' }).selectOption('fixture-coder');
+  await settings.getByRole('combobox', { name: 'Tab autocomplete model' }).selectOption({ label: 'Completion fixture · fixture-coder' });
   await page.locator('.tabs-container .tab').filter({ hasText: 'completion.js' }).first().click();
   await page.locator('.monaco-editor .inputarea').first().focus();
   await page.keyboard.press('ControlOrMeta+End');

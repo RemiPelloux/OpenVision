@@ -339,6 +339,14 @@ model, normal restart, key replacement, custom names, disabled state and explici
 removal. Duplicate IDs across providers and the remaining UI/provider/platform
 gates stay open. No story is promoted; the user's revised target is 34 of 42.
 
+13 October 2026, OV-104/201/202/203 identity follow-up (owner: OpenVision):
+[Provider-specific model choices](provider-model-identity.md) retain duplicate
+raw IDs as distinct choices. Native Windows evidence verifies A/B routing with
+separate keys, persistence after restart, an A-parent/B-child/A-continuation and
+autocomplete acceptance. The menu upgrade check retains saved reasoning. Remaining
+native failure, live-provider, accessibility and large Agent-picker gates remain
+explicit; no story is promoted and the denominator stays 42.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

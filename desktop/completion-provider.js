@@ -15,7 +15,8 @@ function showCompletionStatus(service, error) {
 
 export function completionModel(storage) {
   const id = storage.get(completionStorageKey, -1);
-  return requestProviderRoute(storage, id) ? id : undefined;
+  try { return requestProviderRoute(storage, id) ? id : undefined; }
+  catch { return undefined; }
 }
 
 export function completionContext(text, position, language) {
@@ -68,7 +69,7 @@ export async function localCompletion(service, request, secretToken, ipc = globa
     abortController.signal.addEventListener('abort', cancel, { once: true });
     service.lastStartedRequestId = generationUUID;
     const result = await ipc.invoke('vscode:openvision-completion', {
-      id: generationUUID, ...connection, model: modelId,
+      id: generationUUID, ...connection, model: connection.modelId,
       prefix: context.prefix, suffix: context.suffix, language: context.language,
     });
     if (!current()) return null;
@@ -112,7 +113,7 @@ export function completionControl(document, bridge, providers) {
   const label = document.createElement('div');
   label.className = 'openvision-active-provider';
   label.textContent = 'Tab autocomplete model';
-  let selected = completionModel(bridge.storage) ?? '';
+  let selected = requestProviderRoute(bridge.storage, completionModel(bridge.storage))?.selectionId ?? '';
   const search = document.createElement('input');
   search.type = 'search'; search.placeholder = 'Find autocomplete model';
   search.setAttribute('aria-label', 'Search autocomplete models');

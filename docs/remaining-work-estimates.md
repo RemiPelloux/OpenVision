@@ -53,16 +53,16 @@ do not turn a test passing on a fixture into a provider/platform support claim.
 | OV-102 / Partial | Live GPT/DeepSeek/Grok retry, timeout, Stop, saved history and branching; no duplicate submit | 3–6 days | Provider availability/quota and known DeepSeek failures; medium |
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | 2–5 days | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Subagent explicit/saved/inherit/disabled model and reasoning choices; actual provider routing/acceptance across retries | 3–7 days | OV-102; low until cross-provider subagent routing is traced |
-| OV-201 / Partial | Duplicate IDs across providers, malformed/empty discovery, rename/key replacement and persistence; no silent fallback | 2–5 days | Shared Agent/subagent/autocomplete model identity and transport mapping; medium |
+| OV-201 / Partial | Complete native disabled/deleted selection and stale-settings failure matrix; consolidate discovery/routing acceptance | 1–3 days | Duplicate Agent/subagent/autocomplete identity now has native Windows evidence; medium |
 | OV-202 / Partial | Agent picker at 10,000 models, bounded rows, focus restoration, accessibility and stale discovery feedback | 2–4 days | OV-201; medium; settings pagination already has separate evidence |
 | OV-203 / Partial | Every advertised reasoning value verified or visibly unverified; changed capabilities and invalid saved choices | 2–5 days | Provider capability contracts; low because current DeepSeek explicit reasoning fails |
 | OV-204 / Planned | 401/403/429/5xx, offline, malformed streams, unsupported tools/images and context limits; useful errors and cleanup | 3–6 days | OV-102/201; medium |
 
-Code inspection on 13 October found that `enabledEntries` and `routingSnapshot`
-deduplicate by raw model ID. Two providers offering the same ID therefore expose
-only the first enabled entry. Fixing this requires provider-scoped selection
-identity, stable saved choices and translation to the original wire model ID in
-Agent, subagents and autocomplete. Merely showing a second row is insufficient.
+The [provider identity change](provider-model-identity.md) removes raw-model-ID
+deduplication. A native Windows fixture verifies two providers with the same ID,
+separate keys/endpoints, saved choice after restart, cross-provider subagents and
+autocomplete. Disabled/deleted and stale-settings paths have owner-boundary tests;
+their complete native failure matrix remains open.
 The prior discovery implementation removed nonmanual models absent from the
 latest catalog. The retention fix keeps these saved choices with a visible
 unlisted status; the [verification report](model-catalog-retention.md) records its scope. This is

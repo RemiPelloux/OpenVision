@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelProviders, requestProviderRoute, requestProvider, activeModelIds, allCatalog } from './model-providers.js';
+import { modelSelectionId } from './model-identity.js';
 
 const model = id => ({ id, name: id, enabled: true });
 const provider = (id, models = [model(id)]) => ({ id, name: id, url: `https://${id}.test/v1`, models });
@@ -19,18 +20,21 @@ function fixture(providers) {
 test('routing reuses one revision without retaining mutable provider data or credentials', async () => {
   const f = fixture([provider('first', [model('shared')]), provider('second', [model('shared'), model('other')])]);
   const storage = f.bridge.storage;
-  const first = requestProviderRoute(storage, 'shared');
-  for (let i = 0; i < 100; i++) assert.equal(requestProviderRoute(storage, 'shared'), first);
-  assert.deepEqual(activeModelIds(storage), ['shared', 'other']);
+  const selected = modelSelectionId('first', 'shared');
+  const first = requestProviderRoute(storage, selected);
+  for (let i = 0; i < 100; i++) assert.equal(requestProviderRoute(storage, selected), first);
+  assert.deepEqual(activeModelIds(storage), [selected, modelSelectionId('second', 'shared'), modelSelectionId('second', 'other')]);
+  assert.throws(() => requestProviderRoute(storage, 'shared'), /multiple providers/);
   assert.equal(Object.isFrozen(first), true);
   assert.equal(first.providerId, 'first');
   let key = 'one'; f.bridge.secrets.get = async () => key;
-  assert.equal((await requestProvider(storage, f.bridge.secrets, 'shared')).apiKey, 'one');
+  assert.equal((await requestProvider(storage, f.bridge.secrets, selected)).apiKey, 'one');
   key = 'two';
-  assert.equal((await requestProvider(storage, f.bridge.secrets, 'shared')).apiKey, 'two');
+  assert.equal((await requestProvider(storage, f.bridge.secrets, selected)).apiKey, 'two');
   f.providers.state.providers[0].models[0].enabled = false;
   await f.providers.persist();
-  assert.equal(requestProviderRoute(storage, 'shared').providerId, 'second');
+  assert.equal(requestProviderRoute(storage, selected), undefined, 'A disabled selection must not fall back to the other provider');
+  assert.throws(() => requestProviderRoute(storage, 'shared'), /multiple providers/);
   f.providers.state.providers[1].url = 'https://changed.test/v1';
   await f.providers.persist();
   assert.equal(requestProviderRoute(storage, 'other').baseUrl, 'https://changed.test/v1');
@@ -46,15 +50,16 @@ test('completion list materializes only visible summaries, preserving selection,
     provider('duplicate', [model('m0')])]);
   for (const p of f.providers.state.providers)
     for (const m of p.models) Object.defineProperty(m, 'capabilities', { get() { assert.fail('Completion must not hydrate reasoning variants'); } });
-  const choices = f.providers.completionChoices('', 'm9999', 40);
-  assert.equal(choices.count, 10000); assert.equal(choices.models.length, 41);
-  assert.equal(choices.models[0].name, 'm9999');
+  const selected = modelSelectionId('many', 'm9999');
+  const choices = f.providers.completionChoices('', selected, 40);
+  assert.equal(choices.count, 10001); assert.equal(choices.models.length, 41);
+  assert.equal(choices.models[0].name, selected);
   assert.equal(choices.models[1].providerId, 'many');
-  const filtered = f.providers.completionChoices('m9998', 'm9999', 40);
+  const filtered = f.providers.completionChoices('m9998', selected, 40);
   assert.equal(filtered.count, 1);
-  assert.deepEqual(filtered.models.map(m => m.name), ['m9999', 'm9998']);
+  assert.deepEqual(filtered.models.map(m => m.name), [selected, modelSelectionId('many', 'm9998')]);
   f.providers.state.providers[0].models[9999].enabled = false;
-  assert.equal(f.providers.completionChoices('m9998', 'm9999', 40).models.length, 1);
+  assert.equal(f.providers.completionChoices('m9998', selected, 40).models.length, 1);
 });
 
 test('batch discovery bounds active requests, coalesces callers and persists/publishes once', async () => {
@@ -116,7 +121,7 @@ test('concurrent explicit discovery shares work and rejects stale provider respo
   await f.providers.save({ id: 'p', name: 'Moved', url: 'https://moved.test/v1' });
   changed.resolve({ data: [{ id: 'stale' }] });
   await assert.rejects(stale, /changed during discovery/);
-  assert.deepEqual(allCatalog(f.bridge.storage).map(m => m.name), ['new', 'p']);
+  assert.deepEqual(allCatalog(f.bridge.storage).map(m => m.name), ['new', 'p'].map(id => modelSelectionId('p', id)));
   assert.equal(f.providers.get('p').models[1].discoveryStatus, 'unlisted');
 });
 

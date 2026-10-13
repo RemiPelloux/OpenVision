@@ -61,8 +61,7 @@ malformed responses, concurrent discovery and stale-provider responses. Native
 fixture results do not establish live-provider availability, cross-platform
 support or all OV-201/202 requirements.
 
-Duplicate raw model IDs across providers still collapse to the first enabled
-provider in the catalog/routing owner. Provider-scoped model identity and its
-Agent/subagent/autocomplete transport mapping remain required. Native Agent
-10,000-row bounds and complete accessibility remain open. OV-201 and OV-202
+The later [provider identity change](provider-model-identity.md) replaces raw-ID
+deduplication and verifies separate Agent/subagent/autocomplete routes in a native
+Windows fixture. Native Agent 10,000-row bounds and complete accessibility remain open. OV-201 and OV-202
 remain Partial; no acceptance story is promoted by this change.

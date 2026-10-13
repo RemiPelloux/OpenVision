@@ -1,12 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { ModelProviders, normalizeBaseUrl, parseModels, catalog, activeModelIds, allCatalog } from './model-providers.js';
+import { ModelProviders, normalizeBaseUrl, parseModels, activeModelIds, allCatalog, modelPreference, modelPreferences } from './model-providers.js';
 import { customModels } from './custom-models.mjs';
 import { providerDefaultReasoning } from './model-reasoning.js';
+import { modelSelectionId } from './model-identity.js';
+import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
 const defaultChoice = { value: providerDefaultReasoning, displayName: 'Provider default' };
 const variantFor = (model, value) => model.variants.find(item => item.parameterValues[0].value === value);
+const catalog = (models, provider = {}) => allCatalog({ get: () => JSON.stringify({ version: 1, activeId: null,
+  providers: [{ id: 'fixture', name: '', url: 'https://fixture.test/v1', ...provider, models }] }) });
 
 function bridge() {
   const storage = new Map(), secrets = new Map(), settings = {}, selected = [];
@@ -30,14 +34,15 @@ test('provider discovery, manual names, activation, persistence and deletion sha
   await providers.discover(a.id);
   assert.equal(a.models.length, 2);
   await providers.activate(a.id);
-  services.ai.modelConfigService.getModelConfig = () => ({ modelName: 'custom-code' });
+  services.ai.modelConfigService.getModelConfig = () => ({ modelName: modelSelectionId(a.id, 'custom-code') });
   const selectedCount = services.selected.length;
   await providers.discover(a.id);
   assert.equal(services.selected.length, selectedCount, 'Refreshing models must preserve an available selection');
   assert.equal(services.settings.openAIBaseUrl, 'https://example.test/v1');
   assert.equal(services.settings.availableDefaultModels2[1].clientDisplayName, 'Codex Easy · My Coder');
-  assert.deepEqual(activeModelIds(services.storage), ['gpt-test', 'custom-code']);
-  assert.deepEqual(allCatalog(services.storage).map(model => model.name), ['gpt-test', 'custom-code']);
+  const ids = ['gpt-test', 'custom-code'].map(id => modelSelectionId(a.id, id));
+  assert.deepEqual(activeModelIds(services.storage), ids);
+  assert.deepEqual(allCatalog(services.storage).map(model => model.name), ids);
   assert.ok(!services.storage.get('openvision.model-providers.v1').includes('test-secret'));
   const restored = new ModelProviders(services);
   await restored.ready;
@@ -45,7 +50,7 @@ test('provider discovery, manual names, activation, persistence and deletion sha
   const b = await restored.save({ name: 'Local', url: 'http://localhost:1234/v1', key: 'local-key' });
   await restored.activate(b.id);
   assert.equal(services.settings.key, 'local-key');
-  assert.deepEqual(services.settings.localProviderModelIds, ['gpt-test', 'custom-code']);
+  assert.deepEqual(services.settings.localProviderModelIds, ids);
   await restored.remove(b.id);
   assert.equal(services.settings.useOpenAIKey, false);
   assert.equal(services.secretsMap.has(`openvision.provider.${b.id}`), false);
@@ -79,7 +84,7 @@ test('empty and reduced discovery retain saved choices across restart and recove
   const restarted = new ModelProviders(services);
   await restarted.ready;
   assert.deepEqual(restarted.state.providers[0].models, provider.models);
-  assert.deepEqual(restarted.allModels().map(model => model.name), ['gpt-test', 'manual']);
+  assert.deepEqual(restarted.allModels().map(model => model.name), ['gpt-test', 'manual'].map(id => modelSelectionId(provider.id, id)));
   services.request = async () => ({ data: [{ id: 'gpt-test', name: 'New server label' }, { id: 'new-model' }] });
   await restarted.discover(provider.id);
   const models = restarted.get(provider.id).models;
@@ -130,7 +135,7 @@ test('discovery metadata survives normalization at both IPC boundaries', () => {
   const row = catalog(models)[0];
   assert.deepEqual(row.parameterDefinitions[0].parameterType.enumParameter.values,
     [defaultChoice, { value: 'provider-ultra', displayName: 'Ultra' }]);
-  assert.deepEqual(row.legacySlugs, []);
+  assert.deepEqual(row.legacySlugs, ['deepseek-test']);
   const unsupported = parseModels({ data: [{ id: 'gpt-6-astra', capabilities: { reasoning_effort: [] } }] });
   assert.equal(catalog(unsupported, { url: 'https://codex-easy.ai/v1' })[0].supportsThinking, false,
     'An explicit provider declaration overrides the documented fallback');
@@ -162,7 +167,7 @@ test('capability refresh preserves disabled models and does not retry known abse
   assert.equal(requests, 1);
   assert.equal(provider.models[1].enabled, false);
   assert.equal(provider.models[1].name, 'Disabled');
-  assert.deepEqual(allCatalog(services.storage).map(model => model.name), ['plain']);
+  assert.deepEqual(allCatalog(services.storage).map(model => model.name), [modelSelectionId(provider.id, 'plain')]);
 });
 
 test('capability refresh reports a provider failure and retains models', async () => {
@@ -186,7 +191,7 @@ test('combined catalog groups providers while retaining the default connection',
   await providers.updateModels(grok.id, [{ id: 'grok-4.7', name: 'Grok 4.7', enabled: true }]);
   await providers.activate(grok.id);
   const models = services.settings.availableDefaultModels2;
-  assert.deepEqual(models.map(model => model.name), ['deepseek-v4-pro', 'grok-4.7']);
+  assert.deepEqual(models.map(model => model.name), [modelSelectionId(deepseek.id, 'deepseek-v4-pro'), modelSelectionId(grok.id, 'grok-4.7')]);
   assert.deepEqual(models.map(model => model.namedModelSectionIndex), [0, 1]);
   assert.equal(models[0].tagline, 'DeepSeek');
   services.ai.modelConfigService.setModelConfig('composer', { modelName: 'deepseek-v4-pro' });
@@ -213,8 +218,32 @@ for (const variant of ['desktop', 'glass']) {
     const startupModels = compute.call({ storageService: services.storage, reactiveStorageService: {
       availableModelsCatalogRevision() {}, applicationUserPersistentStorage: { availableDefaultModels2: [{ name: 'stale' }] },
     } });
-    assert.equal(startupModels[0].name, 'deepseek-v4-pro');
+    assert.equal(startupModels[0].name, modelSelectionId('ce', 'deepseek-v4-pro'));
     assert.equal(startupModels[0].parameterDefinitions[0].id, 'reasoning');
+    const prefKey = modelSelectionId('ce', 'deepseek-v4-pro');
+    const saved = { 'deepseek-v4-pro': { modelId: 'deepseek-v4-pro', parameters: [{ id: 'reasoning', value: 'high' }] } };
+    const preferences = { reactiveStorageService: { applicationUserPersistentStorage: { aiSettings: { modelParameterPreferences: saved } } },
+      storageService: services.storage,
+      getAvailableDefaultModels: () => startupModels,
+      resolveSelectedModelsForRead: (selected, models) => selected.map(value => ({ ...value,
+        modelId: models.find(model => model.legacySlugs.includes(value.modelId))?.name ?? value.modelId })),
+      setModelParameterPreferences: (id, parameters) => { saved[id] = { modelId: id, parameters }; } };
+    for (const name of ['getAllModelParameterPreferences', 'getModelParameterPreferences', 'clearModelParameterPreferences',
+      'deriveSelectedModels', 'getEffectiveModelConfigForComposer']) {
+      const source = 'function ' + text.slice(text.search(new RegExp(name + '\\([^)]*\\) \\{')));
+      const node = parseExpressionAt(source, 0, { ecmaVersion: 'latest' });
+      preferences[name] = new Function(variant === 'desktop' ? 'zc' : 'Rl', 'openvisionModelPreference', 'openvisionModelPreferences',
+        `return (${source.slice(0, node.end)});`)({ localMode: true }, modelPreference, modelPreferences);
+    }
+    assert.equal(preferences.getAllModelParameterPreferences()[prefKey].parameters[0].value, 'high');
+    assert.equal(preferences.getModelParameterPreferences(prefKey).modelId, prefKey);
+    const oldChat = { data: { modelConfig: { selectedModels: [saved['deepseek-v4-pro']] } } };
+    assert.equal(preferences.getEffectiveModelConfigForComposer(oldChat).selectedModels[0].modelId, prefKey);
+    assert.equal(oldChat.data.modelConfig.selectedModels[0].modelId, 'deepseek-v4-pro', 'Reading a saved chat preserves its source data');
+    assert.equal(saved[prefKey], undefined, 'Reading legacy preferences must not mutate storage');
+    preferences.clearModelParameterPreferences(prefKey);
+    assert.deepEqual(preferences.getModelParameterPreferences(prefKey).parameters, []);
+    assert.equal(saved['deepseek-v4-pro'].parameters[0].value, 'high', 'Keep the legacy value as migration evidence');
     assert.ok(text.includes('/* OpenVision local provider ownership */'));
     assert.throws(() => customModels(recovered.replace('children: "Configure gateway"', 'children: "Changed"'), variant), /anchor missing/);
   });
