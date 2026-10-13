@@ -113,6 +113,40 @@ native child error classification and retry behavior remain unverified. Real-pro
 failures remain in [live-provider-compatibility.md](live-provider-compatibility.md).
 No new macOS/Linux or overall RAM claim is made.
 
+### Subagent boundary investigation
+
+REA Evidence
+`ev_f09db4bd6d6ee08c9200b8036a2e449dd707cc091799fa9fb8ef803a2e947178`
+analyzes seven exact recovered expressions plus the current model-identity helper:
+eight parsed JavaScript files, zero parse failures. The ignored
+`logs/subagent-reasoning-boundaries/provenance.json` retains byte and character
+ranges in the original Agent-exec bundle, SHA-256
+`0df300c9865f395a02337ac880339c216ac44b45ada445daa46cae4c80a6e5c2`.
+The complete REA record is `logs/rea-subagent-reasoning-boundaries.json`.
+
+Observed in these source expressions:
+
+- `Wse` calls the Task configuration callback with both resolved model ID and
+  subagent type. Local `IEe.getTaskToolConfig` consumes only the model ID and calls
+  `Zxe` without model parameters. Its Explore override conversion also retains
+  model ID without the stored parameters.
+- The parent request passes `m.parameters` to `Zxe`, but its subsequent `wEe`
+  configuration omits them. An inherited child therefore has no corresponding
+  parent-parameter field at this local configuration boundary.
+- `TEe` recognizes the native `Nwe` error hierarchy. `Lwe` supplies the
+  non-retryable kind. The OpenVision model-selection helper currently creates a
+  plain Error named LocalProviderError; that name alone does not make it an
+  instance of this native hierarchy. Encoder rejection also creates a plain
+  Error. The parent workbench wrapper handles its own selection error, but this
+  is not proof of child/runtime retry behavior.
+
+These are static findings, not observed child requests or a demonstrated retry
+loop. The next OV-104 check must observe inherited and explicitly overridden
+reasoning in actual child requests, plus disabled/unavailable choices and error
+termination. Repair the local parameter producer and native error conversion
+before asserting that UI preferences prove child inference behavior. Do not
+promote OV-104 or OV-203 from the existing workbench-only parameter tests.
+
 One rebuild found eight changed bytes in the local generated JavaScript-debugger
 manifest, with an unchanged old modification time. Its cause is unknown. The
 malformed file and hashes were retained under ignored `logs/`; the valid retained
