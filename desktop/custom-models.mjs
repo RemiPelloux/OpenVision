@@ -25,7 +25,7 @@ function owner(text, anchor) {
 
 function localModelSettings(text, variant) {
   const ownershipMarker = '/* OpenVision local provider ownership */';
-  if (text.includes(ownershipMarker)) return text;
+  if (text.includes(ownershipMarker)) return localTaskSettings(text, variant);
   const settings = owner(text, 'children: "API Keys"');
   const gateway = owner(text, marker).id.name;
   const parameter = settings.params[0];
@@ -33,7 +33,22 @@ function localModelSettings(text, variant) {
   if (!workspace) throw new Error('Local model settings workspace owner missing');
   const [flag, jsx] = variant === 'desktop' ? ['zc', 'Av'] : ['Rl', 'W_'];
   const guard = `\n  ${ownershipMarker}\n  if (${flag}.localMode) return ${jsx}(${gateway}, {settingsWorkspace: ${workspace}});\n`;
-  return text.slice(0, settings.body.start + 1) + guard + text.slice(settings.body.start + 1);
+  return localTaskSettings(text.slice(0, settings.body.start + 1) + guard + text.slice(settings.body.start + 1), variant);
+}
+
+function localTaskSettings(text, variant) {
+  const marker = '/* OpenVision local task model settings */';
+  if (text.includes(marker)) return text;
+  const component = owner(text, 'children: "Explore Subagent Model"').id.name;
+  const jsx = variant === 'desktop' ? 'Av' : 'W_';
+  const pattern = /\/\* OpenVision local provider ownership \*\/\s+if \(([\w$]+)\.localMode\) return ([\w$]+)\(([\w$]+), \{settingsWorkspace: ([\w$]+)\}\);/g;
+  if ([...text.matchAll(pattern)].length !== 1) throw new Error('Local model settings layout changed');
+  return text.replace(pattern, (_match, flag, _jsx, gateway, workspace) => `/* OpenVision local provider ownership */
+  ${marker}
+  if (${flag}.localMode) return ${jsx}("div", {children: [
+    ${jsx}(${gateway}, {settingsWorkspace: ${workspace}}),
+    ${jsx}(${component}, {settingsWorkspace: ${workspace}})
+  ]});`);
 }
 
 export function customModels(text, variant) {

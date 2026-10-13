@@ -8,6 +8,16 @@ Neither set establishes history, branching, subagents or complete model support.
 
 ## Latest recheck after provider selection changes
 
+Native GPT 6.1 Sol High subagent run `wnAlDa` passed after restoring Task Models
+settings and fixing disabled-child fallback. The real provider emitted Task,
+the child emitted Read, then child and parent returned the actual disposable
+file marker. Four HTTP 200 requests took 5,189 / 6,008 / 3,668 / 3,247 ms, all
+with `reasoning_effort: high`; the file was unchanged and host exited 0.
+See [subagent verification](subagent-reasoning-verification.md) for call-ID-bound
+evidence and limits. The relay supplies simulated discovery but forwards native
+inference bodies unchanged to the saved real URL/key. This successful workflow
+does not resolve the preceding timeout or establish all-model reliability.
+
 After the reasoning-capability lifecycle changes, native GPT 6.1 Sol High run
 `oJS37r` reached the real saved Codex Easy endpoint twice. The initial request
 returned HTTP 200 with a Read tool call in 4,124 ms. OpenVision read the file and
@@ -18,8 +28,8 @@ success; the cause of this timeout is unresolved. The owned host exited 0 after
 manual dismissal of a verifier cleanup overlay and native Stop. The verifier now
 dismisses menus before submission/cleanup, uses keyboard entry to the reasoning
 submenu, and attempts host closure even if the native Stop cleanup fails. These
-verifier changes are syntax-checked but have not been rerun against the live
-provider; they are not evidence of improved provider behavior.
+verifier changes were subsequently exercised by the successful `wnAlDa` run;
+they are not evidence of improved provider reliability.
 
 These results supersede any blanket success interpretation of the older runs.
 All inference below reached the real saved Codex Easy URL with its saved key.
@@ -32,6 +42,7 @@ No saved provider settings were changed.
 | Native `PyU9tO` | DeepSeek V4 Flash, Provider default: initial native Agent request failed with HTTP 400 / `upstream_error`, 1,344 ms. No Read continuation occurred. This contradicts the earlier success as a reliable compatibility claim; cause unresolved. |
 | Native `iGrWN2` | Grok 4.7, Provider default: actual Read continuation and visible file-token answer passed; three HTTP 200 requests, 5,179 ms, 3,901 ms and 6,001 ms. |
 | Native `vF10zV` | GPT 6.1 Sol, High: native Read and visible file-token answer passed; both requests carried `reasoning_effort: high`, HTTP 200, 6,178 ms and 4,358 ms. |
+| Native `wnAlDa` | GPT 6.1 Sol, High: Task child Read and parent continuation passed; four real HTTP 200 requests preserved High, with actual file token in both child and parent results. |
 
 Direct records are `logs/live-provider-verification-<suffix>/result.json`;
 native records are `logs/live-agent-verification-<suffix>/result.json`.

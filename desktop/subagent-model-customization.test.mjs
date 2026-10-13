@@ -4,6 +4,31 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { subagentModelParameters } from './subagent-model-customization.mjs';
+import { scopedAgentProviders } from './agent-provider-customization.mjs';
+
+test('local Task configuration retains an unavailable explicit override instead of inheriting the parent', async () => {
+  const source = await readFile(new URL('../../cursor/readable/app/extensions/cursor-agent-exec/dist/main.js', import.meta.url), 'utf8');
+  const patched = scopedAgentProviders(source);
+  assert.equal(scopedAgentProviders(patched), patched);
+  const start = patched.indexOf('function IEe(e) {');
+  const node = parseExpressionAt(patched, start, { ecmaVersion: 'latest' });
+  const configure = runInNewContext(`(${patched.slice(start, node.end)})`, {
+    wbe: options => options.localProvider,
+    ube: (id, models) => models.some(model => model.id === id) ? id : undefined,
+    Y0: type => type, One: 'native-policy', Ane: models => models,
+  });
+  const options = { modelId: 'parent', availableModels: [{ modelId: 'parent' }], localProvider: { kind: 'http' } };
+  for (const modelId of ['disabled', 'deleted', 'openvision-model:provider:manual']) {
+    const config = configure({ ...options, subagentModelOverrides: [{ subagentType: 'explore',
+      selection: { case: 'model', value: { modelId } } }] });
+    assert.equal(config.subagentModelOverrides.explore.type, 'model');
+    assert.equal(config.subagentModelOverrides.explore.modelId, modelId);
+  }
+  for (const mode of ['disabled', 'inherit']) {
+    const config = configure({ ...options, subagentModelOverrides: [{ subagentType: 'explore', selection: { case: mode, value: true } }] });
+    assert.equal(config.subagentModelOverrides.explore.type, mode);
+  }
+});
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} recovered subagent selection preserves explicit and saved reasoning through native validation`, async t => {

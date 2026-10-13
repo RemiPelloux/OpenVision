@@ -13,13 +13,14 @@ import { createLiveAgentRelay } from './live-agent-relay.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high]\nRuns a native Agent Read through your saved provider, using real quota and a synthetic disposable project.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
 assert.ok(modelIndex >= 0 && model && !model.startsWith('--'), 'Select an enabled saved model with --model');
 const reasoningIndex = process.argv.indexOf('--reasoning');
 const reasoning = reasoningIndex < 0 ? 'default' : process.argv[reasoningIndex + 1];
+const subagent = process.argv.includes('--subagent');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const db = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
@@ -43,9 +44,9 @@ if (process.platform === 'win32') {
   await writeFile(join(profile, 'Local State'), JSON.stringify({ os_crypt: { encrypted_key: state.os_crypt.encrypted_key } }));
 }
 const { layout } = await loadRuntime(root);
-const result = { checkedAt: new Date().toISOString(), model, reasoning, provider: { name: provider.name, url: provider.url },
+const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, provider: { name: provider.name, url: provider.url },
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
-  scope: 'Windows native Agent selection, live stream and real Read continuation in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.',
+  scope: `Windows native Agent selection, live stream and real ${subagent ? 'Task child Read and parent' : 'Read'} continuation in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`,
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['agent', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
@@ -97,15 +98,26 @@ try {
   }
   await dismissMenu();
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
-  await input.fill('Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
+  await input.fill(subagent
+    ? 'Use exactly one Task subagent with the inherited model. Ask it to use Read on probe.txt and return exactly the single line in that file. After the Task finishes, reply with exactly the returned line. Do not read the file yourself, edit files, run commands or use other tools.'
+    : 'Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
   await input.press('Enter');
   await Promise.race([
-    page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 90000 }),
+    page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: subagent ? 180000 : 90000 }),
     relay.failure.then(message => { throw new Error(message); }),
   ]);
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
   assert.ok(relay.requests.some(request => request.actualFileInToolResult), 'Actual file must appear in the tool continuation');
   assert.ok(relay.requests.some(request => request.assistantReturnedMarker), 'Provider must return the actual file marker as assistant text');
+  if (subagent) {
+    const calls = relay.requests.flatMap(request => request.responseToolCalls ?? []);
+    const task = calls.find(call => call.name === 'Task'), read = calls.find(call => call.name === 'Read');
+    assert.ok(task?.id && read?.id, 'The real provider must request Task and Read');
+    assert.ok(relay.requests.some(request => request.toolResults?.some(result => result.callId === read.id && result.containsFileMarker)), 'Read must return the actual file marker');
+    assert.ok(relay.requests.some(request => request.assistantReturnedMarker &&
+      request.toolResults?.some(result => result.callId === task.id && result.containsFileMarker)), 'The parent must receive the Task result and return its marker');
+    result.subagentContinuationVerified = true;
+  }
   assert.ok(relay.requests.every(request => reasoning === 'default' ? request.reasoning === undefined :
     (request.reasoning?.effort ?? request.reasoning) === reasoning), 'Wire effort must match the explicit native selection');
   assert.equal(await readFile(file, 'utf8'), marker + '\n');

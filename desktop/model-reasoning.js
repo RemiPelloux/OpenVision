@@ -23,6 +23,17 @@ export function reasoningSource(model, provider) {
   return fallbackReasoningValues(provider.url, model.id)?.length ? 'Compatibility hints · Unverified' : 'No reasoning levels declared';
 }
 
+export function subagentSelectionNotice(override, catalog) {
+  if (override?.mode !== 'model') return '';
+  const selection = override.modelConfig?.selectedModels?.[0];
+  const id = selection?.modelId ?? override.modelConfig?.modelName;
+  const model = catalog.find(model => model.name === id);
+  if (!model) return 'The selected Explore model is unavailable. Choose another model or Inherit from parent.';
+  const values = model.parameterDefinitions?.find(parameter => parameter.id === 'reasoning')?.parameterType?.enumParameter?.values ?? [];
+  const unavailable = unavailableReasoning(selection?.parameters, values.map(value => value.value));
+  return unavailable ? `Reasoning level "${unavailable}" is unavailable for the selected Explore model. Choose a listed level or Provider default.` : '';
+}
+
 // Compatibility hints; individual tiers require live verification. Declarations take precedence.
 export function fallbackReasoningValues(baseUrl, modelId) {
   let hostname;

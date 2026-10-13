@@ -57,7 +57,7 @@ All live entries below use saved provider-specific credentials at
 
 | Model/connection | Discovery | Live stream/tool evidence | Reasoning and other limits |
 | --- | --- | --- | --- |
-| GPT connection, `gpt-6.1-sol` | 11 IDs, all enabled saved IDs present | Direct low-effort tool roundtrip, plain stream and earlier native Read with Provider default/High passed; latest High Read continuation timed out after 60 seconds | Latest failure is retained; other models/tiers, images, autocomplete and full Agent lifecycle unverified |
+| GPT connection, `gpt-6.1-sol` | 11 IDs, all enabled saved IDs present | Direct tool roundtrip/plain stream and native Read passed; a later High Read timed out; latest inherited High Task child Read and parent continuation passed four HTTP 200 requests | Timeout retained; real explicit child overrides, retries/resumes, other models/tiers, images, autocomplete and full lifecycle unverified |
 | DeepSeek connection, `deepseek-v4-flash` | 6 IDs, all enabled saved IDs present | Latest plain stream passed; earlier native Read passed, latest native Provider default request returned HTTP 400 | Agent support is inconsistent. Explicit low/none/high requests and direct synthetic tool continuation also failed; the cause of the latest native failure is unresolved |
 | Grok connection, `grok-4.7` | 4 IDs, all enabled saved IDs present | Direct low-effort tool roundtrip and latest native Read with Provider default passed | Latest plain-stream exact-phrase check failed on a refusal (HTTP 200); earlier continuation HTTP 429; other tiers/models and full lifecycle unverified |
 | Local `fixture-agent` | One synthetic ID | Deterministic native stream/tool/approval/cancellation/restart fixture | Proves local workflow only; no model intelligence, upstream performance or token-usage claim |
@@ -72,6 +72,10 @@ The [reasoning capability lifecycle](reasoning-capability-lifecycle.md) now make
 that uncertainty visible and verifies parent-Agent rejection/recovery for stale
 choices in a simulated native Windows workflow. It adds no live-provider support
 claim and leaves OV-203 Partial.
+The [subagent verification](subagent-reasoning-verification.md) adds native
+reasoning/override/restart/error fixtures and the real GPT child Read above.
+It corrects the earlier static inference of broken child reasoning propagation;
+the measured disabled-child model fallback was fixed. OV-104/203 remain Partial.
 
 ## Platform, language and runtime matrix
 

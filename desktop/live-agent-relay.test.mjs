@@ -28,11 +28,13 @@ test('relay forwards both inference bodies unchanged and swaps only transport au
   const relay = await fixture(t, async (request, response) => {
     let body = ''; for await (const chunk of request) body += chunk;
     received.push({ body, path: request.url, authorization: request.headers.authorization });
-    sse(response, [{ model: `reported-${key}`, choices: [{ delta: { content: marker.slice(0, 10) } }] },
+    sse(response, [{ choices: [{ delta: { tool_calls: [{ index: 0, id: 'read-1', function: { name: 'Re' } }] } }] },
+      { choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'ad' } }] } }] },
+      { model: `reported-${key}`, choices: [{ delta: { content: marker.slice(0, 10) } }] },
       { choices: [{ delta: { content: marker.slice(10) + 'x'.repeat(100) } }] }]);
   });
   for (const endpoint of ['chat/completions', 'responses']) {
-    const body = JSON.stringify({ model, stream: true, messages: [{ role: 'tool', content: marker }],
+    const body = JSON.stringify({ model, stream: true, messages: [{ role: 'tool', content: marker, tool_call_id: 'read-1' }],
       input: [{ type: 'function_call_output', output: marker }], reasoning_effort: 'high' }, null, 2);
     const response = await fetch(`${relay.url}/${endpoint}`, { method: 'POST', headers, body });
     assert.equal(response.status, 200); await response.text();
@@ -41,6 +43,8 @@ test('relay forwards both inference bodies unchanged and swaps only transport au
     assert.equal(relay.requests.at(-1).assistantReturnedMarker, true);
     assert.equal(relay.requests.at(-1).reasoning, 'high');
     assert.equal(relay.requests.at(-1).responseModel, 'reported-[redacted]');
+    assert.deepEqual(relay.requests.at(-1).responseToolCalls, [{ id: 'read-1', name: 'Read' }]);
+    assert.deepEqual(relay.requests.at(-1).toolResults, [{ callId: 'read-1', containsFileMarker: true }]);
   }
   assert.ok(!JSON.stringify(relay.requests).includes(key));
   const catalog = await (await fetch(`${relay.url}/models`, { headers })).json();

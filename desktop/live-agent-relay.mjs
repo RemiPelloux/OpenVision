@@ -7,6 +7,7 @@ const byteLimit = 4 * 1024 * 1024;
 
 function streamEvidence(record, marker, redact) {
   const decoder = new TextDecoder(); let buffer = '', output = '';
+  const observeTools = toolEvidence(record, redact);
   return chunk => {
     buffer += decoder.decode(chunk, { stream: true });
     let end;
@@ -14,6 +15,7 @@ function streamEvidence(record, marker, redact) {
       const line = buffer.slice(0, end).replace(/\r$/, ''); buffer = buffer.slice(end + 1);
       if (!line.startsWith('data:') || line.slice(5).trim() === '[DONE]') continue;
       const event = JSON.parse(line.slice(5));
+      observeTools(event);
       if (event.model) record.responseModel = redact(event.model);
       const content = event.type === 'response.output_text.delta' ? event.delta : event.choices?.[0]?.delta?.content;
       if (typeof content === 'string') {
@@ -22,6 +24,23 @@ function streamEvidence(record, marker, redact) {
         output = output.slice(-marker.length);
       }
     }
+  };
+}
+
+function toolEvidence(record, redact) {
+  const calls = new Map();
+  return event => {
+    let changed = false;
+    for (const delta of event.choices?.[0]?.delta?.tool_calls ?? []) {
+      const key = `chat:${delta.index ?? 0}`, previous = calls.get(key) ?? { id: '', name: '' };
+      calls.set(key, { id: delta.id ?? previous.id, name: previous.name + (delta.function?.name ?? '') });
+      changed = true;
+    }
+    if (['response.output_item.added', 'response.output_item.done'].includes(event.type) && event.item?.type === 'function_call') {
+      calls.set(`responses:${event.item.id}`, { id: event.item.call_id, name: event.item.name });
+      changed = true;
+    }
+    if (changed) record.responseToolCalls = [...calls.values()].map(call => ({ id: redact(call.id), name: redact(call.name) }));
   };
 }
 
@@ -61,6 +80,11 @@ export async function createLiveAgentRelay({ provider, model, marker }) {
       messageShapes: payload.messages?.map(message => ({ role: message.role, content: message.content === null ? 'null' : typeof message.content,
         keys: Object.keys(message), toolCalls: message.tool_calls?.map(call => ({ keys: Object.keys(call), functionKeys: Object.keys(call.function ?? {}) })) })),
       tools: payload.tools?.map(tool => tool.function?.name ?? tool.name),
+      toolResults: payload.messages?.filter(message => message.role === 'tool').map(message => ({
+        callId: redact(message.tool_call_id ?? ''), containsFileMarker: JSON.stringify(message.content).includes(marker),
+      })) ?? payload.input?.filter(item => item.type === 'function_call_output').map(item => ({
+        callId: redact(item.call_id ?? ''), containsFileMarker: JSON.stringify(item.output).includes(marker),
+      })),
       actualFileInToolResult: payload.messages?.some(message => message.role === 'tool' && JSON.stringify(message.content).includes(marker)) ||
         payload.input?.some(item => item.type === 'function_call_output' && JSON.stringify(item.output).includes(marker)) || false };
     requests.push(record);

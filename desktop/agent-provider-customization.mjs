@@ -16,14 +16,31 @@ function insertFunction(text, name, body) {
 }
 
 export function scopedAgentProviders(text) {
-  if (text.includes(marker)) return text;
+  if (text.includes(marker)) return retainSubagentSelection(text);
   text = insertFunction(text, 'Zxe', '\n e = openvisionModelIdentity.resolveAgentModel(e);\n');
   text = insertFunction(text, 'ybe', '\n e = openvisionModelIdentity.parseModelSelection(e)?.modelId ?? e;\n');
   const pattern = /localProvider: \{\s+kind: "http",\s+endpoints: \[\s+\{ baseUrl: t\.baseUrl, \.\.\.\(void 0 !== t\.apiKey \? \{ apiKey: t\.apiKey \} : \{\}\) \},/g;
   if ([...text.matchAll(pattern)].length !== 1) throw new Error('Agent runtime provider transfer changed');
   text = text.replace(pattern, value => value.replace('kind: "http",',
     'kind: "http", openvisionProviders: t.openvisionProviders,'));
-  return `${marker}\nconst openvisionModelIdentity = require("./openvision-model-identity.cjs");\n${text}`;
+  return retainSubagentSelection(`${marker}\nconst openvisionModelIdentity = require("./openvision-model-identity.cjs");\n${text}`);
+}
+
+function retainSubagentSelection(text) {
+  const marker = '/* OpenVision retain unavailable subagent overrides */';
+  if (text.includes(marker)) return text;
+  const anchor = 'function IEe(e) {', start = text.indexOf(anchor);
+  if (start < 0 || text.indexOf(anchor, start + 1) !== -1) throw new Error('Local subagent configuration owner changed');
+  const node = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
+  let body = text.slice(start, node.end);
+  const fallback = /const e = ube\(t.selection.value.modelId, n\);\s+r = void 0 === e \? \{ type: "inherit" \} : \{ type: "model", modelId: e \};/g;
+  if ([...body.matchAll(fallback)].length !== 1) throw new Error('Subagent override resolution changed');
+  body = body.replace(fallback, `${marker}\nr = {type: "model", modelId: t.selection.value.modelId};`);
+  const unused = 'const n = Object.keys(t).map((e) => ({ id: e }));';
+  if (body.split(unused).length !== 2) throw new Error('Subagent override catalog owner changed');
+  body = body.replace(unused, '').replace('i = (function (e, t) {', 'i = (function (e) {')
+    .replace('})(e.subagentModelOverrides, s);', '})(e.subagentModelOverrides);');
+  return text.slice(0, start) + body + text.slice(node.end);
 }
 
 export async function installAgentProviders(root) {

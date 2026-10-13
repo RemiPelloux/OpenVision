@@ -42,7 +42,8 @@
     "verify:model-menu:large": "node desktop/verify-large-model-menu.mjs",
     "verify:catalog-retention": "node desktop/verify-catalog-retention.mjs",
     "verify:provider-identity": "node desktop/verify-provider-identity.mjs",
-    "verify:reasoning-capabilities": "node desktop/verify-reasoning-capabilities.mjs"
+    "verify:reasoning-capabilities": "node desktop/verify-reasoning-capabilities.mjs",
+    "verify:subagent-reasoning": "node desktop/verify-subagent-reasoning.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

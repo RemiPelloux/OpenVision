@@ -159,7 +159,16 @@ verifies unverified-source notices, changed/empty/omitted capabilities, invalid
 saved choices across restart, zero inference for blocked selections and explicit
 recovery in the Windows parent Agent. Malformed reasoning discovery now reports
 an error and retains the last valid catalog/selection across restart. Native
-subagent error/retry behavior remains open; OV-203 stays Partial. The count stays 5/42.
+subagent capability-change/error behavior was then checked in the scoped follow-up below;
+OV-203 stays Partial. The count stays 5/42.
+
+The [subagent follow-up](subagent-reasoning-verification.md) restores Task Models
+settings, preserves capability updates, and fixes disabled-child fallback to the
+parent. Native fixtures pass inherited/explicit/saved reasoning, restart,
+unavailable choices, recovery and disabled Explore. Real Codex Easy GPT High
+Task/Read/parent continuation passed four HTTP 200 requests. Broader retries,
+resumes, real explicit overrides and provider matrix remain open; OV-104/203
+retain Partial status.
 
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |

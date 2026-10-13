@@ -107,9 +107,9 @@ the live compatibility report and is not counted as a success.
 
 ## Limits and follow-up
 
-OV-203 remains Partial pending its OV-104 dependency and native subagent
-capability-change/error behavior. Malformed discovery handling is now checked;
-native child error classification and retry behavior remain unverified. Real-provider successes and
+OV-203 remains Partial pending its OV-104 dependency and remaining retry/resume
+and provider cases. Malformed discovery and native child capability-change/error
+behavior now have scoped evidence in [subagent verification](subagent-reasoning-verification.md). Real-provider successes and
 failures remain in [live-provider-compatibility.md](live-provider-compatibility.md).
 No new macOS/Linux or overall RAM claim is made.
 
@@ -141,11 +141,14 @@ Observed in these source expressions:
   is not proof of child/runtime retry behavior.
 
 These are static findings, not observed child requests or a demonstrated retry
-loop. The next OV-104 check must observe inherited and explicitly overridden
-reasoning in actual child requests, plus disabled/unavailable choices and error
-termination. Repair the local parameter producer and native error conversion
-before asserting that UI preferences prove child inference behavior. Do not
-promote OV-104 or OV-203 from the existing workbench-only parameter tests.
+loop. Subsequent native checks supersede the inference that this omission breaks
+the active Windows child path: inherited High already worked before edits, and
+the restored settings control sends explicit Ultra to the selected child.
+Unavailable levels terminate with a Task error and zero child requests. The
+measured defect was a disabled model silently becoming inherited; that local
+override conversion is fixed. See [subagent verification](subagent-reasoning-verification.md)
+for native fixture and real GPT evidence, remaining alternate-path uncertainty,
+and the explicit limits on retry/resume claims.
 
 One rebuild found eight changed bytes in the local generated JavaScript-debugger
 manifest, with an unchanged old modification time. Its cause is unknown. The
