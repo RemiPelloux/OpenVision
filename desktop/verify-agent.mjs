@@ -148,7 +148,8 @@ async function launch() {
 }
 try {
   if (verifyMcp) {
-    mcp = await createAgentMcpFixture({ directory, profile, stdio: process.argv.includes('--mcp-stdio') });
+    mcp = await createAgentMcpFixture({ directory, profile, stdio: process.argv.includes('--mcp-stdio'),
+      failures: process.argv.includes('--mcp-failures') });
     result.mcp = mcp.results;
   }
   await launch();

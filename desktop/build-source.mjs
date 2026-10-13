@@ -25,6 +25,7 @@ import { installOwnedShellProcesses } from './agent-process-customization.mjs';
 import { installLazyMcpChannels } from './mcp-lazy-customization.mjs';
 import { installMcpAttemptCleanup } from './mcp-attempt-customization.mjs';
 import { installMcpCancellation } from './mcp-cancel-customization.mjs';
+import { installMcpReconnect } from './mcp-reconnect-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -46,6 +47,7 @@ await installProfilePathIsolation(root);
 await installLazyMcpChannels(root);
 await installMcpAttemptCleanup(root);
 await installMcpCancellation(root);
+await installMcpReconnect(root);
 await installSubagentPathIsolation(root);
 await installAgentRuntime(root);
 await installOwnedShellProcesses(root);

@@ -22,7 +22,10 @@ export async function createMcpServerFixture() {
           active.writeHead(204); active.end();
         }
       }
-      if (message.method === 'tools/call' && message.params?.arguments?.mode === 'slow') {
+      if (message.method === 'tools/call' && message.params?.arguments?.mode === 'disconnect') {
+        response.destroy(); return;
+      }
+      if (message.method === 'tools/call' && ['slow', 'timeout'].includes(message.params?.arguments?.mode)) {
         pending.set(message.id, response);
         response.on('close', () => {
           if (pending.get(message.id) !== response) return;

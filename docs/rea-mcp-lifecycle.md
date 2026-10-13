@@ -93,3 +93,8 @@ transport failure, timeouts, native failed cleanup, OAuth, multi-window ownershi
 idle utility disposal, long-session growth, remote paths and other platforms
 still need evidence. The accepted denominator remains 42 stories, with three
 fully Verified stories.
+
+Follow-up: [MCP disconnect and timeout recovery](rea-mcp-recovery.md) records
+the expanded native failure scenarios and the subsequent STDIO readiness fix.
+Use that report for the later build's hashes and outcomes; the records above
+remain evidence for their original builds.

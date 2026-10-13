@@ -317,6 +317,14 @@ not establish live-provider reasoning acceptance, accessibility completeness or
 bounded Agent-picker rendering at 10,000 models. Both stories remain Partial.
 No accepted story was removed or promoted; three of 42 remain fully Verified.
 
+13 October 2026, OV-303 recovery follow-up (owner: OpenVision):
+[MCP disconnect and timeout recovery](rea-mcp-recovery.md) extends native fault
+verification and fixes the connection manager returning a stale adapter after a
+STDIO process closes. A subsequent operation waits for the existing lifecycle to
+reconnect; the failed operation is not replayed. The linked report distinguishes
+original failure evidence, final build evidence and unresolved provider/platform
+gates. This does not promote an acceptance story or change the denominator.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

@@ -4,13 +4,19 @@ import { join } from 'node:path';
 import { createMcpServerFixture } from './verify-mcp-server.mjs';
 import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
 
-export async function createAgentMcpFixture({ directory, profile, stdio = false }) {
+// Exercise the production two-minute idle timeout with a UI continuation margin.
+const timeoutContinuationBudgetMs = 150000;
+
+export async function createAgentMcpFixture({ directory, profile, stdio = false, failures = false }) {
   const transport = await (stdio ? createMcpStdioFixture() : createMcpServerFixture());
   const results = { transport: transport.kind, transportRequests: transport.requests, errors: transport.errors,
     connections: transport.connections, cancellations: transport.cancellations, continuations: [], processSamples: [] };
   function verifyRequests() {
     assert.ok(transport.requests.every(request => stdio ? request.fixtureControlAuthenticated : request.authorized));
     assert.deepEqual(transport.errors, []);
+    if (failures) for (const mode of ['disconnect', 'timeout'])
+      assert.equal(transport.requests.filter(request => request.method === 'tools/call' &&
+        request.params?.arguments?.mode === mode).length, 1, `${mode} must never be replayed later`);
   }
   const callCount = () => transport.requests.filter(request => request.method === 'tools/call').length;
   async function sample(app, label) {
@@ -24,8 +30,8 @@ export async function createAgentMcpFixture({ directory, profile, stdio = false 
       `Propose calling memory_probe on user-openvision-verify in ${mode} mode. Wait for my approval.`);
     await input.press('Enter');
   }
-  async function finish(page, mode) {
-    await page.getByText(`OpenVision MCP ${mode} finished.`, { exact: true }).first().waitFor({ timeout: 45000 });
+  async function finish(page, mode, timeout = 45000) {
+    await page.getByText(`OpenVision MCP ${mode} finished.`, { exact: true }).first().waitFor({ timeout });
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
     const content = results.continuations.find(result => result.mode === mode)?.content;
     assert.ok(content, `Missing native MCP ${mode} continuation`);
@@ -66,6 +72,23 @@ export async function createAgentMcpFixture({ directory, profile, stdio = false 
     assert.ok(results.stopMs < 1000, 'MCP Stop must meet the one-second cancellation budget');
     results.upstreamCancellation = true;
   }
+  async function verifyFailure(page, mode, setPhase) {
+    const started = performance.now();
+    const before = await approveGate(page, mode, setPhase);
+    const content = await finish(page, mode, mode === 'timeout' ? timeoutContinuationBudgetMs : 45000);
+    assert.equal(callCount(), before + 1, 'A call with an unknown execution outcome must not be silently replayed');
+    assert.ok(!content.includes(transport.marker), 'Failure must not be presented as successful tool output');
+    assert.match(content, mode === 'timeout' ? /timed out|timeout|deadline/i : /error|closed|connect|fetch|socket/i);
+    (results.failureCases ??= []).push({ mode, elapsedMs: Math.round(performance.now() - started), content,
+      executions: callCount() - before });
+    if (mode === 'timeout') {
+      const request = transport.requests.findLast(request => request.method === 'tools/call');
+      assert.ok(transport.cancellations.some(event => event.requestId === request.id && event.instance === request.instance),
+        'Native timeout must reach the server and release its pending operation');
+    }
+    await approve(page, `after-${mode}`, setPhase);
+    await transport.verifyOneActiveChild?.();
+  }
   return {
     results, dispose: () => transport.dispose(),
     async verifyShutdown() { if (transport.verifyExited) { await transport.verifyExited(); results.nativeChildCleanup = true; } },
@@ -83,7 +106,7 @@ export async function createAgentMcpFixture({ directory, profile, stdio = false 
       }
       const args = mode === 'discover' ? { server: 'user-openvision-verify' } :
         { server: 'user-openvision-verify', toolName: 'memory_probe',
-          description: `OpenVision MCP ${mode} probe`, arguments: mode === 'slow' ? { mode: 'slow' } : {} };
+          description: `OpenVision MCP ${mode} probe`, arguments: ['slow', 'disconnect', 'timeout'].includes(mode) ? { mode } : {} };
       event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function',
         function: { name, arguments: JSON.stringify(args) } }] }); event({}, 'tool_calls');
     },
@@ -115,6 +138,7 @@ export async function createAgentMcpFixture({ directory, profile, stdio = false 
       for (const mode of ['deny', 'allow']) await approve(page, mode, setPhase);
       await verifyCancellation(page, setPhase);
       await approve(page, 'after-stop', setPhase);
+      if (failures) for (const mode of ['disconnect', 'timeout']) await verifyFailure(page, mode, setPhase);
       verifyRequests();
       results.lateConfiguration = true;
       results.toolListsBeforeRestart = transport.requests.filter(request => request.method === 'tools/list').length;

@@ -23,8 +23,11 @@ const input = createInterface({ input: process.stdin });
 input.on('line', line => {
   try {
     const message = JSON.parse(line);
+    if (message.method === 'tools/call' && message.params?.arguments?.mode === 'disconnect') {
+      socket.write(JSON.stringify({ kind: 'request', message }) + '\n', () => process.exit(0)); return;
+    }
     report({ kind: 'request', message });
-    if (message.method === 'tools/call' && message.params?.arguments?.mode === 'slow') {
+    if (message.method === 'tools/call' && ['slow', 'timeout'].includes(message.params?.arguments?.mode)) {
       pending.add(message.id); return;
     }
     if (message.method === 'notifications/cancelled' && pending.delete(message.params?.requestId))

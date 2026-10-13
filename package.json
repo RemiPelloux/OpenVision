@@ -34,7 +34,7 @@
     "verify:agent": "node desktop/verify-agent.mjs",
     "benchmark:native": "node desktop/verify-agent.mjs --baseline",
     "test:native-baseline": "node --test desktop/native-baseline.test.mjs",
-    "test:mcp-lazy": "node --test desktop/mcp-lazy.test.mjs desktop/mcp-routing.test.mjs desktop/mcp-attempt.test.mjs desktop/mcp-cancel.test.mjs",
+    "test:mcp-lazy": "node --test desktop/mcp-lazy.test.mjs desktop/mcp-routing.test.mjs desktop/mcp-attempt.test.mjs desktop/mcp-cancel.test.mjs desktop/mcp-reconnect.test.mjs",
     "smoke": "node test/smoke.mjs",
     "benchmark:models": "node --expose-gc desktop/benchmark-models.mjs",
     "benchmark:context": "node --expose-gc desktop/benchmark-context.mjs",

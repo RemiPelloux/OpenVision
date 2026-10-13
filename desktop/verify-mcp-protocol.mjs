@@ -6,7 +6,7 @@ export function mcpFixtureResponse(message, marker) {
     case 'initialize': result = { protocolVersion: message.params.protocolVersion,
       capabilities: { tools: {} }, serverInfo: { name: 'openvision-verify', version: '1.0.0' } }; break;
     case 'tools/list': result = { tools: [{ name: 'memory_probe', description: 'Read the disposable verification marker.',
-      inputSchema: { type: 'object', properties: { mode: { type: 'string', enum: ['slow'] } }, additionalProperties: false } }] }; break;
+      inputSchema: { type: 'object', properties: { mode: { type: 'string', enum: ['slow', 'disconnect', 'timeout'] } }, additionalProperties: false } }] }; break;
     case 'tools/call': result = message.params.name === 'memory_probe'
       ? { content: [{ type: 'text', text: marker }] }
       : { isError: true, content: [{ type: 'text', text: 'Unknown fixture tool' }] }; break;
