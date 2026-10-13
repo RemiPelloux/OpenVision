@@ -1,5 +1,10 @@
 # Performance review — 2026-10-12
 
+The [13 October model-catalog follow-up](model-memory-optimization.md) removes
+repeated provider parsing, eager autocomplete reasoning data, per-provider whole
+catalog publication and quadratic manual-model merging. It includes reproducible
+before/after heap and timing measurements with explicit scope and cache costs.
+
 This pass reduces repeated build allocations, removes one JavaScript/TypeScript
 server by default, and gives import previews an explicit lifetime.
 

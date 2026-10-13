@@ -52,10 +52,12 @@ try {
   const completionSearch = page.getByRole('searchbox', { name: 'Search autocomplete models' });
   assert.equal(await completion.locator('option').count(), 41);
   await completionSearch.fill('model-9876');
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Tab autocomplete model"]')?.options.length === 2);
   assert.equal(await completion.locator('option').count(), 2);
   await completion.selectOption('model-9876');
   assert.equal(await page.evaluate(() => window.completionModel), 'model-9876');
   await completionSearch.fill('');
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Tab autocomplete model"]')?.options.length === 42);
   assert.equal(await completion.inputValue(), 'model-9876', 'Filtering preserves the selected model');
   assert.equal(await completion.locator('option').count(), 42);
   await page.getByRole('button', { name: 'Next', exact: true }).click();

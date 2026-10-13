@@ -48,6 +48,21 @@ function dialog(title) {
   return { node, form, status, actions };
 }
 
+function modelPage(models, options) {
+  const { page, query, enabledOnly } = options;
+  let count = 0, enabled = 0;
+  const visible = [], offset = page * modelsPerPage;
+  for (const model of models) {
+    if (model.enabled) enabled++;
+    if ((enabledOnly && !model.enabled) || (query && !`${model.name} ${model.id}`.toLowerCase().includes(query))) continue;
+    if (count >= offset && visible.length < modelsPerPage) visible.push(model);
+    count++;
+  }
+  const last = Math.max(0, Math.ceil(count / modelsPerPage) - 1);
+  if (page > last) return modelPage(models, { ...options, page: last });
+  return { visible, count, enabled, page, offset };
+}
+
 export function mountModels(container, bridge) {
   if (!container || container.dataset.mounted) return;
   container.dataset.mounted = 'true';
@@ -68,9 +83,9 @@ export function mountModels(container, bridge) {
   const list = element('div', '', 'openvision-provider-list');
   const pages = new Map();
   let renderFrame;
-  const matches = model => (filter.value !== 'enabled' || model.enabled) &&
-    `${model.name} ${model.id}`.toLowerCase().includes(search.value.trim().toLowerCase());
+  let filterQuery = '';
   function renderProviders() {
+    filterQuery = search.value.trim().toLowerCase();
     list.replaceChildren(...providers.state.providers.map(providerRow));
     if (busy) for (const control of list.querySelectorAll('button,input')) control.disabled = true;
   }
@@ -162,13 +177,16 @@ export function mountModels(container, bridge) {
     return row;
   }
   function providerRow(provider) {
+    const { visible, count, enabled, page, offset } = modelPage(provider.models, {
+      page: pages.get(provider.id) ?? 0, query: filterQuery, enabledOnly: filter.value === 'enabled',
+    });
     const section = element('section', '', 'openvision-provider');
     const header = element('div', '', 'openvision-provider-header');
     const title = element('div', '', 'openvision-model-title');
     title.append(element('strong', provider.name), element('small', provider.url));
     const meta = element('div', '', 'openvision-provider-meta');
     if (providers.state.activeId === provider.id) meta.append(element('span', 'Active', 'openvision-active-badge'));
-    meta.append(element('span', `${provider.models.filter(model => model.enabled).length} / ${provider.models.length} enabled`));
+    meta.append(element('span', `${enabled} / ${provider.models.length} enabled`));
     title.append(meta);
     header.append(title, button('Discover Models', () => run(() => providers.discover(provider.id)), 'refresh'),
       button('Add Model', () => modelDialog(provider), 'plus'),
@@ -176,11 +194,8 @@ export function mountModels(container, bridge) {
       button('Remove Provider', () => run(() => providers.remove(provider.id)), 'remove'));
     section.append(header);
     if (!provider.models.length) section.append(element('p', 'No models configured.', 'openvision-model-status'));
-    const visible = provider.models.filter(matches);
-    const page = Math.min(pages.get(provider.id) ?? 0, Math.max(0, Math.ceil(visible.length / modelsPerPage) - 1));
-    const offset = page * modelsPerPage;
-    for (const model of visible.slice(offset, offset + modelsPerPage)) section.append(modelRow(provider, model));
-    if (visible.length > modelsPerPage) {
+    for (const model of visible) section.append(modelRow(provider, model));
+    if (count > modelsPerPage) {
       const navigation = element('nav', '', 'openvision-model-actions');
       navigation.setAttribute('aria-label', `${provider.name} model pages`);
       const move = delta => {
@@ -190,8 +205,8 @@ export function mountModels(container, bridge) {
         active?.querySelector('button:not(:disabled)')?.focus();
       };
       const previous = button('Previous', () => move(-1)); previous.disabled = page === 0;
-      const next = button('Next', () => move(1)); next.disabled = offset + modelsPerPage >= visible.length;
-      navigation.append(previous, element('span', `${offset + 1}–${Math.min(offset + modelsPerPage, visible.length)} of ${visible.length}`), next);
+      const next = button('Next', () => move(1)); next.disabled = offset + modelsPerPage >= count;
+      navigation.append(previous, element('span', `${offset + 1}–${Math.min(offset + modelsPerPage, count)} of ${count}`), next);
       section.append(navigation);
     }
     if (provider.models.length && !visible.length) section.append(element('p', 'No matching models.', 'openvision-empty-models'));

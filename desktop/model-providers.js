@@ -1,6 +1,8 @@
 import { fallbackReasoningValues } from './model-reasoning.js';
 const storageKey = 'openvision.model-providers.v1';
 const secretKey = id => `openvision.provider.${id}`;
+const routeSnapshots = new WeakMap();
+const concurrentDiscoveries = 3;
 
 export function normalizeBaseUrl(value) {
   const url = new URL(value.trim());
@@ -119,12 +121,30 @@ function readState(text) {
 export class ModelProviders {
   constructor(bridge) {
     this.bridge = bridge;
+    this.discovery = new Map();
+    this.discoveryUpdates = new Map();
     this.state = readState(bridge.storage.get(storageKey, -1));
     this.ready = this.state.activeId ? this.activate(this.state.activeId).catch(() => {}) : Promise.resolve();
   }
 
   allModels() {
     return stateCatalog(this.state);
+  }
+
+  completionChoices(query, selected, limit) {
+    const models = [];
+    let count = 0, active;
+    for (const { model, provider } of enabledEntries(this.state)) {
+      const name = provider.name ? `${provider.name} · ${model.name}` : model.name;
+      const matches = !query || `${model.id} ${name}`.toLowerCase().includes(query);
+      if (matches) count++;
+      if (model.id !== selected && (!matches || models.length >= limit)) continue;
+      const row = { name: model.id, clientDisplayName: name, providerId: provider.id, tagline: provider.name };
+      if (model.id === selected) active = row;
+      if (matches && models.length < limit) models.push(row);
+    }
+    if (active && !models.includes(active)) models.unshift(active);
+    return { models, count };
   }
 
   async persist() {
@@ -144,31 +164,62 @@ export class ModelProviders {
     if (this.state.activeId === provider.id) await this.activate(provider.id);
     return provider;
   }
-  async discover(id) {
-    const provider = this.get(id);
+  discover(id) {
+    let provider;
+    try { provider = this.get(id); }
+    catch (error) { return Promise.reject(error); }
+    if (!this.discoveryUpdates.has(provider)) {
+      const update = this.loadModels(provider).then(async () => {
+        await this.persist(); this.publishModels(); return provider.models;
+      }).finally(() => this.discoveryUpdates.delete(provider));
+      this.discoveryUpdates.set(provider, update);
+    }
+    return this.discoveryUpdates.get(provider);
+  }
+  loadModels(provider) {
+    const existing = this.discovery.get(provider);
+    if (existing) return existing;
+    const pending = this.fetchModels(provider).finally(() => this.discovery.delete(provider));
+    this.discovery.set(provider, pending);
+    return pending;
+  }
+  async fetchModels(provider) {
+    const id = provider.id;
     const key = await this.bridge.secrets.get(secretKey(id));
+    if (!this.state.providers.includes(provider)) throw new Error('Provider changed during discovery. Refresh its new configuration.');
     const response = await this.bridge.request(`${provider.url}/models`, key);
     const discovered = parseModels(response);
+    if (!this.state.providers.includes(provider)) throw new Error('Provider changed during discovery. Refresh its new configuration.');
     const old = new Map(provider.models.map(model => [model.id, model]));
+    const found = new Set(discovered.map(model => model.id));
     provider.models = discovered.map(model => {
       const previous = old.get(model.id);
       return previous ? { ...previous, ...model, enabled: previous.enabled,
         name: previous.name || model.name, manual: previous.manual } : model;
     });
     for (const model of old.values())
-      if (model.manual && !provider.models.some(item => item.id === model.id)) provider.models.push(model);
+      if (model.manual && !found.has(model.id)) provider.models.push(model);
     provider.capabilitiesDiscovered = true;
-    await this.persist();
-    this.publishModels();
-    return provider.models;
   }
-  async discoverMissingCapabilities() {
-    const pending = this.state.providers
-      .filter(provider => !provider.capabilitiesDiscovered && provider.models.some(model => model.enabled))
-      .map(provider => this.discover(provider.id));
-    const results = await Promise.allSettled(pending);
-    const failures = results.filter(result => result.status === 'rejected');
-    if (failures.length) throw new Error(`${failures.length} provider refresh(es) failed: ${failures.map(result => result.reason.message).join('; ')}`);
+  discoverMissingCapabilities() {
+    if (!this.capabilityRefresh) this.capabilityRefresh = this.refreshCapabilities()
+      .finally(() => { this.capabilityRefresh = undefined; });
+    return this.capabilityRefresh;
+  }
+  async refreshCapabilities() {
+    const providers = this.state.providers.filter(provider =>
+      !provider.capabilitiesDiscovered && provider.models.some(model => model.enabled));
+    let index = 0, refreshed = 0;
+    const failures = [];
+    await Promise.all(Array.from({ length: Math.min(concurrentDiscoveries, providers.length) }, async () => {
+      while (index < providers.length) {
+        const provider = providers[index++];
+        try { await this.loadModels(provider); refreshed++; }
+        catch (error) { failures.push(error.message); }
+      }
+    }));
+    if (refreshed) { await this.persist(); this.publishModels(); }
+    if (failures.length) throw new Error(`${failures.length} provider refresh(es) failed: ${failures.join('; ')}`);
   }
   get(id) {
     const provider = this.state.providers.find(item => item.id === id);
@@ -218,7 +269,7 @@ export class ModelProviders {
 }
 
 export function activeModelIds(storage) {
-  return allCatalog(storage).map(model => model.name);
+  return [...routingSnapshot(storage).keys()];
 }
 
 export function allCatalog(storage) {
@@ -226,17 +277,38 @@ export function allCatalog(storage) {
 }
 
 function stateCatalog(state) {
+  return Array.from(enabledEntries(state), ({ model, provider, section }) => catalogModel(model, provider, section));
+}
+
+function* enabledEntries(state) {
   const seen = new Set();
-  return state.providers.flatMap((provider, section) => catalog(provider.models, provider, section))
-    .filter(model => !seen.has(model.name) && seen.add(model.name));
+  for (const [section, provider] of state.providers.entries()) {
+    for (const model of provider.models) {
+      if (!model.enabled || seen.has(model.id)) continue;
+      seen.add(model.id);
+      yield { model, provider, section };
+    }
+  }
+}
+
+function routingSnapshot(storage) {
+  const text = storage.get(storageKey, -1);
+  const previous = routeSnapshots.get(storage);
+  if (previous && previous.text === text) return previous.routes;
+  routeSnapshots.delete(storage);
+  const state = readState(text), routes = new Map();
+  for (const provider of state.providers) {
+    const route = Object.freeze({ providerId: provider.id, baseUrl: provider.url });
+    for (const model of provider.models)
+      if (model.enabled && !routes.has(model.id)) routes.set(model.id, route);
+  }
+  routeSnapshots.set(storage, { text, routes });
+  return routes;
 }
 
 export function requestProviderRoute(storage, modelId) {
   if (typeof modelId !== 'string' || !modelId) return undefined;
-  const state = readState(storage.get(storageKey, -1));
-  const provider = state.providers.find(provider => provider.models.some(model => model.enabled && model.id === modelId));
-  if (!provider) return undefined;
-  return { providerId: provider.id, baseUrl: provider.url };
+  return routingSnapshot(storage).get(modelId);
 }
 
 export async function requestProvider(storage, secrets, modelId) {

@@ -90,15 +90,11 @@ export async function localCompletion(service, request, secretToken, ipc = globa
   } finally { abortController.signal.removeEventListener('abort', cancel); }
 }
 
-function completionOptions(document, select, models, selected, query) {
-  const matches = models.filter(model => `${model.name} ${model.clientDisplayName}`.toLowerCase().includes(query));
-  const visible = matches.slice(0, completionOptionsLimit);
-  const active = models.find(model => model.name === selected);
-  if (active && !visible.includes(active)) visible.unshift(active);
+function completionOptions(document, select, choices, selected) {
   const off = document.createElement('option'); off.value = ''; off.textContent = 'Off';
   select.replaceChildren(off);
   const groups = new Map();
-  for (const model of visible) {
+  for (const model of choices.models) {
     const groupId = model.providerId;
     if (!groups.has(groupId)) {
       const group = document.createElement('optgroup'); group.label = model.tagline || 'Models';
@@ -109,14 +105,13 @@ function completionOptions(document, select, models, selected, query) {
     groups.get(groupId).append(option);
   }
   select.value = selected;
-  return matches.length > completionOptionsLimit ? `Showing ${completionOptionsLimit} of ${matches.length} matches. Search to find a model.` : `${matches.length} matching models.`;
+  return choices.count > completionOptionsLimit ? `Showing ${completionOptionsLimit} of ${choices.count} matches. Search to find a model.` : `${choices.count} matching models.`;
 }
 
 export function completionControl(document, bridge, providers) {
   const label = document.createElement('div');
   label.className = 'openvision-active-provider';
   label.textContent = 'Tab autocomplete model';
-  const models = providers.allModels();
   let selected = completionModel(bridge.storage) ?? '';
   const search = document.createElement('input');
   search.type = 'search'; search.placeholder = 'Find autocomplete model';
@@ -124,8 +119,15 @@ export function completionControl(document, bridge, providers) {
   const select = document.createElement('select');
   select.setAttribute('aria-label', 'Tab autocomplete model');
   const status = document.createElement('small'); status.setAttribute('role', 'status');
-  const render = () => { status.textContent = completionOptions(document, select, models, selected, search.value.trim().toLowerCase()); };
-  search.oninput = render;
+  const render = () => {
+    const choices = providers.completionChoices(search.value.trim().toLowerCase(), selected, completionOptionsLimit);
+    status.textContent = completionOptions(document, select, choices, selected);
+  };
+  let frame;
+  search.oninput = () => {
+    if (frame !== undefined) return;
+    frame = requestAnimationFrame(() => { frame = undefined; if (label.isConnected) render(); });
+  };
   render();
   select.onchange = async () => {
     selected = select.value;
