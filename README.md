@@ -209,6 +209,13 @@ latest protocol findings and cancellation fixes.
 The [MCP investigation](docs/rea-mcp-contract.md) records the recovered
 transport routing and the remaining local server lifecycle checks.
 
+The local control plane supports custom MCP servers through `GET
+/api/servers/:id/tools` and `POST /api/servers/:id/call`. STDIO and HTTP server
+definitions are stored in `config/servers.json`; STDIO child processes are owned
+and reaped by OpenVision. Use `transport: "http"` with a `url` for an HTTP MCP
+server. Account login, billing and hosted cloud agents remain
+outside the product scope.
+
 ## Verify
 
 ```sh

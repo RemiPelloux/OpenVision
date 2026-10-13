@@ -71,11 +71,19 @@ export function normalizeConfig(config) {
 }
 
 export function validateServer(id, server) {
-  if (!idPattern.test(id) || !server || server.kind !== "mcp" || typeof server.command !== "string" || !Array.isArray(server.args)) {
+  const transport = server?.transport ?? "stdio";
+  const validStdio = transport === "stdio" && typeof server?.command === "string" && Array.isArray(server?.args);
+  const validHttp = transport === "http" && typeof server?.url === "string";
+  if (!idPattern.test(id) || !server || server.kind !== "mcp" || (!validStdio && !validHttp)) {
     throw new Error(`Invalid MCP server definition: ${id}`);
   }
+  if (validHttp) new URL(server.url);
   if (server.env !== undefined && (typeof server.env !== "object" || server.env === null)) {
     throw new Error(`Invalid environment for MCP server: ${id}`);
+  }
+  for (const [name, value] of Object.entries(server.env ?? {})) {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/u.test(name) || typeof value !== "string")
+      throw new Error(`Invalid environment entry for MCP server: ${id}`);
   }
 }
 
@@ -85,9 +93,11 @@ export function publicConfig(config) {
     servers: Object.fromEntries(
       Object.entries(config.servers).map(([id, server]) => [id, {
         kind: server.kind,
+        transport: server.transport ?? "stdio",
         enabled: server.enabled !== false,
         command: server.command,
         args: server.args,
+        url: server.url,
         hasEnvironment: Object.keys(server.env ?? {}).length > 0,
       }]),
     ),

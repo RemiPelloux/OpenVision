@@ -57,6 +57,21 @@ transport modules do not establish STDIO process ownership, HTTP reconnect,
 approval, cancellation or cleanup behavior for a user-owned server. Those checks
 remain in OV-302–OV-304 and must use disposable local fixtures.
 
+OpenVision now has a local control-plane implementation for the first part of
+that contract. `src/mcp.mjs` owns JSON-RPC MCP clients over STDIO and HTTP. It
+performs `initialize`/`notifications/initialized`, lists tools, calls tools,
+expands configured environment tokens, tracks session IDs for HTTP, rejects
+malformed/error responses, propagates request cancellation, and reaps only child
+processes it started. `src/server.mjs` exposes these operations at
+`GET /api/servers/:id/tools` and `POST /api/servers/:id/call`; deleting a server
+closes its owned client first. Server shutdown closes every owned client.
+
+The implementation is deliberately local and transport-level. It does not claim
+approval UI, OAuth, tool-result policy, reconnect backoff or integration with the
+recovered Electron Agent surface. Four focused tests cover STDIO initialization,
+tool calls, cancellation/cleanup, HTTP JSON transport and manager reuse. These
+tests use disposable fixtures and no account or cloud endpoint.
+
 Required acceptance evidence:
 
 1. Start a disposable STDIO MCP server and verify discovery, one tool call,

@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { loadConfig, mutateConfig, paths, publicConfig, validateServer } from "./config.mjs";
+import { McpManager } from "./mcp.mjs";
 import { runRea } from "./rea.mjs";
 
 const port = Number(process.env.OPENVISION_PORT ?? process.env.CURSOR_APP_PORT ?? 4317);
@@ -16,6 +17,7 @@ const operations = new Set([
   "inspect-artifact",
   "analyze",
 ]);
+const mcp = new McpManager();
 
 function json(response, status, body) {
   response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
@@ -34,7 +36,7 @@ async function body(request) {
 }
 
 function safeServerView(id, definition) {
-  return { id, kind: definition.kind, enabled: definition.enabled !== false, command: definition.command, args: definition.args, hasEnvironment: Object.keys(definition.env ?? {}).length > 0 };
+  return { id, kind: definition.kind, transport: definition.transport ?? "stdio", enabled: definition.enabled !== false, command: definition.command, args: definition.args, url: definition.url, hasEnvironment: Object.keys(definition.env ?? {}).length > 0 };
 }
 
 async function route(request, response) {
@@ -46,6 +48,10 @@ async function route(request, response) {
     const { configPath, config } = await loadConfig();
     return json(response, 200, { configPath, servers: Object.entries(config.servers).map(([id, definition]) => safeServerView(id, definition)) });
   }
+  const toolsMatch = url.pathname.match(/^\/api\/servers\/([^/]+)\/tools$/u);
+  if (method === "GET" && toolsMatch) return listServerTools(decodeURIComponent(toolsMatch[1]), response);
+  const callMatch = url.pathname.match(/^\/api\/servers\/([^/]+)\/call$/u);
+  if (method === "POST" && callMatch) return callServerTool(decodeURIComponent(callMatch[1]), request, await body(request), response);
   if (method === "GET" && url.pathname === "/api/apis") {
     const { config } = await loadConfig();
     return json(response, 200, { apis: (config.apis ?? []).map(({ id, baseUrl, enabled = true }) => ({ id, baseUrl, enabled })) });
@@ -122,7 +128,7 @@ async function addServer(input, response) {
   const definition = { ...input, kind: input.kind ?? "mcp" };
   validateServer(input.id, definition);
   if (input.id === "rea") return json(response, 409, { error: "The built-in rea server cannot be replaced." });
-  const server = { kind: "mcp", enabled: input.enabled !== false, command: input.command, args: input.args, env: input.env ?? {} };
+  const server = { kind: "mcp", transport: input.transport ?? "stdio", enabled: input.enabled !== false, command: input.command, args: input.args, url: input.url, headers: input.headers, env: input.env ?? {} };
   await mutateConfig((config) => { config.servers[input.id] = server; });
   return json(response, 201, { server: safeServerView(input.id, server) });
 }
@@ -137,6 +143,7 @@ async function addApi(input, response) {
 
 async function removeServer(id, response) {
   if (id === "rea") return json(response, 409, { error: "The built-in rea server cannot be removed." });
+  await mcp.close(id);
   const removed = await mutateConfig((config) => {
     if (!Object.hasOwn(config.servers, id)) return false;
     delete config.servers[id];
@@ -144,6 +151,27 @@ async function removeServer(id, response) {
   });
   if (!removed) return json(response, 404, { error: "Server not found." });
   return json(response, 200, { removed: id });
+}
+
+async function serverDefinition(id) {
+  const { config } = await loadConfig();
+  const definition = config.servers[id];
+  if (!definition) throw Object.assign(new Error("MCP server not found."), { statusCode: 404 });
+  return definition;
+}
+
+async function listServerTools(id, response) {
+  const definition = await serverDefinition(id);
+  const tools = await mcp.listTools(id, definition);
+  return json(response, 200, { id, tools });
+}
+
+async function callServerTool(id, request, input, response) {
+  const definition = await serverDefinition(id);
+  const controller = new AbortController();
+  request.once("close", () => controller.abort(new Error("MCP client disconnected.")));
+  const result = await mcp.callTool(id, definition, input.tool, input.arguments, { signal: controller.signal, timeoutMs: input.timeoutMs });
+  return json(response, 200, { id, result });
 }
 
 async function removeApi(id, response) {
@@ -181,5 +209,7 @@ function page(response) {
   response.end(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>OpenVision</title><style>body{font:15px system-ui;margin:2rem;max-width:1100px;color:#15202b}main{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}section{border:1px solid #d7dee7;border-radius:8px;padding:1rem}pre{white-space:pre-wrap;overflow:auto;background:#f5f7fa;padding:.75rem;border-radius:6px;max-height:360px}button{padding:.55rem .8rem;border:1px solid #9aa8b8;border-radius:6px;background:white;cursor:pointer}input,select,textarea{padding:.5rem;width:100%;box-sizing:border-box;margin:.25rem 0 .6rem}textarea{min-height:120px;font-family:inherit}label{display:block;font-weight:600;margin-top:.4rem}.muted{color:#5a6875}</style></head><body><h1>OpenVision</h1><p class="muted">Fast local reverse engineering, evidence, AI routing, and custom MCP/API orchestration.</p><main><section><h2>Runtime</h2><pre id="health">Loading...</pre><button onclick="load()">Refresh</button></section><section><h2>REA capability surface</h2><pre id="capabilities">Loading...</pre></section><section><h2>AI server</h2><label>OpenAI-compatible base URL<input id="aiUrl" placeholder="http://127.0.0.1:11434/v1"></label><label>Model<input id="aiModel" placeholder="local-model"></label><label>API key environment variable<input id="aiEnv" value="OPENVISION_AI_API_KEY"></label><button onclick="saveAi()">Save AI settings</button><pre id="aiStatus"></pre></section><section><h2>Analysis</h2><label>Operation<select id="operation"><option>analyze-javascript-application</option><option>inspect-managed-artifact</option><option>inspect-go-binary</option><option>inspect-wasm-artifact</option><option>inspect-pe-resources</option><option>inspect-android-package</option><option>decode-android-resources</option><option>inspect-artifact</option></select></label><label>Target<input id="target" placeholder="C:\\path\\to\\artifact"></label><button onclick="analyze()">Run analysis</button><pre id="result"></pre></section><section><h2>AI chat</h2><label>Prompt<textarea id="prompt" placeholder="Explain this evidence..."></textarea></label><button onclick="chat()">Ask OpenVision</button><pre id="chatResult"></pre></section></main><script>async function get(path){const r=await fetch(path);return r.json()}async function load(){document.querySelector('#health').textContent=JSON.stringify(await get('/api/health'),null,2);const c=await get('/api/capabilities');document.querySelector('#capabilities').textContent=JSON.stringify(c.capabilities??c,null,2);const a=await get('/api/ai/config');if(a.ai){aiUrl.value=a.ai.baseUrl;aiModel.value=a.ai.model;aiEnv.value=a.ai.apiKeyEnv;aiStatus.textContent=JSON.stringify(a.ai,null,2)}}async function saveAi(){const r=await fetch('/api/ai/config',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({enabled:true,baseUrl:aiUrl.value,model:aiModel.value,apiKeyEnv:aiEnv.value})});aiStatus.textContent=JSON.stringify(await r.json(),null,2)}async function analyze(){result.textContent='Running...';const r=await fetch('/api/analyze',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({operation:operation.value,target:target.value})});result.textContent=JSON.stringify(await r.json(),null,2)}async function chat(){chatResult.textContent='Running...';const r=await fetch('/api/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:prompt.value}]})});chatResult.textContent=JSON.stringify(await r.json(),null,2)}load()</script></body></html>`);
 }
 
-const server = createServer((request, response) => route(request, response).catch((error) => json(response, 500, { error: error instanceof Error ? error.message : String(error) })));
+const server = createServer((request, response) => route(request, response).catch((error) => json(response, error?.statusCode ?? 500, { error: error instanceof Error ? error.message : String(error) })));
 server.listen(port, host, () => console.log(`OpenVision listening at http://${host}:${port}`));
+process.once("SIGINT", () => { mcp.closeAll().finally(() => server.close(() => process.exit(0))); });
+process.once("SIGTERM", () => { mcp.closeAll().finally(() => server.close(() => process.exit(0))); });
