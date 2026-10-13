@@ -46,6 +46,11 @@ subagent parameter fix. Native host binaries and addons are still required from
 matching platform inputs. The source tree is under `source/app`; build-time
 customizations are under `desktop`.
 
+Built-in telemetry collectors and upload paths are disabled in the core,
+workbench and bundled extensions. Settings imports preserve the disabled policy.
+The [telemetry audit](rea-telemetry-audit.md) records the implementation, 24 focused
+tests, native Windows observation, and remaining network/platform assurance gaps.
+
 Built-in extension checksums now describe the actual local extension files after
 source assembly. Verification stays enabled. `build/extension-integrity.json`
 records prior and current hashes; original host manifests are backed up. These

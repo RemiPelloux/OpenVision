@@ -2,10 +2,15 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { parse, modify, applyEdits } = require('../tooling/node_modules/jsonc-parser');
+export const telemetrySettings = Object.freeze({
+  'telemetry.telemetryLevel': 'off', 'telemetry.enableTelemetry': false,
+  'telemetry.enableCrashReporter': false, 'telemetry.feedback.enabled': false,
+});
 export const localSettings = {
   'window.title': 'OpenVision - ${rootName}${separator}${activeEditorShort}',
-  'update.mode': 'none', 'extensions.autoUpdate': false, 'telemetry.telemetryLevel': 'off',
+  'update.mode': 'none', 'extensions.autoUpdate': false,
   'workbench.startupEditor': 'none', 'cursor.general.disableHttp2': true,
+  ...telemetrySettings,
 };
 export const protectedSettings = new Set(Object.keys(localSettings));
 
@@ -22,7 +27,7 @@ export function mergeSettings(source, destination = '{}\n', overwrite = true) {
   const existing = parseConfiguration(destination);
   let result = destination;
   for (const [key, value] of Object.entries(localSettings))
-    if (!Object.hasOwn(existing, key)) result = setSetting(result, key, value);
+    if (!Object.hasOwn(existing, key) || Object.hasOwn(telemetrySettings, key)) result = setSetting(result, key, value);
   for (const [key, value] of Object.entries(incoming)) {
     if (protectedSettings.has(key) || (!overwrite && Object.hasOwn(existing, key))) continue;
     if (JSON.stringify(existing[key]) === JSON.stringify(value)) continue;

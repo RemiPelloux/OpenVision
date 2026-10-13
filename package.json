@@ -18,6 +18,8 @@
     "control-plane": "node src/server.mjs",
     "check": "node --check src/config.mjs && node --check src/mcp.mjs && node --check src/rea.mjs && node --check src/server.mjs",
     "test:mcp": "node --test test/mcp.mjs",
+    "test:telemetry": "node --test desktop/telemetry-core.test.mjs desktop/telemetry-extensions.test.mjs desktop/telemetry-workbench.test.mjs",
+    "verify:telemetry": "node desktop/verify-telemetry.mjs",
     "smoke": "node test/smoke.mjs"
   },
   "engines": {

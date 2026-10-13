@@ -14,6 +14,7 @@ const project = await projectPaths(root);
 const argumentsList = [
   '--user-data-dir', join(root, 'data/local'), '--extensions-dir', join(root, 'data/local-extensions'),
   '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
+  '--disable-telemetry', '--disable-crash-reporter',
   project.workspace, join(project.project, 'src/main.js')
 ];
 if (process.platform === 'linux') argumentsList.unshift(...await linuxSandboxArguments(layout.host));

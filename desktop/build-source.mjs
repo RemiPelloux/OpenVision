@@ -15,6 +15,8 @@ import { customizeBundles } from './bundle-customization.mjs';
 import { buildExtensionIntegrity } from './extension-integrity.mjs';
 import { installAgentRuntime } from './agent-customization.mjs';
 import { installContextRuntime } from './context-customization.mjs';
+import { installCoreTelemetryPolicy } from './telemetry-customization.mjs';
+import { installExtensionTelemetryPolicy } from './telemetry-extensions.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -34,6 +36,8 @@ await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.exe
 await customizeBundles(root);
 await installAgentRuntime(root);
 await installContextRuntime(root);
+await installCoreTelemetryPolicy(root);
+await installExtensionTelemetryPolicy(root);
 const integrity = await buildExtensionIntegrity(root);
 console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 await installLocalProfile(root);

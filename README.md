@@ -29,6 +29,28 @@ Playground, keeping application internals out of everyday project indexing.
 Open **OpenVision Development.code-workspace** when editing the application itself.
 Existing workspace folders are preserved during builds.
 
+## Telemetry
+
+OpenVision disables built-in usage analytics, Sentry reporting, crash uploads,
+performance profiling, edit-history telemetry, codebase snapshot telemetry,
+and bundled Agent/debugger telemetry. The build removes their collectors and
+upload implementations, forces telemetry settings off, and protects those
+settings during imports. Local diagnostic logs remain available.
+
+Restart existing OpenVision windows after rebuilding to load the changes.
+Your configured AI providers and MCP servers still receive requests needed for
+their features. Independently installed extensions can have their own networking.
+See the [telemetry audit](docs/rea-telemetry-audit.md) for the exact coverage and
+Windows runtime results.
+
+```sh
+npm run test:telemetry
+npm run verify:telemetry
+```
+
+The runtime check opens and closes a separate test window/profile and saves its
+network log, screenshot, and result under `logs/telemetry-verification-*`.
+
 ## First Setup
 
 Use Node.js **24.18.0**, npm, Git, and native input files for your operating
