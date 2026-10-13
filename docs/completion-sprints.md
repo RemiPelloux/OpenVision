@@ -254,6 +254,14 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+13 October 2026, OV-1001/OV-1003 follow-up (owner: OpenVision):
+[workspace context optimization](context-memory-optimization.md) removes repeated
+status/branch reads for shared repository roots and bounds foreground/background
+folder work. Recovered-owner tests cover fresh data, failures and disposal; the
+Windows synthetic benchmark records allocation and request-count improvements.
+Whole-app idle/long-session memory and other platforms remain open. Both stories
+remain Partial; the accepted denominator and Verified count are unchanged.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

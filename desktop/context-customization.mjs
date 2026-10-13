@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { fileHash, digest } from './import-files.mjs';
 import { cachedFile } from './build-cache.mjs';
+import { customizeContextWork } from './context-work-customization.mjs';
 
 const marker = '/* OpenVision demand-driven request context v2 */';
 const previousMarker = '/* OpenVision demand-driven request context v1 */';
@@ -61,11 +62,14 @@ export function customizeContext(text) {
 export async function installContextRuntime(root) {
   const relative = 'extensions/cursor-agent-exec/dist/main.js';
   const path = join(root, 'source/app', relative);
+  const runtime = join(root, 'desktop/context-work.cjs');
+  await copyFile(runtime, join(dirname(path), 'openvision-context-work.cjs'));
   const recipe = digest(JSON.stringify([await fileHash(join(root, 'desktop/context-customization.mjs')),
+    await fileHash(join(root, 'desktop/context-work-customization.mjs')), await fileHash(runtime),
     await fileHash(join(root, 'tooling/package-lock.json'))]));
   await cachedFile({ path, marker: join(root, 'build/cache/request-context.json'), recipe }, async () => {
     const before = await readFile(path, 'utf8');
-    const after = customizeContext(before);
+    const after = customizeContextWork(customizeContext(before));
     if (before === after) return;
     const backup = join(root, 'backups/request-context', relative);
     await mkdir(dirname(backup), { recursive: true });

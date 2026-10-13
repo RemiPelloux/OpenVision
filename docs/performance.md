@@ -5,6 +5,11 @@ repeated provider parsing, eager autocomplete reasoning data, per-provider whole
 catalog publication and quadratic manual-model merging. It includes reproducible
 before/after heap and timing measurements with explicit scope and cache costs.
 
+The [Agent workspace context follow-up](context-memory-optimization.md) bounds
+foreground/background folder work and shares repeated Git reads per collection.
+Its 2,000-folder synthetic workload reduced reads from 4,000 to 40 and sampled
+JavaScript heap growth from 17.82 MiB to 2.01 MiB.
+
 This pass reduces repeated build allocations, removes one JavaScript/TypeScript
 server by default, and gives import previews an explicit lifetime.
 

@@ -34,6 +34,7 @@ const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: roo
     ['agentExec', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
     ['ownedShell', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-owned-shell.cjs')],
+    ['contextWork', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-context-work.cjs')],
     ...(process.platform === 'win32' ? [['nativeManifest', join(root, 'source/app/node_modules/rea-agents/native/windows/build/manifest.json')]] : []),
   ].map(async ([name, path]) => [name, { path, sha256: await fileHash(path) }]))) };
 await writeFile(join(directory, 'identity.json'), JSON.stringify(identity, null, 2));
