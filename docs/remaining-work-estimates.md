@@ -2,8 +2,8 @@
 
 Updated 13 October 2026. The user changed the verified-coverage target to **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
-Verified**. Current ledger: **4 Verified, 22 Partial, 14 Planned, 2 Unknown**,
-or **9.52%**. Thirty additional stories must pass to reach the numeric target.
+Verified**. Current ledger: **5 Verified, 21 Partial, 14 Planned, 2 Unknown**,
+or **11.90%**. Twenty-nine additional stories must pass to reach the numeric target.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 
@@ -53,7 +53,6 @@ do not turn a test passing on a fixture into a provider/platform support claim.
 | OV-102 / Partial | Live GPT/DeepSeek/Grok retry, timeout, Stop, saved history and branching; no duplicate submit | 3–6 days | Provider availability/quota and known DeepSeek failures; medium |
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | 2–5 days | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Subagent explicit/saved/inherit/disabled model and reasoning choices; actual provider routing/acceptance across retries | 3–7 days | OV-102; low until cross-provider subagent routing is traced |
-| OV-202 / Partial | Agent picker at 10,000 models, bounded rows, focus restoration, accessibility and stale discovery feedback | 2–4 days | OV-201; medium; settings pagination already has separate evidence |
 | OV-203 / Partial | Every advertised reasoning value verified or visibly unverified; changed capabilities and invalid saved choices | 2–5 days | Provider capability contracts; low because current DeepSeek explicit reasoning fails |
 | OV-204 / Planned | 401/403/429/5xx, offline, malformed streams, unsupported tools/images and context limits; useful errors and cleanup | 3–6 days | OV-102/201; medium |
 
@@ -63,6 +62,9 @@ separate keys/endpoints, saved choice after restart, cross-provider subagents an
 autocomplete. The [selection lifecycle acceptance](provider-selection-lifecycle.md)
 also verifies disabled/deleted selections without fallback, manual IDs and key
 replacement across restart. Stale-settings races retain owner-boundary coverage.
+The [native picker acceptance](model-picker-scale.md) now verifies the 10,000-model
+Agent and settings lists, keyboard/focus behavior, accessible labels and failed
+discovery feedback. Broader UI/resource budgets remain under OV-1003.
 The prior discovery implementation removed nonmanual models absent from the
 latest catalog. The retention fix keeps these saved choices with a visible
 unlisted status; the [verification report](model-catalog-retention.md) records its scope. This is
@@ -137,7 +139,7 @@ not proof of why a past live catalog shrank.
 4. Run packaging, rollback and the complete supported native matrix; measure
    performance/telemetry under realistic sessions and audit every acceptance row.
 
-OV-101, OV-105, OV-201 and OV-601 are already Verified and have no remaining estimate in
-this table. All 38 other accepted stories appear exactly once. GitHub Actions
+OV-101, OV-105, OV-201, OV-202 and OV-601 are already Verified and have no remaining estimate in
+this table. All 37 other accepted stories appear exactly once. GitHub Actions
 remain disabled; checks, builds and releases are local. No completion date is
 claimed while required evidence is absent.

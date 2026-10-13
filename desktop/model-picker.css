@@ -1,4 +1,9 @@
 /* Keep the native menu's selection, search, focus and parameter controls. */
+.openvision-model-page-status {
+  padding: 6px 8px;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
 .ui-model-picker__menu:has(.openvision-provider-title) {
   max-width: calc(100vw - 24px) !important;
   border-radius: 12px;

@@ -68,5 +68,6 @@ during awaited secret access, ambiguity, malformed IDs and credential isolation.
 OV-201 is Verified for this local configuration contract on Windows. The
 42-story denominator is unchanged. OV-202 accessibility/large-picker checks,
 OV-203 reasoning support, OV-204 provider failures and native macOS/Linux
-release gates remain open. A disabled selection may still display its encoded
-identity in the closed trigger; polishing that label belongs to OV-202.
+release gates remain open. The later [picker update](model-picker-scale.md)
+replaces the disabled selection's encoded display with a readable unavailable
+label and completes the local OV-202 acceptance checks.

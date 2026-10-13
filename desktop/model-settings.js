@@ -36,6 +36,7 @@ function field(form, title, value = '', type = 'text', placeholder = '') {
 }
 function dialog(title) {
   const node = element('dialog', '', 'openvision-model-dialog');
+  node.setAttribute('aria-label', title);
   const form = element('form');
   const status = element('p', '', 'openvision-model-status');
   status.setAttribute('role', 'status');
@@ -186,6 +187,7 @@ export function mountModels(container, bridge) {
       page: pages.get(provider.id) ?? 0, query: filterQuery, enabledOnly: filter.value === 'enabled',
     });
     const section = element('section', '', 'openvision-provider');
+    section.setAttribute('aria-label', provider.name);
     const header = element('div', '', 'openvision-provider-header');
     const title = element('div', '', 'openvision-model-title');
     title.append(element('strong', provider.name), element('small', provider.url));

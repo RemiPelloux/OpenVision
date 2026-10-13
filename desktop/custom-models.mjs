@@ -4,6 +4,8 @@ import { dirname, join } from 'node:path';
 import { localModelPicker } from './model-picker.mjs';
 import { readableModelMenu } from './model-picker-layout.mjs';
 import { strictModelSelection } from './model-selection-customization.mjs';
+import { paginateModelPicker } from './model-picker-pagination.mjs';
+import { readablePickerLabels } from './model-picker-labels.mjs';
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
@@ -34,6 +36,8 @@ function localModelSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  text = readablePickerLabels(text, variant);
+  text = paginateModelPicker(text, variant);
   text = strictModelSelection(text, variant);
   text = text.replace('import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
   text = completeSelectionMigration(text, variant);
@@ -169,6 +173,8 @@ function startupCatalog(text, variant) {
 export async function installModelSettings(root) {
   const app = join(root, 'source/app');
   const workbench = join(app, 'out/vs/code/electron-sandbox/workbench');
+  for (const name of ['model-picker-pages.js', 'model-picker-window.js'])
+    await copyFile(join(root, 'desktop', name), join(app, 'out/vs/workbench', `openvision-${name}`));
   for (const name of ['model-settings.js', 'model-settings.css', 'model-providers.js', 'model-picker.css'])
     await copyFile(join(root, 'desktop', name), join(workbench, `openvision-${name}`));
   await copyFile(join(root, 'desktop/model-http.mjs'), join(app, 'out/openvision-model-http.js'));

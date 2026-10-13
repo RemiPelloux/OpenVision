@@ -79,6 +79,10 @@ try {
   await trigger.click();
   const row = menu.locator('[data-model-picker-item-name="openvision-model:gpt:gpt-6.1-sol"]');
   await row.hover();
+  const parameters = page.getByTestId('parameter-submenu').filter({ visible: true }).first();
+  await parameters.waitFor();
+  await parameters.getByRole('menu', { name: 'GPT-6.1 Sol parameters', exact: true }).waitFor();
+  result.readableParameterMenuLabel = true;
   await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
   await page.getByText('Extra High', { exact: true }).filter({ visible: true }).last().waitFor();
   result.reasoningSubmenu = true;

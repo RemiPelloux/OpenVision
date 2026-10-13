@@ -42,10 +42,11 @@ immediately, before the recovered 200 ms storage debounce. These direct renderer
 reloads bypass normal app shutdown. Unsent-chat/abrupt-reload recovery remains an
 open lifecycle gate; the final persistence check uses normal close and restart.
 
-The full desktop suite includes two owner-boundary regression tests for this
-change. Native Windows evidence does not prove a native glass session, screen
-reader completeness, macOS/Linux behavior or a bounded 10,000-row Agent picker.
-OV-202/OV-203 remain Partial; the fixed acceptance denominator is unchanged.
+The full desktop suite includes owner-boundary regression tests for this change.
+These initial runs did not prove a native glass session, screen-reader completeness,
+macOS/Linux behavior or a bounded 10,000-row Agent picker. The later
+[scale and accessibility acceptance](model-picker-scale.md) completes OV-202 on
+Windows. OV-203 and the platform gates remain open; the denominator is unchanged.
 
 ## Provider identity and upgrade follow-up
 
