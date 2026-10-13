@@ -118,6 +118,15 @@ retained Job Object ownership. OV-102/103 stay Partial: external providers,
 branching, other shells/platforms and the other untested clauses remain gates.
 The 42-story denominator is unchanged.
 
+13 October live-provider follow-up (owner: OpenVision):
+[direct API evidence](live-provider-compatibility.md) establishes GPT 6.1 Sol and
+Grok 4.7 streamed tool roundtrips with low reasoning, and DeepSeek V4 Flash plain
+streaming with the reasoning field omitted. DeepSeek tool continuation and tested
+reasoning requests return HTTP 400; an initial Grok continuation returned HTTP
+429. These are recorded failures, not removed gates. Native provider workflows,
+retry/stop/history/branching and the full reasoning matrix remain open. OV-102
+and OV-203 retain Partial status.
+
 ## Sprint 2 — Complete provider settings and model interaction
 
 Outcome: usable model selection with capabilities owned by the provider contract.

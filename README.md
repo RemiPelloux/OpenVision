@@ -186,6 +186,12 @@ not require a cloud account. Generated notes are kept in their workspace.
 See [local rules and reasoning implementation](docs/rea-local-rules.md) for
 migration, verification and remaining limits.
 
+The [live provider matrix](docs/live-provider-compatibility.md) records tested
+GPT/Grok tool roundtrips and the remaining DeepSeek reasoning/tool failures.
+For an opt-in check using a saved connection, run
+`npm run verify:providers:live -- --live --model gpt-6.1-sol`. This sends small
+synthetic requests and consumes provider quota; it does not send project files.
+
 ## Import Settings
 
 In **OpenVision Settings > General**, open the settings-import action. Select
