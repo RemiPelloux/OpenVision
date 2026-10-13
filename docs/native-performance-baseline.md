@@ -128,3 +128,37 @@ This was a verifier limitation, not an observed product failure.
 After the run, the ancestry collector was changed from repeated scans to a linear
 child index. Its tests pass and replaying all eight retained process snapshots
 produces identical memory sums. The original run's sampler digest is preserved.
+
+## MCP startup comparison, 13 October
+
+The [MCP startup follow-up](rea-mcp-startup.md) removes unconfigured MCP utility
+startup while retaining on-demand routing. The final fixed-workload record is
+`logs/agent-verification-eP9HUu/result.json`, with workbench SHA-256
+`ea450599160ec528deea0219c159db46ebd66e714527670afa53922aa8cfd7e5`.
+The original host, workstation, profile/project workload and enabled functionality
+are unchanged. The ordinary user window remained open during these measurements.
+
+| Check | Baseline `FkFzEi` | Final `eP9HUu` |
+| --- | ---: | ---: |
+| Fresh-profile titlebar | 5,027 ms | 5,064 ms |
+| Same-profile restart titlebar | 3,588 ms | 3,599 ms |
+| Fresh idle, additional ten seconds, private committed | 2,740.65 MiB | 2,585.36 MiB |
+| Fresh idle observed process count | 21 | 20 |
+| MCP utility present across the eight snapshots | 8/8 | 0/8 |
+| Stream Stop | 65 ms | 87 ms |
+| Command Stop and owned process check | 164 ms | 183 ms |
+| Full workload inference requests | 16 | 16 |
+| Auxiliary title requests | 0 | 0 |
+| Total UTF-8 request body bytes | 1,559,231 | 1,559,231 |
+
+The settled idle sample is **155.29 MiB lower (5.67%)**. This is a sampled
+private-commit comparison, not a physical-RAM or universal speed claim. In the
+original sample the MCP utility alone accounted for 130.50 MiB of private commit;
+variation in other processes also contributes to the total difference. An earlier
+intermediate build (`VHQAhM`) sampled 2,534.73 MiB, illustrating that variation.
+The final run stayed within every initial comparison budget above, retained the
+ordinary Agent assertions and exited both owned hosts with code 0.
+
+This optimization avoids an unused process; it does not establish a long-session
+leak fix or disposal after last use. Native MCP activation/approval evidence is
+recorded separately so adding MCP tool calls does not change this fixed workload.

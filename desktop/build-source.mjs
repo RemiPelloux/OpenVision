@@ -22,6 +22,7 @@ import { installProfilePathIsolation } from './profile-paths.mjs';
 import { installSubagentPathIsolation } from './subagent-paths.mjs';
 import { installLocalChatTitles } from './local-chat-title.mjs';
 import { installOwnedShellProcesses } from './agent-process-customization.mjs';
+import { installLazyMcpChannels } from './mcp-lazy-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -40,6 +41,7 @@ const layout = platformLayout(root);
 await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
 await customizeBundles(root);
 await installProfilePathIsolation(root);
+await installLazyMcpChannels(root);
 await installSubagentPathIsolation(root);
 await installAgentRuntime(root);
 await installOwnedShellProcesses(root);

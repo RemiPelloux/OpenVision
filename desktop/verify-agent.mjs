@@ -13,6 +13,7 @@ import { fileHash } from './import-files.mjs';
 import { createAgentEditFixture } from './verify-agent-edits.mjs';
 import { createAgentCommandFixture } from './verify-agent-commands.mjs';
 import { memorySample, requestMeasurement, baselineIdentity } from './native-baseline.mjs';
+import { createAgentMcpFixture } from './verify-agent-mcp.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout, manifest } = await loadRuntime(root);
@@ -28,6 +29,7 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });
 const commands = await createAgentCommandFixture({ directory, project });
+const mcp = process.argv.includes('--mcp') ? await createAgentMcpFixture({ directory, profile }) : undefined;
 const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   platform: process.platform, arch: process.arch, osRelease: release(), node: process.version,
   hashes: Object.fromEntries(await Promise.all([
@@ -35,6 +37,8 @@ const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: roo
     ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
     ['commandFixture', join(root, 'desktop/verify-agent-commands.mjs')],
     ['commandLifecycle', join(root, 'desktop/verify-command-lifecycle.mjs')],
+    ...(mcp ? [['mcpFixture', join(root, 'desktop/verify-agent-mcp.mjs')],
+      ['mcpServer', join(root, 'desktop/verify-mcp-server.mjs')]] : []),
     ['agentExec', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
     ['ownedShell', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-owned-shell.cjs')],
@@ -65,6 +69,10 @@ const server = createServer(async (request, response) => {
     id: 'fixture-response', object: 'chat.completion.chunk', model: payload.model,
     choices: [{ index: 0, delta, finish_reason }],
   })}\n\n`);
+  if (phase.startsWith('mcp-')) {
+    mcp.respond(payload, event, phase.slice('mcp-'.length));
+    response.end('data: [DONE]\n\n'); return;
+  }
   if (phase.startsWith('command-')) {
     commands.respond(payload, event, phase.slice('command-'.length));
     response.end('data: [DONE]\n\n'); return;
@@ -101,6 +109,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app, page;
 const ownedHostExits = [];
 const result = { checkedAt: new Date().toISOString(), identity, platform: process.platform, requests, errors, success: false };
+if (mcp) result.mcp = mcp.results;
 if (measureBaseline) result.baseline = baseline;
 async function sample(label) {
   if (measureBaseline) result.baseline.samples.push(await memorySample(app, label));
@@ -203,6 +212,11 @@ try {
   assert.equal(requests.filter(request => request.phase === 'resume').length, 1);
   assert.equal(requests.at(-1).resumedHistory, true, 'Continued request must retain prior user context after process restart');
   await sample('after-resumed-agent-reply');
+  if (mcp) {
+    await mcp.verify(page, app, value => { phase = value; });
+    await closeOwnedApp(); await launch();
+    await mcp.verifyRestart(page, app, value => { phase = value; });
+  }
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
   assert.deepEqual(errors, []);
   await page.screenshot({ path: join(directory, 'agent.png') });
@@ -227,7 +241,7 @@ try {
   try {
     const failures = [];
     for (const cleanup of [async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); },
-      () => commands.dispose(), closeOwnedApp]) {
+      () => commands.dispose(), closeOwnedApp, ...(mcp ? [() => mcp.dispose()] : [])]) {
       try { await cleanup(); } catch (error) { failures.push(error); }
     }
     if (failures.length) throw new AggregateError(failures, 'Native Agent verification cleanup failed');

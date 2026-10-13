@@ -288,6 +288,18 @@ Windows synthetic benchmark records allocation and request-count improvements.
 Whole-app idle/long-session memory and other platforms remain open. Both stories
 remain Partial; the accepted denominator and Verified count are unchanged.
 
+13 October 2026, OV-303/OV-1003 follow-up (owner: OpenVision):
+[MCP startup and native Agent evidence](rea-mcp-startup.md) defers unused callback
+connections and unconfigured shared-process routing. Native Windows HTTP tests
+prove late configuration, discovery, approval/denial, real tool results and saved
+configuration after full restart. The fixed-workload
+[memory comparison](native-performance-baseline.md#mcp-startup-comparison-13-october)
+records one fewer idle process and a 155.29 MiB lower settled private-commit sample;
+16 inference requests, zero title requests and cancellation budgets are preserved.
+Both stories remain Partial: native STDIO, OAuth, reconnect/timeout/failed cleanup,
+multi-window behavior, idle disposal, long-session growth and other platforms
+still need evidence. The 42-story denominator and 3 Verified stories are unchanged.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story
