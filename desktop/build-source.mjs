@@ -21,6 +21,7 @@ import { installCompletion } from './completion-customization.mjs';
 import { installProfilePathIsolation } from './profile-paths.mjs';
 import { installSubagentPathIsolation } from './subagent-paths.mjs';
 import { installLocalChatTitles } from './local-chat-title.mjs';
+import { installOwnedShellProcesses } from './agent-process-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -41,6 +42,7 @@ await customizeBundles(root);
 await installProfilePathIsolation(root);
 await installSubagentPathIsolation(root);
 await installAgentRuntime(root);
+await installOwnedShellProcesses(root);
 await installContextRuntime(root);
 await installCoreTelemetryPolicy(root);
 await installExtensionTelemetryPolicy(root);

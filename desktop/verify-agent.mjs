@@ -11,6 +11,7 @@ import { localSettings } from './import-json.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { createAgentEditFixture } from './verify-agent-edits.mjs';
+import { createAgentCommandFixture } from './verify-agent-commands.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -22,11 +23,18 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...localSe
   'git.openRepositoryInParentFolders': 'never' }));
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });
+const commands = await createAgentCommandFixture({ directory, project });
 const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   platform: process.platform, arch: process.arch, osRelease: release(), node: process.version,
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
+    ['commandFixture', join(root, 'desktop/verify-agent-commands.mjs')],
+    ['commandLifecycle', join(root, 'desktop/verify-command-lifecycle.mjs')],
+    ['agentExec', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
+    ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
+    ['ownedShell', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-owned-shell.cjs')],
+    ...(process.platform === 'win32' ? [['nativeManifest', join(root, 'source/app/node_modules/rea-agents/native/windows/build/manifest.json')]] : []),
   ].map(async ([name, path]) => [name, { path, sha256: await fileHash(path) }]))) };
 await writeFile(join(directory, 'identity.json'), JSON.stringify(identity, null, 2));
 const requests = [], errors = [], canceled = Promise.withResolvers(), entered = Promise.withResolvers();
@@ -51,6 +59,10 @@ const server = createServer(async (request, response) => {
     id: 'fixture-response', object: 'chat.completion.chunk', model: payload.model,
     choices: [{ index: 0, delta, finish_reason }],
   })}\n\n`);
+  if (phase.startsWith('command-')) {
+    commands.respond(payload, event, phase.slice('command-'.length));
+    response.end('data: [DONE]\n\n'); return;
+  }
   if (phase === 'edit') {
     edits.respond(payload, event);
     response.end('data: [DONE]\n\n'); return;
@@ -136,6 +148,9 @@ try {
   for (const action of ['Undo All', 'Keep All']) {
     phase = 'edit'; await edits.verifyReview(page, action);
   }
+  for (const mode of ['deny', 'allow', 'slow']) {
+    phase = `command-${mode}`; await commands.verify(page, mode);
+  }
   phase = 'slow';
   await input.fill('Reply slowly. Do not use tools.'); await input.press('Enter');
   await Promise.race([entered.promise, new Promise((_, reject) => {
@@ -153,7 +168,7 @@ try {
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
   await closeOwnedApp();
   await launch();
-  await page.getByText('OpenVision multi-file edits 2 ready for review.', { exact: true }).first().waitFor();
+  await page.getByText('OpenVision cancellation pending.', { exact: true }).first().waitFor();
   await edits.assertKeptFiles();
   phase = 'resume';
   input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
@@ -169,8 +184,9 @@ try {
     nativeReadToolContinuation: readToolObserved,
     nativeMultiFileEdits: true, rejectAllRestoresFiles: true, keepAllPreservesEdits: true, unrelatedFilePreserved: true,
     conversationRestartResume: true, keptEditsSurviveRestart: true,
+    commandChecks: commands.results,
     upstreamCancellation: true, cancellationMs,
-    scope: 'Fresh Windows profile and controlled HTTP fixture. External providers, command tools, branching, descendant process cleanup and other platforms remain unverified.' });
+    scope: 'Native PowerShell approval, denial and foreground command cancellation with a local HTTP fixture. External providers, branching, other shells and other platforms remain unverified.' });
 } catch (error) {
   result.failure = error.stack;
   const page = app?.windows()[0];
@@ -182,8 +198,12 @@ try {
   console.error('Agent verification evidence:', directory); throw error;
 } finally {
   try {
-    server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
-    await closeOwnedApp();
+    const failures = [];
+    for (const cleanup of [async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); },
+      () => commands.dispose(), closeOwnedApp]) {
+      try { await cleanup(); } catch (error) { failures.push(error); }
+    }
+    if (failures.length) throw new AggregateError(failures, 'Native Agent verification cleanup failed');
   } catch (error) {
     result.success = false; result.cleanupFailure = error.stack; throw error;
   } finally {

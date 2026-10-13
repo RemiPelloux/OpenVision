@@ -8,11 +8,12 @@ app, including the busy-Agent quit confirmation if needed.
 
 ## Observed behavior
 
-The current run is retained at `logs/agent-verification-TLLcjM/result.json` with
-`agent.png`, two edit-review screenshots, tool schemas and tool results. It runs
-the product at commit `67ad9ac` with the expanded verifier in this change.
+The current run is retained at `logs/agent-verification-8cOFXC/result.json` with
+`agent.png`, edit/command screenshots, tool schemas and tool results. It runs
+commit `29ae0c7` plus the owned-process implementation in this change.
 `identity.json` records Windows x64 build `10.0.26200`, Node `24.18.0` and SHA-256
-digests of the host, workbench and verifier inputs. It established:
+digests of the host, workbench, Agent bundles, native manifest and verifier inputs.
+It established:
 
 - One first submit produces exactly one authenticated streaming Agent request
   to the selected model/URL. The streamed reply appears in the native UI.
@@ -30,13 +31,19 @@ digests of the host, workbench and verifier inputs. It established:
   The helper checks every file until the asynchronous updates settle, then asserts
   their exact contents. It never implements the edit or undo itself.
 - After a complete owned-app shutdown and relaunch with the same local profile,
-  the earlier reply is visible, both kept edits remain, and the unrelated file is
+  the recent reply is visible, both kept edits remain, and the unrelated file is
   unchanged. Submitting a new message makes one authenticated request to the saved
   model, with the previous edit instruction present in its conversation context.
 - Clicking the native Stop control closes the server's streaming response.
-  This run measured **152 ms** from before the click to the server close event;
-  earlier runs measured 136–164 ms. These are local loopback observations, not
+  This run measured **88 ms** from before the click to the server close event;
+  earlier runs measured 102–164 ms. These are local loopback observations, not
   provider latency guarantees.
+- Native command approval blocks execution before **Run**. **Skip** returns a
+  rejection and creates no fixture output. **Run** creates the expected output
+  file with the selected cwd and Unicode contents. Stopping a running command
+  closes its authenticated fixture connection in **161 ms** and its registered
+  process is no longer live. The [command ownership report](rea-command-cancellation.md)
+  explains the observed failure, Job Object fix and detached-descendant tests.
 - No renderer page errors occurred during this run.
 - Both captured Electron host process objects report exit code 0 after closing.
   Results are written after cleanup; a cleanup failure makes the run unsuccessful.
@@ -84,8 +91,8 @@ UI behavior. Original slices, provenance and full REA results remain in ignored
 ## Limits
 
 OV-102, OV-103 and OV-1001 remain Partial. The fixture does not establish real
-GPT/DeepSeek/Grok support, command approval/denial, running-tool cancellation,
-search tools, editor undo after kept changes, retries, malformed-stream handling,
+GPT/DeepSeek/Grok support, command behavior outside the tested Windows x64
+PowerShell path, search tools, editor undo after kept changes, retries, malformed-stream handling,
 branch persistence, remote hosts, or macOS/Linux execution. Restart evidence
 covers a normally closed conversation with kept edits, not crash recovery or
 interrupted writes. The fixed 42-story denominator and two fully Verified stories

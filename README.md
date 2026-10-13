@@ -88,6 +88,13 @@ session, and a working Chromium sandbox. See [platform details](docs/native-runt
 `OPENVISION_RECOVERY_DIR` selects an existing recovery snapshot. Default recovery
 outputs live in `build/recovery`; the editable application lives in `source/app`.
 
+Windows x64 Agent command cancellation uses a pinned REA native Job Object
+runtime to stop the shell and its owned children together. It loads when a
+command is first needed. After updating this checkout, run `npm ci --prefix tooling`
+and `npm run build:desktop`, then restart OpenVision. See the
+[command ownership report](docs/rea-command-cancellation.md) for verified behavior,
+local checks and other-platform limitations.
+
 ## AI Providers
 
 Open **OpenVision Settings > Models > Custom Providers**.

@@ -12,6 +12,7 @@
     "playwright-core": "1.58.2",
     "plist": "3.1.0",
     "rcedit": "5.0.2",
+    "rea-agents": "6.4.0",
     "sharp": "0.35.5",
     "vscode-uri": "3.1.0"
   }

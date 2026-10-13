@@ -111,10 +111,12 @@ authenticated stream display, real Read and multi-file StrReplace continuations,
 confirmed rejection restoring both originals, keeping both changes and preserving
 an unrelated file. A full app restart retains the conversation, credentials and
 kept edits; a subsequent request includes prior user context. Upstream Stop takes
-152 ms in the final loopback run. Local titles eliminate the auxiliary naming
-request. OV-102/103 stay Partial: external providers, branching, command approval,
-running-tool cancellation and the other untested clauses remain gates. The
-42-story denominator is unchanged.
+152 ms in that loopback run. Local titles eliminate the auxiliary naming request.
+The [command-control follow-up](rea-command-cancellation.md) verifies native
+approval/denial and fixes an observed orphaned Windows command after Stop using
+retained Job Object ownership. OV-102/103 stay Partial: external providers,
+branching, other shells/platforms and the other untested clauses remain gates.
+The 42-story denominator is unchanged.
 
 ## Sprint 2 — Complete provider settings and model interaction
 
