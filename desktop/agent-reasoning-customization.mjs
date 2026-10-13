@@ -22,7 +22,7 @@ function replaceOnce(text, before, after) {
 }
 
 export function customizeAgentReasoning(text, kind) {
-  if (text.includes(marker)) return providerDefault(text, kind);
+  if (text.includes(marker)) return rejectUnavailable(providerDefault(text, kind), kind);
   if (kind === 'exec') {
     text = replaceOwner(text, 'function Zxe(e) {', body => replaceOnce(body,
       'defaultOpenAICompatibleEndpoint: e.defaultOpenAICompatibleEndpoint,\n                configuredEffortValues: e.configuredEffortValues,',
@@ -41,7 +41,23 @@ export function customizeAgentReasoning(text, kind) {
       '})(s, e),', '})(s, {...e, configuredEffortValues: openvisionEfforts}),'));
     text = replaceOwner(text, 'function RMe(e, t, r, n = !1) {', allowExplicitNone);
   } else throw new Error(`Unknown reasoning transport kind: ${kind}`);
-  return providerDefault(`${marker}\n${text}`, kind);
+  return rejectUnavailable(providerDefault(`${marker}\n${text}`, kind), kind);
+}
+
+function rejectUnavailable(text, kind) {
+  const marker = '/* OpenVision reject unsupported explicit reasoning */';
+  if (text.includes(marker)) return text;
+  const anchor = kind === 'exec' ? 'function Xxe(e) {' : 'function RMe(e, t, r, n = !1) {';
+  const parameters = kind === 'exec' ? 'e.modelParameters' : 't';
+  const allowed = kind === 'exec' ? 'e.configuredEffortValues' : 'r';
+  const applicable = kind === 'exec' ? 'e.apiType === "openai_compatible" && ' : '';
+  return replaceOwner(text, anchor, body => body.replace(anchor, `${anchor}
+    ${marker}
+    const selectedEffort = ${parameters}?.find(item => ['reasoning', 'effort', 'thought_level'].includes(item.id))?.value;
+    if (${applicable}Array.isArray(${allowed}) && selectedEffort &&
+        selectedEffort !== ${JSON.stringify(providerDefaultReasoning)} && !${allowed}.includes(selectedEffort))
+      throw new Error('The selected reasoning level is unavailable. Choose a listed level or Provider default in the model picker.');
+`));
 }
 
 function providerDefault(text, kind) {

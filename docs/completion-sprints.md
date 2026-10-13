@@ -154,6 +154,13 @@ and OV-203 retain Partial status.
 
 Outcome: usable model selection with capabilities owned by the provider contract.
 
+13 October reasoning follow-up: [capability lifecycle evidence](reasoning-capability-lifecycle.md)
+verifies unverified-source notices, changed/empty/omitted capabilities, invalid
+saved choices across restart, zero inference for blocked selections and explicit
+recovery in the Windows parent Agent. Malformed reasoning discovery now reports
+an error and retains the last valid catalog/selection across restart. Native
+subagent error/retry behavior remains open; OV-203 stays Partial. The count stays 5/42.
+
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
 | OV-201 / Verified | As a user, I can add a URL/key and discover or manually add models. | OV-101 | Verify discovery, empty/malformed catalogs, duplicate IDs across providers, renamed entries, key replacement and persistence. No silent provider fallback; only selected credentials reach the configured endpoint. [Native Windows local-contract evidence](provider-selection-lifecycle.md); real-provider compatibility remains separate. |

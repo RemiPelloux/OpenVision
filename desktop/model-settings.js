@@ -1,5 +1,6 @@
 import { ModelProviders } from './openvision-model-providers.js';
 import { completionControl } from './openvision-completion-provider.js';
+import { reasoningSource } from './model-reasoning.js';
 
 const icons = { plus: 'plus', refresh: 'refresh-cw', edit: 'pencil', remove: 'trash-2' };
 const modelsPerPage = 40;
@@ -172,6 +173,7 @@ export function mountModels(container, bridge) {
       provider.models.map(item => item === model ? { ...item, enabled: toggle.checked } : item)));
     const title = element('div', '', 'openvision-model-title');
     title.append(element('span', model.name), element('small', model.id));
+    title.append(element('small', reasoningSource(model, provider), 'openvision-reasoning-source'));
     if (model.discoveryStatus === 'unlisted') {
       const availability = element('small', 'Not in latest catalog', 'openvision-model-availability');
       availability.title = 'This saved model is still selectable. The provider did not list it in its latest discovery response.';

@@ -25,7 +25,7 @@ test('provider credentials are resolved per request even before settings mount',
   assert.equal(requestProviderRouting(output, 'desktop'), output);
   const calls = [];
   const service = runInNewContext(output.replace(/^import .*;$/m, '') + '\nservice;', {
-    K6e: 'secret-storage', openvisionAgentProvider: async (_storage, _secret, id) => {
+    K6e: 'secret-storage', openvisionAgentProvider: async (_storage, _secret, { modelId: id }) => {
       calls.push(id);
       return { baseUrl: `https://${id}.example.test/v1`, apiKey: `${id}-key` };
     },
@@ -93,10 +93,10 @@ test('recovered Agent request encoder preserves declared tiers in Responses and 
     const payload = requests.at(-1);
     assert.equal(endpoint === 'responses' ? payload.reasoning?.effort : payload.reasoning_effort, effort);
   }
-  const fetch = factory({ modelId: 'deepseek-v4-pro', modelParameters: [{ id: 'reasoning', value: 'xhigh' }],
-    apiType: 'openai_compatible', openAICompatibleEndpoint: 'responses', configuredEffortValues: ['none', 'low', 'high', 'max'] });
-  await fetch('https://fixture.invalid/v1', { body: JSON.stringify({ reasoning: { effort: 'xhigh' } }) });
-  assert.equal(requests.at(-1).reasoning, undefined);
+  const before = requests.length;
+  assert.throws(() => factory({ modelId: 'deepseek-v4-pro', modelParameters: [{ id: 'reasoning', value: 'xhigh' }],
+    apiType: 'openai_compatible', openAICompatibleEndpoint: 'responses', configuredEffortValues: ['none', 'low', 'high', 'max'] }), /reasoning level is unavailable/);
+  assert.equal(requests.length, before);
   for (const endpoint of ['responses', 'chat_completions']) {
     const defaultFetch = factory({ modelId: 'deepseek-v4-flash', modelParameters: [{ id: 'reasoning', value: providerDefaultReasoning }],
       apiType: 'openai_compatible', openAICompatibleEndpoint: endpoint, configuredEffortValues: [] });
@@ -131,5 +131,6 @@ test('recovered host reasoning patch is compatible with the prepared artifact', 
     assert.ok(!result.body.includes(providerDefaultReasoning));
   }
   assert.equal(JSON.parse(encode({ body: '{}' }, [{ id: 'reasoning', value: 'high' }], ['high']).body).reasoning.effort, 'high');
+  assert.throws(() => encode({ body: '{}' }, [{ id: 'reasoning', value: 'ultra' }], ['high']), /reasoning level is unavailable/);
   assert.equal(encode({ body: 'malformed' }, [{ id: 'reasoning', value: providerDefaultReasoning }], []).body, 'malformed');
 });

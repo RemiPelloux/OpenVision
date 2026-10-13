@@ -30,10 +30,14 @@ export async function installAgentProviders(root) {
   const relative = 'extensions/cursor-agent-exec/dist/main.js';
   const path = join(root, 'source/app', relative);
   const helper = await readFile(join(root, 'desktop/model-identity.js'), 'utf8');
+  const reasoning = await readFile(join(root, 'desktop/model-reasoning.js'), 'utf8');
+  await writeFile(join(dirname(path), 'openvision-model-reasoning.cjs'),
+    reasoning.replaceAll('export function ', 'function ').replaceAll('export const ', 'const ') + '\nmodule.exports = {unavailableReasoning};\n');
   await writeFile(join(dirname(path), 'openvision-model-identity.cjs'),
-    helper.replaceAll('export function ', 'function ') + '\nmodule.exports = { modelSelectionId, parseModelSelection, resolveAgentModel };\n');
+    helper.replace("import { unavailableReasoning } from './model-reasoning.js';", 'const {unavailableReasoning} = require("./openvision-model-reasoning.cjs");')
+      .replaceAll('export function ', 'function ') + '\nmodule.exports = { modelSelectionId, parseModelSelection, resolveAgentModel };\n');
   const recipe = digest(JSON.stringify(await Promise.all(['desktop/agent-provider-customization.mjs',
-    'desktop/model-identity.js', 'desktop/build-cache.mjs', 'desktop/import-files.mjs',
+    'desktop/model-identity.js', 'desktop/model-reasoning.js', 'desktop/build-cache.mjs', 'desktop/import-files.mjs',
     'tooling/package-lock.json'].map(file => fileHash(join(root, file))))));
   await cachedFile({ path, recipe, marker: join(root, 'build/cache/agent-providers.json') }, async () => {
     const before = await readFile(path, 'utf8'), after = scopedAgentProviders(before);

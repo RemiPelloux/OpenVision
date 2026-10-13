@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 
 const modules = new Map([
   ['/model-identity.js', 'model-identity.js'],
+  ['/model-catalog.js', 'model-catalog.js'],
   ['/model-settings.js', 'model-settings.js'],
   ['/openvision-model-providers.js', 'model-providers.js'],
   ['/model-reasoning.js', 'model-reasoning.js'],
@@ -62,7 +63,7 @@ try {
   assert.equal(await completion.inputValue(), 'openvision-model:fixture:model-9876', 'Filtering preserves the selected model');
   assert.equal(await completion.locator('option').count(), 42);
   await page.getByRole('button', { name: 'Next', exact: true }).click();
-  assert.equal(await rows.first().locator('small').innerText(), 'model-40');
+  assert.equal(await rows.first().locator('small').first().innerText(), 'model-40');
   const search = page.getByRole('searchbox', { name: 'Search models' });
   await search.fill('model-9999');
   await page.getByRole('checkbox', { name: 'Enable Model 9999', exact: true }).waitFor();

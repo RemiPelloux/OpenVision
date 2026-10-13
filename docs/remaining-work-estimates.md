@@ -53,7 +53,7 @@ do not turn a test passing on a fixture into a provider/platform support claim.
 | OV-102 / Partial | Live GPT/DeepSeek/Grok retry, timeout, Stop, saved history and branching; no duplicate submit | 3–6 days | Provider availability/quota and known DeepSeek failures; medium |
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | 2–5 days | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Subagent explicit/saved/inherit/disabled model and reasoning choices; actual provider routing/acceptance across retries | 3–7 days | OV-102; low until cross-provider subagent routing is traced |
-| OV-203 / Partial | Every advertised reasoning value verified or visibly unverified; changed capabilities and invalid saved choices | 2–5 days | Provider capability contracts; low because current DeepSeek explicit reasoning fails |
+| OV-203 / Partial | Native subagent capability changes/errors/retries; parent selection/restart/recovery, malformed discovery retention and visible unverified status now checked | 1–3 days | OV-104 and provider capability contracts; low because current DeepSeek explicit reasoning fails |
 | OV-204 / Planned | 401/403/429/5xx, offline, malformed streams, unsupported tools/images and context limits; useful errors and cleanup | 3–6 days | OV-102/201; medium |
 
 The [provider identity change](provider-model-identity.md) removes raw-model-ID
@@ -65,6 +65,11 @@ replacement across restart. Stale-settings races retain owner-boundary coverage.
 The [native picker acceptance](model-picker-scale.md) now verifies the 10,000-model
 Agent and settings lists, keyboard/focus behavior, accessible labels and failed
 discovery feedback. Broader UI/resource budgets remain under OV-1003.
+The [reasoning lifecycle follow-up](reasoning-capability-lifecycle.md) prevents
+silent effort substitution and verifies explicit recovery after changed, empty
+or omitted capabilities, including native restart. Invalid discovery declarations
+produce errors and preserve the last valid catalog/selection. Its simulated requests do not
+add live-provider coverage; OV-203 remains Partial.
 The prior discovery implementation removed nonmanual models absent from the
 latest catalog. The retention fix keeps these saved choices with a visible
 unlisted status; the [verification report](model-catalog-retention.md) records its scope. This is

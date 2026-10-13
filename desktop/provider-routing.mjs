@@ -18,7 +18,7 @@ function methodBody(text, name) {
 }
 
 export function requestProviderRouting(text, variant) {
-  if (text.includes(marker)) return text;
+  if (text.includes(marker)) return selectionParameters(text);
   if (text.includes(previousMarker)) {
     const upgrades = [
       ['const openvisionProvider = await openvisionRequestProvider(this.storageService,',
@@ -31,7 +31,7 @@ export function requestProviderRouting(text, variant) {
       if (text.split(before).length !== 2) throw new Error('Previous provider routing contract changed');
       text = text.replace(before, after);
     }
-    return agentRoutingPayload(text.replace(previousMarker, marker));
+    return selectionParameters(agentRoutingPayload(text.replace(previousMarker, marker)));
   }
   const secrets = variant === 'desktop' ? 'K6e' : 'oHe';
   const agent = methodBody(text, 'getLocalAgentProviderConfig');
@@ -54,7 +54,19 @@ export function requestProviderRouting(text, variant) {
   for (const edit of [{ offset: agent.offset, value: agentGuard }, { offset: inference.offset, value: inferenceGuard }]
     .sort((a, b) => b.offset - a.offset))
     text = text.slice(0, edit.offset) + edit.value + text.slice(edit.offset);
-  return agentRoutingPayload(`${marker}\nimport {requestProvider as openvisionRequestProvider, requestAgentProvider as openvisionAgentProvider} from "../code/electron-sandbox/workbench/openvision-model-providers.js";\n${text}`);
+  return selectionParameters(agentRoutingPayload(`${marker}\nimport {requestProvider as openvisionRequestProvider, requestAgentProvider as openvisionAgentProvider} from "../code/electron-sandbox/workbench/openvision-model-providers.js";\n${text}`));
+}
+
+function selectionParameters(text) {
+  const marker = '/* OpenVision validate selected reasoning before dispatch */';
+  if (text.includes(marker)) return text;
+  const method = methodBody(text, 'getLocalAgentProviderConfig');
+  const [model, context] = method.parameters;
+  const before = `${context}?.requestedModel?.modelId ?? ${model}?.modelId);`;
+  const body = text.slice(method.offset, method.end);
+  if (body.split(before).length !== 2) throw new Error('Agent reasoning selection payload changed');
+  const after = body.replace(before, `${marker}\n      ${context}?.requestedModel ?? ${model});`);
+  return text.slice(0, method.offset) + after + text.slice(method.end);
 }
 
 function agentRoutingPayload(text) {

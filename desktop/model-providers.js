@@ -1,4 +1,5 @@
-import { fallbackReasoningValues, providerDefaultReasoning } from './model-reasoning.js';
+import { catalogModel } from './model-catalog.js';
+import { reasoningChoices, unavailableReasoning, providerDefaultReasoning } from './model-reasoning.js';
 import { modelSelectionId, parseModelSelection, modelSelectionError } from './model-identity.js';
 const storageKey = 'openvision.model-providers.v1';
 const secretKey = id => `openvision.provider.${id}`;
@@ -27,12 +28,12 @@ export function parseModels(body) {
 }
 
 function parseCapabilities(item) {
-  const source = item.capabilities && typeof item.capabilities === 'object' ? item.capabilities : item;
-  const values = source.reasoningEffortValues ?? source.reasoning_effort ?? source.reasoning_efforts ?? item.reasoning_effort ?? item.reasoning_efforts ??
-    (item.variants && typeof item.variants === 'object' ? Object.keys(item.variants) : undefined);
-  const reasoning = normalizeReasoningValues(values);
+  if (item.capabilities !== undefined && (!item.capabilities || typeof item.capabilities !== 'object' || Array.isArray(item.capabilities)))
+    throw new Error('The provider returned invalid model capabilities. The previous model list is retained.');
+  const source = item.capabilities ?? item;
+  const values = reasoningDeclaration(source, item);
   const capabilities = {};
-  if (Array.isArray(values)) capabilities.reasoningEffortValues = reasoning;
+  if (values !== undefined) capabilities.reasoningEffortValues = normalizeReasoningValues(values);
   const context = source.contextLength ?? source.context_length ?? item.limit?.context;
   const output = source.maxOutputTokens ?? source.max_output_tokens ?? item.limit?.output;
   const vision = source.supportsVision ?? source.supports_vision;
@@ -42,61 +43,33 @@ function parseCapabilities(item) {
   return Object.keys(capabilities).length ? capabilities : undefined;
 }
 
+function reasoningDeclaration(source, item) {
+  for (const owner of source === item ? [source] : [source, item])
+    for (const name of ['reasoningEffortValues', 'reasoning_effort', 'reasoning_efforts'])
+      if (Object.hasOwn(owner, name)) {
+        if (!Array.isArray(owner[name])) throw new Error('The provider returned invalid reasoning metadata: expected a list. The previous model list is retained.');
+        return owner[name];
+      }
+  if (!Object.hasOwn(item, 'variants')) return undefined;
+  if (!item.variants || typeof item.variants !== 'object' || Array.isArray(item.variants))
+    throw new Error('The provider returned invalid reasoning variants. The previous model list is retained.');
+  return Object.keys(item.variants);
+}
+
 function normalizeReasoningValues(values) {
-  if (!Array.isArray(values)) return [];
-  const seen = new Set();
-  return values.flatMap(value => {
+  const ids = new Set(), wireValues = new Set();
+  const validText = value => typeof value === 'string' && value.trim().length > 0;
+  return values.map(value => {
     const entry = typeof value === 'string' ? { id: value, value } : value;
-    if (!entry || typeof entry.id !== 'string' || !entry.id.trim() || seen.has(entry.id)) return [];
-    seen.add(entry.id);
-    return [{ id: entry.id, value: typeof entry.value === 'string' && entry.value ? entry.value : entry.id,
-      ...(typeof entry.label === 'string' && entry.label ? { label: entry.label } : {}) }];
+    if (!entry || !validText(entry.id) || (Object.hasOwn(entry, 'value') && !validText(entry.value)) ||
+        (Object.hasOwn(entry, 'label') && !validText(entry.label)))
+      throw new Error('The provider returned invalid reasoning metadata: each level needs a valid ID, wire value and optional label. The previous model list is retained.');
+    const wire = entry.value ?? entry.id;
+    if (ids.has(entry.id) || wireValues.has(wire) || entry.id === providerDefaultReasoning || wire === providerDefaultReasoning)
+      throw new Error('The provider returned invalid reasoning metadata: duplicate or reserved levels. The previous model list is retained.');
+    ids.add(entry.id); wireValues.add(wire);
+    return { id: entry.id, value: wire, ...(entry.label !== undefined ? { label: entry.label } : {}) };
   });
-}
-
-const reasoningLabels = {
-  none: 'Off', auto: 'Auto', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High',
-  xhigh: 'Extra High', 'extra-high': 'Extra High', max: 'Max', ultra: 'Ultra',
-};
-function reasoningParameter(values) {
-  return { id: 'reasoning', name: 'Reasoning', markdownTooltip: 'Provider default leaves reasoning to your server. Other choices request an explicit effort.',
-    parameterType: { enumParameter: { values: values.map(item => ({ value: item.value ?? item.id, displayName: item.label ?? reasoningLabels[item.id] ?? item.id })) } },
-    isCycleableByHotkey: true };
-}
-
-function modelReasoning(model) {
-  return Array.isArray(model.capabilities?.reasoningEffortValues) ? model.capabilities.reasoningEffortValues : undefined;
-}
-
-function configuredReasoning(model, provider) {
-  return (fallbackReasoningValues(provider.url, model.id) ?? []).map(id => ({ id, value: id }));
-}
-
-function catalogModel(model, provider, namedModelSectionIndex) {
-  const selectionId = modelSelectionId(provider.id, model.id);
-  const declared = modelReasoning(model);
-  const efforts = declared ?? configuredReasoning(model, provider);
-  const reasoning = efforts.length ? [{ id: providerDefaultReasoning, label: 'Provider default' }, ...efforts] : [];
-  const defaultEffort = reasoning[0];
-  const variants = reasoning.map(item => {
-    const label = item.label ?? reasoningLabels[item.id] ?? item.id;
-    return { parameterValues: [{ id: 'reasoning', value: item.value ?? item.id }], displayName: `${model.name} · ${label}`,
-      displayNameOutsidePicker: item.id === providerDefaultReasoning ? model.name : `${model.name} · ${label}`, isMaxMode: false,
-      isDefaultNonMaxConfig: item === defaultEffort, isDefaultMaxConfig: item === defaultEffort };
-  });
-  return {
-    supportsThinking: reasoning.length > 0,
-    parameterDefinitions: reasoning.length ? [reasoningParameter(reasoning)] : [], variants,
-    name: selectionId, serverModelName: selectionId,
-    clientDisplayName: provider.name ? `${provider.name} · ${model.name}` : model.name,
-    inputboxShortModelName: model.name, defaultOn: true, supportsAgent: true,
-    namedModelSectionIndex,
-    tagline: provider.name,
-    providerId: provider.id,
-    supportsMaxMode: false, supportsNonMaxMode: true,
-    supportsImages: model.capabilities?.supportsVision ?? false,
-    idAliases: [], legacySlugs: [], cloudAgentEffortModes: [], modelPickerBadges: [],
-  };
 }
 
 function readState(text) {
@@ -195,6 +168,7 @@ export class ModelProviders {
     provider.models = discovered.map(model => {
       const previous = old.get(model.id);
       return previous ? { ...previous, ...model, enabled: previous.enabled,
+        capabilities: model.capabilities,
         name: previous.name || model.name, manual: previous.manual, discoveryStatus: 'listed' }
         : { ...model, discoveryStatus: 'listed' };
     });
@@ -332,7 +306,8 @@ function routingSnapshot(storage) {
     for (const model of provider.models) {
       const selectionId = modelSelectionId(provider.id, model.id);
       if (model.enabled) routes.set(selectionId, Object.freeze({ providerId: provider.id,
-        baseUrl: provider.url, modelId: model.id, selectionId }));
+        baseUrl: provider.url, modelId: model.id, selectionId,
+        reasoningValues: reasoningChoices(model, provider).map(item => item.value ?? item.id) }));
       aliases.set(model.id, aliases.has(model.id) ? null : selectionId);
     }
   }
@@ -361,16 +336,20 @@ export async function requestProvider(storage, secrets, modelId) {
   return { baseUrl: route.baseUrl, modelId: route.modelId, apiKey };
 }
 
-export async function requestAgentProvider(storage, secrets, modelId) {
+export async function requestAgentProvider(storage, secrets, selection) {
+  const modelId = typeof selection === 'string' ? selection : selection?.modelId;
   const route = requestProviderRoute(storage, modelId);
   if (!route) {
     if (parseModelSelection(modelId) || routingSnapshot(storage).aliases.has(modelId)) throw modelSelectionError('The selected model or provider is unavailable. Select an enabled model in OpenVision settings.');
     return undefined;
   }
+  const unavailable = unavailableReasoning(selection?.parameters, route.reasoningValues);
+  if (unavailable) throw modelSelectionError(`Reasoning level "${unavailable}" is no longer available for this model. Choose a listed level or Provider default in the model picker.`);
   const snapshot = routingSnapshot(storage), grouped = new Map();
   for (const item of snapshot.routes.values()) {
-    if (!grouped.has(item.providerId)) grouped.set(item.providerId, { id: item.providerId, baseUrl: item.baseUrl, modelIds: [], legacyModelIds: [] });
+    if (!grouped.has(item.providerId)) grouped.set(item.providerId, { id: item.providerId, baseUrl: item.baseUrl, modelIds: [], legacyModelIds: [], reasoningValues: Object.create(null) });
     grouped.get(item.providerId).modelIds.push(item.modelId);
+    grouped.get(item.providerId).reasoningValues[item.modelId] = item.reasoningValues;
     if (snapshot.aliases.get(item.modelId) === item.selectionId) grouped.get(item.providerId).legacyModelIds.push(item.modelId);
   }
   const openvisionProviders = await Promise.all([...grouped.values()].map(async provider =>

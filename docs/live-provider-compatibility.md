@@ -8,6 +8,19 @@ Neither set establishes history, branching, subagents or complete model support.
 
 ## Latest recheck after provider selection changes
 
+After the reasoning-capability lifecycle changes, native GPT 6.1 Sol High run
+`oJS37r` reached the real saved Codex Easy endpoint twice. The initial request
+returned HTTP 200 with a Read tool call in 4,124 ms. OpenVision read the file and
+sent its result in the second request; both carried `reasoning_effort: high`.
+The continuation timed out after 60,014 ms without recorded response headers.
+The run failed. This supersedes a blanket interpretation of the earlier High
+success; the cause of this timeout is unresolved. The owned host exited 0 after
+manual dismissal of a verifier cleanup overlay and native Stop. The verifier now
+dismisses menus before submission/cleanup, uses keyboard entry to the reasoning
+submenu, and attempts host closure even if the native Stop cleanup fails. These
+verifier changes are syntax-checked but have not been rerun against the live
+provider; they are not evidence of improved provider behavior.
+
 These results supersede any blanket success interpretation of the older runs.
 All inference below reached the real saved Codex Easy URL with its saved key.
 No saved provider settings were changed.

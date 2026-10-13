@@ -2,6 +2,29 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { modelSelectionId, parseModelSelection, resolveAgentModel } from './model-identity.js';
 import { allCatalog, requestProvider, requestAgentProvider } from './model-providers.js';
+import { providerDefaultReasoning } from './model-reasoning.js';
+
+test('removed reasoning fails before secrets or dispatch and permits explicit replacement', async () => {
+  const f = fixture(), modelId = modelSelectionId('one', 'shared');
+  const model = f.providers[0].models[0];
+  model.capabilities = { reasoningEffortValues: [{ id: 'ultra', value: 'vendor-ultra' }] };
+  const selection = { modelId, parameters: [{ id: 'reasoning', value: 'vendor-ultra' }] };
+  assert.ok(await requestAgentProvider(f.storage, f.secrets, selection));
+  model.capabilities.reasoningEffortValues = [{ id: 'high', value: 'high' }];
+  f.reads.length = 0;
+  await assert.rejects(requestAgentProvider(f.storage, f.secrets, selection), /no longer available/);
+  assert.deepEqual(f.reads, []);
+  for (const value of ['high', providerDefaultReasoning])
+    assert.ok(await requestAgentProvider(f.storage, f.secrets, { modelId, parameters: [{ id: 'reasoning', value }] }));
+  const provider = await requestAgentProvider(f.storage, f.secrets, modelId);
+  const input = { modelId, localProvider: provider, configuredEffortValues: ['vendor-ultra'],
+    modelParameters: [{ id: 'reasoning', value: 'high' }] };
+  const routed = resolveAgentModel(input);
+  assert.deepEqual(routed.configuredEffortValues, ['high'], 'Current saved capabilities override stale runtime discovery');
+  assert.throws(() => resolveAgentModel({ ...input, modelParameters: selection.parameters }), /reasoning level is unavailable/);
+  delete model.capabilities;
+  await assert.rejects(requestAgentProvider(f.storage, f.secrets, selection), /no longer available/);
+});
 
 function fixture() {
   const providers = ['one', 'two'].map(id => ({ id, name: id, url: `https://${id}.test/v1`,

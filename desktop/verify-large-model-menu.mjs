@@ -73,7 +73,11 @@ try {
     await menu.getByText('1–40 of 10000 models', { exact: true }).waitFor();
     result.keyboardPagination = true;
     await search.fill('09999');
-    await menu.getByRole('menuitem', { name: 'Model 09999', exact: true }).waitFor();
+    const tailItem = menu.getByRole('menuitem').filter({
+      has: page.locator('[data-model-picker-item-name="openvision-model:provider-1:model-09999"]'),
+    });
+    await tailItem.waitFor();
+    assert.match(await tailItem.ariaSnapshot(), /Model 09999/, 'Search result must retain its accessible model name');
     assert.equal(await menu.locator('[data-model-picker-item-name]').count(), 1);
     await search.press('Enter'); await menu.waitFor({ state: 'hidden' });
     await trigger.getByText('Model 09999', { exact: true }).waitFor();

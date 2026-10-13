@@ -53,6 +53,13 @@ const result = { checkedAt: new Date().toISOString(), model, reasoning, provider
   ].map(async ([name, path]) => [name, await fileHash(path)]))), success: false };
 const relay = await createLiveAgentRelay({ provider, model, marker });
 let app, page;
+async function dismissMenu() {
+  if (!page || page.isClosed()) return;
+  await page.mouse.move(0, 0);
+  const backdrop = page.locator('[data-component="menu-backdrop"]').filter({ visible: true });
+  for (let attempt = 0; attempt < 4 && await backdrop.count(); attempt++) await page.keyboard.press('Escape');
+  await backdrop.waitFor({ state: 'hidden' });
+}
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
@@ -81,11 +88,14 @@ try {
   await row.click(); await page.keyboard.press('Escape');
   if (reasoning !== 'default') {
     await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
-    await row.hover();
+    const item = menu.getByRole('menuitem').filter({ has: page.locator('[data-model-picker-item-name]').filter({ hasText: model }) });
+    await item.focus(); await item.press('ArrowRight');
+    await page.getByTestId('parameter-submenu').filter({ visible: true }).first().waitFor();
     await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
     await page.getByText('High', { exact: true }).filter({ visible: true }).last().click();
     await page.keyboard.press('Escape');
   }
+  await dismissMenu();
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   await input.fill('Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
   await input.press('Enter');
@@ -112,6 +122,14 @@ try {
   try { await relay.close(); } catch { cleanupErrors.push('Relay cleanup failed'); }
   try {
     if (app) {
+      try {
+        await dismissMenu();
+        if (page && !page.isClosed()) {
+          const stop = page.locator('.stop-button').filter({ visible: true });
+          if (await stop.count()) await stop.first().click();
+          await stop.waitFor({ state: 'hidden', timeout: 15000 });
+        }
+      } catch { cleanupErrors.push('Native Stop or menu cleanup failed'); }
       const child = app.process(), exited = new Promise(resolve => child.once('exit', resolve));
       const closing = app.close();
       await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 3000 }).catch(() => {});

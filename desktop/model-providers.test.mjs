@@ -114,6 +114,55 @@ test('discovery preserves reasoning capabilities for the model picker', async ()
     [{ id: 'low', value: 'low' }]);
 });
 
+test('successful discovery owns capability replacement; omitted and empty declarations have distinct meanings', async () => {
+  const services = bridge(), providers = new ModelProviders(services);
+  const provider = await providers.save({ name: 'Codex Easy', url: 'https://codex-easy.ai/v1', key: '' });
+  let capabilities = { reasoning_effort: [{ id: 'ultra', value: 'vendor-ultra', label: 'Ultra' }] };
+  services.request = async () => ({ data: [{ id: 'gpt-6.1-sol', ...(capabilities ? { capabilities } : {}) }] });
+  await providers.discover(provider.id);
+  const declared = providers.allModels()[0];
+  assert.ok(declared.variants.every(item => item.tooltipData.markdownContent.startsWith('Provider-declared · Unverified')));
+  assert.equal(variantFor(declared, 'vendor-ultra').displayName, 'gpt-6.1-sol · Ultra');
+  capabilities = undefined;
+  await providers.discover(provider.id);
+  assert.equal(provider.models[0].capabilities, undefined, 'Omission in the latest listed model clears stale declarations');
+  const hinted = providers.allModels()[0];
+  assert.ok(hinted.variants.every(item => item.tooltipData.markdownContent.startsWith('Compatibility hints · Unverified')));
+  assert.equal(variantFor(hinted, 'vendor-ultra'), undefined);
+  capabilities = { reasoning_effort: [] };
+  await providers.discover(provider.id);
+  assert.deepEqual(providers.allModels()[0].parameterDefinitions[0].parameterType.enumParameter.values, [defaultChoice], 'Explicit empty blocks fallback hints but permits explicit recovery');
+  const restored = new ModelProviders(services);
+  assert.deepEqual(restored.state.providers[0].models[0].capabilities.reasoningEffortValues, []);
+});
+
+test('malformed reasoning discovery fails atomically and keeps the saved catalog through restart', async () => {
+  const services = bridge(), providers = new ModelProviders(services);
+  const provider = await providers.save({ name: 'Fixture', url: 'https://example.test/v1', key: 'test-secret' });
+  services.request = async () => ({ data: [{ id: 'custom', reasoning_effort: ['ultra'] }] });
+  await providers.discover(provider.id);
+  const before = services.storage.get('openvision.model-providers.v1');
+  const invalid = [
+    { capabilities: [] }, { capabilities: null }, { reasoning_effort: 'high' }, { reasoning_effort: null },
+    { reasoning_effort: ['low', null] }, { reasoning_effort: ['low', { id: 'ultra', value: 7 }] },
+    { reasoning_effort: [{ id: 'high', label: false }] }, { reasoning_effort: ['high', 'high'] },
+    { reasoning_effort: [{ id: 'a', value: 'high' }, { id: 'b', value: 'high' }] },
+    { reasoning_effort: [providerDefaultReasoning] }, { variants: ['high'] },
+    { capabilities: { reasoningEffortValues: null }, reasoning_effort: ['high'] },
+  ];
+  for (const metadata of invalid) {
+    services.request = async () => ({ data: [{ id: 'new-valid', reasoning_effort: ['high'] }, { id: 'custom', ...metadata }] });
+    await assert.rejects(providers.discover(provider.id), /invalid .*previous model list is retained/);
+    assert.equal(services.storage.get('openvision.model-providers.v1'), before);
+    const restarted = new ModelProviders(services);
+    assert.deepEqual(restarted.state.providers, providers.state.providers);
+    assert.deepEqual(restarted.allModels().map(model => model.inputboxShortModelName), ['custom']);
+    assert.ok(variantFor(restarted.allModels()[0], 'ultra'));
+  }
+  assert.deepEqual(parseModels({ data: [{ id: 'custom', variants: { low: {}, ultra: {} } }] })[0].capabilities.reasoningEffortValues,
+    [{ id: 'low', value: 'low' }, { id: 'ultra', value: 'ultra' }]);
+});
+
 test('Codex Easy GPT models use their configured Cursor-style reasoning variants', () => {
   const model = catalog([{ id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', enabled: true }],
     { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })[0];
@@ -148,7 +197,7 @@ test('known provider models retain different tiers with an explicit provider def
   const choices = row => row.parameterDefinitions[0]?.parameterType.enumParameter.values.map(value => value.value) ?? [];
   assert.deepEqual(rows.map(choices), [
     [providerDefaultReasoning, 'low', 'medium', 'high', 'xhigh', 'max'], [providerDefaultReasoning, 'none', 'low', 'high', 'max'],
-    [providerDefaultReasoning, 'none', 'low', 'high', 'max'], [providerDefaultReasoning, 'low', 'medium', 'high', 'xhigh'], [],
+    [providerDefaultReasoning, 'none', 'low', 'high', 'max'], [providerDefaultReasoning, 'low', 'medium', 'high', 'xhigh'], [providerDefaultReasoning],
   ]);
   for (const row of rows.slice(0, -1))
     assert.equal(row.variants.find(variant => variant.isDefaultNonMaxConfig).parameterValues[0].value, providerDefaultReasoning);

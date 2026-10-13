@@ -6,6 +6,7 @@ import { readableModelMenu } from './model-picker-layout.mjs';
 import { strictModelSelection } from './model-selection-customization.mjs';
 import { paginateModelPicker } from './model-picker-pagination.mjs';
 import { readablePickerLabels } from './model-picker-labels.mjs';
+import { preserveReasoningSelection } from './reasoning-selection-customization.mjs';
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
@@ -37,6 +38,7 @@ function localModelSettings(text, variant) {
 
 export function customModels(text, variant) {
   text = readablePickerLabels(text, variant);
+  text = preserveReasoningSelection(text, variant);
   text = paginateModelPicker(text, variant);
   text = strictModelSelection(text, variant);
   text = text.replace('import {allCatalog as openvisionCatalog} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
@@ -183,6 +185,8 @@ export async function installModelSettings(root) {
   await copyFile(join(root, 'desktop/model-identity.js'), join(app, 'out/model-identity.js'));
   await copyFile(join(root, 'desktop/model-reasoning.js'), join(app, 'out/model-reasoning.js'));
   await copyFile(join(root, 'desktop/model-reasoning.js'), join(workbench, 'model-reasoning.js'));
+  await copyFile(join(root, 'desktop/model-catalog.js'), join(workbench, 'model-catalog.js'));
+  await copyFile(join(root, 'desktop/model-catalog.js'), join(app, 'out/model-catalog.js'));
   const mainPath = join(app, 'out/main.js');
   const main = await readFile(mainPath, 'utf8');
   const nativeImport = 'import "./openvision-model-http.js";';

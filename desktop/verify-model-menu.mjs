@@ -82,6 +82,8 @@ try {
   const parameters = page.getByTestId('parameter-submenu').filter({ visible: true }).first();
   await parameters.waitFor();
   await parameters.getByRole('menu', { name: 'GPT-6.1 Sol parameters', exact: true }).waitFor();
+  await parameters.getByTestId('parameter-submenu-description').getByText(/Compatibility hints · Unverified/).waitFor();
+  result.visibleUnverifiedHints = true;
   result.readableParameterMenuLabel = true;
   await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
   await page.getByText('Extra High', { exact: true }).filter({ visible: true }).last().waitFor();

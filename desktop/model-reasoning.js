@@ -7,6 +7,22 @@ const gptModels = new Set([
 // Local UI intent, never an upstream effort value.
 export const providerDefaultReasoning = 'openvision-provider-default';
 
+export function reasoningChoices(model, provider) {
+  return model.capabilities?.reasoningEffortValues ??
+    (fallbackReasoningValues(provider.url, model.id) ?? []).map(id => ({ id, value: id }));
+}
+
+export function unavailableReasoning(parameters, allowed) {
+  const effort = parameters?.find(item => ['reasoning', 'effort', 'thought_level'].includes(item.id))?.value;
+  return effort && effort !== providerDefaultReasoning && !allowed.includes(effort) ? effort : undefined;
+}
+
+export function reasoningSource(model, provider) {
+  if (Array.isArray(model.capabilities?.reasoningEffortValues))
+    return model.capabilities.reasoningEffortValues.length ? 'Provider-declared · Unverified' : 'No reasoning levels declared';
+  return fallbackReasoningValues(provider.url, model.id)?.length ? 'Compatibility hints · Unverified' : 'No reasoning levels declared';
+}
+
 // Compatibility hints; individual tiers require live verification. Declarations take precedence.
 export function fallbackReasoningValues(baseUrl, modelId) {
   let hostname;

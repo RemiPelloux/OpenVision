@@ -1,3 +1,5 @@
+import { unavailableReasoning } from './model-reasoning.js';
+
 const prefix = 'openvision-model:';
 
 export function modelSelectionError(message) {
@@ -34,6 +36,10 @@ export function resolveAgentModel(options) {
     throw modelSelectionError(matches.length ? 'This model is offered by multiple providers. Select its provider in the model picker.'
       : 'The selected model or provider is unavailable. Select an enabled model in OpenVision settings.');
   const provider = matches[0];
-  return { ...options, modelId: selected?.modelId ?? options.modelId,
+  const modelId = selected?.modelId ?? options.modelId;
+  const allowed = provider.reasoningValues?.[modelId];
+  if (allowed && unavailableReasoning(options.modelParameters, allowed))
+    throw modelSelectionError('The selected reasoning level is unavailable. Choose a listed level or Provider default in the model picker.');
+  return { ...options, modelId, ...(allowed ? { configuredEffortValues: allowed } : {}),
     localProvider: { ...options.localProvider, endpoints: [{ baseUrl: provider.baseUrl, apiKey: provider.apiKey }] } };
 }
