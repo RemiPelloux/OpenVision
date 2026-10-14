@@ -28,13 +28,22 @@ export class LocalRules {
 
   read() {
     return [profileScope, workspaceScope].flatMap(scope =>
-      this.storage.keys(scope, machineTarget).filter(key => this.ownsKey(key)).flatMap(key => {
+      this.keys(scope).filter(key => this.ownsKey(key)).flatMap(key => {
         const raw = this.storage.get(key, scope);
         if (raw === undefined) return [];
         const item = parseRule(raw, key.slice(prefix.length));
         if (scopeOf(item) !== scope) throw new Error('A saved rule has an unexpected scope; its original data was preserved.');
         return [item];
       })).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '') || a.id.localeCompare(b.id));
+  }
+
+  keys(scope) {
+    // Native storage.keys() reads a shared target-metadata blob. Simultaneous
+    // window writes can replace that blob while both rule records survive.
+    // Enumerate the storage owner's actual records; the prefix owns identity.
+    const items = this.storage.getStorage(scope)?.items;
+    if (!items || typeof items.keys !== 'function') throw new Error('OpenVision rule storage is unavailable.');
+    return [...items.keys()];
   }
 
   write(item) {

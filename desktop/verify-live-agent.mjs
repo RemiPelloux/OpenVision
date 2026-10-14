@@ -13,9 +13,10 @@ import { createLiveAgentRelay } from './live-agent-relay.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { verifyLiveHistory, verifyPersistedLiveHistory } from './verify-live-history.mjs';
 import { prepareLivePaste, inspectPasteRequest, verifySavedLivePaste } from './verify-live-paste.mjs';
+import { createLiveUserRule, inspectRulesRequest } from './verify-live-rules.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--paste] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Paste checks native large clipboard text saved to a file and read on demand. Capture saves the first request locally with the transport key redacted.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--paste|--rules] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -25,7 +26,9 @@ const reasoning = reasoningIndex < 0 ? 'default' : process.argv[reasoningIndex +
 const subagent = process.argv.includes('--subagent');
 const history = process.argv.includes('--history');
 const paste = process.argv.includes('--paste');
+const rules = process.argv.includes('--rules');
 assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to-Read probe');
+assert.ok(!rules || (!paste && !history && !subagent), '--rules is a separate persisted-rules probe');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const db = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
@@ -42,8 +45,16 @@ const profile = join(directory, 'profile'), project = join(directory, 'project')
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'git.openRepositoryInParentFolders': 'never' }));
 const marker = `OPENVISION_READ_${randomUUID().replaceAll('-', '')}`;
-const file = join(project, 'probe.txt');
+const ruleFilename = `rule-probe-${randomUUID()}.txt`;
+const userRule = `The verification file for this project is ${ruleFilename}. When asked to read the verification file, use Read on this file and answer with its exact first line. Do not use other tools.`;
+const projectRule = `OPENVISION_PROJECT_RULE_${randomUUID()}`;
+const file = join(project, rules ? ruleFilename : 'probe.txt');
 if (!paste) await writeFile(file, marker + '\n');
+if (rules) {
+  await mkdir(join(project, '.openvision/rules'), { recursive: true });
+  await writeFile(join(project, '.openvision/rules/live-check.mdc'),
+    `---\ndescription: Native live rule verification\nalwaysApply: true\n---\nProject label: ${projectRule}. Do not include this label in replies unless explicitly asked.\n`);
+}
 if (process.platform === 'win32') {
   const state = JSON.parse(await readFile(join(root, 'data/local/Local State'), 'utf8'));
   assert.equal(typeof state.os_crypt?.encrypted_key, 'string');
@@ -58,13 +69,17 @@ const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent
     ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['relay', join(root, 'desktop/live-agent-relay.mjs')],
     ...(history ? [['historyVerifier', join(root, 'desktop/verify-live-history.mjs')]] : []),
+    ...(rules ? [['rulesHelper', join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js')],
+      ['rulesVerifier', join(root, 'desktop/verify-live-rules.mjs')]] : []),
   ].map(async ([name, path]) => [name, await fileHash(path)]))), success: false };
 if (paste) result.paste = {};
+if (rules) result.rules = {};
 const captureRequest = async body => {
   if (paste) {
     inspectPasteRequest(body, result.paste);
     assert.ok(!body.includes(marker), 'The provider must learn the unique marker only from the file Read');
   }
+  if (rules) inspectRulesRequest(body, { userRule, projectRule, marker }, result.rules);
   if (process.argv.includes('--capture-payload')) await writeFile(join(directory, 'native-request.json'), body);
 };
 const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest });
@@ -126,11 +141,20 @@ try {
     await page.keyboard.press('Escape');
   }
   await dismissMenu();
+  if (rules) {
+    await createLiveUserRule(page, userRule);
+    await closeOwnedApp();
+    await launch();
+    result.rules.restartedBeforeFirstRequest = true;
+    await page.keyboard.press('ControlOrMeta+Shift+l');
+  }
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   let pasted;
   if (paste) pasted = await prepareLivePaste({ app, input, project, marker });
   else {
-    await input.fill(subagent
+    await input.fill(rules
+    ? 'Read the verification file specified in my saved rule. Reply with exactly its first line.'
+    : subagent
     ? 'Use exactly one Task subagent with the inherited model. Ask it to use Read on probe.txt and return exactly the single line in that file. After the Task finishes, reply with exactly the returned line. Do not read the file yourself, edit files, run commands or use other tools.'
     : 'Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
     await input.press('Enter');

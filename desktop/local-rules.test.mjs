@@ -11,6 +11,7 @@ function storageFixture(values = new Map()) {
   const at = scope => { assert.ok(scope === 0 || scope === 1); return scope === 0 ? values : workspace; };
   const fire = (scope, key) => { for (const item of listeners) if (item.scope === scope) item.callback({key}); };
   return { values, listeners,
+    getStorage: scope => ({ items: at(scope) }),
     keys: (scope, target) => { assert.equal(target, 1); return [...at(scope).keys()]; },
     get: (key, scope) => at(scope).get(key),
     store(key, value, scope, target) {
@@ -36,6 +37,16 @@ test('local rules survive a new owner, preserve unrelated writes and migrate leg
   second.migrateLegacy('Use meaningful names.');
   assert.deepEqual(second.read(), [], 'Deleted legacy rules must not reappear after restart');
   assert.deepEqual(new LocalRules(storageFixture()).read(), [], 'Another profile is isolated');
+});
+
+test('rules survive missing or stale shared key-target metadata', () => {
+  const storage = storageFixture(), rules = new LocalRules(storage);
+  rules.add('Window A', 'Keep first');
+  rules.add('Window B', 'Keep second');
+  storage.keys = () => [];
+  assert.equal(new LocalRules(storage).read().length, 2);
+  storage.getStorage = () => undefined;
+  assert.throws(() => rules.read(), /storage is unavailable/);
 });
 
 test('user rules follow the profile but generated memories stay in their workspace', () => {

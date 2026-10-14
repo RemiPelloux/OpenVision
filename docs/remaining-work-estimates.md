@@ -89,7 +89,7 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Estimated remaining effort | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-301 / Partial | Live Agent consumes rules; workspace memories; two windows, malformed records and failed writes | 2–4 days | OV-103 and isolated native profiles; medium |
+| OV-301 / Partial | Native generated workspace memories and asynchronous persistence failure/recovery; live first-request user/project rules and two-window concurrency now pass | 1–3 days | [Concurrency fix and live evidence](local-rules-concurrency.md); OV-103 and isolated native profiles; medium |
 | OV-302 / Partial | Complete global path-owner audit and additive migration; two profiles and another installation; watcher consumers | 3–6 days | Recovered producer/consumer paths and native fixtures; medium |
 | OV-303 / Partial | Native failed-cleanup recovery and remaining lifecycle/ownership cases | 1–3 days | HTTP/STDIO approval, Stop, disconnect, timeout and restart now have scoped evidence; medium |
 | OV-304 / Planned | OAuth canceled consent, expiry/refresh and secret storage; discovery precedence, invalid config and watcher disposal | 3–6 days | Owned OAuth server and supported auth contracts; medium |
