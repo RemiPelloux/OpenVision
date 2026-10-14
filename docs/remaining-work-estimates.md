@@ -1,8 +1,8 @@
 # OpenVision remaining work and estimates
 
-Updated 13 October 2026. The user changed the verified-coverage target to **80%**.
+Updated 14 October 2026. The user changed the verified-coverage target to **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
-Verified**. Current ledger: **5 Verified, 21 Partial, 14 Planned, 2 Unknown**,
+Verified**. Current ledger: **5 Verified, 22 Partial, 13 Planned, 2 Unknown**,
 or **11.90%**. Twenty-nine additional stories must pass to reach the numeric target.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
@@ -54,7 +54,7 @@ do not turn a test passing on a fixture into a provider/platform support claim.
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | 2–5 days | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | 2–5 days | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
 | OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | 1–2 days | OV-104 and provider capability contracts; low because current DeepSeek explicit reasoning fails |
-| OV-204 / Planned | 401/403/429/5xx, offline, malformed streams, unsupported tools/images and context limits; useful errors and cleanup | 3–6 days | OV-102/201; medium |
+| OV-204 / Partial | Remaining offline/timeout, malformed/oversized streams, unsupported tools/images, context limits and manual retry UX; native HTTP errors and parsed stream failures checked | 2–5 days | OV-102/201; medium; live/platform gates remain |
 
 The [provider identity change](provider-model-identity.md) removes raw-model-ID
 deduplication. A native Windows fixture verifies two providers with the same ID,
@@ -75,6 +75,11 @@ Models control and fixes disabled-child fallback. Native fixtures cover saved
 reasoning/restart/errors/recovery; a separate real Codex Easy GPT High Task → Read
 → parent continuation passed. This supersedes the earlier static inference of
 broken reasoning propagation on the active Windows child path.
+The [provider failure follow-up](provider-failure-handling.md) fixes echoed-key
+diagnostics and duplicate automatic SDK/Agent requests for transport and parsed
+stream errors. Native fixtures and a fresh real Codex Easy GPT High Task → Read
+→ parent continuation pass; unsupported capability, timeout and additional
+provider/platform gates remain open. OV-204 is Partial and adds no Verified credit.
 The prior discovery implementation removed nonmanual models absent from the
 latest catalog. The retention fix keeps these saved choices with a visible
 unlisted status; the [verification report](model-catalog-retention.md) records its scope. This is

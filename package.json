@@ -30,6 +30,8 @@
     "verify:providers:live": "node desktop/verify-live-providers.mjs",
     "verify:agent:live": "node desktop/verify-live-agent.mjs",
     "test:agent-relay": "node --test desktop/live-agent-relay.test.mjs",
+    "test:provider-errors": "node --test desktop/provider-error-policy.test.mjs desktop/live-provider-probe.test.mjs",
+    "verify:provider-errors": "node desktop/verify-provider-errors.mjs",
     "verify:project": "node desktop/verify-project.mjs",
     "verify:agent": "node desktop/verify-agent.mjs",
     "benchmark:native": "node desktop/verify-agent.mjs --baseline",

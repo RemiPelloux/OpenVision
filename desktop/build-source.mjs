@@ -27,6 +27,7 @@ import { installMcpAttemptCleanup } from './mcp-attempt-customization.mjs';
 import { installMcpCancellation } from './mcp-cancel-customization.mjs';
 import { installMcpReconnect } from './mcp-reconnect-customization.mjs';
 import { installAgentProviders } from './agent-provider-customization.mjs';
+import { installProviderErrorPolicy } from './provider-error-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -52,6 +53,7 @@ await installMcpReconnect(root);
 await installSubagentPathIsolation(root);
 await installAgentRuntime(root);
 await installAgentProviders(root);
+await installProviderErrorPolicy(root);
 await installOwnedShellProcesses(root);
 await installContextRuntime(root);
 await installCoreTelemetryPolicy(root);
