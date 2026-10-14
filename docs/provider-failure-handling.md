@@ -22,10 +22,60 @@ retain their identity and backpressure; cancellation reaches the upstream reader
 A weak ownership set marks transport failures. SDK and local Agent retry owners
 stop automatic repeats for these errors, including wrapped causes. This does
 not change unrelated error classification or erase the SDK's transient-status
-fact. Submitting a fresh message remains possible. A dedicated manual Retry
-button with independent automatic-retry policy is still an open UX gate.
+fact. The error adapter now exposes **Try again** while preserving the terminal
+error class used by automatic retry classifiers. Manual retry retains the prior
+prompt and selected model/provider; it does not silently change credentials or
+reasoning. Authentication errors can be retried after correcting the settings.
+
+Error response bodies now have an explicit **64 KiB decoded-byte retention
+budget** and a **10-second read deadline**. These apply after error headers arrive,
+not to successful model output or time waiting for inference headers. The reader
+checks each chunk before decoding/retaining it, cancels on overflow/timeout and
+releases its lock/timer. Compressed bytes are counted after decompression. The
+transport may allocate its own chunk; this is a bound on retained diagnostics,
+not a claim of a 64 KiB total process allocation. Truncation, observed bytes,
+status, request URL/body and response headers remain recorded.
+
+Provider-declared context exhaustion no longer starts repeated paid summarization
+attempts. A native fixture reproduced **ten requests for one context-limit error**
+in `provider-errors-yauHqH`; the fixed path reports the failure and suggests
+reducing attached context or starting a new chat. Existing proactive/internal
+context recovery remains intact. Provider codes for unsupported tools/images
+and HTTP rate/server errors receive guidance without changing the selected model.
+
+Two native runs (`provider-errors-DRibsj` and `provider-errors-JczaV1`) also showed
+the error and retry button disappearing after several successful retries in a
+single chat. The display previously relied on a transient error bubble. The
+provider-error producer now retains the failure in chat-level submission state,
+with an explicit ownership flag, until retry/new submission or dismissal. Both
+workbench variants use the same policy; native Windows exercises desktop only.
 
 ## Evidence and scope
+
+Latest expanded native run: `logs/provider-errors-ESuXiD/result.json` on Windows
+x64. All **14 failure cases and their manual retries** passed in one chat:
+401/403/429/500/502/503, malformed stream, streamed provider error, dropped
+connection, context limit, unsupported tool/image responses, oversized error
+body and stalled error body. Each failure made exactly one HTTP request; each
+explicit retry made one successful request with its original prompt, model and
+credential. Context failures no longer invoked summary requests. Size/deadline
+failures closed the streaming response sockets before recovery.
+
+The same run stopped the HTTP server to establish actual connection refusal,
+then restored it on the same port and recovered through Try again. It also
+verified Stop closing an active SSE socket, successful submission afterward,
+and dismissing an error without submitting. Exactly **32 requests** were expected
+and observed; **43 log files** had no synthetic-credential matches. The owned
+host exited 0, with no cleanup errors. The verifier records Agent, workbench,
+helper and host digests, including Agent
+`8601f2812c37d7eda5020ef26f51536ac9da8ffd11588b6e27d11c8e4b39c830`
+and workbench
+`4951d1ba394d758c86c9939873a2c379d653b9cb45de5083c01e3b7ca6747400`.
+
+This expands the earlier passing `provider-errors-t4M8MW` run with explicit
+dismissal and workbench identity evidence. Recovery means the fixture changes
+from failure to success; it does not establish upstream model capability or
+that retrying an unchanged invalid request will succeed.
 
 Run with the pinned Node 24.18.0 toolchain:
 
@@ -70,7 +120,15 @@ The same Agent SHA-256 was used as in the native failure run:
 This establishes that successful live streaming/tool continuation still works
 for that model/effort/path, not all models or failure modes.
 
-Validation also passed 101 desktop tests, 12 focused provider-error/probe tests,
+After the bounded-body/manual-retry changes, real native Grok 4.7 run `YaqVHy`
+passed Glob → Read → file-marker response with three HTTP 200 requests.
+DeepSeek V4 Flash run `Fkiask` failed at the first native request with HTTP 400
+(`upstream_error: Bad Request`); no tool continuation occurred. Both used Provider
+default and the same build as `ESuXiD`, and both owned hosts exited 0. The
+[live compatibility report](live-provider-compatibility.md) records the exact
+scope and preserves the unresolved DeepSeek failure.
+
+Validation also passed 101 desktop tests, 23 focused provider-error/probe tests,
 the acceptance-ledger test, desktop syntax checks and the production source build.
 Those test totals are regression evidence, not additional acceptance-story credit.
 
@@ -80,16 +138,15 @@ catalog/error fixtures cannot establish Codex Easy, DeepSeek or Grok behavior.
 
 ## Remaining acceptance work
 
-- Native connection refusal/DNS/TLS failures and timeout cleanup.
-- Unsupported tools/images and context-limit responses with useful recovery.
-- All malformed/truncated/oversized stream shapes, including downstream tool
-  validation and bounded HTTP error-body reads.
-- Separate manual retry controls and transient-error guidance without automatic
-  request multiplication.
+- Native DNS/TLS failures and successful-response/header/stream inactivity timeouts.
+- Unsupported capability behavior against actual tool/image inputs and providers;
+  error-response fixtures do not establish the model's capability contract.
+- Remaining malformed/truncated/oversized successful stream shapes and downstream
+  tool validation; the diagnostic budget covers HTTP error bodies only.
 - Custom authentication-header overrides and remaining completion/discovery
   error paths; this change covers the Agent's SDK Authorization boundary.
 - Live provider failure/cancellation/recovery and native macOS/Linux evidence.
 
-Estimated remaining OV-204 effort: **2–5 engineering days**, conditional on live
+Estimated remaining OV-204 effort: **2–4 engineering days**, conditional on live
 provider availability and the platform access required by claimed support.
 The broader per-story estimates remain in [remaining-work-estimates.md](remaining-work-estimates.md).

@@ -180,6 +180,14 @@ retain Partial status.
 Sprint exit: a provider matrix distinguishes discovery, chat, tools, reasoning,
 images and autocomplete support. Listing a model alone never earns a support tick.
 
+14 October OV-204 follow-up: [provider failure handling](provider-failure-handling.md)
+records 14 native failure cases with explicit retry, bounded/stalled diagnostic
+reads, connection-refusal recovery, Stop and dismissal. A context-limit response
+previously triggered ten requests; the fixed path makes one and gives recovery
+guidance. Actual tool/image capability inputs, remaining inference timeout/stream
+cases and live/platform coverage remain unverified. OV-204 remains Partial;
+the fixed ledger stays 5/42 Verified.
+
 ## Sprint 3 — Own customization and MCP lifecycle
 
 Outcome: local user data and custom tools have clear paths, authority and cleanup.

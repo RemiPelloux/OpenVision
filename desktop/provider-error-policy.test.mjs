@@ -49,6 +49,29 @@ test('diagnostic graph redaction preserves identity, status, retryability and un
   assert.equal(policy.isProviderFailure(new Error('unrelated')), false);
 });
 
+test('native context-error classification preserves provider failures without starting paid summary retries', () => {
+  class InputTokenLimitError extends Error {}
+  const classify = runInNewContext(`${expression('function vi(e, t)')}\n${expression('function wi(e)')}\n${expression('function bi(e)')}\n(${expression('function pEe(e)')})`, {
+    ...context, jo: InputTokenLimitError,
+  });
+  const provider = new ApiError({ message: 'context_length_exceeded', statusCode: 400 });
+  policy.redactProviderError(provider, {});
+  assert.equal(classify(provider), provider);
+  assert.match(policy.providerFailureDetail(provider, 'details'), /Reduce attached context/);
+  // Preserve the original proactive/internal context-recovery contract.
+  const internal = new Error('context_length_exceeded');
+  assert.ok(classify(internal) instanceof InputTokenLimitError);
+  assert.equal(policy.providerFailureDetail(internal, 'details'), 'details');
+});
+
+test('recovery guidance uses parsed provider facts without inventing capability failures', () => {
+  assert.match(policy.providerFailureDetail({ statusCode: 429 }, 'detail'), /Wait before choosing Try again/);
+  assert.match(policy.providerFailureDetail({ statusCode: 503 }, 'detail'), /server error/);
+  assert.match(policy.providerFailureDetail({ data: { error: { code: 'unsupported_tools' } } }, 'detail'), /tool support/);
+  assert.match(policy.providerFailureDetail({ data: { error: { code: 'unsupported_image' } } }, 'detail'), /image support/);
+  assert.equal(policy.providerFailureDetail({ statusCode: 400, data: { error: { code: 'unknown' } } }, 'detail'), 'detail');
+});
+
 test('recovered HTTP owner sanitizes actual responses before SDK and Agent retry decisions', async () => {
   let count = 0;
   const server = createServer((request, response) => {

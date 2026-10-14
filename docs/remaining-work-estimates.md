@@ -54,7 +54,7 @@ do not turn a test passing on a fixture into a provider/platform support claim.
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | 2–5 days | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | 2–5 days | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
 | OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | 1–2 days | OV-104 and provider capability contracts; low because current DeepSeek explicit reasoning fails |
-| OV-204 / Partial | Remaining offline/timeout, malformed/oversized streams, unsupported tools/images, context limits and manual retry UX; native HTTP errors and parsed stream failures checked | 2–5 days | OV-102/201; medium; live/platform gates remain |
+| OV-204 / Partial | Remaining DNS/TLS, inference timeout and malformed/oversized stream cases; actual capability inputs and live/platform gates. Native manual retries, context/capability error responses, bounded/stalled diagnostics, connection refusal and Stop now checked | 2–4 days | OV-102/201; medium; live/platform gates remain |
 
 The [provider identity change](provider-model-identity.md) removes raw-model-ID
 deduplication. A native Windows fixture verifies two providers with the same ID,

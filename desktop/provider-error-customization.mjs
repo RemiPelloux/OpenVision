@@ -4,7 +4,7 @@ import { cachedFile } from './build-cache.mjs';
 import { digest, fileHash } from './import-files.mjs';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
-const marker = '/* OpenVision provider error boundary v3 */';
+const marker = '/* OpenVision provider error boundary v5 */';
 const target = 'extensions/cursor-agent-exec/dist/main.js';
 
 function uniqueIndex(text, anchor) {
@@ -27,11 +27,31 @@ function wrapTransport(text) {
 
 export function redactProviderErrors(text) {
   if (text.includes(marker)) return text;
+  if (text.includes('/* OpenVision provider error boundary v4 */')) {
+    const convert = 'const t = new jo(e.message);';
+    const detail = 'i = s ? (r ? `${s} (${r})` : s) : o,';
+    uniqueIndex(text, convert); uniqueIndex(text, detail);
+    return text.replace('/* OpenVision provider error boundary v4 */', marker)
+      .replace(convert, 'if (openvisionProviderErrors.isProviderFailure(e)) return openvisionProviderErrors.requireContextRecovery(e);\n          ' + convert)
+      .replace(detail, 'i = openvisionProviderErrors.providerFailureDetail(n ?? e, s ? (r ? `${s} (${r})` : s) : o),');
+  }
+  if (text.includes('/* OpenVision provider error boundary v3 */')) {
+    const read = 'const i = await n.text(),\n                a = qt(n);';
+    uniqueIndex(text, read);
+    const classify = 'return a ? new YEe(i, l) : new Lwe(i, l);';
+    uniqueIndex(text, classify);
+    const detail = 'o = null != r ? r : e instanceof Error ? e.message : String(e),';
+    uniqueIndex(text, detail);
+    return redactProviderErrors(text.replace('/* OpenVision provider error boundary v3 */', '/* OpenVision provider error boundary v4 */')
+      .replace(read, 'const i = await openvisionProviderErrors.readProviderErrorBody(n, facts => new Te({...facts, url: s, requestBodyValues: o})),\n                a = qt(n);')
+      .replace(detail, 'o = n?.responseBodyTruncated ? n.message : null != r ? r : e instanceof Error ? e.message : String(e),')
+      .replace(classify, 'return a || openvisionProviderErrors.isProviderFailure(e) ? new YEe(i, l) : new Lwe(i, l);'));
+  }
   if (text.includes('/* OpenVision provider error boundary v2 */')) {
     const anchor = 'return await n({ response: a, url: e, requestBodyValues: r.values });';
     uniqueIndex(text, anchor);
-    return text.replace('/* OpenVision provider error boundary v2 */', marker).replace(anchor,
-      'return openvisionProviderErrors.protectProviderResult(await n({ response: a, url: e, requestBodyValues: r.values }), t);');
+    return redactProviderErrors(text.replace('/* OpenVision provider error boundary v2 */', '/* OpenVision provider error boundary v3 */').replace(anchor,
+      'return openvisionProviderErrors.protectProviderResult(await n({ response: a, url: e, requestBodyValues: r.values }), t);'));
   }
   // Upgrade the unpublished v1 patch without replacing other customizations.
   text = text.replace('/* OpenVision provider error redaction v1 */\nconst openvisionProviderErrors = require("./openvision-provider-errors.cjs");\n', '')
@@ -52,8 +72,8 @@ export async function installProviderErrorPolicy(root) {
   const path = join(root, 'source/app', target);
   const helper = join(root, 'desktop/provider-error-policy.js');
   const helperTarget = join(dirname(path), 'openvision-provider-errors.cjs');
-  const helperSource = (await readFile(helper, 'utf8')).replaceAll('export function ', 'function ');
-  await writeFile(helperTarget, `${helperSource}\nmodule.exports = {providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult};\n`);
+  const helperSource = (await readFile(helper, 'utf8')).replaceAll('export function ', 'function ').replaceAll('export async function ', 'async function ').replaceAll('export const ', 'const ');
+  await writeFile(helperTarget, `${helperSource}\nmodule.exports = {providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult, readProviderErrorBody, requireContextRecovery, providerFailureDetail};\n`);
   const recipe = digest(JSON.stringify(await Promise.all([
     fileHash(join(root, 'desktop/provider-error-customization.mjs')),
     fileHash(helper), fileHash(join(root, 'tooling/package-lock.json')),

@@ -1,4 +1,4 @@
-# Live provider compatibility — 13 October 2026
+# Live provider compatibility — 14 October 2026
 
 These checks contacted the three saved Codex Easy connections at
 `https://codex-easy.ai/v1`, using each provider's own stored credential. They
@@ -7,6 +7,27 @@ Windows Agent checks below exercise selection, rendering and Read continuation.
 Neither set establishes history, branching, subagents or complete model support.
 
 ## Latest recheck after provider selection changes
+
+14 October: native DeepSeek V4 Flash, Provider default, run `Fkiask` failed
+before Read with one actual HTTP 400 (`upstream_error: Bad Request`) in 988 ms.
+The request omitted reasoning effort and reached the saved Codex Easy endpoint;
+request ID `859ddd1f-2fb5-4df4-b31a-917d2856fb93`. No file tool or continuation ran.
+The owned host exited 0. This reproduces the earlier `PyU9tO` failure; the cause
+remains unresolved, and native DeepSeek compatibility is not claimed. The
+provider-failure changes were present (Agent `8601f2812c37d7eda5020ef26f51536ac9da8ffd11588b6e27d11c8e4b39c830`,
+workbench `4951d1ba394d758c86c9939873a2c379d653b9cb45de5083c01e3b7ca6747400`).
+The verifier stops on the upstream error, so this run is not a manual-retry UI
+acceptance check; native local fixtures establish that behavior separately.
+
+14 October: native Grok 4.7, Provider default, run `YaqVHy` passed with the same
+Agent/workbench build. The real provider requested Glob, then Read, and returned
+the disposable file's random marker after receiving its tool result. Three HTTP
+200 requests reached Codex Easy; the observed response model was `grok-4.7` and
+reasoning effort was omitted. The file remained unchanged and the owned host
+exited 0. This verifies the Read continuation path; Grok used an extra Glob call
+despite the prompt asking for Read only, so exact instruction adherence and
+minimum request count are not claimed. The catalog remained simulated while
+inference bodies were forwarded unchanged to the real endpoint.
 
 Native GPT 6.1 Sol High subagent run `wnAlDa` passed after restoring Task Models
 settings and fixing disabled-child fallback. The real provider emitted Task,

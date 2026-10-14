@@ -27,6 +27,8 @@ const scenarios = [
   ['server-error', 503], ['bad-gateway', 502], ['internal-error', 500],
   ['malformed-stream', 200], ['stream-error', 200],
   ['disconnected', 0],
+  ['context-limit', 400], ['unsupported-tools', 400], ['unsupported-images', 400],
+  ['oversized-error', 503], ['stalled-error', 429],
 ];
 let scenario = 'success';
 const requests = [];
@@ -40,6 +42,7 @@ const server = createServer(async (request, response) => {
   for await (const chunk of request) chunks.push(chunk);
   const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   const record = { scenario, authorized: request.headers.authorization === 'Bearer secret-fixture-key', model: body.model };
+  if (scenario.startsWith('recovery:')) record.originalPromptRetained = JSON.stringify(body.messages).includes(`Trigger ${scenario.slice(9)}`);
   requests.push(record);
   if (scenario === 'disconnected') return response.destroy();
   if (scenario === 'stop') {
@@ -48,30 +51,45 @@ const server = createServer(async (request, response) => {
     response.on('close', () => { record.socketClosed = true; });
     return;
   }
+  if (scenario === 'oversized-error' || scenario === 'stalled-error') {
+    response.writeHead(scenario === 'oversized-error' ? 503 : 429, { 'content-type': 'application/json' });
+    response.write('{"error":{"message":"secret-fixture-key');
+    let timer, bytes = 0;
+    if (scenario === 'oversized-error') timer = setInterval(() => {
+      if (bytes >= 1024 * 1024) return clearInterval(timer);
+      response.write('x'.repeat(8192)); bytes += 8192;
+    }, 10);
+    response.on('close', () => { clearInterval(timer); record.socketClosed = true; });
+    return;
+  }
   if (scenario === 'malformed-stream' || scenario === 'stream-error') {
     response.writeHead(200, { 'content-type': 'text/event-stream' });
     const message = `fixture ${scenario} secret-fixture-key`;
     return response.end(`data: ${JSON.stringify(scenario === 'stream-error' ? { error: { message, type: 'fixture_error' } } :
       { choices: [{ delta: { content: message } }] })}\n\ndata: [DONE]\n\n`);
   }
-  if (scenario !== 'success') {
+  if (scenario !== 'success' && !scenario.startsWith('recovery:')) {
     response.writeHead(Number(scenarios.find(([name]) => name === scenario)?.[1] ?? 500),
       { 'content-type': 'application/json', 'x-request-id': `fixture-${scenario}` });
-    return response.end(JSON.stringify({ error: { message: `fixture ${scenario} secret-fixture-key`, type: 'fixture_error' } }));
+    const code = { 'context-limit': 'context_length_exceeded', 'unsupported-tools': 'unsupported_tools', 'unsupported-images': 'unsupported_image' }[scenario];
+    return response.end(JSON.stringify({ error: { message: `fixture ${scenario} secret-fixture-key`, type: 'fixture_error', code } }));
   }
   response.writeHead(200, { 'content-type': 'text/event-stream' });
   const event = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({
     id: 'fixture-response', object: 'chat.completion.chunk', model: 'provider-failure-fixture', choices: [{ index: 0, delta, finish_reason }],
   })}\n\n`);
-  event({ role: 'assistant', content: 'fixture success' }); event({}, 'stop'); response.end('data: [DONE]\n\n');
+  event({ role: 'assistant', content: scenario.startsWith('recovery:') ? `fixture recovered ${scenario.slice(9)}` : 'fixture success' });
+  event({}, 'stop'); response.end('data: [DONE]\n\n');
 });
 await new Promise(resolveServer => server.listen(0, '127.0.0.1', resolveServer));
+const port = server.address().port;
 
 const result = { checkedAt: new Date().toISOString(), commit: execFileSync('git', ['rev-parse', 'HEAD'],
   { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
   scope: 'Native Windows Agent with a local HTTP failure fixture; no live-provider compatibility claim.',
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['agent', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
+    ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['helper', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-provider-errors.cjs')],
     ['verifier', fileURLToPath(import.meta.url)],
   ].map(async ([name, path]) => [name, await fileHash(path)]))),
@@ -109,7 +127,7 @@ try {
   const settings = page.locator('.openvision-model-settings');
   await settings.getByRole('button', { name: 'Add Provider', exact: true }).click();
   await page.getByLabel('Provider Name', { exact: true }).fill('Provider failure fixture');
-  await page.getByLabel('API Base URL', { exact: true }).fill(`http://127.0.0.1:${server.address().port}/v1`);
+  await page.getByLabel('API Base URL', { exact: true }).fill(`http://127.0.0.1:${port}/v1`);
   await page.getByLabel('API Key', { exact: true }).fill('secret-fixture-key');
   await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await page.locator('dialog').waitFor({ state: 'detached' });
@@ -125,7 +143,8 @@ try {
     const before = requests.length;
     await input.fill(`Trigger ${name}. Do not use tools.`);
     await input.press('Enter');
-    const expected = name === 'disconnected' ? /Cannot connect to API/ : new RegExp(`fixture ${name} \\[redacted\\]`);
+    const expected = { disconnected: /Cannot connect to API/, 'oversized-error': /Provider error details exceeded 65536 bytes/,
+      'stalled-error': /Timed out reading provider error details/ }[name] ?? new RegExp(`fixture ${name} \\[redacted\\]`);
     await page.getByText(expected).filter({ visible: true }).last().waitFor({ timeout: 30000 });
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
     // Exceed the SDK's former initial retry delay; don't switch fixtures while an attempt is active.
@@ -137,8 +156,36 @@ try {
     assert.equal(body.includes('secret-fixture-key'), false, `${name}: credential leaked into UI`);
     assert.equal(observed.length, 1, `${name}: duplicate automatic attempts`);
     assert.ok(observed.every(request => request.scenario === name && request.authorized && request.model === 'provider-failure-fixture'));
+    if (['oversized-error', 'stalled-error'].includes(name)) assert.equal(observed[0].socketClosed, true);
+    scenario = `recovery:${name}`;
+    const recoveryBefore = requests.length;
+    await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
+    await page.getByText(`fixture recovered ${name}`, { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 30000 });
+    await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
+    assert.equal(requests.length - recoveryBefore, 1, `${name}: manual retry must submit once`);
+    assert.ok(requests[recoveryBefore].originalPromptRetained, `${name}: manual retry lost its original prompt`);
+    assert.ok(requests[recoveryBefore].authorized && requests[recoveryBefore].model === 'provider-failure-fixture');
+    result.scenarios[name].manualRetryVerified = true;
     console.log(`Native ${name}: terminal error, one request, credential redacted`);
   }
+  server.closeAllConnections();
+  await new Promise(resolveClose => server.close(resolveClose));
+  const offlineBefore = requests.length;
+  await input.fill('Trigger offline. Do not use tools.'); await input.press('Enter');
+  await page.getByText(/Cannot connect to API:.*ECONNREFUSED/).filter({ visible: true }).last().waitFor({ timeout: 30000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
+  assert.equal(requests.length, offlineBefore);
+  await new Promise((resolveListen, reject) => {
+    server.once('error', reject);
+    server.listen(port, '127.0.0.1', () => { server.off('error', reject); resolveListen(); });
+  });
+  scenario = 'recovery:offline';
+  await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
+  await page.getByText('fixture recovered offline', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 30000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
+  assert.equal(requests.length - offlineBefore, 1);
+  assert.ok(requests[offlineBefore].originalPromptRetained);
+  result.offlineRecovery = true;
   scenario = 'stop';
   const stopBefore = requests.length;
   await input.fill('Wait for cancellation.'); await input.press('Enter');
@@ -157,6 +204,17 @@ try {
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
   assert.equal(requests.length - before, 1);
   result.manualRecovery = true;
+  scenario = 'forbidden';
+  const dismissBefore = requests.length;
+  await input.fill('Trigger failure dismissal.'); await input.press('Enter');
+  await page.getByText(/fixture forbidden \[redacted\]/).filter({ visible: true }).last().waitFor({ timeout: 30000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
+  await page.locator('.composer-warning-popup-close-button').filter({ visible: true }).last().click();
+  await page.getByText('Try again', { exact: true }).filter({ visible: true }).waitFor({ state: 'hidden' });
+  await page.waitForTimeout(2500);
+  assert.equal(requests.length - dismissBefore, 1, 'Dismissing an error must not issue a request');
+  assert.equal(await page.getByText(/fixture forbidden \[redacted\]/).filter({ visible: true }).count(), 0);
+  result.dismissalVerified = true;
   await page.screenshot({ path: join(directory, 'native-provider-errors.png') });
   result.success = true;
 } catch (error) {
@@ -195,7 +253,11 @@ try {
     result.cleanupErrors = cleanupErrors;
     result.requests = requests;
     await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2) + '\n');
-    console.log(JSON.stringify({ ...result, directory }, null, 2));
+    console.log(JSON.stringify({ directory, success: result.success, cases: Object.keys(result.scenarios).length,
+      requests: result.requests.length, offlineRecovery: result.offlineRecovery, stopVerified: result.stopVerified,
+      dismissalVerified: result.dismissalVerified, scannedLogFiles: result.scannedLogFiles,
+      secretLogMatches: result.secretLogMatches, ownedHostExit: result.ownedHostExit,
+      error: result.error, cleanupErrors: result.cleanupErrors }, null, 2));
   }
 }
 if (!result.success) process.exitCode = 1;
