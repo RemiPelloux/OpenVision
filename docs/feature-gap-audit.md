@@ -166,9 +166,9 @@ See [performance methodology and tradeoffs](performance.md).
    cancellation latency, completion latency and UI frame times. Agree budgets
    from those baselines, then retain regression checks and publish tradeoffs.
 
-This is an ordered engineering backlog, not a time estimate. The missing server
-contracts and untested native interfaces must be investigated before a reliable
-effort estimate or full parity claim is possible.
+This is an ordered backlog. Missing server contracts and untested native
+interfaces must be investigated before their scope or full parity is established.
+The current [roadmap](roadmap.md) tracks complexity points and acceptance gates.
 
 ## Evidence, provenance and limits
 

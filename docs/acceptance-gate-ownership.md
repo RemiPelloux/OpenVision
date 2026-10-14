@@ -7,7 +7,7 @@ remote operation and platform validation under one paragraph. Each requirement
 below now has a named owner so future evidence is evaluated consistently.
 
 The sprint table remains authoritative. Supplemental requirements already
-recorded in follow-ups and estimates remain required. A local Windows story can
+recorded in follow-ups and the roadmap remain required. A local Windows story can
 be verified only for its explicitly declared contract; that never establishes
 the independent-build, remote or other-platform release stories. Existing
 Verified model/configuration stories follow this same scoped rule.

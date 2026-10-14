@@ -61,8 +61,8 @@ Project rules, plans, agents, skills, commands and MCP configuration use
 for the layout and migration command.
 
 Release work targets **80% of the fixed 42 acceptance stories**, plus a usable
-development workflow. Current evidence, missing functions and conditional ETAs
-are in [remaining work and estimates](remaining-work-estimates.md).
+development workflow. Current evidence, missing functions and complexity points
+are in [feature roadmap](roadmap.md).
 
 ## Telemetry
 

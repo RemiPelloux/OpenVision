@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Plan remaining features with relative complexity points and acceptance gates.
+- Add the final Rust rewrite track: core services, native desktop shell, compatibility, migration and measured performance. No Rust runtime changes ship in this documentation update.
+
 ## 0.2.0-preview.1 — 2026-10-14
 
 First public development preview of the OpenVision customization source.
@@ -29,5 +34,5 @@ Agent/completion quality, retrieval, next-edit prediction, independent builds,
 installers, remote development and native macOS/Linux checks remain unfinished.
 
 See [release notes](docs/releases/0.2.0-preview.1.md),
-[remaining features and estimates](docs/remaining-work-estimates.md) and
+[feature roadmap](docs/roadmap.md) and
 [verification matrix](docs/release-claims.md). No GitHub Actions workflows run.

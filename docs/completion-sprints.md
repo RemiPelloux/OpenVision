@@ -73,10 +73,10 @@ The user confirmed that only Windows is currently available for native testing.
 macOS/Linux checks remain unverified and retain their acceptance gates.
 
 On 13 October the user changed the target from 95% to 80% and requested a fully
-usable product plus estimates for missing functions. Baseline version 2 changes
+usable product plus a complete missing-feature backlog. Baseline version 2 changes
 only the target; all 42 IDs and their acceptance gates are retained. See the
-[remaining work and estimates](remaining-work-estimates.md) for sequencing,
-conditional ETAs and the usability release gate.
+[feature roadmap](roadmap.md) for sequencing,
+complexity points and the usability release gate.
 
 | Area | Established evidence | Remaining gate |
 | --- | --- | --- |

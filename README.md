@@ -15,7 +15,7 @@ options without an OpenVision account.
 **Development preview · Windows x64 tested · macOS/Linux unverified**
 
 [Get started](#get-started) · [Configure AI](#bring-your-own-ai) ·
-[Feature roadmap & ETA](docs/remaining-work-estimates.md) ·
+[Feature roadmap](docs/roadmap.md) ·
 [Releases](https://github.com/RemiPelloux/OpenVision/releases) ·
 [Documentation](docs/README.md)
 
@@ -121,9 +121,13 @@ with the critical development workflow. The largest remaining areas are live
 Agent coverage, retrieval/indexing ownership, next-edit prediction, independent
 builds, packaging, remote development and native macOS/Linux verification.
 
-The [complete feature ETA](docs/remaining-work-estimates.md) covers every unfinished
-story, dependencies, effort ranges, confidence and release milestones. Estimates
-are engineering effort, not guaranteed delivery dates.
+The [feature roadmap](docs/roadmap.md) covers every unfinished story using
+**complexity points, dependencies and acceptance gates**.
+
+The final architecture track is a [Rust rewrite](docs/rust-roadmap.md): migrate
+the core services, then replace the recovered desktop shell while preserving
+editing, Agent, extension and project workflows. Each replacement must prove
+feature parity and measured performance gains. The rewrite is planned, not shipped.
 
 ## Develop and verify locally
 

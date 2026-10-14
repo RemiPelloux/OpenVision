@@ -1,6 +1,6 @@
 # Contributing to OpenVision
 
-OpenVision is a development preview. Start with the [feature ETA](docs/remaining-work-estimates.md)
+OpenVision is a development preview. Start with the [feature roadmap](docs/roadmap.md)
 and [acceptance ledger](docs/completion-sprints.md), then describe the user-visible
 problem, intended scope and evidence needed to close it.
 

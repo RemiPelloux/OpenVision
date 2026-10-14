@@ -147,6 +147,6 @@ catalog/error fixtures cannot establish Codex Easy, DeepSeek or Grok behavior.
   error paths; this change covers the Agent's SDK Authorization boundary.
 - Live provider failure/cancellation/recovery and native macOS/Linux evidence.
 
-Estimated remaining OV-204 effort: **2–4 engineering days**, conditional on live
-provider availability and the platform access required by claimed support.
-The broader per-story estimates remain in [remaining-work-estimates.md](remaining-work-estimates.md).
+Remaining OV-204 work is sized at **5 complexity points**. Live provider
+availability and native platform access remain verification prerequisites.
+The [feature roadmap](roadmap.md) owns the current score and acceptance gates.
