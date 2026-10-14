@@ -1,1 +1,1 @@
-81388d12518ce1a3f56561e9cc45c769205c1886b282239b7ab44ad743376b9f  OpenVision-0.2.0-preview.5-win32-x64.zip
+94ae64ef414ffef24068a80db890b6af335dc3d30d8b0ed2af89c56752cc1b0a  OpenVision-0.2.0-preview.6-win32-x64.zip
