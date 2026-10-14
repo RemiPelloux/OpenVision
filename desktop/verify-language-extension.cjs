@@ -5,6 +5,7 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
+const { verifyCrossFile } = require('./cross-file.cjs');
 
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const digest = text => crypto.createHash('sha256').update(text).digest('hex');
@@ -187,6 +188,8 @@ async function run(context) {
     await navigation(project, result);
     await rename(project, result);
     await formatting(project, result);
+    await verifyCrossFile(project, { language: 'javascript', names: ['js-library.js', 'js-other.js', 'js-consumer.js'],
+      symbol: 'jsGreet', renamed: 'jsWelcome' }, result.checks);
     await largeFile(project, result);
     await saveConflict(project, result);
     result.success = true;

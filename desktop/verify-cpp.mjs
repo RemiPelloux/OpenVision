@@ -24,6 +24,9 @@ const files = {
   'math.hpp': '#pragma once\nint sum(int a, int b);\n',
   'math.cpp': '#include "math.hpp"\nint sum(int a, int b) { return a + b; }\n',
   'main.cpp': '#include "math.hpp"\nint main() { return sum(2, 3) == 5 ? 0 : 1; }\n',
+  'c-math.h': '#pragma once\nint cSum(int a, int b);\n',
+  'c-math.c': '#include "c-math.h"\nint cSum(int a, int b) { return a + b; }\n',
+  'c-main.c': '#include "c-math.h"\nint main(void) { return cSum(2, 3) == 5 ? 0 : 1; }\n',
   'bad.cpp': 'int number = "invalid";\n', 'bad.c': 'int number = "invalid";\n',
   'format.cpp': 'int formatted(){return 7;}\n', 'format.c': 'int formatted(){return 7;}\n',
   'complete.cpp': 'int addNumbers(int a, int b);\nint completionProbe() { return add; }\n',
@@ -38,10 +41,13 @@ await writeFile(join(extension, 'package.json'), JSON.stringify({ name: 'openvis
   publisher: 'openvision-local-verification', version: '0.0.0', engines: { vscode: '^1.90.0' },
   main: './extension.cjs', activationEvents: ['onStartupFinished'] }));
 await copyFile(join(root, 'desktop/verify-cpp-extension.cjs'), join(extension, 'extension.cjs'));
+await copyFile(join(root, 'desktop/verify-language-cross-file.cjs'), join(extension, 'cross-file.cjs'));
 const workbench = join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js');
 const result = { directory, platform: process.platform, launcher_node: process.version,
   workbench: await fileHash(workbench), server: await fileHash(tools.executable),
   extension: await fileHash(join(tools.extension, 'out/bundle.js')), compiler: await fileHash(compiler),
+  driver: await fileHash(join(root, 'desktop/verify-cpp-extension.cjs')),
+  cross_file_driver: await fileHash(join(root, 'desktop/verify-language-cross-file.cjs')),
   scope: 'Native Windows OpenVision with official clangd extension/server; public API driver; no AI inference or mock language provider.' };
 const errors = [];
 let app, page;
@@ -67,13 +73,25 @@ try {
   assert.equal(build.status, 0);
   const run = spawnSync(join(project, 'verify-cpp.exe'), [], { cwd: project, timeout: 10000, windowsHide: true });
   assert.equal(run.status, 0); result.compiled_program_exit = run.status;
+  await writeFile(buildScript, '@echo off\r\ncall "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat" >nul\r\nif errorlevel 1 exit /b 1\r\ncl /nologo /TC c-main.c c-math.c /Fe:verify-c.exe\r\nexit /b %errorlevel%\r\n');
+  const cBuild = spawnSync('cmd.exe', ['/d', '/c', 'verify-build.cmd'], { cwd: project, encoding: 'utf8', windowsHide: true });
+  result.c_build = { status: cBuild.status, stdout: cBuild.stdout, stderr: cBuild.stderr };
+  assert.equal(cBuild.status, 0);
+  const cRun = spawnSync(join(project, 'verify-c.exe'), [], { cwd: project, timeout: 10000, windowsHide: true });
+  assert.equal(cRun.status, 0); result.c_compiled_program_exit = cRun.status;
   assert.equal(await fileHash(workbench), result.workbench);
+  assert.equal(await fileHash(join(root, 'desktop/verify-cpp-extension.cjs')), result.driver);
+  assert.equal(await fileHash(join(root, 'desktop/verify-language-cross-file.cjs')), result.cross_file_driver);
   assert.deepEqual(errors, []);
   result.success = true;
 } catch (error) { result.success = false; result.failure = error.stack; process.exitCode = 1; }
 finally {
   if (page) await page.screenshot({ path: join(directory, 'native-cpp.png') }).catch(() => {});
-  if (app) await app.close();
+  if (app) {
+    const child = app.process(); await app.close();
+    result.host_exit = { pid: child.pid, code: child.exitCode, signal: child.signalCode };
+    if (child.exitCode !== 0) { result.success = false; result.cleanup_failure = 'Native host did not exit 0'; process.exitCode = 1; }
+  }
   result.page_errors = errors;
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));

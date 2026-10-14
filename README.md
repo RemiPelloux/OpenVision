@@ -20,7 +20,7 @@ options without an OpenVision account.
 [Documentation](docs/README.md)
 
 > **Ready to run on Windows x64.** Download the complete portable app from
-> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.2),
+> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.3),
 > extract it, and double-click **OpenVision.cmd**. The complete app payload is
 > also included in this Git repository. No separate editor, Node.js or npm setup.
 
@@ -29,7 +29,7 @@ options without an OpenVision account.
 | Capability | What you can do today | Evidence and limits |
 | --- | --- | --- |
 | Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/provider-selection-lifecycle.md) |
-| Project home (development build) | Search recent projects, pin favorites, focus open windows and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); newer than the portable preview |
+| Project Home | Search recent projects, pin favorites, focus open windows and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); included in the portable app |
 | AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/rea-agent-runtime.md); broader workflow coverage remains open |
 | Code autocomplete | Select a separate completion model, accept with Tab, undo, cancel pending work | [Windows editing checks](docs/rea-custom-autocomplete.md); predictive navigation is unfinished |
 | Project development | Explore projects, search, edit, Save All, run terminals/tasks and debug Node | [Development workflows](docs/development-workflows.md); one intermittent host-exit issue remains under investigation |
@@ -40,10 +40,11 @@ options without an OpenVision account.
 
 ## Get started
 
-**Download:** get **OpenVision-0.2.0-preview.2-win32-x64.zip** from
-[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.2).
-Extract the ZIP and double-click **OpenVision.cmd**. Open your project with
-**File → Open Folder**, then configure your AI provider in **Models** settings.
+**Download:** get **OpenVision-0.2.0-preview.3-win32-x64.zip** from
+[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.3).
+Extract the ZIP and double-click **OpenVision.cmd**. Project Home brings together
+recent projects, pinned favorites and open windows. Open a folder or saved
+workspace, then configure your AI provider in **Models** settings.
 
 **From Git:** clone the complete repository and double-click **Run-OpenVision.cmd**:
 

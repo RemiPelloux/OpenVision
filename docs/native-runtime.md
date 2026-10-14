@@ -7,9 +7,9 @@ No separate editor installation, Node.js or npm is needed to run it.
 ## Download and launch
 
 1. Open the [OpenVision releases](https://github.com/RemiPelloux/OpenVision/releases).
-2. Download **OpenVision-0.2.0-preview.2-win32-x64.zip** and extract it to a writable folder.
+2. Download **OpenVision-0.2.0-preview.3-win32-x64.zip** and extract it to a writable folder.
 3. Double-click **OpenVision.cmd**.
-4. Choose **File → Open Folder** to open your project.
+4. Use **Project Home** to open a folder, resume recent work or pin a favorite project.
 5. Open **OpenVision Settings → Models**, add a provider URL and your key, and discover models.
 
 The ZIP is approximately **328 MiB**; reserve at least **2 GiB** of free space for
@@ -58,7 +58,7 @@ folder after confirming it contains no files you need, then retry.
 | `electron-host/desktop/` | OpenVision runtime adapters and helpers |
 | `electron-host/data/local/` | Your new local profile, created on first launch |
 | `electron-host/data/local-extensions/` | Extensions you install |
-| `electron-host/backups/` | Settings-import backups, when created |
+| `electron-host/data/local/Backups/openvision-import/` | Native settings-import backups, when created |
 
 No author profile, API keys, chats or import backups are included. API keys are
 saved in local secret storage after you configure them. Project rules, plans,
@@ -92,7 +92,7 @@ guaranteed: re-enter your keys on a new machine.
 Windows files do not run natively on macOS or Linux. Native tests used disposable
 profiles and controlled local HTTP responses; they establish the package wiring
 and named workflows, not blanket live-model compatibility. See
-[portable verification](portable-verification.md) and
+[portable verification](portable-preview3.md) and
 [release claims](release-claims.md) for the exact evidence.
 GitHub Actions remains disabled.
 

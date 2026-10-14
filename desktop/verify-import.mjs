@@ -7,9 +7,11 @@ import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash, optionalFile } from './import-files.mjs';
 import { parseConfiguration } from './import-json.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 // Never attach to desktop-launch.json: every verification launch has a disposable profile.
-const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
+const root = resolve(import.meta.dirname, '..'), { layout, appRoot, runtimeRoot } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/import-verification-'));
 const source = await mkdtemp(join(tmpdir(), 'openvision-import-source-'));
 const profile = join(directory, 'profile'), extensions = join(directory, 'extensions'), project = join(directory, 'project');
@@ -135,6 +137,27 @@ async function verify() {
   assert.deepEqual(await Promise.all(normalPaths.map(fileHash)), normalHashes);
   assert.equal(await readFile(join(directory, 'other-profile/User/settings.json'), 'utf8'), 'Unrelated profile sentinel');
   result.checks.normal_and_other_profiles_untouched = true;
+  const recoveryPreview = await ok({ action: 'preview', options });
+  result.cliRecoveryBackup = (await ok({ action: 'apply', token: recoveryPreview.token })).backup;
+}
+
+async function verifyCliRecovery() {
+  const invokeCli = async args => {
+    const { stdout } = await promisify(execFile)(process.execPath, [join(runtimeRoot, 'desktop/import-cli.mjs'),
+      '--target-user-data', profile, '--target-extensions', extensions, ...args], { timeout: 30000 });
+    return JSON.parse(stdout);
+  };
+  const listing = await invokeCli(['--list-backups']);
+  assert.ok(listing.backups.some(entry => entry.backup === result.cliRecoveryBackup && entry.status === 'complete'));
+  const before = await Promise.all([...preserved.keys()].map(fileHash));
+  assert.equal((await invokeCli(['--preview-restore', result.cliRecoveryBackup])).pending, 6);
+  assert.deepEqual(await Promise.all([...preserved.keys()].map(fileHash)), before);
+  result.checks.cli_discovers_and_previews_native_backup_after_host_exit = true;
+  assert.equal((await invokeCli(['--restore', result.cliRecoveryBackup])).restored, 6);
+  for (const [path, bytes] of preserved) assert.deepEqual(await optionalFile(path), bytes);
+  assert.equal((await invokeCli(['--restore', result.cliRecoveryBackup])).restored, 0);
+  assert.deepEqual(await Promise.all(normalPaths.map(fileHash)), normalHashes);
+  result.checks.cli_restores_native_backup_byte_exact_after_host_exit = true;
 }
 
 try {
@@ -149,6 +172,10 @@ try {
     await app.close().catch(error => { result.cleanupError = String(error); process.exitCode = 1; });
     result.exitCode = child.exitCode;
     if (child.exitCode !== 0) { result.status = 'failed'; process.exitCode = 1; }
+  }
+  if (result.status === 'passed') {
+    try { await verifyCliRecovery(); }
+    catch (error) { result.status = 'failed'; result.error = error.stack; process.exitCode = 1; }
   }
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));

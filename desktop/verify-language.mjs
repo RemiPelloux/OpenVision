@@ -32,6 +32,9 @@ const fixtures = {
   'checked.js': '// @ts-check\n/** @type {number} */\nconst wrong = "JavaScript diagnostic";\nexport {};\n',
   'format.ts': 'export const formatValue={alpha:1,beta:2};\n',
   'format.js': 'export const formatValue={alpha:1,beta:2};\n',
+  'js-library.js': '/** @param {string} name */\nexport function jsGreet(name) { return `Hello ${name}`; }\n',
+  'js-other.js': 'import { jsGreet } from "./js-library";\nexport const jsOther = jsGreet("second file");\n',
+  'js-consumer.js': 'import { jsGreet } from "./js-library";\nconsole.log(jsGreet("OpenVision"));\n',
   'conflict.ts': 'export const conflictValue = 1;\n',
   'large.ts': 'import { welcome } from "./library";\n' + Array.from({ length: 25000 }, (_, index) =>
     `const fixtureValue${index} = ${index};\n`).join('') + 'console.log(welcome("large file"));\n',
@@ -41,11 +44,13 @@ await writeFile(join(extension, 'package.json'), JSON.stringify({ name: 'openvis
   publisher: 'openvision-local-verification', version: '0.0.0', engines: { vscode: '^1.90.0' },
   main: './extension.cjs', activationEvents: ['onStartupFinished'] }));
 await copyFile(join(root, 'desktop/verify-language-extension.cjs'), join(extension, 'extension.cjs'));
+await copyFile(join(root, 'desktop/verify-language-cross-file.cjs'), join(extension, 'cross-file.cjs'));
 const identityPaths = ['build/source-build.json', 'source/app/out/vs/workbench/workbench.desktop.main.js',
   'source/app/extensions/typescript-language-features/package.json',
   'source/app/extensions/typescript-language-features/dist/extension.js',
   'source/app/extensions/node_modules/typescript/package.json',
-  'source/app/extensions/node_modules/typescript/lib/typescript.js', 'desktop/verify-language-extension.cjs'];
+  'source/app/extensions/node_modules/typescript/lib/typescript.js', 'desktop/verify-language-extension.cjs',
+  'desktop/verify-language-cross-file.cjs'];
 const identities = Object.fromEntries(await Promise.all(identityPaths.map(async path => [path, await fileHash(join(root, path))])));
 const result = { checked_at: new Date().toISOString(), directory, platform: process.platform,
   arch: process.arch, node: process.version, identities, executable_sha256: await fileHash(layout.executable),
@@ -115,7 +120,12 @@ try {
   }
   process.exitCode = 1;
 } finally {
-  if (app) await app.close();
+  if (app) {
+    const child = app.process();
+    await app.close();
+    result.host_exit = { pid: child.pid, code: child.exitCode, signal: child.signalCode };
+    if (child.exitCode !== 0) { result.success = false; result.cleanup_failure = 'Native host did not exit 0'; process.exitCode = 1; }
+  }
   if (result.success) {
     try { result.language_protocol = await languageProtocolEvidence(); }
     catch (error) { result.success = false; result.failure = error.stack; process.exitCode = 1; }

@@ -19,6 +19,13 @@ export function importDestinations(root, selected) {
   return result;
 }
 
+export function selectedImportDestinations(userData, extensions) {
+  if (typeof userData !== 'string' || !isAbsolute(userData) || typeof extensions !== 'string' || !isAbsolute(extensions))
+    throw Error('Select both absolute user-data and extension directories.');
+  return importDestinations('', { user: join(userData, 'User'), extensions, userRoot: userData, backupsRoot: userData,
+    backups: join(userData, 'Backups/openvision-import') });
+}
+
 export function nativeImportDestinations(owner, sender) {
   const window = owner?.windowsMainService?.getWindows().find(window => window.win?.webContents === sender);
   const profile = window?.profile;
@@ -36,9 +43,8 @@ export function nativeImportDestinations(owner, sender) {
     ['tasksResource', 'tasks.json'], ['snippetsHome', 'snippets']])
     if (!samePath(local(profile[key]), join(user, name))) throw Error('Import profile resources have unsupported ownership.');
   const environment = owner.environmentMainService;
-  const destinations = importDestinations('', { user, extensions: environment?.extensionsPath,
-    userRoot: environment?.userDataPath, backupsRoot: environment?.userDataPath,
-    backups: typeof environment?.userDataPath === 'string' ? join(environment.userDataPath, 'Backups/openvision-import') : undefined });
+  const destinations = selectedImportDestinations(environment?.userDataPath, environment?.extensionsPath);
+  if (!samePath(user, destinations.user)) throw Error('Import profile settings have unsupported ownership.');
   if (!samePath(local(profile.extensionsResource), join(destinations.extensions, 'extensions.json')))
     throw Error('Import extension registry ownership is unavailable.');
   return destinations;

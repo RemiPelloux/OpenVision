@@ -56,11 +56,41 @@ Earlier attempts remain as failed results, not rewritten successes:
 
 The save-all finding is grounded in the selected recovered workbench: `$saveAll` at line 922014 delegates to the editor service; `saveAll` at line 1001783 calls `getAllModifiedEditors`; that function at line 1001804 enumerates editor groups and their editor tabs. The initial language run used explicit document saves. The subsequent [Save All fix](save-all-verification.md) removes that workaround: `logs/language-verification-eb6tNI/result.json` passes the full matrix using `workspace.saveAll(false)` for three-file rename/undo/redo. Its workbench hash is `f5e44f0c2a9cc9a682b9da9bb91f289bd08ba952cb2901826496b4ff54633aff`, driver hash `dfe54d0e76b735af676ab9afd818a9dee72e68d77d3725b8db345e0d0ec63bdf`, and observed large-file definition time 329 ms. Separate native checks cover the visible global Save All command. These are scoped checks, not proof of every possible extension/editor combination.
 
+## Expanded JavaScript matrix, 14 October
+
+`logs/language-verification-iAa69p/result.json` passes all 18 recorded checks on
+the real Windows desktop, including three new JavaScript checks. The native
+TypeScript extension and compiler identities match the versions above. Workbench
+SHA-256 is `9251426f04943379ff29248049f3d2dbb3290e1a68172f852bbc180ead11a503`.
+
+Two split editors receive insertion requests before either promise is awaited.
+Both operations succeed, remain bounded insertions in native document events,
+and save exact expected UTF-8 contents. Subsequent JavaScript definition and
+reference requests resolve the exported function across its declaration and two
+consumers, including shifted source lines. The native definition command opens
+the target. A three-file rename then preserves those concurrent edits through
+Save All, undo and redo, with exact disk-content comparisons at every step.
+
+The existing TypeScript matrix, diagnostics in both languages, formatting,
+large-file navigation and conflicting-save checks passed again. The native host
+exited 0 with no renderer page errors; selected runtime and driver hashes remained
+unchanged. The 25,003-line TypeScript navigation observation was 517 ms after prior
+operations; it is not an isolated performance comparison. CPU time, peak
+process-family memory and filesystem scan counts were not measured. No AI
+inference or simulated language provider was used.
+
+The shared `verify-language-cross-file.cjs` driver also exercises the
+[C cross-file matrix](cpp-support.md). Concurrent here means overlapping edit
+requests to separate documents in one native window. It does not establish
+same-document conflict resolution or stale rename handling while a language
+request remains in flight. All evidence is retained under ignored disposable
+profiles; the normal profile is untouched.
+
 ## Remaining acceptance gates
 
 OV-402 remains **Partial**. This narrows its previously missing evidence substantially, but does not finish its full acceptance contract:
 
-- JavaScript cross-file navigation/references/rename, additional explicitly supported languages and extension versions.
+- Additional explicitly supported languages and extension versions; JavaScript cross-file navigation/references/rename now have the scoped native evidence above.
 - Native rename UI, reference-pane interactions and keyboard/menu accessibility beyond the command/API checks above.
 - Conflict merge/retry/overwrite decisions, stale concurrent rename results, and edits while a language request is in flight.
 - Large-project dependency changes, cancellation, indexing/watch invalidation, filesystem scan counts, CPU, RAM and responsiveness budgets.

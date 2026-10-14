@@ -1,8 +1,9 @@
 # OpenVision Quick Edit
 
-14 October 2026. The development build now connects native **Ctrl+K Quick Edit**
-to the custom model selected in Agent. The portable **0.2.0-preview.2** payload
-predates this adapter; rebuilding the development desktop is required for it.
+14 October 2026. Native **Ctrl+K Quick Edit** connects to the custom model selected
+in Agent. It is included in the **0.2.0-preview.3** portable app. Relocated checks
+passed accept/save, undo, reject, failure/recovery, cancellation and Unicode/CRLF;
+see [portable verification](portable-preview3.md).
 
 ## Use it
 

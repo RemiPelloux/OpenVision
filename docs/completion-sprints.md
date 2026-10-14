@@ -8,6 +8,16 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+14 October preview.3 delivery: the portable payload now includes Project Home,
+Quick Edit, cross-window memory notification fixes and provider failure guidance.
+[Portable checks](portable-preview3.md) cover relocated project history/pins,
+Agent and Quick Edit, plus exact import restoration through a fresh CLI process.
+[Language checks](rea-language-workflows.md) add JavaScript/C cross-file navigation,
+rename/undo/redo and overlapping edits to different documents. [WASM evidence](rea-wasm-inventory.md)
+now covers 14/15 complete records. Older follow-up statements about an unchanged
+portable payload describe their original run. No full story is promoted: **6/42**
+remain Verified, and all outstanding acceptance clauses remain required.
+
 14 October Quick Edit follow-up: [native custom-provider editing](rea-inline-edit.md)
 passes approved-rule inclusion/hidden-memory exclusion, accept/save, two-step
 undo, reject, safe HTTP failure/retry, Escape cancellation, Unicode/CRLF and exact

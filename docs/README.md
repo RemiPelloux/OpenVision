@@ -17,13 +17,14 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Save and review project memories | [Memory workflow](project-memories.md) |
 | Investigate model compatibility | [Live provider matrix](live-provider-compatibility.md) |
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
-| Edit a selection with AI | [Development-build Quick Edit](rea-inline-edit.md) |
+| Edit a selection with AI | [Native Quick Edit](rea-inline-edit.md) |
 | Understand resource usage | [Performance review](performance.md) · [Native baseline](native-performance-baseline.md) |
 | Inspect large-project watcher behavior | [100-file and 10,000-file native verification](project-scale-verification.md) |
 | Understand provider errors and manual retries | [Provider failure handling](provider-failure-handling.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |
-| Read this release's scope | [0.2.0-preview.2 portable desktop](releases/0.2.0-preview.2.md) |
-| Review the packaged-app tests | [Portable verification](portable-verification.md) |
+| Read this release's scope | [0.2.0-preview.3 project workspace](releases/0.2.0-preview.3.md) |
+| Review the packaged-app tests | [Portable verification](portable-preview3.md) |
+| Check WebAssembly recovery | [14/15 complete REA records and remaining limits](rea-wasm-inventory.md) |
 
 The sprint ledger owns story status. The roadmap owns complexity points and delivery gates.
 Individual evidence reports preserve their original dates and run scope; a past

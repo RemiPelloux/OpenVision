@@ -90,8 +90,31 @@ Earlier run `s4ywVD` failed because its diagnostic assertion was case-sensitive;
 `JwmA5W` first passed the corrected mapping before completion and rename undo/redo
 checks were added. Failure artifacts are preserved.
 
+## Expanded C cross-file verification
+
+`logs/cpp-verification-jJyx6c/result.json` passed on 14 October 2026 using the same
+pinned clangd server and extension. It retains the full earlier C/C++ matrix and
+adds C definition navigation, references and rename across `c-math.h`,
+`c-math.c` and `c-main.c`. Two split-editor insertion requests are issued before
+either promise is awaited; both save exact bytes as bounded native document
+changes. The subsequent language requests observe the shifted source lines.
+Three-file rename, Save All, undo and redo preserve those edits exactly.
+
+The renamed C and C++ fixtures both compile with the existing MSVC compiler and
+both resulting executables exit 0. The owned desktop host exits 0, no renderer
+page errors occur, and the selected workbench/driver hashes remain unchanged.
+The workbench hash is
+`9251426f04943379ff29248049f3d2dbb3290e1a68172f852bbc180ead11a503`.
+The shared cross-file driver hash is
+`b7e23c5e988f40bd831f5db2e780e8aa93d6626d53d59337b7cf96d477ffdea6`.
+Only disposable projects/profiles are used; no AI inference or replacement
+language provider is involved.
+
 OV-402 remains Partial: large C++ repositories, complete standard-library/SDK
-configurations, cancellation and concurrent edits, C cross-file rename, UNC or
-case-sensitive Windows directories, debugging, and native macOS/Linux still need
-verification. The small fixture's standard-library indexing logs include an
-incomplete-index warning; it is not proof of full SDK/header coverage.
+configurations, cancellation, same-document conflicts, stale rename results
+while language requests are in flight, UNC or case-sensitive Windows directories,
+debugging, and native macOS/Linux still need verification. These concurrent edits
+target separate documents in one window. CPU, peak process-family memory and
+filesystem scan counts are not measured. The small fixture's standard-library
+indexing logs include an incomplete-index warning; it is not proof of full
+SDK/header coverage.

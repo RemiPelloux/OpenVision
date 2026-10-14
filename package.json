@@ -1,6 +1,6 @@
 {
   "name": "openvision",
-  "version": "0.2.0-preview.2",
+  "version": "0.2.0-preview.3",
   "private": true,
   "type": "module",
   "description": "Experimental AI coding workspace customization with local profiles, custom providers, agents, Tab autocomplete and MCP.",
@@ -16,7 +16,7 @@
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",
     "import:settings": "node desktop/import-cli.mjs",
-    "test:import": "node --test desktop/cursor-import.test.mjs desktop/import-destinations.test.mjs desktop/import-preview.test.mjs desktop/import-replacement.test.mjs",
+    "test:import": "node --test desktop/cursor-import.test.mjs desktop/import-destinations.test.mjs desktop/import-preview.test.mjs desktop/import-replacement.test.mjs desktop/import-recovery-cli.test.mjs",
     "verify:import": "node desktop/verify-import.mjs",
     "check:desktop": "node desktop/check.mjs",
     "test:portable": "node --test desktop/platform.test.mjs desktop/native-identity.test.mjs desktop/native-assets.test.mjs desktop/source-assembly.test.mjs desktop/cursor-import.test.mjs desktop/branding.test.mjs",

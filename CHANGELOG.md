@@ -1,14 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-preview.3 — 2026-10-14
 
 - Add Project Home with searchable recent projects, saved favorites, open-window focus and bounded lists.
 - Route native Quick Edit through the selected custom provider, model and reasoning setting, with cancellation and native diff review.
 - Explain DNS, refused connections and TLS failures using structured transport errors while preserving manual retry control.
 - Import settings into the active default profile and selected extension directory; preserve exact backups and avoid registry casing changes that blocked restore.
 - Extend local verification with cross-window memory review and large-project watcher workloads. Evidence and remaining gates are recorded in the [roadmap](docs/roadmap.md).
+- Recover native import backups after restart using explicit profile/extension destinations, backup discovery and a read-only restore preview.
+- Verify JavaScript and C cross-file navigation, three-file rename, Save All, undo/redo and overlapping edits to separate documents with real installed language providers.
+- Refresh the complete Windows portable download and offline Git payload. The launcher opens Project Home when no project argument is supplied; packaging reads the project version.
 
-These development changes are newer than the Windows portable payload below.
+Native package checks use disposable profiles and controlled local AI responses. No new paid inference or macOS/Linux verification is claimed.
 
 ## 0.2.0-preview.2 — 2026-10-14
 

@@ -1,10 +1,10 @@
-import { mkdir, readFile, writeFile, copyFile, rename, rm } from 'node:fs/promises';
+import { mkdir, writeFile, copyFile, rename, rm } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { dirname, join, relative, resolve } from 'node:path';
-import { safeDestination, fileHash, inside } from './import-files.mjs';
+import { dirname, join, relative } from 'node:path';
+import { safeDestination, fileHash } from './import-files.mjs';
 import { summarize } from './cursor-import.mjs';
-import { importDestinations, safeImportDestination, destinationOwner, sameImportDestinations } from './import-destinations.mjs';
-import { samePath } from './platform.mjs';
+import { importDestinations, safeImportDestination, destinationOwner } from './import-destinations.mjs';
+import { prepareImportRestore } from './import-backup.mjs';
 
 export async function replaceFile(temporary, path, { expectedHash, renameFile = rename } = {}) {
   const retries = 5;
@@ -86,49 +86,8 @@ export async function applyImport(plan) {
 }
 
 export async function restoreImport(root, input, selected) {
-  let destinations = importDestinations(root, selected);
-  const backup = resolve(input);
-  const legacy = importDestinations(root);
-  if (samePath(destinations.user, legacy.user) && samePath(destinations.extensions, legacy.extensions) && inside(legacy.backups, backup))
-    destinations = legacy;
-  const owner = destinations.backups;
-  if (!inside(owner, backup) || resolve(owner) === backup) throw new Error('Select an OpenVision Cursor import backup.');
-  await safeDestination(destinations.backupsRoot, backup);
-  await safeDestination(destinations.backupsRoot, join(backup, 'manifest.json'));
-  const manifest = JSON.parse(await readFile(join(backup, 'manifest.json'), 'utf8'));
-  if (![1, 2].includes(manifest.version) || typeof manifest.root !== 'string' || !samePath(resolve(manifest.root), resolve(root)) || !Array.isArray(manifest.records) ||
-      !['complete', 'partial', 'prepared', 'restored'].includes(manifest.status)) throw new Error('Invalid import backup.');
-  const expected = manifest.version === 1 ? legacy : importDestinations(root, manifest.destinations);
-  if (!sameImportDestinations(expected, destinations)) throw Error('Import backup belongs to a different profile or extensions directory.');
-  const changes = [];
-  const seen = new Set();
-  for (const record of manifest.records) {
-    if (typeof record.path !== 'string' || (manifest.version === 1 && !/^data[\\/](local[\\/]User[\\/]|local-extensions[\\/])/.test(record.path)) ||
-        (manifest.version === 2 && !['user', 'extensions'].includes(record.owner)) ||
-        !/^[a-f0-9]{64}$/.test(record.after) || (record.before !== null && !/^[a-f0-9]{64}$/.test(record.before)) ||
-        (record.original !== null && !/^\d+\.bin$/.test(record.original))) throw new Error('Invalid import backup record.');
-    const base = manifest.version === 1 ? root : destinations[record.owner];
-    const path = resolve(base, record.path);
-    if (manifest.version === 2 && (!inside(base, path) || path === base))
-      throw new Error('Import backup destination escapes the profile or extensions directory.');
-    destinationOwner(destinations, path);
-    if (seen.has(process.platform === 'win32' ? path.toLowerCase() : path)) throw Error('Duplicate import backup destination.');
-    seen.add(process.platform === 'win32' ? path.toLowerCase() : path);
-    const source = record.original ? join(backup, record.original) : undefined;
-    if (source) await safeDestination(backup, source);
-    if ((record.before === null) !== (record.original === null)) throw Error('Invalid import backup original.');
-    if ((source ? await fileHash(source) : null) !== record.before) throw new Error('Import backup content does not match its digest.');
-    changes.push({ ...record, path, source });
-  }
+  const { destinations, backup, manifest, pending } = await prepareImportRestore(root, input, selected);
   if (manifest.status === 'restored') return { restored: 0, backup };
-  const pending = [];
-  for (const change of changes) {
-    await safeImportDestination(destinations, change.path);
-    const hash = await fileHash(change.path);
-    if (hash === change.before) continue;
-    if (hash !== change.after) throw new Error(`Restore would overwrite a newer edit: ${change.path}`);
-    pending.push(change);
-  }
   for (const change of pending) {
     await checkFiles(destinations, [change], 'after');
     if (change.source) await atomicCopy(change.path, change.source, change.before, change.after);

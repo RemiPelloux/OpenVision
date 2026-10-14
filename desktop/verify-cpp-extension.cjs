@@ -3,6 +3,7 @@ const vscode = require('vscode');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const assert = require('node:assert/strict');
+const { verifyCrossFile } = require('./cross-file.cjs');
 
 async function until(probe, label) {
   const deadline = Date.now() + 60000;
@@ -112,6 +113,8 @@ async function run() {
     await diagnostic(project, 'bad.cpp', result.checks);
     await diagnostic(project, 'bad.c', result.checks);
     await navigation(project, result.checks);
+    await verifyCrossFile(project, { language: 'c', names: ['c-math.h', 'c-math.c', 'c-main.c'],
+      symbol: 'cSum', renamed: 'cTotal' }, result.checks);
     await format(project, result.checks);
     await completion(project, result.checks);
     result.success = true;

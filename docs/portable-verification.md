@@ -1,5 +1,8 @@
 # Windows portable package verification
 
+This report preserves the **preview.2** results. Current package verification is
+recorded in [0.2.0-preview.3](portable-preview3.md).
+
 Verified **14 October 2026**, Windows x64, for **0.2.0-preview.2**.
 The complete package was tested outside the development checkout. Disposable
 test profiles stayed outside the package and are excluded from distribution.

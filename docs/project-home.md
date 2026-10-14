@@ -1,12 +1,14 @@
 # Project home
 
-The OpenVision development build opens to a project dashboard with a blinking
-eye, a responsive layout and immediate access to your work. This follows the
-0.2.0-preview.2 portable release; that downloadable payload has not yet been refreshed.
+OpenVision opens to a project dashboard with a blinking eye, a responsive layout
+and immediate access to your work. It is included in the **0.2.0-preview.3**
+portable app, with relocated native verification recorded in
+[the package report](portable-preview3.md).
 
 ## Start and resume
 
-Run `start-openvision.cmd` or `npm start` in a prepared development checkout.
+Double-click `OpenVision.cmd` in the portable package, or run
+`start-openvision.cmd` / `npm start` in a prepared development checkout.
 The launcher opens project home instead of creating/opening the demonstration
 project. Pass a project explicitly with `npm start -- "D:\Projects\My app"`.
 Inside the editor, the **Projects** titlebar button reopens the dashboard.

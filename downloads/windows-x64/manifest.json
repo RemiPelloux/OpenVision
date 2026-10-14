@@ -1,46 +1,46 @@
 {
   "name": "OpenVision",
-  "version": "0.2.0-preview.2",
+  "version": "0.2.0-preview.3",
   "platform": "win32",
   "arch": "x64",
-  "archive": "OpenVision-0.2.0-preview.2-win32-x64.zip",
-  "bytes": 343716698,
-  "sha256": "6cbe6b82fe809c5f2a49615e9bf575775a2799d1e3eccf9d198625d8f6638194",
+  "archive": "OpenVision-0.2.0-preview.3-win32-x64.zip",
+  "bytes": 343747636,
+  "sha256": "fd421440fd8b275e604fd11bfe1765390fc4bb79ff4d95ecf37d04d0eb8258a6",
   "chunks": [
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part001",
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part001",
       "bytes": 50331648,
-      "sha256": "c2cc9ea694f71eebe3c3e59f33e1aa54a9dd7739118fd023ddc7fcf8f2956b66"
+      "sha256": "7250e329204cc0430d5949660a89624d833a1d9e53208a634f8361b515f18795"
     },
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part002",
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part002",
       "bytes": 50331648,
-      "sha256": "e1af36b1f365beee4eb3b8d266c404e52f1baf57916156b0e58f3a676386985d"
+      "sha256": "40e73150d50fbc81701ad822712ec9293b5fcacbeef4076e271b53bb19a62d27"
     },
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part003",
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part003",
       "bytes": 50331648,
-      "sha256": "173ef88c88d6695e310d6eb978d5b7af8ef6bc4fffb7d3c22e20ae4cd3a8e19d"
+      "sha256": "0343bc9587526b03ce58afa7f31c817b520855cd0d88de0df783d8a06b83a394"
     },
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part004",
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part004",
       "bytes": 50331648,
-      "sha256": "a4ce576a941044e9e97ad5db258980ccc4dc40bcf961a30eb0a01ee3129b8e1d"
+      "sha256": "b54fdc7005504d0f4240caf0c46368eb5974fd13e5521b2a4687e1bb7f4951f6"
     },
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part005",
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part005",
       "bytes": 50331648,
-      "sha256": "c1ab38c403354a4c218c6e11fc57aee5ebcbc2183d2f2829d902795af6d2e05b"
+      "sha256": "884e403d3ecc523c55d3c465dd6d77583df8fff8d589f795515db5aa2d249ab9"
     },
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part006",
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part006",
       "bytes": 50331648,
-      "sha256": "46bf1ea259ef5229033dd5a32228b02f681b93888dbcf3be7c6fedb2d2ca154e"
+      "sha256": "f997f5d1ad6467c16ced126ded4da4ab6c2fff0ca5e165e3abb7740b18ce285c"
     },
     {
-      "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part007",
-      "bytes": 41726810,
-      "sha256": "3876044d61d6b31d528d3913c15fcf491c41cff1f224592b84907b1c0371f985"
+      "file": "OpenVision-0.2.0-preview.3-win32-x64.zip.part007",
+      "bytes": 41757748,
+      "sha256": "81e9cb0d3f793a6680a0681da63fcbd93a2d53a52ecbc0169f046eeba4e3344a"
     }
   ]
 }

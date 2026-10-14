@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto';
-import { open, mkdir, writeFile, lstat } from 'node:fs/promises';
+import { open, mkdir, writeFile, lstat, readFile } from 'node:fs/promises';
 import { basename, join, resolve } from 'node:path';
 
 const CHUNK_BYTES = 48 * 1024 * 1024;
 const archive = resolve(process.argv[2] ?? '');
 if (!process.argv[2]) throw Error('Provide a verified portable ZIP.');
-const directory = resolve(import.meta.dirname, '../downloads/windows-x64');
+const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+if (basename(archive) !== `OpenVision-${version}-win32-x64.zip`) throw Error('Archive name must match the project version.');
+const directory = resolve(process.argv[3] ?? resolve(import.meta.dirname, '../downloads/windows-x64'));
 try { await lstat(directory); throw Error('Distribution directory already exists.'); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 await mkdir(directory, { recursive: true });
@@ -27,7 +29,7 @@ try {
     digest.update(bytes);
     chunks.push({ file, bytes: length, sha256: createHash('sha256').update(bytes).digest('hex') });
   }
-  const manifest = { name: 'OpenVision', version: '0.2.0-preview.2', platform: 'win32', arch: 'x64',
+  const manifest = { name: 'OpenVision', version, platform: 'win32', arch: 'x64',
     archive: basename(archive), bytes: size, sha256: digest.digest('hex'), chunks };
   await writeFile(join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   console.log(JSON.stringify(manifest, null, 2));

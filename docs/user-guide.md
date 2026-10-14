@@ -236,12 +236,14 @@ the source profile and categories, preview the changes, then import. The importe
 supports editor preferences, keyboard shortcuts, snippets, tasks, and registered
 extensions. Source files are read without modification.
 
-In the development build, imports target the running instance's default profile
+Imports target the running instance's default profile
 and selected extension directory, including custom launch paths. Named profiles
 are currently rejected. Native-dialog backups live under that user-data folder's
-`Backups/openvision-import`; restore them through the same profile's dialog.
-The CLI retains its installation-default destinations and backup directory, so
-its restore command is for CLI backups. These paths are not interchangeable.
+`Backups/openvision-import`. The dialog can restore its latest import. After a
+restart, use the CLI with both `--target-user-data` and `--target-extensions` to
+select that same instance's destinations. `--list-backups` discovers backups;
+`--preview-restore` checks their bytes and detects newer edits without writing.
+Without target arguments, the CLI uses its original installation-default paths.
 
 For command-line preview or import:
 
@@ -252,6 +254,17 @@ npm run import:settings -- --apply --keep-existing
 npm run import:settings -- --apply --categories settings,keybindings --user "/path/to/User"
 npm run import:settings -- --restore "/exact/backup/path/from-import"
 ```
+
+For native-dialog recovery, close OpenVision and use the CLI belonging to the
+same installation. For a portable package, its script is under `electron-host/desktop/`:
+
+```sh
+node electron-host/desktop/import-cli.mjs --target-user-data "/path/to/electron-host/data/local" --target-extensions "/path/to/electron-host/data/local-extensions" --list-backups
+```
+
+Keep both target arguments and replace `--list-backups` with
+`--preview-restore "/exact/backup/path"`, then `--restore "/exact/backup/path"`.
+This optional CLI recovery workflow requires Node 24.18.0; normal app launch does not.
 
 For restore, use the **exact backup path** printed by the import, rather than the
 example placeholder. Close OpenVision before CLI import/restore, and restart
@@ -339,5 +352,6 @@ checks do not establish full editor parity. This repository has no GitHub Action
 | Imported extensions missing | Restart and check target-platform compatibility |
 | Restore refuses a file | Reconcile the newer edit with the local backup |
 
-Generated application files, native
-binaries, profiles, keys, backups, and dependencies are excluded from Git.
+Development runtime trees, profiles, keys, backups and local dependencies remain
+ignored. The complete distributable Windows app is included as verified payload
+parts under `downloads/windows-x64/`.
