@@ -7,6 +7,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { verifyLegacyMemoryStale } from './verify-legacy-memory-stale.mjs';
 
 const root = resolve(import.meta.dirname, '..'), layout = platformLayout(root);
 await mkdir(join(root, 'logs'), { recursive: true });
@@ -176,6 +177,11 @@ try {
   await launch();
   assert.deepEqual(await memoryFiles(), []);
   const saved = await inspectAndApprove();
+  if (process.argv.includes('--stale')) {
+    result.limitations.push('Stale-source mutation uses the real mounted knowledge service in the review window; no second-window broadcast is claimed.');
+    await verifyLegacyMemoryStale({ page, fixtures, result, memoryFiles, memoryDirectory });
+    originalsUnchanged();
+  }
   await close(); originalsUnchanged();
   await launch(); await openRules();
   await section().getByRole('button', { name: `Review legacy memories (${fixtures.length})`, exact: true }).click();

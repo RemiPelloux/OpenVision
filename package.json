@@ -63,6 +63,7 @@
     "verify:memory": "node desktop/verify-memory.mjs",
     "verify:mcp-cleanup": "node desktop/verify-mcp-cleanup.mjs",
     "verify:legacy-memory": "node desktop/verify-legacy-memory.mjs",
+    "verify:legacy-memory:stale": "node desktop/verify-legacy-memory.mjs --stale",
     "verify:project:lifecycle": "node desktop/verify-project-lifecycle.mjs",
     "verify:language": "node desktop/verify-language.mjs",
     "test:save-all": "node --test desktop/save-all.test.mjs",

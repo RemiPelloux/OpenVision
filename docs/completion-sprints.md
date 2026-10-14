@@ -47,7 +47,10 @@ recall. Customize → Rules now supports reviewed legacy-memory import while
 preserving original records; native paging/import/restart/isolation checks pass.
 Native two-root selection, junction rejection and real ACL-denied writes/retry
 also pass. OV-301 stays Partial pending physical full-disk/I/O, stale cross-window
-review and seeded native inline-edit gates. This rules follow-up itself promoted no story.
+review and seeded native inline-edit gates. A subsequent native stale-source
+check passes rejection without writes and refresh to the latest source through
+the mounted memory service; it does not establish cross-window propagation.
+This rules follow-up itself promoted no story.
 
 14 October MCP cleanup follow-up: [retained cleanup ownership](rea-mcp-cleanup.md)
 prevents reconnect starting a replacement after an unresolved transport close.

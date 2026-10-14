@@ -205,6 +205,33 @@ native multi-window races remain unverified. These new runs use synthetic data
 and controlled responses, not live AI. Earlier real-provider evidence above
 remains scoped to its recorded build and requests.
 
+## Native stale-review verification, 14 October
+
+`npm run verify:legacy-memory:stale` passed all 11 checks at
+`logs/legacy-memory-verification-YudQpI/result.json`. With a legacy review card
+open, the verifier changes its source through the mounted native knowledge
+service. This uses production IPC and SQLite; it does not replace storage or
+simulate a save response. Clicking Import rejects the stale review, retains the
+reviewed content and leaves all existing approved memory files unchanged.
+Selecting the revised record displays its latest content; dismissing saves nothing.
+
+The fixture restores the source through the same service. Exact original SQLite
+bytes, approved files, restart persistence and other-project isolation pass.
+All four owned hosts exited 0, with no uncaught renderer errors or observed
+renderer knowledge-base requests. No AI inference was involved. Source mutation
+uses test-only access to the mounted service, not a user-facing legacy editor.
+
+Workbench SHA-256:
+`6879c3194b7081b5e8b90c41da7f167f6b1f9b6612dc0e7acf56870a991af1be`.
+Eight focused memory/persistence/transform tests also passed without skips.
+
+The earlier two-window attempt at `legacy-memory-verification-JaYriN` timed out
+waiting for another window: reopening the same workspace reused its existing
+window. Original records remained unchanged. The passing check therefore covers
+a native source change in the review window, not cross-window propagation.
+That gate, physical full-disk/I/O recovery and seeded native inline-edit exclusion
+remain open. OV-301 stays Partial; the 42-story denominator is unchanged.
+
 ## Build verification follow-up
 
 The final normal-profile launch exposed invalid text in the generated workbench
