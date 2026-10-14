@@ -7,12 +7,12 @@ No separate editor installation, Node.js or npm is needed to run it.
 ## Download and launch
 
 1. Open the [OpenVision releases](https://github.com/RemiPelloux/OpenVision/releases).
-2. Download **OpenVision-0.2.0-preview.5-win32-x64.zip** and extract it to a writable folder.
+2. Download **OpenVision-0.2.0-preview.6-win32-x64.zip** and extract it to a writable folder.
 3. Double-click **OpenVision.cmd**.
 4. Use **Project Home** to open a folder, resume recent work or pin a favorite project.
 5. Open **OpenVision Settings → Models**, add a provider URL and your key, and discover models.
 
-The ZIP is approximately **328 MiB**; reserve at least **2 GiB** of free space for
+The ZIP is approximately **327 MiB**; reserve at least **2 GiB** of free space for
 extraction and your profile. Keep the folder writable. This preview is not signed
 with an OpenVision publisher certificate; Windows may display a publisher warning.
 It is a development preview, with remaining gates recorded in the
@@ -45,6 +45,15 @@ The installer uses built-in Windows PowerShell and .NET only. It refuses to
 overwrite an unrelated folder or another version. An interrupted extraction
 retains its separate `.install-<id>` folder for inspection; remove that exact
 folder after confirming it contains no files you need, then retry.
+
+After pulling a newer release, an existing **OpenVision-portable/** from an older
+version is intentionally preserved. Install into a new destination, for example:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-OpenVision.ps1 -Destination "D:\Apps\OpenVision-preview6"
+```
+
+Then follow the profile-copy instructions below before running the new app.
 
 ## Your files and editable application
 
@@ -92,7 +101,7 @@ guaranteed: re-enter your keys on a new machine.
 Windows files do not run natively on macOS or Linux. Native tests used disposable
 profiles and controlled local HTTP responses; they establish the package wiring
 and named workflows, not blanket live-model compatibility. See
-[portable verification](portable-preview5.md) and
+[portable verification](portable-preview6.md) and
 [release claims](release-claims.md) for the exact evidence.
 GitHub Actions remains disabled.
 

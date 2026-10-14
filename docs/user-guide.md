@@ -17,6 +17,11 @@ double-click **Run-OpenVision.cmd** to verify, extract and launch the included a
 No Node.js, npm or separate editor installation is needed.
 See [installation and updates](native-runtime.md).
 
+Project Home opens recent projects, folders, saved workspaces and cloned
+repositories in the current window. An already-open project focuses its existing
+window. If a switch asks about unsaved edits, **Cancel** keeps the current project
+and its unsaved text. Use **File → New Window** when you want a separate window.
+
 Use **Project Home → Color theme** to choose a dark, light or high-contrast theme.
 In the editor, **Local Profile → Appearance settings** opens color options.
 [Appearance customization](appearance.md) covers custom colors, fonts and icons.

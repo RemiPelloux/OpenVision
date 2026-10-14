@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0-preview.6 — 2026-10-14
+
+- Open recent projects, folders, saved workspaces and completed clones in the current window; focus projects that are already open.
+- Preserve native unsaved-file prompts and cancel a project switch without losing editor contents.
+- Carry the reuse request through native folder/workspace pickers and route the startup screen into the editor in place.
+- Verify real Codex Easy Stop and same-chat resubmission for GPT 6.1 Sol, DeepSeek V4 Flash and Grok 4.7 at Provider default. This establishes client transport closure, not upstream compute/billing cancellation.
+- Distinguish Windows launcher exits from native main-process shutdown evidence; retain the earlier unexplained exit 134.
+- Refresh the complete Windows portable download, offline repository payload, documentation and roadmap with complexity points. See [release scope](docs/releases/0.2.0-preview.6.md).
+
 ## 0.2.0-preview.5 — 2026-10-14
 
 - Simplify Project Home and cloning to match the selected editor theme, with compact controls and a monochrome eye.

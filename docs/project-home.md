@@ -1,15 +1,14 @@
 # Project home
 
 OpenVision opens to a project dashboard with a blinking eye, a responsive layout
-and immediate access to your work. It is included in the **0.2.0-preview.5**
+and immediate access to your work. It is included in the **0.2.0-preview.6**
 portable app, with relocated native verification recorded in
-[the package report](portable-preview5.md). Home and cloning follow your
+[the package report](portable-preview6.md). Home and cloning follow your
 [selected theme and custom colors](appearance.md).
 
-The development checkout now reuses the current window when opening a project.
-This follow-up is newer than the preview.5 portable download, which still opens
-a separate editor window. Rebuild and fully restart the development app to load
-the native window-routing change.
+The preview.6 portable app and development checkout reuse the current window
+when opening a project. Projects already open elsewhere focus their existing
+window. Native unsaved-file prompts protect edits before a switch.
 
 ## Start and resume
 

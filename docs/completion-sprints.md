@@ -510,6 +510,17 @@ the earlier launcher exit 134 remains unexplained. These are verifier changes,
 not product performance or crash fixes. Both stories remain Partial, the portable
 payload is unchanged, and the ledger stays **6/42 Verified (14.29%)**.
 
+14 October 2026, preview.6 distribution follow-up (owner: OpenVision):
+[Packaged current-window project opening](portable-preview6.md) now passes
+native Windows history/folder/workspace/picker/clone paths while retaining the
+same native window ID. Canceling a switch preserves unsaved editor content.
+The repository installer reconstructs the seven-part payload and validates its
+archive hash; native theme/restart/custom-color checks also pass on that extracted
+app. Main implementation commit: `4b5cb04`; the release includes verification
+commit `c429e1a`. No full story is promoted: **6/42 Verified (14.29%)** remains
+unchanged. [Remaining priorities](roadmap.md#preview6-delivery-and-next-priorities)
+use complexity points; platform, independent-build and full rollback gates remain.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

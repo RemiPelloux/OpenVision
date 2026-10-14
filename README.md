@@ -20,7 +20,7 @@ options without an OpenVision account.
 [Documentation](docs/README.md)
 
 > **Ready to run on Windows x64.** Download the complete portable app from
-> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.5),
+> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6),
 > extract it, and double-click **OpenVision.cmd**. The complete app payload is
 > also included in this Git repository. No separate editor, Node.js or npm setup.
 
@@ -29,11 +29,11 @@ options without an OpenVision account.
 | Capability | What you can do today | Evidence and limits |
 | --- | --- | --- |
 | Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/provider-selection-lifecycle.md) |
-| Project Home | Search recent projects, pin favorites, focus open windows and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); included in the portable app |
+| Project Home | Open projects in the current window, search recent work, pin favorites and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); included in the portable app |
 | Appearance | Choose dark, light or high-contrast themes and customize colors, fonts and icons | [Appearance guide](docs/appearance.md) |
 | AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/rea-agent-runtime.md); broader workflow coverage remains open |
 | Code autocomplete | Select a separate completion model, accept with Tab, undo, cancel pending work | [Windows editing checks](docs/rea-custom-autocomplete.md); predictive navigation is unfinished |
-| Project development | Explore projects, search, edit, Save All, run terminals/tasks and debug Node | [Development workflows](docs/development-workflows.md); one intermittent host-exit issue remains under investigation |
+| Project development | Explore projects, search, edit, Save All, run terminals/tasks and debug Node | [Development workflows](docs/development-workflows.md); one intermittent launcher-exit issue remains under investigation |
 | Language tools | Bundled JavaScript/TypeScript tooling and optional pinned clangd for C/C++ | [Language checks](docs/rea-language-workflows.md) · [C/C++ setup](docs/cpp-support.md) |
 | Git and worktrees | Create branches/worktrees, review diffs, resolve conflicts and recover across restart | [Verified Windows scope](docs/git-workflows.md) |
 | Local customization | Project rules, plans, skills, agents and MCP configuration under `.openvision/` | [Project configuration](docs/project-configuration.md); some global paths still need auditing |
@@ -41,8 +41,8 @@ options without an OpenVision account.
 
 ## Get started
 
-**Download:** get **OpenVision-0.2.0-preview.5-win32-x64.zip** from
-[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.5).
+**Download:** get **OpenVision-0.2.0-preview.6-win32-x64.zip** from
+[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6).
 Extract the ZIP and double-click **OpenVision.cmd**. Project Home brings together
 recent projects, pinned favorites and open windows. Open a folder or saved
 workspace, then configure your AI provider in **Models** settings.
@@ -57,7 +57,7 @@ cd OpenVision
 The repository launcher verifies and extracts the included payload once, then
 opens **OpenVision-portable/**. It uses built-in Windows tools only, preserves your
 profile on later launches and makes no runtime downloads. GitHub's repository
-ZIP works too. The package is approximately **328 MiB**; allow **2 GiB** free.
+ZIP works too. The package is approximately **327 MiB**; allow **2 GiB** free.
 
 | System | Current support |
 | --- | --- |

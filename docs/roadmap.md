@@ -1,6 +1,6 @@
 # OpenVision feature roadmap
 
-Updated 14 October 2026 for **0.2.0-preview.5**. The verified-coverage target is **80%**.
+Updated 14 October 2026 for **0.2.0-preview.6**. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
@@ -33,6 +33,27 @@ No open defect may silently lose user data, select the wrong provider/key,
 execute unapproved tools, or leave owned commands running after Stop.
 
 ## Points and delivery gates
+
+### Preview.6 delivery and next priorities
+
+Preview.6 ships current-window project/folder/workspace opening and cloning,
+with native unsaved-edit cancellation. It also publishes the existing real
+Provider-default Stop/resubmission evidence and more precise shutdown diagnostics.
+These narrow improvements do not promote a full acceptance story.
+
+The requested ETA is expressed as remaining complexity and acceptance gates:
+
+| Next work | Remaining points | What must pass |
+| --- | --- | --- |
+| Conversation recovery (OV-102) | 8 | Live error retry, controlled timeout, interrupted sessions and remaining reasoning cases without duplicate requests |
+| Native shutdown reliability (OV-403) | 8 | Explain the earlier launcher exit 134 and verify the remaining shutdown matrix |
+| Provider failures (OV-204) | 5 | Certificate edge cases, inference timeouts and remaining malformed/oversized streams |
+| Project lifecycle and scale (OV-401) | 5 | Remaining filesystem/link behavior and measured filesystem work |
+| Autocomplete quality (OV-602) | 8 | Representative project/language quality and native live-provider acceptance |
+
+These entries are priorities from the complete tables below, not extra stories
+or additive estimates. The Rust core/shell replacement follows the independent
+build and compatibility gates; native macOS/Linux checks require those systems.
 
 Work is sized with **relative complexity points**: implementation breadth,
 unknowns, integration risk and verification difficulty. Points are not hours,
