@@ -6,11 +6,11 @@ import { createLiveAgentRelay } from './live-agent-relay.mjs';
 const model = 'fixture-model', marker = 'OPENVISION_READ_fixture', key = 'fixture-transport-secret';
 const headers = { Authorization: 'Bearer native-probe-key', 'Content-Type': 'application/json' };
 
-async function fixture(t, handler, captureRequest) {
+async function fixture(t, handler, captureRequest, inspectRequest) {
   const server = createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); });
-  const relay = await createLiveAgentRelay({ model, marker, captureRequest, provider: {
+  const relay = await createLiveAgentRelay({ model, marker, captureRequest, inspectRequest, provider: {
     url: `http://127.0.0.1:${server.address().port}/v1`,
     models: [{ id: model, capabilities: { reasoningEffortValues: [{ id: 'high', value: 'high' }] } }],
   } });
@@ -60,20 +60,21 @@ test('catalog authentication and selected model are checked before contacting a 
   assert.equal(calls, 0); assert.equal(relay.requests.length, 0);
 });
 
-test('opt-in capture redacts only its first request and does not alter forwarded bytes', async t => {
-  const received = [], captured = [], entered = Promise.withResolvers(), release = Promise.withResolvers();
+test('capture sees the first request, inspection sees every redacted request, and forwarded bytes stay unchanged', async t => {
+  const received = [], captured = [], inspected = [], entered = Promise.withResolvers(), release = Promise.withResolvers();
   t.after(() => release.resolve());
   const relay = await fixture(t, async (request, response) => {
     let body = ''; for await (const chunk of request) body += chunk;
     received.push(body); sse(response, [{ choices: [{ delta: { content: 'ok' }, finish_reason: 'stop' }] }]);
-  }, async body => { captured.push(body); entered.resolve(); await release.promise; });
+  }, async body => { captured.push(body); entered.resolve(); await release.promise; }, body => { inspected.push(body); });
   const firstBody = JSON.stringify({ model, messages: [{ role: 'user', content: `echo ${key}` }] });
   const first = fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: firstBody });
   await entered.promise;
-  const secondBody = JSON.stringify({ model, messages: [{ role: 'user', content: 'second' }] });
+  const secondBody = JSON.stringify({ model, messages: [{ role: 'user', content: `second ${key}` }] });
   const second = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: secondBody });
   await second.text(); release.resolve(); await (await first).text();
   assert.deepEqual(captured, [firstBody.replaceAll(key, '[redacted]')]);
+  assert.deepEqual(inspected, [firstBody, secondBody].map(body => body.replaceAll(key, '[redacted]')));
   assert.deepEqual(received, [secondBody, firstBody]);
 });
 

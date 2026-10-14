@@ -8,6 +8,22 @@ import { installProjectNamespace, restoreNamespaceInputs } from './namespace-bui
 
 const transform = (source, json = false) => applyNamespaceEdits(source, namespaceEdits(source, json));
 
+test('large Unicode inputs retain every untouched character through many edits and exact restoration', () => {
+  const segment = '日本語 Å 🧿 unchanged '.repeat(1024) + '".cursor/rules";\n';
+  const source = segment.repeat(512), edits = [];
+  for (const match of source.matchAll(/\.cursor\/rules/g))
+    edits.push({ start: match.index, before: match[0], after: '.openvision/rules' });
+  const after = applyNamespaceEdits(source, edits);
+  assert.equal(after, source.replaceAll('.cursor/rules', '.openvision/rules'));
+  let offset = 0;
+  const reverse = edits.map(edit => {
+    const start = edit.start + offset; offset += edit.after.length - edit.before.length;
+    return { start, before: edit.after, after: edit.before };
+  });
+  assert.equal(applyNamespaceEdits(after, reverse), source);
+  assert.throws(() => applyNamespaceEdits(source, [{ start: 0, before: 'wrong', after: '' }]), /no longer matches/);
+});
+
 test('changes path producers and regex consumers while preserving identifiers, CSS and vendor domains', () => {
   const source = String.raw`const folder = ".cursor";
     const rule = ".cursor/rules";

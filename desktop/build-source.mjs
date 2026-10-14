@@ -1,6 +1,7 @@
 import { mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { installLocalProfile } from './local-workbench.mjs';
 import { projectWorkspace } from './project-workspace.mjs';
 import { installModelSettings } from './custom-models.mjs';
@@ -69,12 +70,21 @@ await installLocalProfile(root);
 await installModelSettings(root);
 await copyFile(join(root, 'desktop/local-rules.js'),
   join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js'));
+for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspace-memory-card.css'])
+  await copyFile(join(root, 'desktop', file), join(root, 'source/app/out/vs/code/electron-sandbox/workbench', `openvision-${file}`));
 await installCursorImport(root);
 await installRuleDurability(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 } });
+for (const variant of ['desktop', 'glass']) {
+  const path = join(root, `source/app/out/vs/workbench/workbench.${variant}.main.js`);
+  const checked = spawnSync(process.execPath, ['--check', path], { stdio: 'inherit' });
+  if (checked.error) throw checked.error;
+  if (checked.status !== 0) throw new Error(`Generated ${variant} workbench failed syntax validation`);
+}
+console.log('Generated desktop and Glass workbench syntax validated');
 const settings = join(root, 'data/local/User/settings.json');
 if (!await exists(settings)) {
   await mkdir(dirname(settings), { recursive: true });

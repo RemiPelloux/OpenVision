@@ -44,7 +44,13 @@ export function applyNamespaceEdits(source, edits) {
       throw new Error('Namespace edit no longer matches its source');
     previousEnd = edit.start + edit.before.length;
   }
-  for (const edit of [...edits].reverse())
-    source = source.slice(0, edit.start) + edit.after + source.slice(edit.start + edit.before.length);
-  return source;
+  if (!edits.length) return source;
+  const parts = [];
+  let offset = 0;
+  for (const edit of edits) {
+    parts.push(source.slice(offset, edit.start), edit.after);
+    offset = edit.start + edit.before.length;
+  }
+  parts.push(source.slice(offset));
+  return parts.join('');
 }

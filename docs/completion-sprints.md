@@ -12,7 +12,10 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 fixes hidden rules caused by concurrent storage metadata updates and waits for
 SQLite acknowledgement before reporting a saved rule. Two real windows, profile
 isolation/restart, native rejected-write recovery, and real GPT first-request
-rule consumption pass. OV-301 stays Partial pending native workspace-memory gates.
+rule consumption pass. [Approved project memories](project-memories.md) now pass
+native suggestion/dismiss/save/restart/project isolation and real GPT on-demand
+recall. OV-301 stays Partial pending legacy-memory disposition and remaining
+native filesystem failure/multi-root gates. The count remains 5/42 Verified.
 
 14 October follow-up: [large clipboard pastes](rea-large-paste.md) now use local
 files and compact prompt references. Native paste/failure checks and a real

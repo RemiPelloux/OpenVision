@@ -210,7 +210,11 @@ dialogs use short transitions, with reduced-motion preferences respected.
 
 In **Customize > Rules**, user rules are saved in the local OpenVision profile
 and included in local Agent context. Creating, editing and removing them does
-not require a cloud account. Generated notes are kept in their workspace.
+not require a cloud account. Agent can suggest a project memory in a review card.
+Edit it, choose its project, then click **Save project memory**; dismissing writes
+nothing. Approved memories live in `.openvision/rules/memory-*.mdc`. Only their
+descriptions enter new chat context; Agent reads their contents when relevant.
+See [project memories](docs/project-memories.md) for usage and verified limits.
 See [local rules and reasoning implementation](docs/rea-local-rules.md) for
 migration, verification and remaining limits.
 

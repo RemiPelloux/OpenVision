@@ -1,0 +1,10 @@
+.openvision-memory-card { border: 1px solid var(--vscode-widget-border); border-radius: 10px; padding: 14px; background: var(--vscode-editorWidget-background); color: var(--vscode-foreground); display: grid; gap: 10px; font: 13px/1.5 var(--vscode-font-family, system-ui, sans-serif); white-space: normal; }
+.openvision-memory-card p { margin: 0; color: var(--vscode-descriptionForeground); }
+.openvision-memory-card label { display: grid; gap: 4px; }
+.openvision-memory-card input, .openvision-memory-card textarea, .openvision-memory-card select { box-sizing: border-box; width: 100%; min-width: 0; padding: 7px; border: 1px solid var(--vscode-input-border, var(--vscode-widget-border)); border-radius: 5px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); font: inherit; }
+.openvision-memory-card textarea { resize: vertical; }
+.openvision-memory-card :focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+.openvision-memory-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.openvision-memory-actions button { padding: 6px 12px; cursor: pointer; border: 0; border-radius: 5px; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); font: inherit; }
+.openvision-memory-actions button:first-child { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
+.openvision-memory-actions button:disabled { opacity: .6; cursor: default; }

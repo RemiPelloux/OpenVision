@@ -54,7 +54,7 @@ async function requestBody(request) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export async function createLiveAgentRelay({ provider, model, marker, captureRequest }) {
+export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest }) {
   const requests = [], controllers = new Set(), pending = new Set();
   const failed = Promise.withResolvers();
   let key;
@@ -90,6 +90,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       actualFileInToolResult: payload.messages?.some(message => message.role === 'tool' && JSON.stringify(message.content).includes(marker)) ||
         payload.input?.some(item => item.type === 'function_call_output' && JSON.stringify(item.output).includes(marker)) || false };
     requests.push(record);
+    if (inspectRequest) await inspectRequest(redact(body));
     if (requests.length === 1 && captureRequest) await captureRequest(redact(body));
     const controller = new AbortController(); controllers.add(controller);
     const timer = setTimeout(() => controller.abort(), 60000), started = performance.now();

@@ -92,6 +92,8 @@ export async function workbenchAssets(app, svg, png) {
     append(head, parseFragment('<link rel="stylesheet" href="./openvision-local-profile.css">').childNodes[0]);
   if (!hasHref('./openvision-welcome-screen.css'))
     append(head, parseFragment('<link rel="stylesheet" href="./openvision-welcome-screen.css">').childNodes[0]);
+  if (!hasHref('./openvision-workspace-memory-card.css'))
+    append(head, parseFragment('<link rel="stylesheet" href="./openvision-workspace-memory-card.css">').childNodes[0]);
   if (!hasHref('./openvision-logo.svg'))
     append(head, parseFragment('<link rel="icon" href="./openvision-logo.svg">').childNodes[0]);
   if (!body.childNodes.some(node => node.tagName === 'script' &&

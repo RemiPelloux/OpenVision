@@ -14,6 +14,7 @@ import { completionCancellation } from './completion-cancellation.mjs';
 import { providerManualRetry } from './provider-error-ui.mjs';
 import { customizeWelcome } from './welcome-customization.mjs';
 import { customizePaste } from './paste-customization.mjs';
+import { customizeMemory } from './memory-customization.mjs';
 
 async function customize(root, variant) {
   const relative = `out/vs/workbench/workbench.${variant}.main.js`;
@@ -24,7 +25,7 @@ async function customize(root, variant) {
   const stream = customizeStream(customModels(cloud.text, variant));
   const providers = providerSelectionErrors(requestProviderRouting(stream.text, variant));
   const welcome = customizeWelcome(providerManualRetry(completionCancellation(localUserRules(subagentModelParameters(providers, variant), variant))), variant);
-  const after = customizePaste(welcome, variant);
+  const after = customizeMemory(customizePaste(welcome, variant), variant);
   if (before === after) return;
   const backup = join(root, 'backups/bundle-customizations', relative);
   await mkdir(dirname(backup), { recursive: true });
@@ -43,6 +44,7 @@ export async function customizeBundles(root) {
     'desktop/provider-error-ui.mjs',
     'desktop/welcome-customization.mjs',
     'desktop/paste-customization.mjs',
+    'desktop/memory-customization.mjs',
     'desktop/reasoning-selection-customization.mjs',
     'desktop/model-picker-pagination.mjs',
     'desktop/model-picker-labels.mjs',

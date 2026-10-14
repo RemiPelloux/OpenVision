@@ -14,9 +14,10 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { verifyLiveHistory, verifyPersistedLiveHistory } from './verify-live-history.mjs';
 import { prepareLivePaste, inspectPasteRequest, verifySavedLivePaste } from './verify-live-paste.mjs';
 import { createLiveUserRule, inspectRulesRequest } from './verify-live-rules.mjs';
+import { approveLiveMemory, inspectLiveMemoryContext } from './verify-live-memory.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--paste|--rules] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Capture saves the first request locally with the transport key redacted.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--paste|--rules|--memory] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -27,6 +28,8 @@ const subagent = process.argv.includes('--subagent');
 const history = process.argv.includes('--history');
 const paste = process.argv.includes('--paste');
 const rules = process.argv.includes('--rules');
+const memory = process.argv.includes('--memory');
+assert.ok(!memory || (!rules && !paste && !history && !subagent), '--memory is a separate suggested-memory approval probe');
 assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to-Read probe');
 assert.ok(!rules || (!paste && !history && !subagent), '--rules is a separate persisted-rules probe');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
@@ -48,7 +51,7 @@ const marker = `OPENVISION_READ_${randomUUID().replaceAll('-', '')}`;
 const ruleFilename = `rule-probe-${randomUUID()}.txt`;
 const userRule = `The verification file for this project is ${ruleFilename}. When asked to read the verification file, use Read on this file and answer with its exact first line. Do not use other tools.`;
 const projectRule = `OPENVISION_PROJECT_RULE_${randomUUID()}`;
-const file = join(project, rules ? ruleFilename : 'probe.txt');
+const file = join(project, rules || memory ? ruleFilename : 'probe.txt');
 if (!paste) await writeFile(file, marker + '\n');
 if (rules) {
   await mkdir(join(project, '.openvision/rules'), { recursive: true });
@@ -71,9 +74,13 @@ const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent
     ...(history ? [['historyVerifier', join(root, 'desktop/verify-live-history.mjs')]] : []),
     ...(rules ? [['rulesHelper', join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js')],
       ['rulesVerifier', join(root, 'desktop/verify-live-rules.mjs')]] : []),
+    ...(memory ? [['memoryHelper', join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-workspace-memory.js')], ['memoryCard', join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-workspace-memory-card.js')],
+      ['memoryVerifier', join(root, 'desktop/verify-live-memory.mjs')]] : []),
   ].map(async ([name, path]) => [name, await fileHash(path)]))), success: false };
 if (paste) result.paste = {};
 if (rules) result.rules = {};
+if (memory) result.memory = {};
+let inspectMemoryRetrieval = false;
 const captureRequest = async body => {
   if (paste) {
     inspectPasteRequest(body, result.paste);
@@ -82,7 +89,12 @@ const captureRequest = async body => {
   if (rules) inspectRulesRequest(body, { userRule, projectRule, marker }, result.rules);
   if (process.argv.includes('--capture-payload')) await writeFile(join(directory, 'native-request.json'), body);
 };
-const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest });
+const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest: body => {
+  if (inspectMemoryRetrieval) {
+    inspectLiveMemoryContext(body, { filename: ruleFilename, marker }, result.memory);
+    inspectMemoryRetrieval = false;
+  }
+} });
 let app, page;
 async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
@@ -148,11 +160,20 @@ try {
     result.rules.restartedBeforeFirstRequest = true;
     await page.keyboard.press('ControlOrMeta+Shift+l');
   }
+  if (memory) {
+    await approveLiveMemory({ page, project, filename: ruleFilename, result: result.memory });
+    assert.ok(relay.requests.every(request => !request.responseToolCalls?.length), 'Suggestion must not invoke write or other tools');
+    await closeOwnedApp(); await launch();
+    await page.keyboard.press('ControlOrMeta+Shift+l');
+    inspectMemoryRetrieval = true; result.memory.restartedBeforeRecall = true;
+  }
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   let pasted;
   if (paste) pasted = await prepareLivePaste({ app, input, project, marker });
   else {
-    await input.fill(rules
+    await input.fill(memory
+    ? 'Use the saved project memory to find the verification file, read it, and reply with exactly its first line. Do not edit files.'
+    : rules
     ? 'Read the verification file specified in my saved rule. Reply with exactly its first line.'
     : subagent
     ? 'Use exactly one Task subagent with the inherited model. Ask it to use Read on probe.txt and return exactly the single line in that file. After the Task finishes, reply with exactly the returned line. Do not read the file yourself, edit files, run commands or use other tools.'
