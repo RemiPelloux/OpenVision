@@ -32,6 +32,9 @@ try {
   assert.ok(page.url().includes(portable ? '/electron-host/resources/app/' : '/openvision/source/app/'),
     'Welcome must run in the selected editable OpenVision application');
   await page.waitForTimeout(1500);
+  result.nativeWindowTitle = await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows().find(window => window.isVisible())?.getTitle());
+  assert.equal(result.nativeWindowTitle, 'OpenVision', 'Native welcome window must use OpenVision branding');
   assert.doesNotMatch(await screen.innerText(), /Cursor|Log In|Sign Up/);
   assert.equal(await page.locator('img[src*="cursor-splash-logo"]').count(), 0, 'Legacy launch splash must not mount');
   result.layout = await screen.evaluate(node => {

@@ -4,13 +4,13 @@
   "platform": "win32",
   "arch": "x64",
   "archive": "OpenVision-0.2.0-preview.2-win32-x64.zip",
-  "bytes": 343714567,
-  "sha256": "f7b2e227093e690f92b30a65bcf4a75a50ac719942317e080e7be02271a7311e",
+  "bytes": 343716698,
+  "sha256": "6cbe6b82fe809c5f2a49615e9bf575775a2799d1e3eccf9d198625d8f6638194",
   "chunks": [
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part001",
       "bytes": 50331648,
-      "sha256": "574ed4aed13e37920db07ac2c66d856e5aee49c76bce0ba72559be5d86b62434"
+      "sha256": "c2cc9ea694f71eebe3c3e59f33e1aa54a9dd7739118fd023ddc7fcf8f2956b66"
     },
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part002",
@@ -20,27 +20,27 @@
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part003",
       "bytes": 50331648,
-      "sha256": "053b086536297f228f03d05879602e43856a6372d56a78c0016bc18f2ed6d988"
+      "sha256": "173ef88c88d6695e310d6eb978d5b7af8ef6bc4fffb7d3c22e20ae4cd3a8e19d"
     },
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part004",
       "bytes": 50331648,
-      "sha256": "1929a025b2e2703ea1e7240390d5dac430fcb127e2f295718458a16d53437777"
+      "sha256": "a4ce576a941044e9e97ad5db258980ccc4dc40bcf961a30eb0a01ee3129b8e1d"
     },
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part005",
       "bytes": 50331648,
-      "sha256": "18ca7651ede028a7521b13d18d72acdb5f66e4741d2847010d53f5a464176a62"
+      "sha256": "c1ab38c403354a4c218c6e11fc57aee5ebcbc2183d2f2829d902795af6d2e05b"
     },
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part006",
       "bytes": 50331648,
-      "sha256": "7f5729685e6656543a2efd41bc845454bfcf655a4df5d8270b8992586d1c2521"
+      "sha256": "46bf1ea259ef5229033dd5a32228b02f681b93888dbcf3be7c6fedb2d2ca154e"
     },
     {
       "file": "OpenVision-0.2.0-preview.2-win32-x64.zip.part007",
-      "bytes": 41724679,
-      "sha256": "91c35e70c3b500e6059073369193331d60840d05dbc7ca778bcbdac0b035ce90"
+      "bytes": 41726810,
+      "sha256": "3876044d61d6b31d528d3913c15fcf491c41cff1f224592b84907b1c0371f985"
     }
   ]
 }

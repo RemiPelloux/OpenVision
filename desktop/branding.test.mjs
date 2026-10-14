@@ -7,6 +7,16 @@ import { sharp } from '../tooling/dependencies.mjs';
 import { workbenchAssets } from './source-assets.mjs';
 import { detectInstallation } from './installation-location.mjs';
 import { platformLayout } from './platform.mjs';
+import { brandAgentWindowTitle } from './source-branding.mjs';
+
+test('agent title belongs to window defaults and refresh is idempotent', () => {
+  const source = '(defaults = {HEIGHT_GLASS: 520,}), (title = "Cursor Agents"), (compatibility = "cursor")';
+  const branded = brandAgentWindowTitle(source);
+  assert.equal(branded, source.replace('Cursor Agents', 'OpenVision'));
+  assert.equal(brandAgentWindowTitle(branded), branded);
+  assert.throws(() => brandAgentWindowTitle(source + source), /one agent window title owner/);
+  assert.throws(() => brandAgentWindowTitle(source.replace('Cursor Agents', 'Unexpected')), /Unexpected agent window title/);
+});
 
 test('brand refresh migrates a prepared workbench to SVG without duplicating bootstrap assets', async t => {
   const app = await mkdtemp(join(tmpdir(), 'openvision-brand-'));

@@ -1,6 +1,30 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { join } from 'node:path';
+
+export function brandAgentWindowTitle(text) {
+  const owners = [...text.matchAll(/HEIGHT_GLASS:\s*520,?\s*}\),\s*\([\w$]+\s*=\s*/g)];
+  if (owners.length !== 1) throw new Error('Expected one agent window title owner');
+  const start = owners[0].index + owners[0][0].length;
+  const title = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
+  if (title.type !== 'Literal' || !['Cursor Agents', 'OpenVision'].includes(title.value))
+    throw new Error('Unexpected agent window title');
+  return text.slice(0, start) + '"OpenVision"' + text.slice(title.end);
+}
+
+export async function installWindowTitles(root) {
+  const backup = join(root, 'backups/window-titles');
+  await mkdir(backup, { recursive: true });
+  for (const file of ['main.js', 'vs/workbench/workbench.desktop.main.js', 'vs/workbench/workbench.glass.main.js']) {
+    const path = join(root, 'source/app/out', file);
+    const before = await readFile(path, 'utf8');
+    const after = brandAgentWindowTitle(before);
+    if (before === after) continue;
+    await copyFile(path, join(backup, file.replaceAll('/', '_')), 1)
+      .catch(error => { if (error.code !== 'EEXIST') throw error; });
+    await writeFile(path, after);
+  }
+}
 
 function findFlags(node) {
   if (!node || typeof node !== 'object') return [];

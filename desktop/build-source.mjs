@@ -34,6 +34,7 @@ import { installProjectNamespace, restoreNamespaceInputs } from './namespace-bui
 import { installRuleDurability } from './rules-durability-customization.mjs';
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
 import { installShutdownOwnership } from './shutdown-customization.mjs';
+import { installWindowTitles } from './source-branding.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -82,6 +83,7 @@ await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 } });
+await installWindowTitles(root);
 for (const variant of ['desktop', 'glass']) {
   const path = join(root, `source/app/out/vs/workbench/workbench.${variant}.main.js`);
   const checked = spawnSync(process.execPath, ['--check', path], { stdio: 'inherit' });
