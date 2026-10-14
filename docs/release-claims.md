@@ -1,6 +1,6 @@
 # OpenVision release claims and verification matrix
 
-Baseline date: 13 October 2026. This is a development build with incomplete release
+Updated 14 October 2026 for 0.2.0-preview.1. This is a development build with incomplete release
 acceptance. The fixed denominator remains the 42 stories
 in [feature-acceptance.json](feature-acceptance.json); at least 34 must be fully
 Verified. The [sprint ledger](completion-sprints.md) owns each story's status and
@@ -24,7 +24,8 @@ original payload or establish an independent rebuild.
 Runtime preparation still requires matching recovered files and shipped native
 components. Source recovery, pseudocode, original-source availability and a clean
 source build are distinct; [recovery status](recovery-status.md) records the gaps.
-No source-rebuild or distributable-release claim is made.
+The public preview distributes customization source and documentation only.
+No independent source-rebuild or standalone editor distribution claim is made.
 
 ## Feature and fixture matrix
 
@@ -40,7 +41,7 @@ No source-rebuild or distributable-release claim is made.
 | OV-401–404 | Native two-root search, Unicode edit/save/undo/redo; rename/move/delete, external conflicts, junction edits, denied-write recovery and graceful unsaved restart ([lifecycle evidence](project-lifecycle-verification.md)); TS/JS and clangd C/C++ language checks; global/API Save All persists hidden dirty files ([language](rea-language-workflows.md), [C/C++](cpp-support.md), [Save All](save-all-verification.md)); native cmd/PowerShell, tasks/problem matcher, Node debugging and child release ([development evidence](development-workflows.md)); [OV-404 Git/worktree contract verified](git-workflows.md), including abnormal-host restart | File symlinks and large-project watchers, remaining language matrix, intermittent development-host exit 134; broader remote/platform/release recovery |
 | OV-501–504 | File-service inventory and local context collector observations | Data-destination proof, retrieval quality, incremental indexing, cancellation/restart/migration and resource budgets |
 | OV-601 | REA completion request/result contracts pinned in [contract findings](rea-autocomplete-contract.md) | Unshipped original server behavior remains unknown |
-| OV-602–604 | Custom Chat Completions adapter; native Windows Unicode single/multiline Tab acceptance/undo, 13-case response-failure matrix and recovery (`npm run verify:completion`); one direct live GPT/DeepSeek/Grok sum-expression fixture each | Representative multi-language/project quality, native live-provider acceptance, partial acceptance, next-edit prediction and latency |
+| OV-602–604 | Custom Chat Completions adapter; native Windows Unicode single/multiline and partial-word acceptance/undo, pending typing/Escape/file-switch cancellation, 13-case response-failure matrix and recovery; one direct live GPT/DeepSeek/Grok sum-expression fixture each | Representative multi-language/project quality, native live-provider acceptance, broader editing/latency workloads and next-edit prediction |
 | OV-701–704 | Settings import and local extension-integrity checks; recovered integration surfaces | Full import rollback/isolation, extension lifecycle, SSH/WSL/container workflows, specialized image/browser/computer modes |
 | OV-801–804 | Inventory of 52 native PE paths and 15 distinct WASM payloads; editable recovered JavaScript | Source/license/ABI/replacement dispositions and clean-checkout independent build |
 | OV-901–904 | Windows x64 assembled editor and scoped native fixtures | Clean installation/package/upgrade/rollback matrix; other native systems and architectures |

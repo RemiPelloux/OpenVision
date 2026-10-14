@@ -1,6 +1,6 @@
 # OpenVision remaining work and estimates
 
-Updated 14 October 2026. The user changed the verified-coverage target to **80%**.
+Updated 14 October 2026 for **0.2.0-preview.1**. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
@@ -45,6 +45,41 @@ proprietary helper replacement and remote/native platform access are unresolved.
 Only a Windows machine is available. For blocked cases, the ETA starts after the
 named dependency is satisfied. Re-estimate after each native acceptance run;
 do not turn a test passing on a fixture into a provider/platform support claim.
+
+## Milestone forecast
+
+| Milestone | Planning effort | Delivery condition |
+| --- | --- | --- |
+| Public source preview, 0.2.0-preview.1 | Prepared for this release | Documentation, original visual assets and customization source; no standalone installer |
+| Harden the current Windows development loop | **20–40 engineer-days**, approximately **4–8 working weeks** | Prioritize remaining Agent, memory, editor, terminal and autocomplete gates; providers remain available; scope excludes an independent build |
+| Reach the 80% acceptance target | **No defensible calendar date yet** | Close 28 more complete stories; reforecast after native-helper/retrieval ownership and independent-build prerequisites are resolved |
+| Complete all currently listed first-target work | **120–278 engineer-days of gross row estimates**, approximately **24–56 working weeks** before adjustments | Inventory subtotal only: shared work can reduce it, investigations and additional platforms/architectures can increase it; not a release promise |
+| Native macOS or Linux release | **4–8 days per initial target for platform acceptance**, plus prerequisites | Hardware/desktop access, independently buildable inputs and core feature completion; additional packaging/signing work is separate |
+
+The Windows stabilization band is an editorial planning allowance for the next
+focused work cycle, not the sum of every Windows requirement. The 120–278 day
+subtotal counts each unfinished row's displayed range once, including both
+investigation and implementation ranges for OV-704. It does not multiply
+per-platform/per-architecture rows or subtract shared work. **Neither number is
+an estimate of unattended AI runtime.** No staffing schedule has been committed.
+
+## What is missing, in plain language
+
+| Area | Still needed before its full acceptance gate closes |
+| --- | --- |
+| AI conversations and agents | Live retry/timeout/Stop behavior, interrupted sessions, remaining edit/undo paths and subagent override/reasoning cases |
+| Local customization | Complete profile-path isolation, stale memory review handling, disk-failure recovery and MCP authentication/lifecycle cases |
+| Projects and languages | Large-project watcher measurements, remaining language navigation/edit matrix and reliable shutdown diagnosis |
+| Retrieval and indexing | Establish data destinations and helper ownership, implement/verify search relevance, incremental updates and index recovery |
+| Autocomplete | Broader live quality, native live-provider acceptance, editing/latency workloads and next-edit prediction |
+| Ecosystem | Full import rollback, extension lifecycle, SSH/WSL/containers and specialized image/browser/computer modes |
+| Independent application | Native/WASM provenance and rebuild decisions, replacement of closed dependencies and clean-machine builds |
+| Shipping and performance | Install/update/rollback, native macOS/Linux checks, long-session RAM/CPU/token/latency budgets and extended telemetry verification |
+
+The tables below give the individual IDs, remaining acceptance evidence,
+dependencies, confidence and estimates. **Already working but incompletely
+verified** and **not implemented** are different states: read the status and
+missing-work column together.
 
 ## Core AI and models
 

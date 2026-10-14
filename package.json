@@ -1,9 +1,13 @@
 {
   "name": "openvision",
-  "version": "0.2.0",
+  "version": "0.2.0-preview.1",
   "private": true,
   "type": "module",
-  "description": "OpenVision local-profile IDE running editable recovered JavaScript with a compiled Electron host.",
+  "description": "Experimental AI coding workspace customization with local profiles, custom providers, agents, Tab autocomplete and MCP.",
+  "repository": { "type": "git", "url": "https://github.com/RemiPelloux/OpenVision.git" },
+  "homepage": "https://github.com/RemiPelloux/OpenVision#readme",
+  "bugs": { "url": "https://github.com/RemiPelloux/OpenVision/issues" },
+  "keywords": ["openvision", "ai-coding", "ide", "code-editor", "ai-agents", "autocomplete", "mcp", "custom-ai-provider", "developer-tools"],
   "scripts": {
     "start": "node desktop/start.mjs",
     "build:desktop": "node desktop/build-source.mjs",
