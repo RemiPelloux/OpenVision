@@ -7,6 +7,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { changeProjectInSameWindow } from './verify-project-window.mjs';
 
 const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/project-clone-verification-'));
@@ -22,6 +23,8 @@ git(source, ['-c', 'user.name=OpenVision Verification', '-c', 'user.email=fixtur
 const head = git(source, ['rev-parse', 'HEAD']);
 const result = { directory, checks: {}, errors: [], exits: [],
   workbenchHash: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+  mainHash: await fileHash(join(appRoot, 'out/main.js')),
+  homeServiceHash: await fileHash(join(appRoot, 'out/vs/code/electron-sandbox/workbench/openvision-project-home-service.js')),
   scope: 'Native Glass and editor Project Home; actual Git clones from a disposable local repository. Native folder selection and error-dialog dismissal are supplied by the harness. No remote authentication or AI inference.' };
 let app, page;
 async function until(probe) {
@@ -89,21 +92,14 @@ try {
   assert.deepEqual(await readdir(destination), []);
   assert.match(await home().locator('.ov-welcome-status').innerText(), /No project was opened|Could not complete/);
   result.checks.failedCloneDoesNotOpenProject = true;
-  const editorReady = app.waitForEvent('window', { timeout: 60000 });
-  await submit(pathToFileURL(source).href);
-  const editor = await editorReady; editor.on('pageerror', error => result.errors.push(error.message));
-  await editor.locator('.openvision-project-home-button').waitFor({ timeout: 60000 });
+  result.checks.startCloneReusesWindow = await changeProjectInSameWindow(app, page, () => submit(pathToFileURL(source).href));
   const cloned = join(destination, 'sample-repository');
   assert.equal(await readFile(join(cloned, 'README.md'), 'utf8'), content);
   assert.equal(git(cloned, ['rev-parse', 'HEAD']), head);
   assert.equal(git(cloned, ['remote', 'get-url', 'origin']), pathToFileURL(source).href);
   result.checks.glassRealCloneOpensEditor = true;
-  page = editor;
   await page.locator('.openvision-project-home-button').click();
-  const secondReady = app.waitForEvent('window', { timeout: 60000 });
-  await submit(pathToFileURL(source).href);
-  const second = await secondReady;
-  await second.locator('.openvision-project-home-button').waitFor({ timeout: 60000 });
+  result.checks.editorCloneReusesWindow = await changeProjectInSameWindow(app, page, () => submit(pathToFileURL(source).href));
   assert.equal(await readFile(join(destination, 'sample-repository-1/README.md'), 'utf8'), content);
   assert.equal(git(join(destination, 'sample-repository-1'), ['rev-parse', 'HEAD']), head);
   result.checks.editorClonePreservesExistingFolder = true;
@@ -111,10 +107,8 @@ try {
   if (remoteIndex >= 0) {
     const url = process.argv[remoteIndex + 1]; assert.ok(url?.startsWith('https://'));
     const remoteHead = git(source, ['ls-remote', url, 'HEAD']).split(/\s/)[0];
-    page = second; await page.locator('.openvision-project-home-button').click();
-    const remoteReady = app.waitForEvent('window', { timeout: 90000 });
-    await submit(url);
-    const remotePage = await remoteReady; await remotePage.locator('.openvision-project-home-button').waitFor({ timeout: 60000 });
+    await page.locator('.openvision-project-home-button').click();
+    result.checks.remoteCloneReusesWindow = await changeProjectInSameWindow(app, page, () => submit(url));
     const name = new URL(url).pathname.split('/').at(-1).replace(/\.git$/, '');
     assert.equal(git(join(destination, name), ['rev-parse', 'HEAD']), remoteHead);
     assert.equal(git(join(destination, name), ['remote', 'get-url', 'origin']), url);

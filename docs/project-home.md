@@ -6,6 +6,11 @@ portable app, with relocated native verification recorded in
 [the package report](portable-preview5.md). Home and cloning follow your
 [selected theme and custom colors](appearance.md).
 
+The development checkout now reuses the current window when opening a project.
+This follow-up is newer than the preview.5 portable download, which still opens
+a separate editor window. Rebuild and fully restart the development app to load
+the native window-routing change.
+
 ## Start and resume
 
 Double-click `OpenVision.cmd` in the portable package, or run
@@ -22,16 +27,17 @@ home window's **Enter workspace** action.
 | Pinned | Favorites saved in your local profile, independently per project |
 | Open now | Projects with a currently open editor window |
 | Search | Match project names or paths; Enter opens the first visible result |
-| Open / Focus | Recheck live windows, focus an existing project or open a new editor |
-| Open folder / Open workspace | Native selection dialogs |
-| Clone repository | Paste a URL, choose a destination, clone and open a new editor |
+| Open / Focus | Recheck live windows, focus an already-open project or load it in the current window |
+| Open folder / Open workspace | Native selection dialogs; open in the current window |
+| Clone repository | Paste a URL, choose a destination, clone and open in the current window |
 | Remove from history | Remove the recent entry and its pin; keep project files |
 | Refresh | Refresh history and current-window state on demand |
 | Color theme | Choose a theme through the native theme picker |
 
 A missing local path produces an actionable message. Its history entry remains
 until you remove it or open its new location. Project opening uses the native
-window service with explicit editor routing; it preserves other open editors.
+window service with explicit editor routing and current-window reuse. Native
+unsaved-file handling can cancel a switch; other windows are left open.
 The native URI identity service handles Windows path casing and IPC URI values.
 Folder and workspace identity stay distinct from displayed labels.
 
@@ -39,7 +45,7 @@ Folder and workspace identity stay distinct from displayed labels.
 
 Choose **Clone repository**, paste an HTTPS or SSH Git URL, then select
 **Choose location & clone**. Pick a parent folder in the native destination
-picker. Git shows progress and opens the completed checkout in a new editor.
+picker. Git shows progress and opens the completed checkout in the current window.
 Absolute local paths and `file://` URLs also work. Git manages credentials for
 private repositories through its configured authentication tools.
 
@@ -71,6 +77,35 @@ This change does not establish a whole-app RAM reduction or a performance lead
 over another editor. Further startup/extension-host work needs separate measurement.
 
 ## Verification
+
+14 October 2026 window-reuse follow-up: Home no longer sends forced-new-window
+flags. The native routing owner maps an explicit reuse request from the startup
+screen to the editor, and the native picker boundary forwards that request.
+Unload vetoes remain owned by the native lifecycle; no close-and-reopen workaround
+or separate window-selection cache was added.
+
+Development runs `project-home-verification-RwzP6h` and
+`project-home-verification-cY6lQ7` kept native window ID 1 and created zero new
+windows for startup project selection, editor workspace switching and both native
+pickers. The latter also edited a real file, canceled the save prompt during a
+switch, verified unchanged disk contents and retained unsaved editor text, then
+saved that text successfully. Three launchers exited 0 with no renderer errors.
+Run `project-clone-verification-qIYDjL` verified the same window ID and zero window
+creation for real local Git clones from Home and the editor, including existing
+destination protection and failure/retry. Its launcher exited 0 without renderer
+errors. Native dialog selections and save-prompt cancellation are harness supplied.
+
+The main-process digest is
+`446524fc4161df2ccd821a0826f74a6ad233f0871c873007fb41ccac2b7abbf9`;
+Home service digest is
+`ea11e1048617e88945f22fae33bb8fa0e4e15b063208a4bfd681eb596746d2a9`.
+Ten focused tests, the full development build and desktop/generated JavaScript
+syntax checks passed. Earlier run `aKpl4t` failed only because the verifier compared
+editor nonbreaking spaces literally; its disposable unsaved window needed forced
+cleanup. That run is retained as a failure, and the verifier now normalizes rendered
+spaces and discards only disposable fixture edits during cleanup. The final run
+above exited normally. macOS/Linux and remote project switching remain unverified.
+No RAM reduction or full acceptance-story promotion is claimed.
 
 ```sh
 npm run test:project-home

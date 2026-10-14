@@ -7,6 +7,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { changeProjectInSameWindow } from './verify-project-window.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const { layout, appRoot } = await verificationRuntime(root);
@@ -16,10 +17,13 @@ const workspace = join(directory, 'Design System.code-workspace');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(project, 'README.md'), '# Aurora Studio\n');
 await writeFile(workspace, JSON.stringify({ folders: [{ path: project }] }));
-await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verificationSettings));
+await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
+  'files.hotExit': 'off', 'files.autoSave': 'off', 'window.dialogStyle': 'native' }));
 const result = { success: false, directory, checks: {}, errors: [], exits: [],
   scope: 'Native Windows desktop and disposable history fixture; no AI inference or network repositories.',
-  workbenchHash: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')) };
+  workbenchHash: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+  mainHash: await fileHash(join(appRoot, 'out/main.js')),
+  homeServiceHash: await fileHash(join(appRoot, 'out/vs/code/electron-sandbox/workbench/openvision-project-home-service.js')) };
 let app, page;
 
 async function launch(args) {
@@ -36,6 +40,14 @@ async function launch(args) {
 
 async function close() {
   if (!app) return;
+  await app.evaluate(({ dialog }) => {
+    const original = globalThis.projectSwitchMessageOriginal ?? dialog.showMessageBox;
+    dialog.showMessageBox = async (...args) => {
+      const options = args.at(-1);
+      const discard = options.buttons?.findIndex(label => /don't save|discard/i.test(label.replaceAll('&', '')));
+      return discard >= 0 ? { response: discard, checkboxChecked: false } : original(...args);
+    };
+  }).catch(() => {});
   const child = app.process(); await app.close(); app = undefined;
   result.exits.push(child.exitCode); assert.equal(child.exitCode, 0);
 }
@@ -100,32 +112,62 @@ try {
   await screen().getByRole('button', { name: 'Unpin Aurora Studio', exact: true }).waitFor();
   assert.equal(await screen().locator('.ov-project-row').count(), 1);
   result.checks.pinsPersistAcrossRestart = true;
-  const nextWindow = app.waitForEvent('window', { timeout: 45000 });
-  await screen().getByRole('button', { name: 'Open Aurora Studio', exact: true }).click();
-  const editor = await nextWindow;
-  await editor.locator('.openvision-project-home-button').waitFor({ timeout: 60000 });
-  await editor.locator('.openvision-project-home-button').click();
-  const home = editor.getByRole('region', { name: 'Welcome to OpenVision' });
-  await home.getByRole('button', { name: 'Focus Aurora Studio', exact: true }).waitFor();
-  await home.getByRole('button', { name: 'Enter workspace', exact: true }).click();
-  assert.equal(await editor.locator('.ov-project-row').count(), 0);
-  assert.equal(await editor.locator('.ov-eye-lids').count(), 0);
+  result.checks.startScreenReusesWindow = await changeProjectInSameWindow(app, page,
+    () => screen().getByRole('button', { name: 'Open Aurora Studio', exact: true }).click());
+  await page.locator('.openvision-project-home-button').click();
+  await screen().getByRole('button', { name: 'Focus Aurora Studio', exact: true }).waitFor();
+  await screen().getByRole('button', { name: 'Enter workspace', exact: true }).click();
+  assert.equal(await page.locator('.ov-project-row').count(), 0);
+  assert.equal(await page.locator('.ov-eye-lids').count(), 0);
   result.checks.openFolderAndDispose = true;
+  await page.keyboard.press('Control+p');
+  await page.locator('.quick-input-widget input[type="text"]').fill(join(project, 'README.md'));
+  await page.locator('.quick-input-widget').getByText('README.md', { exact: true }).first().click();
+  const editor = page.locator('.editor-instance .monaco-editor').filter({ visible: true }).first();
+  await editor.locator('.inputarea').focus();
+  await page.keyboard.press('Control+a'); await page.keyboard.insertText('Unsaved switch protection marker\n');
+  await page.locator('.tabs-container .tab.dirty').waitFor();
+  const originalTitle = await page.title();
+  await app.evaluate(({ dialog }) => {
+    globalThis.projectSwitchMessageOriginal = dialog.showMessageBox;
+    dialog.showMessageBox = async (...args) => {
+      const options = args.at(-1); globalThis.projectSwitchPrompt = options;
+      return { response: options.cancelId, checkboxChecked: false };
+    };
+  });
+  await page.locator('.openvision-project-home-button').click();
   await screen().getByRole('button', { name: 'Recent', exact: true }).click();
   await search().fill('Design System');
-  const workspaceWindow = app.waitForEvent('window', { timeout: 45000 });
   await screen().getByRole('button', { name: 'Open Design System', exact: true }).click();
-  const multi = await workspaceWindow;
-  await multi.locator('.openvision-project-home-button').waitFor({ timeout: 60000 });
-  assert.match(await multi.title(), /Design System/);
+  for (let attempt = 0; attempt < 100 && !await app.evaluate(() => !!globalThis.projectSwitchPrompt); attempt++)
+    await page.waitForTimeout(50);
+  const prompt = await app.evaluate(() => globalThis.projectSwitchPrompt);
+  assert.ok(Number.isInteger(prompt?.cancelId)); assert.match(JSON.stringify(prompt), /save/i);
+  await page.waitForTimeout(500);
+  assert.equal(await page.title(), originalTitle); assert.equal(app.windows().length, 1);
+  assert.equal(await readFile(join(project, 'README.md'), 'utf8'), '# Aurora Studio\n');
+  await app.evaluate(({ dialog }) => { dialog.showMessageBox = globalThis.projectSwitchMessageOriginal; });
+  if (await screen().isVisible()) await screen().getByRole('button', { name: 'Enter workspace', exact: true }).click();
+  assert.match((await editor.locator('.view-lines').innerText()).replaceAll('\u00a0', ' '), /Unsaved switch protection marker/);
+  await editor.locator('.inputarea').focus(); await page.keyboard.press('Control+s');
+  await page.locator('.tabs-container .tab.dirty').waitFor({ state: 'hidden' });
+  assert.equal((await readFile(join(project, 'README.md'), 'utf8')).replaceAll('\r\n', '\n'), 'Unsaved switch protection marker\n');
+  result.checks.cancelSwitchPreservesUnsavedEditor = true;
+  await page.locator('.openvision-project-home-button').click(); await search().fill('Design System');
+  result.checks.editorReusesWindow = await changeProjectInSameWindow(app, page,
+    () => screen().getByRole('button', { name: 'Open Design System', exact: true }).click());
+  assert.match(await page.title(), /Design System/);
   result.checks.openSavedWorkspace = true;
+  await page.locator('.openvision-project-home-button').click();
   await page.bringToFront();
   await app.evaluate(({ dialog }) => {
     globalThis.projectHomeDialogOriginal = dialog.showOpenDialog;
     globalThis.projectHomeDialogCalls = [];
     dialog.showOpenDialog = async (...args) => {
       globalThis.projectHomeDialogCalls.push(args.at(-1).properties);
-      return { canceled: true, filePaths: [] };
+      return globalThis.projectHomeDialogSelection
+        ? { canceled: false, filePaths: [globalThis.projectHomeDialogSelection] }
+        : { canceled: true, filePaths: [] };
     };
   });
   for (const [index, name] of ['Open folder', 'Open workspace'].entries()) {
@@ -136,8 +178,14 @@ try {
     }
     assert.equal(await app.evaluate(() => globalThis.projectHomeDialogCalls.length), index + 1);
   }
-  await app.evaluate(({ dialog }) => { dialog.showOpenDialog = globalThis.projectHomeDialogOriginal; });
   result.checks.nativePickerDispatchAndCancel = true;
+  for (const [name, path] of [['Open folder', project], ['Open workspace', workspace]]) {
+    await app.evaluate((_electron, path) => { globalThis.projectHomeDialogSelection = path; }, path);
+    result.checks[name === 'Open folder' ? 'folderPickerReusesWindow' : 'workspacePickerReusesWindow'] =
+      await changeProjectInSameWindow(app, page, () => screen().getByRole('button', { name, exact: true }).click());
+    await page.locator('.openvision-project-home-button').click();
+  }
+  await app.evaluate(({ dialog }) => { dialog.showOpenDialog = globalThis.projectHomeDialogOriginal; });
   await screen().getByRole('button', { name: 'Clone repository', exact: true }).click();
   await page.getByRole('textbox', { name: 'Repository URL', exact: true }).waitFor();
   await page.keyboard.press('Escape');

@@ -53,7 +53,7 @@ export function createProjectHomeService(owner, getWorkspaces) {
       if (uri.scheme === 'file' && !await owner.fileService.exists(uri))
         throw Error('This project has moved or is unavailable. Open its new location, or remove it from history.');
       const target = row.entry.folderUri ? { folderUri: uri } : { workspaceUri: uri };
-      return owner.nativeHostService.openWindow([target], { forceNewWindow: true, cursorForceNewWindow: true,
+      return owner.nativeHostService.openWindow([target], { forceReuseWindow: true,
         ...(row.entry.remoteAuthority ? { remoteAuthority: row.entry.remoteAuthority } : {}) });
     },
     pin(row, value) { owner.storageService.store(`${pinPrefix}${row.id}`, value ? 'true' : 'false', 0, 1); },
@@ -61,8 +61,8 @@ export function createProjectHomeService(owner, getWorkspaces) {
       await getWorkspaces().removeRecentlyOpened([row.entry.folderUri ?? row.entry.workspace.configPath]);
       owner.storageService.remove(`${pinPrefix}${row.id}`, 0);
     },
-    folder: () => owner.nativeHostService.pickFolderAndOpen({ forceNewWindow: true, cursorForceNewWindow: true }),
-    workspace: () => owner.nativeHostService.pickWorkspaceAndOpen({ forceNewWindow: true, cursorForceNewWindow: true }),
+    folder: () => owner.nativeHostService.pickFolderAndOpen({ forceReuseWindow: true }),
+    workspace: () => owner.nativeHostService.pickWorkspaceAndOpen({ forceReuseWindow: true }),
     theme: () => owner.commandService.executeCommand('workbench.action.selectTheme'),
     appearance: () => owner.commandService.executeCommand('workbench.action.openSettings', 'workbench.color'),
     async clone(location) {
@@ -71,7 +71,7 @@ export function createProjectHomeService(owner, getWorkspaces) {
       if (!path) return false;
       const Uri = owner.nativeEnvironmentService.userRoamingDataHome.constructor;
       await owner.nativeHostService.openWindow([{ folderUri: Uri.file(path) }],
-        { forceNewWindow: true, cursorForceNewWindow: true });
+        { forceReuseWindow: true });
       return true;
     },
     async showOnStartup() {

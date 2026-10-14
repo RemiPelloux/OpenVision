@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createProjectHomeService, projectRows } from './project-home-service.js';
 import { customizeProjectHome } from './project-home-customization.mjs';
 import { repositoryLocation } from './project-clone-dialog.js';
+import { customizeProjectWindows } from './project-window-customization.mjs';
 
 const uri = path => ({ scheme: 'file', path, authority: '', fsPath: path, toString() { return `file://${path}`; } });
 const folder = { folderUri: uri('/projects/alpha') };
@@ -18,7 +19,7 @@ test('clone bypasses provider picker, waits for Git and explicitly opens only a 
   assert.deepEqual(calls, [['git.clone', 'https://example.test/project.git', undefined, { openAfterClone: false }]]);
   cloned = '/projects/cloned'; assert.equal(await service.clone('git@example.test:owner/project.git'), true);
   assert.equal(calls.at(-1)[0], 'open'); assert.equal(calls.at(-1)[1][0].folderUri.fsPath, cloned);
-  assert.equal(calls.at(-1)[2].forceNewWindow, true);
+  assert.deepEqual(calls.at(-1)[2], { forceReuseWindow: true });
   assert.throws(() => repositoryLocation('--upload-pack=anything'), /URL/);
   assert.throws(() => repositoryLocation('https://example.test/a\ncommand'), /URL/);
   assert.throws(() => repositoryLocation('not a repository'), /HTTPS/);
@@ -32,6 +33,43 @@ test('theme and appearance actions use native commands', async () => {
   await service.theme();
   await service.appearance();
   assert.deepEqual(calls, [['workbench.action.selectTheme'], ['workbench.action.openSettings', 'workbench.color']]);
+});
+
+test('folder and workspace pickers request current-window reuse', async () => {
+  const calls = [];
+  const owner = { nativeHostService: {
+    pickFolderAndOpen: async options => calls.push(['folder', options]),
+    pickWorkspaceAndOpen: async options => calls.push(['workspace', options]),
+  } };
+  const service = createProjectHomeService(owner, () => undefined);
+  await service.folder(); await service.workspace();
+  assert.deepEqual(calls, [['folder', { forceReuseWindow: true }], ['workspace', { forceReuseWindow: true }]]);
+});
+
+test('native routing honors reuse from Home and picker forwarding without changing default opens', async () => {
+  const source = `class Routing {
+    shouldHonorGlassOpenRequest(e) {
+      if (e.cursorForceNewWindow && (e.urisToOpen?.length ?? 0) > 0) return !0;
+      return false;
+    }
+    async doOpenPicked(e, t, n) {
+      await this.windowsMainService.open({ urisToOpen: e, contextWindowId: n,
+        forceNewWindow: t.forceNewWindow, cursorForceNewWindow: t.cursorForceNewWindow });
+    }
+  }`;
+  const customized = customizeProjectWindows(source);
+  assert.equal(customizeProjectWindows(customized), customized);
+  const Routing = new Function(`${customized}; return Routing;`)();
+  const routing = new Routing(), uris = [{ folderUri: folder.folderUri }];
+  assert.equal(routing.shouldHonorGlassOpenRequest({ forceReuseWindow: true, urisToOpen: uris }), true);
+  assert.equal(routing.shouldHonorGlassOpenRequest({ cursorForceNewWindow: true, urisToOpen: uris }), true);
+  assert.equal(routing.shouldHonorGlassOpenRequest({ urisToOpen: uris }), false);
+  assert.equal(routing.shouldHonorGlassOpenRequest({ forceReuseWindow: true }), false);
+  let opened; routing.windowsMainService = { open: async options => { opened = options; } };
+  await routing.doOpenPicked(uris, { forceReuseWindow: true }, 7);
+  assert.equal(opened.forceReuseWindow, true); assert.equal(opened.contextWindowId, 7);
+  assert.deepEqual(opened.urisToOpen, uris);
+  assert.throws(() => customizeProjectWindows(source.replace('t.forceNewWindow,', 't.renamed,')), /contract changed/);
 });
 
 test('project identity preserves folder/workspace and remote identity, deduplicates and focuses serialized window URIs', () => {
@@ -58,7 +96,7 @@ test('home loads in two bulk calls without per-project file work; open checks fr
   windows = [{ id: 9, workspace: { uri: folder.folderUri } }];
   await service.open(rows[0]); assert.deepEqual(calls.at(-1), ['focus', { targetWindowId: 9 }]);
   windows = []; exists = true; await service.open(rows[1]);
-  assert.deepEqual(calls.at(-1), ['open', [{ workspaceUri: workspace.workspace.configPath }], { forceNewWindow: true, cursorForceNewWindow: true }]);
+  assert.deepEqual(calls.at(-1), ['open', [{ workspaceUri: workspace.workspace.configPath }], { forceReuseWindow: true }]);
   service.pin(rows[0], true); assert.equal((await service.load())[0].pinned, true);
   await service.remove(rows[0]); assert.equal(storage.size, 0);
 });
