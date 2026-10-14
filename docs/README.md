@@ -22,8 +22,8 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Inspect large-project watcher behavior | [100-file and 10,000-file native verification](project-scale-verification.md) |
 | Understand provider errors and manual retries | [Provider failure handling](provider-failure-handling.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |
-| Read this release's scope | [0.2.0-preview.3 project workspace](releases/0.2.0-preview.3.md) |
-| Review the packaged-app tests | [Portable verification](portable-preview3.md) |
+| Read this release's scope | [0.2.0-preview.4 repository cloning](releases/0.2.0-preview.4.md) |
+| Review the packaged-app tests | [Portable verification](portable-preview4.md) |
 | Check WebAssembly recovery | [14/15 complete REA records and remaining limits](rea-wasm-inventory.md) |
 
 The sprint ledger owns story status. The roadmap owns complexity points and delivery gates.

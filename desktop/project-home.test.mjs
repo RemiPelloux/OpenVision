@@ -2,10 +2,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createProjectHomeService, projectRows } from './project-home-service.js';
 import { customizeProjectHome } from './project-home-customization.mjs';
+import { repositoryLocation } from './project-clone-dialog.js';
 
 const uri = path => ({ scheme: 'file', path, authority: '', fsPath: path, toString() { return `file://${path}`; } });
 const folder = { folderUri: uri('/projects/alpha') };
 const workspace = { workspace: { id: 'multi', configPath: uri('/projects/team.code-workspace') } };
+
+test('clone bypasses provider picker, waits for Git and explicitly opens only a successful destination', async () => {
+  const calls = []; let cloned;
+  const owner = { nativeEnvironmentService: { userRoamingDataHome: { constructor: { file: uri } } },
+    commandService: { executeCommand: async (...args) => { calls.push(args); return cloned; } },
+    nativeHostService: { openWindow: async (...args) => calls.push(['open', ...args]) } };
+  const service = createProjectHomeService(owner, () => undefined);
+  assert.equal(await service.clone(' https://example.test/project.git '), false);
+  assert.deepEqual(calls, [['git.clone', 'https://example.test/project.git', undefined, { openAfterClone: false }]]);
+  cloned = '/projects/cloned'; assert.equal(await service.clone('git@example.test:owner/project.git'), true);
+  assert.equal(calls.at(-1)[0], 'open'); assert.equal(calls.at(-1)[1][0].folderUri.fsPath, cloned);
+  assert.equal(calls.at(-1)[2].forceNewWindow, true);
+  assert.throws(() => repositoryLocation('--upload-pack=anything'), /URL/);
+  assert.throws(() => repositoryLocation('https://example.test/a\ncommand'), /URL/);
+  assert.throws(() => repositoryLocation('not a repository'), /HTTPS/);
+  assert.equal(repositoryLocation('file:///local/repo'), 'file:///local/repo');
+});
 
 test('project identity preserves folder/workspace and remote identity, deduplicates and focuses serialized window URIs', () => {
   const rows = projectRows({ workspaces: [folder, folder, workspace, { ...folder, remoteAuthority: 'ssh-host' }] },

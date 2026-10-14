@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0-preview.4 — 2026-10-14
+
+- Fix Project Home cloning with a direct repository URL form, destination selection and explicit opening of successful checkouts.
+- Add keyboard focus, validation, cancellation and compact layout checks; verify real local and public HTTPS Git operations.
+- Bound MCP cleanup acknowledgements without releasing unresolved resource ownership; isolate diagnostic logger failures from cleanup bookkeeping.
+- Remove exact duplicate Quick Edit attachments from outbound context while retaining distinct source values and enforcing the original input budget.
+- Exercise real self-signed TLS rejection and manual provider retry in native Windows verification.
+- Refresh the complete Windows portable download and offline repository payload. See [release scope](docs/releases/0.2.0-preview.4.md).
+
 ## 0.2.0-preview.3 — 2026-10-14
 
 - Add Project Home with searchable recent projects, saved favorites, open-window focus and bounded lists.

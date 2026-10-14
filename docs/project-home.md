@@ -1,9 +1,9 @@
 # Project home
 
 OpenVision opens to a project dashboard with a blinking eye, a responsive layout
-and immediate access to your work. It is included in the **0.2.0-preview.3**
+and immediate access to your work. It is included in the **0.2.0-preview.4**
 portable app, with relocated native verification recorded in
-[the package report](portable-preview3.md).
+[the package report](portable-preview4.md).
 
 ## Start and resume
 
@@ -23,7 +23,7 @@ home window's **Enter workspace** action.
 | Search | Match project names or paths; Enter opens the first visible result |
 | Open / Focus | Recheck live windows, focus an existing project or open a new editor |
 | Open folder / Open workspace | Native selection dialogs |
-| Clone repository | Native Git clone flow |
+| Clone repository | Paste a URL, choose a destination, clone and open a new editor |
 | Remove from history | Remove the recent entry and its pin; keep project files |
 | Refresh | Refresh history and current-window state on demand |
 
@@ -32,6 +32,24 @@ until you remove it or open its new location. Project opening uses the native
 window service with explicit editor routing; it preserves other open editors.
 The native URI identity service handles Windows path casing and IPC URI values.
 Folder and workspace identity stay distinct from displayed labels.
+
+## Clone a repository
+
+Choose **Clone repository**, paste an HTTPS or SSH Git URL, then select
+**Choose location & clone**. Pick a parent folder in the native destination
+picker. Git shows progress and opens the completed checkout in a new editor.
+Absolute local paths and `file://` URLs also work. Git manages credentials for
+private repositories through its configured authentication tools.
+
+The form validates input, focuses the URL field, supports keyboard submission
+and restores focus after Escape. Canceling destination selection creates no
+checkout. An existing checkout is preserved; Git chooses an available folder
+name. A failed clone opens no project and leaves another attempt available.
+
+This fixes the previous generic source-selection screen, which offered
+“Provide repository URL” without a usable direct URL field in Project Home.
+The new form passes the URL directly to native Git and explicitly opens only
+the successful returned checkout.
 
 ## Resource behavior
 
@@ -55,6 +73,7 @@ over another editor. Further startup/extension-host work needs separate measurem
 ```sh
 npm run test:project-home
 npm run verify:project-home
+npm run verify:project-clone -- --remote https://github.com/octocat/Hello-World.git
 npm run verify:welcome
 npm run check:desktop
 ```
@@ -69,6 +88,24 @@ canceled; no remote repository was cloned in this check.
 All three owned hosts exited 0; no uncaught renderer errors were observed.
 The history scale fixture is seeded in a disposable profile. Native project
 opening itself is real. No AI inference is involved.
+
+The later clone-specific Windows run
+`logs/project-clone-verification-tLhuMj/result.json` exercised real local cloning
+from both the start window and editor Project Home, exact file/HEAD/origin
+checks, duplicate destination protection, failure followed by a successful retry,
+destination cancellation, validation, Escape/focus restoration and a 390-pixel
+layout. It also cloned `https://github.com/octocat/Hello-World.git` over HTTPS
+and matched remote HEAD `7fd1a60b01f91b314f59955a4e4d4e80d8edf11d`.
+The final relocated portable run `logs/project-clone-verification-yjIqWO/result.json`
+passed the same matrix and explicitly verified and dismissed the native Git error
+dialog before retry. Only native folder selection and error-dialog dismissal were
+supplied by the harness; Git operations and editor opening were real. The host
+exited 0 without renderer errors. Earlier portable runs `ouFZEq` and `9MWcFZ`
+timed out because the test left that native error dialog open, blocking the next
+destination picker. Their failed records are retained; the verifier now follows
+the full failure/dismiss/retry interaction.
+Private authentication, SSH transport and interruption during a large transfer
+remain unverified. These checks do not establish every Git workflow.
 
 The existing welcome check also passed entry/dismissal, native branding/window
 controls, blink and reduced motion at `logs/welcome-verification-9PbXzU/result.json`.

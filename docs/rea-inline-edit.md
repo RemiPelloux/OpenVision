@@ -77,10 +77,63 @@ attachments are rejected with a clear message; use Agent for those inputs.
 Live provider quality/reasoning, large edits, simultaneous edits, selection
 changes during requests, and macOS/Linux native behavior remain unverified.
 Earlier context preparation can still perform embeddings/whole-file work and
-retain duplicate attachments. No completed-task token, CPU, peak-memory or
-cold/warm latency comparison was run; bounds alone are not a measured speedup.
+retain duplicate attachments internally. Outbound duplicate normalization below
+does not optimize that earlier producer or establish whole-app RAM savings.
 
 This closes the seeded native inline-rule gate for **OV-301**. That story remains
-**Partial** for stale cross-window memory review and physical full-disk/I/O
-recovery. The fixed total stays **6/42 Verified**. General Quick Edit acceptance
+**Partial** for physical full-disk/I/O recovery; controlled cross-window IPC
+review now has [separate evidence](project-memories.md). The fixed total stays
+**6/42 Verified**. General Quick Edit acceptance
 remains part of the broader editing stories.
+
+## Duplicate attachment normalization
+
+Captured native run `logs/inline-edit-verification-2AW8im/result.json` showed the
+same code attachment repeated twice on retry and three times on cancellation.
+The custom-provider context owner now sends the first occurrence of each exact
+JSON value once. All fields participate in identity, including path, range,
+contents, signatures and detailed lines. Object property order is ignored;
+array order, extra metadata, null values, changed content and different ranges
+remain distinct. Instructions, selection, nearby context and approved rules are
+preserved, and the caller's source data is not mutated.
+
+The existing 128 Ki-character input bound is enforced before normalization,
+including duplicated input. This limits traversal and retained identity strings;
+repetition cannot bypass the budget. Normal requests with zero or one attachment
+keep the existing serialization path. Eleven focused context/inline tests passed,
+including distinct-range/content preservation, reordered object properties,
+caller immutability, escaped-size limits and early oversized-input rejection.
+
+`desktop/benchmark-inline-edit-context.mjs` compares the original and changed
+context functions against the exact captured cancellation payload. Retained
+result: `logs/inline-context-benchmark-VFFMsS/result.json`. Five separate workers
+per implementation each execute a first call, 1,000 priming calls and 10,000
+measured calls. Both perform the same input serialization task; validation
+requires the final contexts to differ only by two exact duplicate attachments.
+
+| Measurement | Before | After |
+| --- | ---: | ---: |
+| Request context UTF-8 bytes | 1,260 | 634 |
+| Code attachment entries | 3 | 1 |
+| Median first-call elapsed time | 0.211 ms | 0.399 ms |
+| Median warm elapsed time per call | 7.18 µs | 35.09 µs |
+| Median warm CPU time per call | 6.3 µs | 37.5 µs |
+| Median worker lifetime peak RSS | 53,828 KiB | 54,676 KiB |
+
+This trades a small amount of local processing for 626 fewer bytes in this
+request. It is not a CPU or RAM reduction claim. The first call excludes process
+launch, module import and fixture parsing. Lifetime peak RSS includes those
+activities; each measured worker has no children. The project toolchain has no
+model tokenizer, so token counts and billed-token savings are **unmeasured**.
+Electron memory, provider inference latency and model-quality effects were not
+measured. The published preview.3 portable payload predates this normalization.
+
+The rebuilt native run `logs/inline-edit-verification-4abAUo/result.json` passes
+all ten workflow checks with both owned hosts exiting 0 and no renderer errors.
+Its six captured requests were compared against the earlier native run;
+`context-comparison.json` alongside the result confirms every context field is
+identical after removing only exact repeated attachments. Retry now carries one
+attachment instead of two, and cancellation one instead of three. All approved
+rules, instructions, ranges and source contents remain unchanged. This uses a
+controlled local HTTP provider, not live AI. The executed context helper SHA-256
+is `d4bd64006887cddafc809fd5fd0d8943f94cdb77a0678474e9688ae6f92c5e8d`.

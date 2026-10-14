@@ -6,7 +6,7 @@ import { digest, fileHash } from './import-files.mjs';
 import { closeMcpAttempt, retryMcpCleanup } from './mcp-attempt-runtime.mjs';
 import { ownMcpLifecycleCleanup } from './mcp-lifecycle-cleanup-customization.mjs';
 
-const marker = '/* OpenVision MCP transport close ownership v2 */';
+const marker = '/* OpenVision MCP transport close ownership v4 */';
 export function mcpAttemptOwner(text) {
   const anchor = 'this.closePromises = new WeakMap()';
   const index = text.indexOf(anchor);
@@ -32,7 +32,8 @@ export function closeOwnedMcpTransports(text) {
     .replace('{', `{ ${marker}`)
     .replace('console.error(', `${log}.error(`)}`;
   const retry = retryMcpCleanup.toString();
-  const retryMethod = `\nstatic async retryCleanup(identifier) ${retry.slice(retry.indexOf('{'))}\n`;
+  const retryMethod = owner.body.body.some(method => method.static && method.key?.name === 'retryCleanup') ? '' :
+    `\nstatic async retryCleanup(identifier) ${retry.slice(retry.indexOf('{'))}\n`;
   return ownMcpLifecycleCleanup(text.slice(0, method.start) + replacement + retryMethod + text.slice(method.end));
 }
 

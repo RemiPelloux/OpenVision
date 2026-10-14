@@ -487,6 +487,17 @@ autocomplete acceptance. The menu upgrade check retains saved reasoning. Remaini
 native failure, live-provider, accessibility and large Agent-picker gates remain
 explicit; no story is promoted and the denominator stays 42.
 
+14 October 2026, preview.4 local reliability follow-up (owner: OpenVision):
+[Project Home cloning](project-home.md) now uses an explicit repository URL form;
+native Windows checks clone local repositories and a real public GitHub repository,
+preserve existing destinations and recover after failure. [MCP cleanup](rea-mcp-cleanup.md)
+bounds pending acknowledgements while retaining resource ownership; final built
+STDIO and HTTP checks include rejection and late recovery. [Quick Edit context](rea-inline-edit.md)
+removes exact outbound attachment duplicates, with measured local processing cost
+and no RAM/token savings claim. [Provider failure checks](provider-failure-handling.md)
+now include actual self-signed certificate rejection and explicit retry. These
+narrow checks leave the story-level acceptance count at **6/42 Verified**.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

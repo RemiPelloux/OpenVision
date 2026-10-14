@@ -20,7 +20,7 @@ options without an OpenVision account.
 [Documentation](docs/README.md)
 
 > **Ready to run on Windows x64.** Download the complete portable app from
-> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.3),
+> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.4),
 > extract it, and double-click **OpenVision.cmd**. The complete app payload is
 > also included in this Git repository. No separate editor, Node.js or npm setup.
 
@@ -40,8 +40,8 @@ options without an OpenVision account.
 
 ## Get started
 
-**Download:** get **OpenVision-0.2.0-preview.3-win32-x64.zip** from
-[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.3).
+**Download:** get **OpenVision-0.2.0-preview.4-win32-x64.zip** from
+[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.4).
 Extract the ZIP and double-click **OpenVision.cmd**. Project Home brings together
 recent projects, pinned favorites and open windows. Open a folder or saved
 workspace, then configure your AI provider in **Models** settings.

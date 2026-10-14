@@ -9,6 +9,7 @@ import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
+import { createUntrustedProvider } from './verify-provider-tls.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -21,13 +22,14 @@ await mkdir(project);
 await writeFile(file, 'export const fixture = true;\n');
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'git.openRepositoryInParentFolders': 'never' }));
+const untrustedProvider = await createUntrustedProvider(directory);
 
 const scenarios = [
   ['unauthorized', 401], ['forbidden', 403], ['rate-limited', 429],
   ['server-error', 503], ['bad-gateway', 502], ['internal-error', 500],
   ['malformed-stream', 200], ['stream-error', 200],
   ['disconnected', 0],
-  ['dns-failure', 0], ['tls-failure', 0],
+  ['dns-failure', 0], ['tls-failure', 0], ['certificate-trust', 0],
   ['context-limit', 400], ['unsupported-tools', 400], ['unsupported-images', 400],
   ['oversized-error', 503], ['stalled-error', 429],
 ];
@@ -45,8 +47,8 @@ const server = createServer(async (request, response) => {
   const record = { scenario, authorized: request.headers.authorization === 'Bearer secret-fixture-key', model: body.model };
   if (scenario.startsWith('recovery:')) record.originalPromptRetained = JSON.stringify(body.messages).includes(`Trigger ${scenario.slice(9)}`);
   requests.push(record);
-  if (scenario === 'dns-failure' || scenario === 'tls-failure') {
-    response.writeHead(307, { location: scenario === 'dns-failure'
+  if (['dns-failure', 'tls-failure', 'certificate-trust'].includes(scenario)) {
+    response.writeHead(307, { location: scenario === 'certificate-trust' ? untrustedProvider.url : scenario === 'dns-failure'
       ? 'http://openvision-provider-fixture.invalid/v1/chat/completions'
       : `https://127.0.0.1:${server.address().port}/v1/chat/completions` });
     return response.end();
@@ -100,7 +102,7 @@ const result = { checkedAt: new Date().toISOString(), commit: execFileSync('git'
     ['helper', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-provider-errors.cjs')],
     ['verifier', fileURLToPath(import.meta.url)],
   ].map(async ([name, path]) => [name, await fileHash(path)]))),
-  scenarios: {}, requests: [], success: false };
+  scenarios: {}, requests: [], success: false, certificate: untrustedProvider.evidence };
 let app, page;
 
 async function scanLogs(directory) {
@@ -151,7 +153,8 @@ try {
     await input.fill(`Trigger ${name}. Do not use tools.`);
     await input.press('Enter');
     const expected = { disconnected: /Cannot connect to API/, 'dns-failure': /The API hostname could not be resolved/,
-      'tls-failure': /The API server could not establish HTTPS/, 'oversized-error': /Provider error details exceeded 65536 bytes/,
+      'tls-failure': /The API server could not establish HTTPS/, 'certificate-trust': /The API TLS certificate could not be verified/,
+      'oversized-error': /Provider error details exceeded 65536 bytes/,
       'stalled-error': /Timed out reading provider error details/ }[name] ?? new RegExp(`fixture ${name} \\[redacted\\]`);
     await page.getByText(expected).filter({ visible: true }).last().waitFor({ timeout: 30000 });
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
@@ -164,6 +167,10 @@ try {
     assert.equal(body.includes('secret-fixture-key'), false, `${name}: credential leaked into UI`);
     assert.equal(observed.length, 1, `${name}: duplicate automatic attempts`);
     assert.ok(observed.every(request => request.scenario === name && request.authorized && request.model === 'provider-failure-fixture'));
+    if (name === 'certificate-trust') {
+      assert.match(body, /DEPTH_ZERO_SELF_SIGNED_CERT|self.signed certificate/i);
+      assert.ok(untrustedProvider.evidence.events.every(event => event.event !== 'unexpected-http-request'));
+    }
     if (['oversized-error', 'stalled-error'].includes(name)) assert.equal(observed[0].socketClosed, true);
     scenario = `recovery:${name}`;
     const recoveryBefore = requests.length;
@@ -233,6 +240,7 @@ try {
   }
 } finally {
   const cleanupErrors = [];
+  await untrustedProvider.close().catch(() => cleanupErrors.push('TLS fixture cleanup failed'));
   server.closeAllConnections();
   await new Promise(resolveClose => server.close(resolveClose));
   try {

@@ -1,3 +1,4 @@
+import { repositoryLocation } from './project-clone-dialog.js';
 const pinPrefix = 'openvision.project-pin.v1.';
 
 export function projectIdentity(uri, remoteAuthority) {
@@ -62,7 +63,15 @@ export function createProjectHomeService(owner, getWorkspaces) {
     },
     folder: () => owner.nativeHostService.pickFolderAndOpen({ forceNewWindow: true, cursorForceNewWindow: true }),
     workspace: () => owner.nativeHostService.pickWorkspaceAndOpen({ forceNewWindow: true, cursorForceNewWindow: true }),
-    clone: () => owner.commandService.executeCommand('git.clone'),
+    async clone(location) {
+      const path = await owner.commandService.executeCommand('git.clone', repositoryLocation(location), undefined,
+        { openAfterClone: false });
+      if (!path) return false;
+      const Uri = owner.nativeEnvironmentService.userRoamingDataHome.constructor;
+      await owner.nativeHostService.openWindow([{ folderUri: Uri.file(path) }],
+        { forceNewWindow: true, cursorForceNewWindow: true });
+      return true;
+    },
     async showOnStartup() {
       if (owner.nativeEnvironmentService.isGlass || owner.contextService.getWorkbenchState() !== 1) return false;
       const windows = await owner.nativeHostService.getWindows({ includeAuxiliaryWindows: false });

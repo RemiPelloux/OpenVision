@@ -139,9 +139,9 @@ try {
   await app.evaluate(({ dialog }) => { dialog.showOpenDialog = globalThis.projectHomeDialogOriginal; });
   result.checks.nativePickerDispatchAndCancel = true;
   await screen().getByRole('button', { name: 'Clone repository', exact: true }).click();
-  await page.getByText('Provide repository URL', { exact: true }).waitFor();
+  await page.getByRole('textbox', { name: 'Repository URL', exact: true }).waitFor();
   await page.keyboard.press('Escape');
-  await page.getByText('Provide repository URL', { exact: true }).waitFor({ state: 'hidden' });
+  await page.getByRole('textbox', { name: 'Repository URL', exact: true }).waitFor({ state: 'hidden' });
   result.checks.clonePromptAndCancel = true;
   await close(); assert.deepEqual(result.errors, []); result.success = true;
 } catch (error) {

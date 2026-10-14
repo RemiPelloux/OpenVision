@@ -8,10 +8,11 @@ const variants = [
   ['process', 'out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', 'Y'],
   ['extension', 'extensions/cursor-mcp/dist/main.js', 'j_'],
 ];
-function instance(text, loggerName) {
+function instance(text, loggerName, logError) {
   const owner = mcpAttemptOwner(text), errors = [];
   const Type = runInNewContext(`(${text.slice(owner.start, owner.end)})`, {
-    [loggerName]: () => ({ debug() {}, error: (...args) => errors.push(args) }),
+    setTimeout, clearTimeout,
+    [loggerName]: () => ({ debug() {}, error: (...args) => { errors.push(args); logError?.(...args); } }),
   });
   return { attempt: new Type('fixture'), Type, errors };
 }
@@ -50,8 +51,21 @@ for (const [name, relative, logger] of variants) {
     assert.equal(result.ok, false); assert.equal(result.failures[0].error, failure);
     assert.equal(attempt.openvisionFailedClosures.get(resource), failure);
     assert.ok(Type.openvisionCleanupOwners.has(attempt)); assert.equal(errors.length, 1);
+    assert.equal(errors[0][1], failure, 'Native logger expects Error before metadata');
     attempt.setClient({ transport: undefined }); await attempt.requestClose('retry');
     assert.equal(calls, 2); assert.equal(attempt.openvisionFailedClosures.size, 0);
     assert.equal(Type.openvisionCleanupOwners.has(attempt), false);
+  });
+  test(`${name}: a diagnostic logger failure cannot turn rejected cleanup into a stuck pending owner`, async () => {
+    const loggingFailure = new Error('logger unavailable'), failure = new Error('close rejected');
+    const { attempt, Type } = instance(closeOwnedMcpTransports(await source), logger, () => { throw loggingFailure; });
+    let calls = 0;
+    attempt.setClient({ transport: { close: async () => { if (++calls === 1) throw failure; } } });
+    const result = await attempt.requestClose('first');
+    assert.equal(result.ok, false); assert.equal(result.failures[0].error, failure);
+    assert.equal(result.failures[0].loggingError, loggingFailure);
+    assert.equal(attempt.openvisionPendingClosures.size, 0);
+    assert.equal((await Type.retryCleanup('fixture')).ok, true);
+    assert.equal(calls, 2); assert.equal(Type.openvisionCleanupOwners.size, 0);
   });
 }

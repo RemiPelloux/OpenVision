@@ -14,11 +14,33 @@ export function inlineEditContext(request, session) {
   };
   const selection = find('cmdKSelection'), query = find('cmdKQuery'), nearby = find('cmdKImmediateContext');
   if (!selection || !query || !nearby) throw new InlineEditError('Inline edit context is not ready. Try again.');
-  return boundedContext({ instruction: query.query, selection, nearby, rules: request.rules ?? [],
+  const context = boundedContext({ instruction: query.query, selection, nearby, rules: request.rules ?? [],
     userRules: request.legacyContext?.explicitContext?.context ?? '',
     codeAttachments: request.legacyContext?.promptCodeBlocks ?? [],
     previousQueries: recentHistory(find('cmdKQueryHistory'), 'queryHistory', item => item.query?.query ?? ''),
     chatHistory: recentHistory(find('chatHistory'), 'chatHistory', item => ({ user: item.userMessage, assistant: item.assistantResponse })) });
+  return request.legacyContext?.promptCodeBlocks?.length > 1 ? uniqueCodeAttachments(context) : context;
+}
+
+function uniqueCodeAttachments(text) {
+  // Validate/bound the entire input first, including duplicates. Otherwise a
+  // repeated attachment list could consume unbounded traversal to shrink it.
+  const context = JSON.parse(text), attachments = context.codeAttachments;
+  if (attachments.length < 2) return text;
+  const seen = new Set(), unique = [];
+  for (const attachment of attachments) {
+    // Include every JSON field, not just path/body: distinct ranges, versions,
+    // signatures and detailed lines remain distinct context. Object property
+    // order has no semantic meaning; array order and all values do.
+    const identity = JSON.stringify(attachment, (key, value) => value &&
+      typeof value === 'object' && !Array.isArray(value)
+      ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value);
+    if (seen.has(identity)) continue;
+    seen.add(identity); unique.push(attachment);
+  }
+  if (unique.length === attachments.length) return text;
+  context.codeAttachments = unique;
+  return JSON.stringify(context);
 }
 
 function recentHistory(history, next, select) {

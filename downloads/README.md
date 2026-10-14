@@ -1,6 +1,6 @@
 # Complete OpenVision desktop payload
 
-`windows-x64/` contains the complete **0.2.0-preview.2** portable application,
+`windows-x64/` contains the complete **0.2.0-preview.4** portable application,
 split into seven ordinary Git files below GitHub's per-file size limit.
 `manifest.json` records each part's size and SHA-256 plus the complete archive hash.
 There is no Git LFS dependency and no runtime download during installation.

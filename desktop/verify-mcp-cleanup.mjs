@@ -54,6 +54,7 @@ try {
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
   await writeFile(configPath, JSON.stringify(config));
   await until('native shared MCP discovery', async () => transport.requests.some(request => request.method === 'tools/list') &&
+    (await events()).some(event => event.event === 'attempt-committed') &&
     await app.evaluate(({ app }) => app.getAppMetrics().some(metric => metric.name?.startsWith('mcp-process-'))));
   await transport.verifyOneActiveChild();
   const prior = transport.connections.findLast(connection => !connection.closedAt);

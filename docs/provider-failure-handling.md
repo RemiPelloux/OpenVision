@@ -193,6 +193,24 @@ The evidence records Agent SHA-256
 `10f04dea5b7c308ee27e8ca4d3b698064f13962f81b1ed6f4bc7b02c1cadc464` and workbench
 `9251426f04943379ff29248049f3d2dbb3290e1a68172f852bbc180ead11a503`.
 This closes the Windows native DNS-resolution and HTTPS-protocol failure/recovery
-subcases. Actual certificate expiry/trust/hostname rejection, inference timeouts,
+subcases. At that revision, actual certificate expiry/trust/hostname rejection, inference timeouts,
 successful-stream size/truncation and live-provider/platform gates remain open.
 OV-204 remains Partial; no story or percentage is promoted.
+
+## Native certificate trust rejection
+
+Windows run `logs/provider-errors-PIRrCc/result.json` passed **17 scenarios**
+and their explicit retries, including a real HTTPS server with an untrusted,
+self-signed certificate. The fixture redirects the initial request to that
+server; the native client rejects its certificate, displays certificate guidance,
+and sends no HTTP request through the rejected TLS connection. The test changes
+neither trust stores nor TLS verification. Certificate digests and TLS events
+are retained in the private run evidence; disposable private keys stay in ignored
+logs and are not shipped.
+
+The run observed 38 requests, passed connection-refusal recovery, Stop and
+dismissal, and found no synthetic-credential matches in 43 native log files.
+The owned host exited 0 without cleanup errors. This extends controlled native
+transport coverage, not live-provider inference. Expired certificates, hostname
+mismatches, inference timeouts and other remaining gates above are still open.
+OV-204 remains Partial.

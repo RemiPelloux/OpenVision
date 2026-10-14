@@ -21,7 +21,7 @@ function generatorPromise(context, _args, _promise, fn) {
 }
 function fixture(text, logger, attemptName) {
   const attempt = mcpAttemptOwner(text), lifecycle = mcpLifecycleOwner(text), errors = [];
-  const context = { [logger]: () => ({ error: (...args) => errors.push(args), debug() {} }), M_: generatorPromise };
+  const context = { [logger]: () => ({ error: (...args) => errors.push(args), debug() {} }), M_: generatorPromise, setTimeout, clearTimeout };
   const Attempt = runInNewContext(`(${text.slice(attempt.start, attempt.end)})`, context);
   context[attemptName] = Attempt;
   const Lifecycle = runInNewContext(`(${text.slice(lifecycle.start, lifecycle.end)})`, context);
@@ -41,6 +41,32 @@ function fixture(text, logger, attemptName) {
 
 for (const [name, relative, logger, attemptName] of variants) {
   const source = readFile(new URL(`../../cursor/readable/app/${relative}`, import.meta.url), 'utf8');
+  test(`${name}: permanently pending close bounds demand acknowledgement without releasing or replacing its owner`, async () => {
+    const current = fixture(closeOwnedMcpTransports(await source), logger, attemptName);
+    const pending = Promise.withResolvers(), attempt = new current.Attempt('fixture'); let calls = 0;
+    const transport = { close: () => { calls++; return pending.promise; } };
+    attempt.setClient({ transport });
+    const first = attempt.requestClose('pending');
+    const replacement = current.owner(), events = [];
+    replacement.connect();
+    const start = performance.now();
+    await replacement.runConnectionAttempt(() => false, changes => events.push(...changes), new current.Attempt('fixture'));
+    assert.ok(performance.now() - start < 7000);
+    assert.equal((await first).failures[0].pending, true);
+    assert.equal(calls, 1); assert.equal(current.created(), 0); assert.equal(events[0].isRetryable, false);
+    assert.ok(current.Attempt.openvisionCleanupOwners.has(attempt));
+    const acknowledgement = attempt.openvisionCloseAcknowledgements.get(transport);
+    for (let demand = 0; demand < 20; demand++) {
+      assert.equal((await current.Attempt.retryCleanup('fixture')).failures[0].pending, true);
+      assert.equal(attempt.openvisionCloseAcknowledgements.get(transport), acknowledgement);
+    }
+    pending.resolve();
+    await current.Attempt.retryCleanup('fixture');
+    assert.equal(current.Attempt.openvisionCleanupOwners.size, 0);
+    replacement.connect();
+    await assert.rejects(replacement.runConnectionAttempt(() => false, () => {}, new current.Attempt('fixture')), error => error === reachedClientCreation);
+    assert.equal(calls, 1); assert.equal(current.created(), 1);
+  });
   test(`${name}: disposed committed transports retain ownership and explicit replacement demand retries`, async () => {
     const current = fixture(closeOwnedMcpTransports(await source), logger, attemptName);
     const old = current.owner(); let calls = 0;

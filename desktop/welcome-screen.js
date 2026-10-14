@@ -1,4 +1,5 @@
 import { createProjectList } from './project-home-list.js';
+import { showCloneDialog } from './project-clone-dialog.js';
 const svgNamespace = 'http://www.w3.org/2000/svg';
 
 function element(tag, className, text) {
@@ -49,7 +50,12 @@ export function createWelcomeScreen({ onContinue, onProjectOpen, service = windo
       button.disabled = true; status.textContent = '';
       try { await callback(); }
       catch { status.textContent = 'Could not complete this action. Please try again.'; }
-      finally { if (button.isConnected) button.disabled = false; }
+      finally {
+        if (button.isConnected) {
+          button.disabled = false;
+          if (document.activeElement === document.body) button.focus();
+        }
+      }
     };
     return button;
   };
@@ -63,7 +69,14 @@ export function createWelcomeScreen({ onContinue, onProjectOpen, service = windo
     if (!service) return;
     actions.prepend(action('Open folder', 'ov-welcome-enter', () => service.folder()),
       action('Open workspace', 'ov-welcome-secondary', () => service.workspace()),
-      action('Clone repository', 'ov-welcome-secondary', () => { onProjectOpen?.(); return service.clone(); }));
+      action('Clone repository', 'ov-welcome-secondary', async () => {
+        const repository = await showCloneDialog();
+        if (!repository) return;
+        onProjectOpen?.();
+        status.textContent = 'Choose a destination folder. Git will show cloning progress.';
+        const opened = await service.clone(repository);
+        status.textContent = opened ? '' : 'No project was opened. Check the Git notification or try again.';
+      }));
     browser = createProjectList(service, message => { status.textContent = message; }, onProjectOpen);
     projects.append(browser.root);
   };

@@ -72,3 +72,22 @@
 @media (max-width: 820px) { .ov-welcome-main { grid-template-columns: 1fr; gap: 18px; padding-top: 28px; } .ov-welcome-intro { position: relative; padding-bottom: 0; } .ov-welcome-visual { position: absolute; right: 0; top: 0; width: 100px; height: 70px; opacity: .55; } .ov-welcome-eye { width: 100px; height: 65px; } .ov-eye-orbit { display: none; } .ov-welcome-title { font-size: 34px; max-width: 80%; } .ov-welcome-description { margin: 14px 0 20px; max-width: 80%; } .ov-welcome-actions { max-width: none; grid-template-columns: 1fr 1fr 1fr; } .ov-welcome-enter { grid-column: auto; } .ov-welcome-tertiary { grid-column: 1 / -1; } .ov-welcome-projects { padding: 20px; } }
 @media (max-width: 480px) { .ov-welcome { padding: 22px 18px 18px; } .ov-local-badge { letter-spacing: .5px; font-size: 8px; padding: 7px 8px; } .ov-welcome-actions { grid-template-columns: 1fr 1fr; } .ov-welcome-enter { grid-column: 1 / -1; } .ov-project-kind { display: none; } .ov-project-icon { display: none; } .ov-welcome-footer { font-size: 9px; } .ov-welcome-projects { padding: 16px; } }
 @media (prefers-reduced-motion: reduce) { .ov-welcome *, .ov-welcome *::before, .ov-welcome *::after { animation: none !important; transition: none !important; } }
+.ov-clone-dialog { box-sizing: border-box; width: min(560px, calc(100vw - 32px)); padding: 32px; border: 1px solid #a0edcf35; border-radius: 18px; color: #e5f2ec; background: #11201b; box-shadow: 0 24px 90px #0008; font: 14px/1.5 var(--vscode-font-family, sans-serif); }
+.ov-clone-dialog::backdrop { background: #050d0bd6; backdrop-filter: blur(6px); }
+.ov-clone-eyebrow { font-size: 10px; color: #a0edcf; letter-spacing: 2px; }
+.ov-clone-dialog h2 { margin: 14px 0 10px; font-size: 26px; line-height: 1.2; font-weight: 550; }
+.ov-clone-dialog p { color: #b3c9bd; margin: 0 0 24px; }
+.ov-clone-dialog label { display: block; margin-bottom: 8px; font-weight: 600; }
+.ov-clone-dialog input { box-sizing: border-box; width: 100%; padding: 13px; border: 1px solid #a0edcf35; border-radius: 9px; color: #edf8f2; background: #09130f; font: inherit; outline-offset: 3px; }
+.ov-clone-dialog input:focus-visible { outline: 2px solid #a0edcf; }
+.ov-clone-dialog input::placeholder { color: #8da99a; opacity: 1; }
+.ov-clone-dialog input[aria-invalid=true] { border-color: #f3b2a3; }
+#ov-clone-help { margin-top: 10px; color: #9db6a8; font-size: 11px; }
+.ov-clone-dialog #ov-clone-error { min-height: 18px; margin: 10px 0 18px; color: #f3b2a3; font-size: 12px; }
+.ov-clone-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
+.ov-clone-actions button { min-height: 42px; padding: 9px 16px; border: 1px solid #a0edcf35; border-radius: 8px; font: inherit; cursor: pointer; }
+.ov-clone-cancel { color: #d1e4d9; background: transparent; }
+.ov-clone-submit { color: #082217; background: #a0edcf; }
+.ov-clone-submit span { padding-left: 12px; }
+.ov-clone-actions button:focus-visible { outline: 2px solid #a0edcf; outline-offset: 3px; }
+.ov-clone-actions button:hover { filter: brightness(1.12); }
