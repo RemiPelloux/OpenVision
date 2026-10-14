@@ -13,7 +13,7 @@ import { probeProvider } from './live-provider-probe.mjs';
 import { payloadComparisons, probeNativePayload } from './live-payload-probe.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-providers.mjs --live [--model SAVED_ID] [--mode tools|chat] [--reasoning omit|none|low|medium|high|xhigh|max] [--thinking enabled|disabled]\nOptional: --native-payload PATH with --model compares five variants of a captured disposable Agent request; --comparison structure|output-limit selects the variants. Every response has a byte/time bound. Do not combine with mode/reasoning/thinking. Uses real API quota.');
+  console.log('Usage: node desktop/verify-live-providers.mjs --live [--model SAVED_ID] [--mode tools|chat|completion] [--reasoning omit|none|low|medium|high|xhigh|max] [--thinking enabled|disabled]\nCompletion mode uses the unchanged production autocomplete request and does not accept reasoning/thinking overrides. Optional: --native-payload PATH with --model compares five variants of a captured disposable Agent request; --comparison structure|output-limit selects the variants. Every response has a byte/time bound. Do not combine with mode/reasoning/thinking. Uses real API quota.');
   process.exit(0);
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -50,7 +50,8 @@ if (thinkingIndex >= 0) {
 const modeIndex = process.argv.indexOf('--mode');
 if (modeIndex >= 0) {
   const mode = process.argv[modeIndex + 1];
-  assert.ok(['chat', 'tools'].includes(mode), 'Mode must be chat or tools');
+  assert.ok(['chat', 'tools', 'completion'].includes(mode), 'Mode must be chat, tools or completion');
+  assert.ok(mode !== 'completion' || (effortIndex < 0 && thinkingIndex < 0), 'Completion mode preserves production options');
   providers = providers.map(provider => ({ ...provider, probeMode: mode }));
 }
 const { layout } = await loadRuntime(root);
@@ -93,6 +94,9 @@ const result = { checkedAt: new Date().toISOString(),
   verifierSha256: await fileHash(fileURLToPath(import.meta.url)),
   probeSha256: await fileHash(join(root, 'desktop/live-chat-probe.mjs')),
   discoveryProbeSha256: await fileHash(join(root, 'desktop/live-provider-probe.mjs')),
+  ...(providers[0]?.probeMode === 'completion' ? {
+    completionProbeSha256: await fileHash(join(root, 'desktop/live-completion-probe.mjs')),
+    completionAdapterSha256: await fileHash(join(root, 'desktop/completion-http.mjs')) } : {}),
   ...(nativePayload ? { payloadProbeSha256: await fileHash(join(root, 'desktop/live-payload-probe.mjs')),
     capturedPayloadSha256: await fileHash(resolve(process.argv[payloadIndex + 1])) } : {}),
   providers: [], success: false };
@@ -122,7 +126,8 @@ try {
     console.log(JSON.stringify(observed));
   }
   result.success = result.providers.length > 0 && result.providers.every(provider => nativePayload
-    ? provider.diagnostic?.ok : provider.discovery?.ok && provider.chat?.ok);
+    ? provider.diagnostic?.ok : provider.discovery?.ok &&
+      (providers[0]?.probeMode === 'completion' ? provider.completion?.ok : provider.chat?.ok));
 } catch {
   result.success = false; result.error = 'Probe execution failed before completing all checks.';
 } finally {

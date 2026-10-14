@@ -1,6 +1,6 @@
 import { ipcMain, net } from 'electron';
 import { assertWorkbenchSender } from '../../../desktop/workbench-sender.mjs';
-import { fetchCompletion } from '../../../desktop/completion-http.mjs';
+import { fetchCompletion, CompletionResponseError } from '../../../desktop/completion-http.mjs';
 
 const expected = new URL('./vs/code/electron-sandbox/workbench/workbench.html', import.meta.url);
 const pending = new Map();
@@ -28,7 +28,8 @@ ipcMain.handle('vscode:openvision-completion', async (event, input) => {
     });
     return controller.signal.aborted ? { ok: false, error: 'Canceled' } : { ok: true, text };
   } catch (error) {
-    return { ok: false, error: controller.signal.aborted ? 'Canceled' : 'Completion unavailable. Check the selected model and provider.' };
+    return { ok: false, error: controller.signal.aborted ? 'Canceled' : error instanceof CompletionResponseError
+      ? error.message : 'Completion unavailable. Check the selected model and provider.' };
   } finally {
     if (requests.get(input.id) === controller) requests.delete(input.id);
     if (!requests.size) pending.delete(event.sender);

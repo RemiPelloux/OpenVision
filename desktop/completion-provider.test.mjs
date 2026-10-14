@@ -124,7 +124,7 @@ test('real HTTP completion uses selected connection, has bounded responses and a
     const body = JSON.parse(Buffer.concat(chunks)); requests.push({ body, authorized: req.headers.authorization === 'Bearer fixture-key' });
     if (body.model === 'slow') { res.on('close', () => canceled.resolve()); slowEntered.resolve(); return; }
     res.setHeader('content-type', 'application/json');
-    res.end(JSON.stringify({ choices: [{ message: { content: body.model === 'large' ? 'x'.repeat(70000) : '42' } }] }));
+    res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: body.model === 'large' ? 'x'.repeat(70000) : '42' } }] }));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => { server.closeAllConnections(); server.close(); });
@@ -143,7 +143,7 @@ test('real HTTP completion uses selected connection, has bounded responses and a
 
 test('provider Markdown wrappers with leading whitespace are rejected without changing valid code whitespace', async () => {
   const input = { baseUrl: 'http://127.0.0.1:8000/v1', apiKey: '', model: 'coder', prefix: '', suffix: '', language: 'js' };
-  const response = text => ({ fetch: async () => Response.json({ choices: [{ message: { content: text } }] }) });
+  const response = text => ({ fetch: async () => Response.json({ choices: [{ finish_reason: 'stop', message: { role: 'assistant', content: text } }] }) });
   for (const text of ['```js\n42\n```', '\n  ```js\n42\n```'])
     await assert.rejects(fetchCompletion(input, response(text)), /Markdown/);
   assert.equal(await fetchCompletion(input, response('\n  return 42;')), '\n  return 42;');

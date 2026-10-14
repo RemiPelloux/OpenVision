@@ -7,6 +7,8 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
+import { writeCompletionFailure, verifyCompletionFailures } from './verify-completion-failures.mjs';
+import { fileHash } from './import-files.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -28,8 +30,9 @@ const server = createServer(async (request, response) => {
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
   const payload = JSON.parse(Buffer.concat(chunks).toString());
   const context = JSON.parse(payload.messages.at(-1).content);
-  requests.push({ model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
+  requests.push({ phase, model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
     context, stream: payload.stream });
+  if (writeCompletionFailure(phase, response)) return;
   const matchesMultiline = phase === 'multiline' && /const items = \[\r?\n  $/.test(context.prefix);
   const content = phase === 'simple' ? '42' : matchesMultiline ? '"café 日本語",\n  "😀"' : '';
   response.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }] }));
@@ -39,6 +42,7 @@ const server = createServer(async (request, response) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app;
 const errors = [];
+const result = { directory, success: false, platform: process.platform };
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
@@ -103,13 +107,23 @@ try {
   await page.keyboard.press('ControlOrMeta+s');
   await page.waitForTimeout(500);
   assert.equal((await readFile(file, 'utf8')).replaceAll('\r\n', '\n'), 'const items = [\n  \n];');
+  const failures = await verifyCompletionFailures({ page, file, directory, requests, setPhase: value => { phase = value; } });
+  phase = 'simple';
+  await page.keyboard.press('Escape'); await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText('const recovered ='); await page.keyboard.press('End');
+  await page.keyboard.insertText(' ');
+  await page.waitForTimeout(2500);
+  await page.keyboard.press('Tab'); await page.keyboard.press('ControlOrMeta+s');
+  await page.waitForTimeout(500);
+  assert.equal((await readFile(file, 'utf8')).trim(), 'const recovered = 42', 'Valid completion recovers after rejection');
   assert.ok(requests.every(request => request.model === 'fixture-coder' && request.authorized));
   assert.deepEqual(errors, []);
-  const result = { checked_at: new Date().toISOString(), platform: process.platform,
-    native_suggestion: true, tab_accept: true, undo: true, multiline_unicode_accept_undo: true, requests, errors,
-    provider_scope: 'Controlled local HTTP fixture; external provider quality/compatibility not established.' };
-  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
-  console.log(JSON.stringify({ ...result, directory }, null, 2));
+  Object.assign(result, { success: true, checked_at: new Date().toISOString(), platform: process.platform,
+    native_suggestion: true, tab_accept: true, undo: true, multiline_unicode_accept_undo: true, failures,
+    recovery_after_rejection: true, requests, errors,
+    hashes: { completionHttp: await fileHash(join(root, 'desktop/completion-http.mjs')),
+      completionIpc: await fileHash(join(root, 'source/app/out/openvision-completion-ipc.js')) },
+    provider_scope: 'Controlled local HTTP fixture; external provider quality/compatibility not established.' });
 } catch (error) {
   const page = app?.windows()[0];
   if (page) {
@@ -117,9 +131,16 @@ try {
     await writeFile(join(directory, 'failure.txt'), await page.locator('body').innerText()).catch(() => {});
   }
   await writeFile(join(directory, 'requests.json'), JSON.stringify(requests, null, 2));
-  console.error('Verification evidence:', directory);
-  throw error;
+  result.success = false; result.failure = error.stack; process.exitCode = 1;
 } finally {
-  if (app) await app.close();
+  if (app) {
+    const child = app.process();
+    try { await app.close(); }
+    catch (error) { result.success = false; result.cleanupFailure = error.stack; process.exitCode = 1; }
+    result.hostExit = child.exitCode;
+    if (child.exitCode !== 0) { result.success = false; result.cleanupFailure ??= `Host exited ${child.exitCode}`; process.exitCode = 1; }
+  }
   server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
+  console.log(JSON.stringify(result, null, 2));
 }

@@ -102,6 +102,13 @@ logging `ENOPRO`, so the two symptoms must not be equated. The verifier now reta
 a bounded stderr tail and records cleanup evidence even after a failed host exit.
 OV-403 stays Partial until that remaining failure is understood.
 
+Three further diagnostic runs (`ZykGLe`, `oLPXzL`, `NLKpup`) passed the full
+workflow, process release and state-save checks with exit 0 and no storage error
+in retained stderr. A read-only query of the Windows Application event log for
+15:11:30–15:13:30 local time found no Application Error/Windows Error Reporting
+record for the earlier failure. This bounded negative check and the successful
+reruns do not establish why `AYXW1r` exited 134; its status remains unresolved.
+
 ## Harness findings and limits
 
 Initial runs `RZbBdC` and `yIwOrQ` failed resize observation: the Node fixture did

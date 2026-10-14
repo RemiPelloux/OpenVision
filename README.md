@@ -193,8 +193,10 @@ For code suggestions, select **Tab autocomplete model** in Models settings.
 It starts **Off**. Choose a fast enabled model supporting Chat Completions; nearby
 code is sent to that model's saved URL using its saved key. Press **Tab** to accept
 a suggestion and use normal **Undo** to revert it. This supports code insertions;
-predictive jumps are not implemented. Native Windows acceptance/undo is verified
-with a local endpoint; external-provider compatibility remains unverified.
+predictive jumps are not implemented. Truncated or malformed responses are rejected
+with a status message. Native Windows acceptance/undo and failure handling are
+verified with a local endpoint. A small real Codex Easy completion sample passed
+for GPT‑6.1 Sol, DeepSeek‑V4 Flash and Grok‑4.7; broader quality remains unverified.
 See [autocomplete details and checks](docs/rea-custom-autocomplete.md).
 
 Chat titles are generated locally from the first message, saving a separate AI

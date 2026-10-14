@@ -40,7 +40,7 @@ No source-rebuild or distributable-release claim is made.
 | OV-401–404 | Native two-root search, Unicode edit/save/undo/redo; rename/move/delete, external conflicts, junction edits, denied-write recovery and graceful unsaved restart ([lifecycle evidence](project-lifecycle-verification.md)); TS/JS and clangd C/C++ language checks; global/API Save All persists hidden dirty files ([language](rea-language-workflows.md), [C/C++](cpp-support.md), [Save All](save-all-verification.md)); native cmd/PowerShell, tasks/problem matcher, Node debugging and child release ([development evidence](development-workflows.md)); [OV-404 Git/worktree contract verified](git-workflows.md), including abnormal-host restart | File symlinks and large-project watchers, remaining language matrix, intermittent development-host exit 134; broader remote/platform/release recovery |
 | OV-501–504 | File-service inventory and local context collector observations | Data-destination proof, retrieval quality, incremental indexing, cancellation/restart/migration and resource budgets |
 | OV-601 | REA completion request/result contracts pinned in [contract findings](rea-autocomplete-contract.md) | Unshipped original server behavior remains unknown |
-| OV-602–604 | Custom Chat Completions adapter; native Windows Unicode single/multiline Tab acceptance and undo (`npm run verify:completion`) | Live-model quality, failure matrix, partial acceptance, next-edit prediction and latency |
+| OV-602–604 | Custom Chat Completions adapter; native Windows Unicode single/multiline Tab acceptance/undo, 13-case response-failure matrix and recovery (`npm run verify:completion`); one direct live GPT/DeepSeek/Grok sum-expression fixture each | Representative multi-language/project quality, native live-provider acceptance, partial acceptance, next-edit prediction and latency |
 | OV-701–704 | Settings import and local extension-integrity checks; recovered integration surfaces | Full import rollback/isolation, extension lifecycle, SSH/WSL/container workflows, specialized image/browser/computer modes |
 | OV-801–804 | Inventory of 52 native PE paths and 15 distinct WASM payloads; editable recovered JavaScript | Source/license/ABI/replacement dispositions and clean-checkout independent build |
 | OV-901–904 | Windows x64 assembled editor and scoped native fixtures | Clean installation/package/upgrade/rollback matrix; other native systems and architectures |
@@ -57,13 +57,18 @@ All live entries below use saved provider-specific credentials at
 
 | Model/connection | Discovery | Live stream/tool evidence | Reasoning and other limits |
 | --- | --- | --- | --- |
-| GPT connection, `gpt-6.1-sol` | 11 IDs, all enabled saved IDs present | Direct tool roundtrip/plain stream and native Read passed; a later High Read timed out; latest inherited High Task child Read and parent continuation passed four HTTP 200 requests | Timeout retained; real explicit child overrides, retries/resumes, other models/tiers, images, autocomplete and full lifecycle unverified |
+| GPT connection, `gpt-6.1-sol` | 11 IDs, all enabled saved IDs present | Direct tool roundtrip/plain stream and native Read passed; a later High Read timed out; latest inherited High Task child Read and parent continuation passed four HTTP 200 requests | Timeout retained; real explicit child overrides, retries/resumes, other models/tiers, images, broader autocomplete and full lifecycle unverified |
 | DeepSeek connection, `deepseek-v4-flash` | 6 IDs, all enabled saved IDs present | Plain stream and latest native Provider default/High Read passed; High restart/fork recall and persisted isolation passed | Earlier native/default/explicit-effort and direct tool continuation HTTP 400 failures retained. Captured payload replays now pass unchanged; failure cause and reliability remain unresolved |
 | Grok connection, `grok-4.7` | 4 IDs, all enabled saved IDs present | Direct low-effort tool roundtrip and native Read with Provider default passed; latest native restart/fork recall and persisted isolation passed | Plain-stream exact-phrase check failed on a refusal (HTTP 200); earlier continuation HTTP 429; other tiers/models and full lifecycle unverified |
 | Local `fixture-agent` | One synthetic ID | Deterministic native stream/tool/approval/cancellation/restart fixture | Proves local workflow only; no model intelligence, upstream performance or token-usage claim |
 | Other custom providers/models | Configuration supported | No blanket compatibility claim | Discovery/chat/tools/reasoning/images/autocomplete each require independent checks |
 
 The [live compatibility report](live-provider-compatibility.md) pins run records.
+The separate [live autocomplete sample](rea-custom-autocomplete.md#live-codex-easy-compatibility-sample)
+used the production non-streaming adapter against GPT‑6.1 Sol, DeepSeek‑V4 Flash
+and Grok‑4.7. Each returned a valid sum expression in one actual API request.
+This limited direct probe does not establish native live acceptance, broad
+suggestion quality or latency budgets.
 Native live Read uses unchanged inference bodies through an authenticated relay;
 its catalog mirrors saved capability hints. None of the three real catalogs
 advertised reasoning metadata. Provider default omits effort; explicit menu tiers

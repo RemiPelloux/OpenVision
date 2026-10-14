@@ -8,6 +8,12 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+14 October autocomplete follow-up: [response validation](rea-custom-autocomplete.md)
+rejects provider-truncated code, refusal/function/tool output and invalid UTF-8.
+The native 13-case failure matrix and recovery pass. Separate real Codex Easy
+GPT/DeepSeek/Grok probes each returned a valid sum expression. Broader live quality,
+native live acceptance and editing/latency gates remain open; OV-602/603 stay Partial.
+
 14 October development follow-up: [native terminals/tasks/debugging](development-workflows.md)
 passes Windows shell resize/Unicode/environment/cancellation, task diagnostics,
 Node debugger break/step/Stop and child release. Fixed disposal of the file
@@ -305,7 +311,7 @@ Outcome: a tested completion contract, separate from chat model discovery.
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
 | OV-601 / Verified | As a maintainer, I can explain the completion request and result contracts. | REA StreamCpp client; OV-101 | [Autocomplete contract findings](rea-autocomplete-contract.md) records request context, streaming events, replacement ranges, prediction data, cancellation and required server behavior with source Evidence IDs. Recovered client facts remain separate from unverified server assumptions. |
-| OV-602 / Partial | As a developer, my configured completion backend offers useful suggestions. | OV-601; OV-201 | Custom Chat Completions adapter implemented; selected authenticated local HTTP fixture produces native Windows suggestions. See [implementation and limits](rea-custom-autocomplete.md). Remaining: complete empty/partial/malformed and unsupported-backend matrix, live provider compatibility and suggestion quality. |
+| OV-602 / Partial | As a developer, my configured completion backend offers useful suggestions. | OV-601; OV-201 | Custom Chat Completions adapter implemented; native Windows suggestions and 13-case empty/partial/malformed/unsupported-response matrix pass. Real GPT/DeepSeek/Grok each completed one sum-expression fixture. See [implementation and limits](rea-custom-autocomplete.md). Remaining: representative multi-language/project quality and native live-provider acceptance. |
 | OV-603 / Partial | As a developer, accepting a suggestion never corrupts my edits. | OV-602; OV-402 | Native Windows single/multiline Unicode Tab accept/save/undo verified; focused tests cover CRLF/Unicode, stale versions/cursors, cancellation and real HTTP abort. See [evidence](rea-custom-autocomplete.md). Remaining: native partial acceptance, typing during requests, measured cancellation/latency and platform matrix. |
 | OV-604 / Planned | As a developer, next-edit predictions are understandable and fast. | OV-603; OV-503 | Explicit supported prediction contract or documented release-scope decision. Verify navigation/range correctness and stale results; record first/subsequent suggestion latency and acceptance quality on fixed workloads. |
 

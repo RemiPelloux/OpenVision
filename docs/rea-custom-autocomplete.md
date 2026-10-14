@@ -25,7 +25,10 @@ Only the selected saved provider receives requests. The payload contains up to
 8,000 UTF-16 units before and 2,000 after the cursor, plus the language identifier.
 Truncation preserves surrogate pairs. The response has a 64 KiB byte ceiling and
 an 8,000-character insertion ceiling. Markdown wrappers, tool calls and malformed
-responses are rejected. Credentials are retrieved from local secret storage.
+responses are rejected. The adapter requires an assistant message and
+`finish_reason: "stop"`; truncated output, refusals and legacy function-call
+responses are not code insertions. Invalid UTF-8 is rejected rather than repaired
+into different source text. Credentials are retrieved from local secret storage.
 
 The main process validates the sender, owns per-window requests, cancels older
 requests when replaced, and aborts on renderer destruction/navigation or timeout.
@@ -62,3 +65,72 @@ Focused tests cover bounded context, CRLF/Unicode, cancellation/stale results,
 HTTP response limits and upstream abort. These observations do not establish
 external GPT/DeepSeek/Grok compatibility, suggestion quality, partial acceptance,
 latency budgets or macOS/Linux behavior. OV-602 and OV-603 remain **Partial**.
+
+## Response validation and native failure matrix, 14 October
+
+A real HTTP regression check showed that the previous adapter accepted
+`finish_reason: "length"` with an incomplete string such as `return "unfinished`.
+The response owner now validates completion termination, role, refusal/tool fields
+and UTF-8 before returning insertion text. It preserves normal empty responses.
+Only locally authored protocol diagnostics cross IPC; provider text, JSON parser
+excerpts and arbitrary transport error strings cannot become status messages.
+The native Tab status explains truncated, malformed, oversized and unsupported
+responses. No fallback provider, retry, or additional inference request is added.
+
+`logs/completion-verification-bQGYv4/result.json` passed on the real Windows
+desktop. Its 13 cases cover empty text, token-limit truncation, content filtering,
+tool calls, legacy function calls, malformed tool metadata, refusal, missing
+termination metadata, invalid JSON, invalid UTF-8, HTTP 404, oversized responses
+and Markdown wrappers. Each rejected response produces fresh visible feedback;
+an actual empty response clears the prior error before the next case. Pressing
+Tab and saving never inserts rejected code. Normal single/multiline Unicode
+acceptance and undo still pass, and a valid completion succeeds after all failures.
+The owned host exited 0 with no renderer errors. These are controlled HTTP replies,
+not live model responses. Additional HTTP checks reject incorrect message roles,
+missing choices, null JSON and insertions beyond the character limit.
+
+The first native attempt `qUxcxg` replaced the entire document without the final
+typed character needed by native trigger heuristics. It timed out before sending
+an empty-case request. The second `bfso0g` observed the expected truncated-response
+warning but used an ambiguous accessibility locator matching its container and
+button. Both failures remain retained; the verifier now types the trigger and
+selects the status button explicitly. Neither is treated as a product defect.
+
+Production adapter SHA-256:
+`186856eb8cb53caa706845ae7110bd8ba2ea221ad62c4d54938e716ebf445bfe`.
+Loaded IPC helper SHA-256:
+`1f737aa1aa7e761a1450eb908665defaddaa70dc1fcb66ab2220168eb8db5282`.
+
+## Live Codex Easy compatibility sample
+
+Run a quota-consuming probe with saved providers:
+
+```sh
+npm run verify:providers:live -- --live --mode completion
+```
+
+`logs/live-provider-verification-V3tDKi/result.json` passed against the actual
+saved GPT, DeepSeek and Grok connections at `https://codex-easy.ai/v1`. It uses the
+same production adapter, system prompt, 512-token output bound and 15-second
+timeout. No response is mocked or rewritten. The fixture asks for the expression
+in `function add(a, b) { return <insertion>; }`; returned code is parsed, never
+executed. All three returned exactly `a + b` and passed the syntax/fixture check.
+
+| Model | Actual inference requests | Observed request elapsed time |
+| --- | --- | --- |
+| `gpt-6.1-sol` | 1 | 3,976 ms |
+| `deepseek-v4-flash` | 1 | 1,308 ms |
+| `grok-4.7` | 1 | 2,393 ms |
+
+These are single direct Node-fetch samples, excluding discovery and desktop
+startup; they are not native editor latency measurements or a performance ranking.
+Discovery also succeeded for each connection. The owned decryption host exited 0
+and its copied encrypted profile key was removed. Credentials were not written
+to reports. Token usage, CPU time and peak process-family memory were not measured.
+
+OV-602 remains Partial: native failure handling and this live compatibility
+sample are established, but representative multi-language/project suggestions,
+larger live quality samples and native live-provider acceptance remain open.
+OV-603 still requires partial acceptance, typing-during-request behavior and the
+supported latency/cancellation/platform matrix. No extra acceptance credit is
+claimed for these individual checks.
