@@ -6,7 +6,7 @@
 
 **Your projects. Your models. Your workflow.**
 
-OpenVision is an experimental desktop IDE customization project combining a local
+OpenVision is a desktop AI coding workspace combining a local
 profile, project explorer, code editing, AI agents, Tab autocomplete, terminals,
 Git and custom AI providers. Connect an OpenAI-compatible API or your own server
 with a base URL, model name and API key. Discover models and choose reasoning
@@ -19,11 +19,10 @@ options without an OpenVision account.
 [Releases](https://github.com/RemiPelloux/OpenVision/releases) ·
 [Documentation](docs/README.md)
 
-> This repository ships customization source, tests and documentation. It does
-> **not** include an editor installer, recovered application bundles or native
-> binaries. Local preparation requires compatible inputs described in
-> [native runtime and provenance](docs/native-runtime.md). OpenVision is not yet
-> independently buildable from this repository alone.
+> **Ready to run on Windows x64.** Download the complete portable app from
+> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.2),
+> extract it, and double-click **OpenVision.cmd**. The complete app payload is
+> also included in this Git repository. No separate editor, Node.js or npm setup.
 
 ## A workspace built around your choices
 
@@ -40,38 +39,32 @@ options without an OpenVision account.
 
 ## Get started
 
-You need **Node.js 24.18.0**, npm, Git and compatible native inputs on the target
-machine. Read the [input requirements](docs/native-runtime.md) before preparation.
-No system toolchain is installed automatically.
+**Download:** get **OpenVision-0.2.0-preview.2-win32-x64.zip** from
+[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.2).
+Extract the ZIP and double-click **OpenVision.cmd**. Open your project with
+**File → Open Folder**, then configure your AI provider in **Models** settings.
+
+**From Git:** clone the complete repository and double-click **Run-OpenVision.cmd**:
 
 ```sh
-git clone https://github.com/RemiPelloux/OpenVision.git
+git clone --depth 1 https://github.com/RemiPelloux/OpenVision.git
 cd OpenVision
-npm ci --prefix tooling
-npm run prepare:desktop
-npm start
 ```
 
-Preparation detects a supported local installation and creates a separate
-snapshot. To select the input location explicitly:
-
-```sh
-npm run prepare:desktop -- --installation "/path/to/native-input"
-```
-
-For an already prepared checkout, use `npm start` or double-click
-**start-openvision.cmd** on Windows. Open a project with **File → Open Folder**.
-The app uses its own local profile and extensions.
+The repository launcher verifies and extracts the included payload once, then
+opens **OpenVision-portable/**. It uses built-in Windows tools only, preserves your
+profile on later launches and makes no runtime downloads. GitHub's repository
+ZIP works too. The package is approximately **328 MiB**; allow **2 GiB** free.
 
 | System | Current support |
 | --- | --- |
-| Windows x64 | Native workflows exercised on the prepared development build |
-| Windows ARM64 | Preparation path exists; native acceptance remains unverified |
-| macOS Intel / Apple Silicon | Platform-aware preparation exists; no native desktop verification yet |
-| Linux x64 / ARM64 | Platform-aware preparation exists; no native desktop verification yet |
+| Windows x64 | Complete portable download and repository payload; native package checks passed |
+| Windows ARM64 | Native release package still planned |
+| macOS Intel / Apple Silicon | Native release and desktop verification still planned |
+| Linux x64 / ARM64 | Native release and desktop verification still planned |
 
-Each system needs its own compatible inputs. There is no standalone download in
-this preview. [Setup, imports and troubleshooting →](docs/user-guide.md)
+[Installation, editable code and updates →](docs/native-runtime.md) ·
+[Models, imports and project customization →](docs/user-guide.md)
 
 ## Bring your own AI
 
@@ -122,7 +115,8 @@ not the percentage of code implemented or decompiled.
 The next product target is **34/42 verified stories (at least 80%)**, together
 with the critical development workflow. The largest remaining areas are live
 Agent coverage, retrieval/indexing ownership, next-edit prediction, independent
-builds, packaging, remote development and native macOS/Linux verification.
+source rebuilds, upgrade/rollback verification, remote development and native
+macOS/Linux releases. The Windows portable package is delivered in this preview.
 
 The [feature roadmap](docs/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
@@ -138,12 +132,16 @@ feature parity and measured performance gains. The rewrite is planned, not shipp
 npm run check:desktop
 npm run test:portable
 npm run test:completion
-npm run build:desktop
-npm run verify:completion -- --editing
+npm run verify:completion -- --editing --portable ./OpenVision-portable
+npm run verify:welcome -- --portable ./OpenVision-portable
 npm run status:features
 ```
 
-Native checks require a prepared editor and use disposable profiles. Live-provider
+Development tooling uses **Node.js 24.18.0** and `npm ci --prefix tooling`.
+The portable package contains editable code under
+`electron-host/resources/app/` and helpers under `electron-host/desktop/`;
+changes there load after restarting. Full native-source rebuilds remain planned.
+Native checks use disposable profiles. Live-provider
 checks are opt-in and consume API quota. **GitHub Actions is disabled**; this
 project does not require paid CI to build or verify changes.
 
@@ -153,12 +151,13 @@ project does not require paid CI to build or verify changes.
 | `assets/` | Original OpenVision SVG identity and animated README banner |
 | `docs/` | Setup, feature evidence, recovery boundaries and roadmap |
 | `tooling/` | Locked build and verification dependencies |
+| `downloads/windows-x64/` | Complete portable payload in SHA-256-verified Git parts |
+| `Install-OpenVision.ps1`, `Run-OpenVision.cmd` | Offline extraction and launch |
 | `source/`, `electron-host/` | Generated local runtime; excluded from Git |
 | `data/`, `backups/`, `logs/` | Private local state and evidence; excluded from Git |
 
 [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) ·
-[Changelog](CHANGELOG.md) · [Provenance and distribution](docs/native-runtime.md)
+[Changelog](CHANGELOG.md) · [Install and update](docs/native-runtime.md)
 
-Public visibility does not grant a license to third-party software or ship its
-sources. This repository currently has no project-wide redistribution license;
-see [licensing scope](NOTICE.md). OpenVision is an independent experimental project.
+Third-party notices are included in the portable app. See [licensing scope](NOTICE.md).
+OpenVision is an independent project; this preview has unfinished acceptance gates.

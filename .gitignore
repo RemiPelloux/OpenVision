@@ -7,6 +7,8 @@ backups/
 electron-host/
 source/
 build/
+OpenVision-portable/
+OpenVision-portable.install-*/
 tooling/node_modules/
 
 # Machine-specific configuration and generated workspace state.

@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-preview.2 — 2026-10-14
+
+- Ship the complete Windows x64 portable app, including editable application JavaScript, bundled extensions and native runtime support.
+- Include the entire payload in Git as seven verified parts, with an offline Windows installer and double-click launcher. No Git LFS, runtime download, Node.js or separate editor is needed to run it.
+- Add a complete release ZIP and SHA-256 checksums; exclude author profiles, credentials, chats and backups.
+- Verify relocated native autocomplete/editing and the extracted app's animated welcome, local workspace, Agent tools, approved commands, cancellation and history restart/resume.
+- Rewrite the public installation guides around OpenVision downloads, launch, editable code, updates and remaining platform gates.
 
 - Plan remaining features with relative complexity points and acceptance gates.
 - Add the final Rust rewrite track: core services, native desktop shell, compatibility, migration and measured performance. No Rust runtime changes ship in this documentation update.

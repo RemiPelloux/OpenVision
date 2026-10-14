@@ -6,7 +6,7 @@ import { release } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
@@ -16,8 +16,9 @@ import { memorySample, requestMeasurement, baselineIdentity } from './native-bas
 import { createAgentMcpFixture } from './verify-agent-mcp.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { layout, manifest } = await loadRuntime(root);
+const { layout, manifest, appRoot, portable } = await verificationRuntime(root);
 const measureBaseline = process.argv.includes('--baseline');
+if (measureBaseline && portable) throw Error('Baseline measurements require the original input manifests; omit --portable.');
 if (measureBaseline) assert.equal(process.platform, 'win32', 'The process-memory baseline currently requires Windows');
 const baseline = measureBaseline ? { ...await baselineIdentity(manifest), launches: [], samples: [] } : undefined;
 await mkdir(join(root, 'logs'), { recursive: true });
@@ -34,20 +35,20 @@ let mcp;
 const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   platform: process.platform, arch: process.arch, osRelease: release(), node: process.version,
   hashes: Object.fromEntries(await Promise.all([
-    ['host', layout.executable], ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
+    ['host', layout.executable], ['workbench', join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
     ['commandFixture', join(root, 'desktop/verify-agent-commands.mjs')],
     ['commandLifecycle', join(root, 'desktop/verify-command-lifecycle.mjs')],
     ...(verifyMcp ? [['mcpFixture', join(root, 'desktop/verify-agent-mcp.mjs')],
-      ['mcpProcess', join(root, 'source/app/out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js')],
-      ['mcpExtension', join(root, 'source/app/extensions/cursor-mcp/dist/main.js')],
+      ['mcpProcess', join(appRoot, 'out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js')],
+      ['mcpExtension', join(appRoot, 'extensions/cursor-mcp/dist/main.js')],
       ['mcpServer', join(root, 'desktop/verify-mcp-server.mjs')], ['mcpProtocol', join(root, 'desktop/verify-mcp-protocol.mjs')],
       ['mcpStdio', join(root, 'desktop/verify-mcp-stdio.mjs')], ['mcpStdioChild', join(root, 'desktop/verify-mcp-stdio-child.mjs')]] : []),
-    ['agentExec', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
-    ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
-    ['ownedShell', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-owned-shell.cjs')],
-    ['contextWork', join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-context-work.cjs')],
-    ...(process.platform === 'win32' ? [['nativeManifest', join(root, 'source/app/node_modules/rea-agents/native/windows/build/manifest.json')]] : []),
+    ['agentExec', join(appRoot, 'extensions/cursor-agent-exec/dist/main.js')],
+    ['agentHost', join(appRoot, 'extensions/cursor-agent-host/dist/main.js')],
+    ['ownedShell', join(appRoot, 'extensions/cursor-agent-exec/dist/openvision-owned-shell.cjs')],
+    ['contextWork', join(appRoot, 'extensions/cursor-agent-exec/dist/openvision-context-work.cjs')],
+    ...(process.platform === 'win32' ? [['nativeManifest', join(appRoot, 'node_modules/rea-agents/native/windows/build/manifest.json')]] : []),
   ].map(async ([name, path]) => [name, { path, sha256: await fileHash(path) }]))) };
 await writeFile(join(directory, 'identity.json'), JSON.stringify(identity, null, 2));
 const requests = [], errors = [], canceled = Promise.withResolvers(), entered = Promise.withResolvers();

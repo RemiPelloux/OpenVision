@@ -4,7 +4,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 
 | I want to… | Read |
 | --- | --- |
-| Prepare and launch the editor | [Native inputs, platform support and provenance](native-runtime.md) |
+| Download and launch OpenVision | [Portable installation, editable code and updates](native-runtime.md) |
 | Configure models, import settings or customize the UI | [User guide](user-guide.md) |
 | See every missing feature and its complexity | [Feature roadmap](roadmap.md) |
 | Follow the eventual Rust rewrite | [Rust core, native shell and migration gates](rust-roadmap.md) |
@@ -17,7 +17,8 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
 | Understand resource usage | [Performance review](performance.md) · [Native baseline](native-performance-baseline.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |
-| Read this release's scope | [0.2.0-preview.1](releases/0.2.0-preview.1.md) |
+| Read this release's scope | [0.2.0-preview.2 portable desktop](releases/0.2.0-preview.2.md) |
+| Review the packaged-app tests | [Portable verification](portable-verification.md) |
 
 The sprint ledger owns story status. The roadmap owns complexity points and delivery gates.
 Individual evidence reports preserve their original dates and run scope; a past

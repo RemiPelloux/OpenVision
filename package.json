@@ -1,6 +1,6 @@
 {
   "name": "openvision",
-  "version": "0.2.0-preview.1",
+  "version": "0.2.0-preview.2",
   "private": true,
   "type": "module",
   "description": "Experimental AI coding workspace customization with local profiles, custom providers, agents, Tab autocomplete and MCP.",
@@ -10,6 +10,8 @@
   "keywords": ["openvision", "ai-coding", "ide", "code-editor", "ai-agents", "autocomplete", "mcp", "custom-ai-provider", "developer-tools"],
   "scripts": {
     "start": "node desktop/start.mjs",
+    "package:windows": "node desktop/package-windows.mjs",
+    "test:installer": "node --test desktop/portable-installer.test.mjs",
     "build:desktop": "node desktop/build-source.mjs",
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",

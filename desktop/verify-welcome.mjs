@@ -3,21 +3,22 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const { layout } = await loadRuntime(root);
+const { layout, portable, runtimeRoot } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/welcome-verification-'));
 const profile = join(directory, 'profile');
 await mkdir(join(profile, 'User'), { recursive: true });
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verificationSettings));
 const result = { success: false, checkedAt: new Date().toISOString(), platform: process.platform,
+  ...(portable ? { portable } : {}),
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   hashes: Object.fromEntries(await Promise.all(['welcome-screen.js', 'welcome-screen.css', 'welcome-customization.mjs']
-    .map(async name => [name, await fileHash(join(root, 'desktop', name))]))) };
+    .map(async name => [name, await fileHash(join(runtimeRoot, 'desktop', name))]))) };
 let app, page;
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
@@ -28,7 +29,8 @@ try {
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   const screen = page.getByRole('region', { name: 'Welcome to OpenVision' });
   await screen.waitFor({ timeout: 60000 });
-  assert.ok(page.url().includes('/openvision/source/app/'), 'Welcome must run in editable OpenVision source');
+  assert.ok(page.url().includes(portable ? '/electron-host/resources/app/' : '/openvision/source/app/'),
+    'Welcome must run in the selected editable OpenVision application');
   await page.waitForTimeout(1500);
   assert.doesNotMatch(await screen.innerText(), /Cursor|Log In|Sign Up/);
   assert.equal(await page.locator('img[src*="cursor-splash-logo"]').count(), 0, 'Legacy launch splash must not mount');

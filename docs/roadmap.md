@@ -1,6 +1,6 @@
 # OpenVision feature roadmap
 
-Updated 14 October 2026 for **0.2.0-preview.1**. The verified-coverage target is **80%**.
+Updated 14 October 2026 for **0.2.0-preview.2**. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
@@ -14,13 +14,14 @@ independent-build requirements remain in the denominator.
 
 ## What is usable today
 
-The prepared Windows x64 checkout launches the editor and local profile. Native
+The complete Windows x64 portable package launches the editor and local profile. Native
 fixtures have exercised editing, search, tasks, model selection, Agent reads and
 multi-file edits, command approval/cancellation, autocomplete and HTTP/STDIO MCP.
 Separate live-provider runs exercised limited GPT, DeepSeek and Grok chat/tool
 paths. See [release claims](release-claims.md) for exact scope. Several required
-failure, provider and lifecycle cases remain unverified. A clean checkout still
-needs native input artifacts; a standalone finished release is not established.
+failure, provider and lifecycle cases remain unverified. A clean checkout includes
+the complete Windows payload and an offline extraction launcher. Full native
+source rebuilding and the complete release-acceptance matrix remain open.
 
 The numeric target alone will not establish usability. Before declaring a
 usable release, the supported Windows build must complete project open/edit/

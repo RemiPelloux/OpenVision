@@ -11,23 +11,16 @@ uses a local profile, editable application JavaScript, and your own AI endpoints
 
 ## Launch
 
-For an already prepared checkout:
-
-```sh
-npm start
-```
-
-On Windows, double-click **start-openvision.cmd**. On macOS or Linux:
-
-```sh
-sh ./start-openvision.sh
-```
+Download the Windows x64 portable ZIP from [Releases](https://github.com/RemiPelloux/OpenVision/releases),
+extract it and double-click **OpenVision.cmd**. From a complete repository checkout,
+double-click **Run-OpenVision.cmd** to verify, extract and launch the included app.
+No Node.js, npm or separate editor installation is needed.
+See [installation and updates](native-runtime.md).
 
 The launcher opens **OpenVision** with its own preferences and extensions. Open
-your project with **File > Open Folder**. New starter workspaces include only
-Playground, keeping application internals out of everyday project indexing.
-Open **OpenVision Development.code-workspace** when editing the application itself.
-Existing workspace folders are preserved during builds.
+your project with **File > Open Folder**. Editable application files live under
+`electron-host/resources/app/` in the extracted package. Close the app before
+changing those files and restart to load the changes.
 
 C/C++ support is available on Windows x64 through `npm run setup:cpp`. It installs
 pinned clangd tools into OpenVision's own folders and preserves existing settings.
@@ -88,45 +81,19 @@ network log, screenshot, and result under `logs/telemetry-verification-*`.
 
 ## First Setup
 
-Use Node.js **24.18.0**, npm, Git, and native input files for your operating
-system and architecture. Required inputs and original-source provenance are
-documented in [Native Runtime](native-runtime.md). This source repository
-does not include recovered bundles, native binaries, or a standalone installer.
+The full Windows x64 application is included in the release ZIP and the Git
+repository. Follow [Download and launch](native-runtime.md#download-and-launch)
+or [Run directly from the repository](native-runtime.md#run-directly-from-the-repository).
+macOS/Linux native releases and verification remain on the roadmap.
+GitHub Actions is disabled.
 
-```sh
-git clone https://github.com/RemiPelloux/OpenVision.git
-cd OpenVision
-npm ci --prefix tooling
-npm run prepare:desktop
-npm start
-```
-
-Preparation detects a supported local input installation. A custom location can
-be selected with `npm run prepare:desktop -- --installation "/path/to/native-input"`.
-It reads the input, creates an independent snapshot, and verifies the expected
-customization anchors. Existing snapshots are retained. It does not install or
-upgrade system software.
-
-| Platform | OpenVision executable |
-| --- | --- |
-| Windows x64 / ARM64 | `electron-host/OpenVision.exe` |
-| macOS Intel / Apple Silicon | `electron-host/OpenVision.app/Contents/MacOS/OpenVision` |
-| Linux x64 / ARM64, glibc | `electron-host/openvision` |
-
-Each platform needs its own native build. Windows preparation and live editor
-workflows are verified locally. **macOS/Linux runtime execution remains
-unverified.** Verification runs locally; GitHub Actions is disabled for this repository.
-macOS uses system signing tools; Linux needs its desktop libraries, a graphical
-session, and a working Chromium sandbox. See [platform details](native-runtime.md).
-
-`OPENVISION_NODE_PATH` selects an existing Node executable for the launchers.
-`OPENVISION_RECOVERY_DIR` selects an existing recovery snapshot. Default recovery
-outputs live in `build/recovery`; the editable application lives in `source/app`.
+On first launch, choose **Enter workspace**, open a project, and configure your
+provider in Models. The package starts with a new local profile. Your existing
+development profile is neither copied into the release nor overwritten by it.
 
 Windows x64 Agent command cancellation uses a pinned REA native Job Object
 runtime to stop the shell and its owned children together. It loads when a
-command is first needed. After updating this checkout, run `npm ci --prefix tooling`
-and `npm run build:desktop`, then restart OpenVision. See the
+command is first needed. It is included in the portable package. See the
 [command ownership report](rea-command-cancellation.md) for verified behavior,
 local checks and other-platform limitations.
 

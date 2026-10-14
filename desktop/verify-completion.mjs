@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { writeCompletionFailure, verifyCompletionFailures } from './verify-completion-failures.mjs';
@@ -12,7 +12,7 @@ import { fileHash } from './import-files.mjs';
 import { createCompletionEditingFixture, verifyCompletionEditing } from './verify-completion-editing.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { layout } = await loadRuntime(root);
+const { portable, runtimeRoot, appRoot, layout } = await verificationRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/completion-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
@@ -46,7 +46,7 @@ const server = createServer(async (request, response) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app;
 const errors = [];
-const result = { directory, success: false, platform: process.platform };
+const result = { directory, success: false, platform: process.platform, ...(portable ? { portable } : {}) };
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
@@ -130,10 +130,10 @@ try {
   Object.assign(result, { success: true, checked_at: new Date().toISOString(), platform: process.platform,
     native_suggestion: true, tab_accept: true, undo: true, multiline_unicode_accept_undo: true, failures,
     ...(editing ? { editing: editingResult } : { recovery_after_rejection: true }), requests, errors,
-    hashes: { completionHttp: await fileHash(join(root, 'desktop/completion-http.mjs')),
-      completionIpc: await fileHash(join(root, 'source/app/out/openvision-completion-ipc.js')),
-      workbench: await fileHash(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')),
-      provider: await fileHash(join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-completion-provider.js')) },
+    hashes: { completionHttp: await fileHash(join(runtimeRoot, 'desktop/completion-http.mjs')),
+      completionIpc: await fileHash(join(appRoot, 'out/openvision-completion-ipc.js')),
+      workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+      provider: await fileHash(join(appRoot, 'out/vs/code/electron-sandbox/workbench/openvision-completion-provider.js')) },
     provider_scope: 'Controlled local HTTP fixture; external provider quality/compatibility not established.' });
 } catch (error) {
   const page = app?.windows()[0];

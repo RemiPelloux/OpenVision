@@ -1,6 +1,6 @@
 # OpenVision release claims and verification matrix
 
-Updated 14 October 2026 for 0.2.0-preview.1. This is a development build with incomplete release
+Updated 14 October 2026 for 0.2.0-preview.2. This is a development build with incomplete release
 acceptance. The fixed denominator remains the 42 stories
 in [feature-acceptance.json](feature-acceptance.json); at least 34 must be fully
 Verified. The [sprint ledger](completion-sprints.md) owns each story's status and
@@ -24,8 +24,10 @@ original payload or establish an independent rebuild.
 Runtime preparation still requires matching recovered files and shipped native
 components. Source recovery, pseudocode, original-source availability and a clean
 source build are distinct; [recovery status](recovery-status.md) records the gaps.
-The public preview distributes customization source and documentation only.
-No independent source-rebuild or standalone editor distribution claim is made.
+The public preview now includes the complete Windows x64 portable app, both as
+a release ZIP and tracked Git payload parts. Relocated native editing/autocomplete
+and repository extraction are checked in [portable verification](portable-verification.md).
+No independent rebuild of every native component is claimed.
 
 ## Feature and fixture matrix
 
