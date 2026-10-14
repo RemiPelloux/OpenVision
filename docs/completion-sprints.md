@@ -1,12 +1,19 @@
 # OpenVision completion sprints and user stories
 
-Planning baseline: **12 October 2026**, installed input **Cursor 3.21.13 on Windows**.
+Planning baseline: **12 October 2026**, Windows desktop input **3.21.13**.
 OpenVision runs editable recovered JavaScript through a compiled Electron host.
 It is not yet independently buildable or verified across all requested features.
 The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 [local-rules follow-up](rea-local-rules.md) records the latest delivered changes.
 
 ## Current baseline
+
+14 October Quick Edit follow-up: [native custom-provider editing](rea-inline-edit.md)
+passes approved-rule inclusion/hidden-memory exclusion, accept/save, two-step
+undo, reject, safe HTTP failure/retry, Escape cancellation, Unicode/CRLF and exact
+original-record preservation. Six submissions make six controlled local HTTP
+requests. This is development-build evidence, not live inference or an updated
+portable payload. OV-301 remains Partial for its other required gates.
 
 14 October autocomplete follow-up: [response validation](rea-custom-autocomplete.md)
 rejects provider-truncated code, refusal/function/tool output and invalid UTF-8.
@@ -46,8 +53,8 @@ native suggestion/dismiss/save/restart/project isolation and real GPT on-demand
 recall. Customize → Rules now supports reviewed legacy-memory import while
 preserving original records; native paging/import/restart/isolation checks pass.
 Native two-root selection, junction rejection and real ACL-denied writes/retry
-also pass. OV-301 stays Partial pending physical full-disk/I/O, stale cross-window
-review and seeded native inline-edit gates. A subsequent native stale-source
+also pass. OV-301 stays Partial pending physical full-disk/I/O and stale cross-window
+review. The seeded native inline-edit gate passes in the follow-up above. A subsequent native stale-source
 check passes rejection without writes and refresh to the latest source through
 the mounted memory service; it does not establish cross-window propagation.
 This rules follow-up itself promoted no story.

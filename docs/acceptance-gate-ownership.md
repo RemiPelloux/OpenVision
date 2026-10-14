@@ -16,7 +16,7 @@ Verified model/configuration stories follow this same scoped rule.
 | --- | --- | --- |
 | Native user-rule CRUD, migration, first live Agent context, malformed data, acknowledged failed writes, two windows and profile isolation | OV-301 | [Rules evidence](local-rules-concurrency.md) |
 | Approved project memory creation and legacy review/import, workspace isolation, multi-root choice, links, rejected filesystem writes and stale cross-window reviews | OV-301 | [Memory evidence](project-memories.md); remains Partial |
-| Native inline-edit exclusion of hidden generated records | OV-301 | Recovered-function evidence exists; native seeded-request check remains open |
+| Native inline-edit exclusion of hidden generated records | OV-301 | [Native seeded-request check passed](rea-inline-edit.md): approved rule included, hidden originals excluded and preserved |
 | Physical full-disk/I/O recovery for rule and memory persistence | OV-301 | Also part of OV-1004 release failure recovery; SQLite rejection is narrower evidence |
 | STDIO/HTTP discovery, Agent approval/denial, Stop, reconnect, timeout, no replay and exact transport cleanup | OV-303 | [Lifecycle](rea-mcp-lifecycle.md), [recovery](rea-mcp-recovery.md), [cleanup](rea-mcp-cleanup.md) |
 | HTTP failed close, native session-reinitialization failed close, multi-window/profile transport ownership | OV-303 | Remaining native lifecycle gates; remains Partial |

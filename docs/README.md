@@ -15,6 +15,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Save and review project memories | [Memory workflow](project-memories.md) |
 | Investigate model compatibility | [Live provider matrix](live-provider-compatibility.md) |
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
+| Edit a selection with AI | [Development-build Quick Edit](rea-inline-edit.md) |
 | Understand resource usage | [Performance review](performance.md) · [Native baseline](native-performance-baseline.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |
 | Read this release's scope | [0.2.0-preview.2 portable desktop](releases/0.2.0-preview.2.md) |

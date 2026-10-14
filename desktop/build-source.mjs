@@ -19,6 +19,7 @@ import { installContextRuntime } from './context-customization.mjs';
 import { installCoreTelemetryPolicy } from './telemetry-customization.mjs';
 import { installExtensionTelemetryPolicy } from './telemetry-extensions.mjs';
 import { installCompletion } from './completion-customization.mjs';
+import { installInlineEdit } from './inline-edit-customization.mjs';
 import { installProfilePathIsolation } from './profile-paths.mjs';
 import { installSubagentPathIsolation } from './subagent-paths.mjs';
 import { installLocalChatTitles } from './local-chat-title.mjs';
@@ -69,6 +70,7 @@ await installCoreTelemetryPolicy(root);
 await installShutdownOwnership(root);
 await installExtensionTelemetryPolicy(root);
 await installCompletion(root);
+await installInlineEdit(root);
 await installLocalChatTitles(root);
 await installExplicitWorktrees(root);
 await installLocalProfile(root);
@@ -79,11 +81,11 @@ for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspac
   await copyFile(join(root, 'desktop', file), join(root, 'source/app/out/vs/code/electron-sandbox/workbench', `openvision-${file}`));
 await installCursorImport(root);
 await installRuleDurability(root);
+await installWindowTitles(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 } });
-await installWindowTitles(root);
 for (const variant of ['desktop', 'glass']) {
   const path = join(root, `source/app/out/vs/workbench/workbench.${variant}.main.js`);
   const checked = spawnSync(process.execPath, ['--check', path], { stdio: 'inherit' });

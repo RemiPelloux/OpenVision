@@ -57,6 +57,16 @@ Release work targets **80% of the fixed 42 acceptance stories**, plus a usable
 development workflow. Current evidence, missing functions and complexity points
 are in [feature roadmap](roadmap.md).
 
+## Quick Edit in the development build
+
+Choose your custom model in the Agent model picker, select code and press
+**Ctrl+K**. Submit an instruction, review the diff and choose **Accept** or
+**Reject**. **Escape** cancels a pending request. After acceptance, Undo restores
+diff review first; a second Undo restores the original text.
+
+The custom-provider adapter is newer than the 0.2.0-preview.2 portable payload.
+See [Quick Edit setup, verification and limits](rea-inline-edit.md).
+
 ## Telemetry
 
 OpenVision disables built-in usage analytics, Sentry reporting, crash uploads,

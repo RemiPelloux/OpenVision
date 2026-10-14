@@ -229,8 +229,10 @@ The earlier two-window attempt at `legacy-memory-verification-JaYriN` timed out
 waiting for another window: reopening the same workspace reused its existing
 window. Original records remained unchanged. The passing check therefore covers
 a native source change in the review window, not cross-window propagation.
-That gate, physical full-disk/I/O recovery and seeded native inline-edit exclusion
-remain open. OV-301 stays Partial; the 42-story denominator is unchanged.
+That gate and physical full-disk/I/O recovery remain open. The later
+[native Quick Edit check](rea-inline-edit.md) passes seeded approved-rule inclusion,
+hidden-memory exclusion and preservation of both original records. OV-301 stays
+Partial; the 42-story denominator is unchanged.
 
 ## Build verification follow-up
 
