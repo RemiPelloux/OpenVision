@@ -8,6 +8,13 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+14 October Git follow-up: [native Git/worktree acceptance](git-workflows.md)
+passes branch/worktree creation, isolation, diff review, refused checkout,
+dirty-delete cancellation, selected cleanup, merge resolution and recovery after
+both normal shutdown and abnormal host exit. Explicit commands now enumerate
+worktrees even with automatic detection off. OV-404 is Verified for local Windows;
+the fixed ledger is now **6/42 Verified (14.29%)**, with **28** more needed for 80%.
+
 14 October language follow-up: [TS/JS](rea-language-workflows.md) and
 [C/C++](cpp-support.md) native checks now cover diagnostics, completion (C/C++),
 cross-file definitions/references/rename (TS/C++), formatting and undo/redo.
@@ -25,7 +32,7 @@ recall. Customize → Rules now supports reviewed legacy-memory import while
 preserving original records; native paging/import/restart/isolation checks pass.
 Native two-root selection, junction rejection and real ACL-denied writes/retry
 also pass. OV-301 stays Partial pending physical full-disk/I/O, stale cross-window
-review and seeded native inline-edit gates. The count remains 5/42 Verified.
+review and seeded native inline-edit gates. This rules follow-up itself promoted no story.
 
 14 October MCP cleanup follow-up: [retained cleanup ownership](rea-mcp-cleanup.md)
 prevents reconnect starting a replacement after an unresolved transport close.
@@ -255,7 +262,7 @@ Outcome: complete everyday editor workflows with incremental filesystem behavior
 | OV-401 / Partial | As a developer, I can manage large and multi-root projects. | OV-101 | Exercise open/save/rename/move/delete, symlinks, external changes, permissions and restored sessions. Preserve unsaved edits; record watcher and filesystem work for small edits in a large fixture. |
 | OV-402 / Partial | As a developer, language features stay correct while I edit. | OV-401 | Pin language/extension matrix; test diagnostics, rename, references, navigation, formatting and large files. Incremental patches retain undo/redo and conflict handling; no repeated full scan without a justified contract. |
 | OV-403 / Partial | As a developer, I can use terminals, tasks and debuggers. | OV-401 | Native shells: resize, Unicode, environment, exit/cancel/restart, task problem matching and debugger break/step/stop. Check child ownership and release after window/session closure. |
-| OV-404 / Partial | As a developer, Git and worktrees protect my work. | OV-401; OV-103 | Branch/worktree creation, diff review, conflicting edits and merge resolution in disposable repositories. Clean up only owned worktrees; preserve dirty/untracked data and prove recovery after interruption. |
+| OV-404 / Verified | As a developer, Git and worktrees protect my work. | OV-401; OV-103 | Branch/worktree creation, diff review, conflicting edits and merge resolution in disposable repositories. Clean up only owned worktrees; preserve dirty/untracked data and prove recovery after interruption. [Native Windows clause-by-clause evidence](git-workflows.md), including abnormal-host restart. |
 
 Sprint exit: publish the tested language/shell/debugger matrix and unresolved
 limits; a rendered editor or command declaration does not close a workflow.

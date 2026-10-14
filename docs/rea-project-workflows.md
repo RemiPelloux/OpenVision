@@ -43,6 +43,8 @@ OV-402 remains **Partial**: this verifies text editing and undo/redo, but does n
 
 OV-403 remains **Partial**: one configured process task passes. Interactive shell resize and input, task cancellation/restart, problem matching, debugger break/step/stop, and ownership/cleanup of descendants remain open. Closing the owned Electron application does not by itself establish that all possible terminal children are released.
 
-OV-404 is unchanged: this fixture does not exercise Git or worktree behavior.
+This initial fixture does not exercise Git or worktree behavior. The later
+[native Git matrix](git-workflows.md) verifies OV-404 separately, including
+conflicts, owned worktree cleanup and recovery after abnormal host exit.
 
 macOS and Linux branches in the launcher are unverified here. No percentage increase is justified by counting these individual assertions as independent completed stories.

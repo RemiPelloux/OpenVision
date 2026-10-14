@@ -2,8 +2,8 @@
 
 Updated 14 October 2026. The user changed the verified-coverage target to **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
-Verified**. Current ledger: **5 Verified, 22 Partial, 13 Planned, 2 Unknown**,
-or **11.90%**. Twenty-nine additional stories must pass to reach the numeric target.
+Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
+or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 
@@ -101,7 +101,6 @@ not proof of why a past live catalog shrank.
 | OV-401 / Partial | File-symlink cases and large-project incremental watcher/filesystem measurements. Native rename/move/delete, external conflicts, junctions, actual permission-denial recovery and graceful unsaved restart now pass | 2–4 days | [Native lifecycle evidence](project-lifecycle-verification.md); large multi-root fixture and instrumentation; medium |
 | OV-402 / Partial | TS/JS and pinned clangd C/C++ native checks pass; Save All now persists hidden-document edits. Remaining: JS/C cross-file matrix, full SDK/large-project coverage, concurrent request/edit behavior and filesystem/CPU/RAM budgets | 2–5 days | OV-401; [language evidence](rea-language-workflows.md), [C/C++](cpp-support.md), [Save All](save-all-verification.md); medium |
 | OV-403 / Partial | Shell resize/Unicode/environment/restart, task problem matchers, debugger break/step/stop and cleanup | 3–5 days | Native shell/debugger matrix; medium |
-| OV-404 / Partial | Branch/worktree creation, merge conflicts, dirty/untracked preservation and interruption recovery | 2–4 days | OV-401/103 and disposable repositories; medium |
 | OV-501 / Unknown | File-service JS/native/server boundaries, loaded addons and actual project-data destinations | 3–7 days investigation | Owned networking/runtime evidence; low; unknowns may require replacement |
 | OV-502 / Planned | Parsing/chunking/embedding/ranking and endpoint behavior; pinned retrieval relevance measurements | 5–15 days | OV-501 and available/replacement backend; low |
 | OV-503 / Planned | Incremental invalidation for edits, renames, deletes, ignores, links, branches and configuration; counters | 4–8 days | OV-401/502; medium after retrieval ownership is established |
@@ -154,7 +153,9 @@ not proof of why a past live catalog shrank.
 4. Run packaging, rollback and the complete supported native matrix; measure
    performance/telemetry under realistic sessions and audit every acceptance row.
 
-OV-101, OV-105, OV-201, OV-202 and OV-601 are already Verified and have no remaining estimate in
-this table. All 37 other accepted stories appear exactly once. GitHub Actions
+OV-101, OV-105, OV-201, OV-202, OV-404 and OV-601 are Verified and have no remaining estimate in
+this table. [OV-404 native evidence](git-workflows.md) covers its local Windows contract;
+other platforms and physical failure recovery remain in their own rows.
+All 36 other accepted stories appear exactly once. GitHub Actions
 remain disabled; checks, builds and releases are local. No completion date is
 claimed while required evidence is absent.

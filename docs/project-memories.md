@@ -2,7 +2,7 @@
 
 14 October 2026, Windows x64. OpenVision implements the selected workflow:
 **Agent suggests; the user approves saving.** This is scoped progress on OV-301,
-which remains Partial. The fixed acceptance ledger remains 5/42 Verified.
+which remains Partial. See the [current sprint ledger](completion-sprints.md) for overall counts.
 
 ## Use it
 

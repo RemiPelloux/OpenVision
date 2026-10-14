@@ -63,7 +63,9 @@
     "verify:save-all": "node desktop/save-all-verify.mjs",
     "verify:memory:filesystem": "node desktop/verify-memory.mjs --filesystem",
     "setup:cpp": "node desktop/setup-cpp.mjs",
-    "verify:cpp": "node desktop/verify-cpp.mjs"
+    "verify:cpp": "node desktop/verify-cpp.mjs",
+    "test:git-worktrees": "node --test desktop/git-worktree.test.mjs",
+    "verify:git": "node desktop/verify-git.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

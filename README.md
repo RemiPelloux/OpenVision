@@ -36,6 +36,10 @@ configuration and remaining limits. Global **Save All** also saves modified file
 without editor tabs; [native verification](docs/save-all-verification.md) covers
 extension edits, untitled choices and conflicting disk changes.
 
+Git worktree commands list worktrees on demand even with automatic detection
+disabled. Native Windows checks cover branch/worktree isolation, conflict
+resolution, safe cleanup and restart recovery; see [Git workflows](docs/git-workflows.md).
+
 The welcome screen features an animated OpenVision eye and an **Enter workspace**
 button for your local profile. Reopen it from the profile button in the title bar
 by choosing **Welcome screen**. It respects the system's reduced-motion preference.
