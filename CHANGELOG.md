@@ -5,6 +5,7 @@
 - Add Project Home with searchable recent projects, saved favorites, open-window focus and bounded lists.
 - Route native Quick Edit through the selected custom provider, model and reasoning setting, with cancellation and native diff review.
 - Explain DNS, refused connections and TLS failures using structured transport errors while preserving manual retry control.
+- Import settings into the active default profile and selected extension directory; preserve exact backups and avoid registry casing changes that blocked restore.
 - Extend local verification with cross-window memory review and large-project watcher workloads. Evidence and remaining gates are recorded in the [roadmap](docs/roadmap.md).
 
 These development changes are newer than the Windows portable payload below.

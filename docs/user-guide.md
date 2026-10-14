@@ -236,6 +236,13 @@ the source profile and categories, preview the changes, then import. The importe
 supports editor preferences, keyboard shortcuts, snippets, tasks, and registered
 extensions. Source files are read without modification.
 
+In the development build, imports target the running instance's default profile
+and selected extension directory, including custom launch paths. Named profiles
+are currently rejected. Native-dialog backups live under that user-data folder's
+`Backups/openvision-import`; restore them through the same profile's dialog.
+The CLI retains its installation-default destinations and backup directory, so
+its restore command is for CLI backups. These paths are not interchangeable.
+
 For command-line preview or import:
 
 ```sh
@@ -255,7 +262,7 @@ does not create another backup.
 Accounts, cookies, chat history, databases, and extension secret storage are
 excluded. Existing OpenVision provider keys remain in their own storage.
 Source-profile paths, backup layouts, and remaining global-service isolation
-limits are described in [Import Details](native-runtime.md#import-settings).
+limits are described in [Import Details](import-profile-verification.md).
 
 ## Customize
 

@@ -4,6 +4,7 @@ import { join, resolve, relative, sep } from 'node:path';
 import { extensionRecord, assertExtensionPlatform } from './import-extensions.mjs';
 import { mergeSettings, mergeKeybindings, parseConfiguration, protectedSettings } from './import-json.mjs';
 import { optionalFile, digest, fileHash, inside, tree, safeDestination } from './import-files.mjs';
+import { importDestinations, safeImportDestination, destinationOwner } from './import-destinations.mjs';
 
 export const categories = ['settings', 'keybindings', 'snippets', 'tasks', 'extensions'];
 export function defaults(root, context) {
@@ -27,14 +28,14 @@ function validate(options) {
 }
 
 async function addFile(plan, path, data, category, source) {
-  await safeDestination(plan.root, path);
+  await safeImportDestination(plan.destinations, path);
   const before = await optionalFile(path);
   if (before?.equals(data)) return;
   plan.changes.push({ path, data, bytes: data.length, category, source, before: before ? digest(before) : null, after: digest(data) });
 }
 
 async function addExtensionFile(plan, path, source) {
-  await safeDestination(plan.root, path);
+  await safeImportDestination(plan.destinations, path);
   const before = await fileHash(path);
   if (before && !plan.options.overwrite) return;
   const after = await fileHash(source);
@@ -47,7 +48,7 @@ async function importPreference(plan, name, category, merger) {
   const source = join(plan.options.user, name);
   const incoming = await optionalFile(source);
   if (!incoming) { plan.missing.push(source); return; }
-  const destination = join(plan.root, 'data/local/User', name);
+  const destination = join(plan.destinations.user, name);
   const existing = await optionalFile(destination);
   const data = merger ? Buffer.from(merger(incoming.toString('utf8'), existing?.toString('utf8'), plan.options.overwrite)) : incoming;
   if (!merger) {
@@ -61,7 +62,7 @@ async function importSnippets(plan) {
   const directory = join(plan.options.user, 'snippets');
   for (const source of await tree(directory)) {
     if (!/\.(json|code-snippets)$/i.test(source)) continue;
-    const destination = join(plan.root, 'data/local/User/snippets', relative(directory, source));
+    const destination = join(plan.destinations.user, 'snippets', relative(directory, source));
     const incoming = await optionalFile(source);
     parseConfiguration(incoming.toString('utf8'));
     const existing = await optionalFile(destination);
@@ -85,7 +86,7 @@ async function importExtensions(plan) {
   const incoming = await optionalFile(source);
   if (!incoming) { plan.missing.push(source); return; }
   const entries = parseConfiguration(incoming.toString('utf8'), 'array');
-  const directory = join(plan.root, 'data/local-extensions');
+  const directory = plan.destinations.extensions;
   const destination = join(directory, 'extensions.json');
   const before = await optionalFile(destination);
   const registry = before ? parseConfiguration(before.toString('utf8'), 'array') : [];
@@ -112,12 +113,16 @@ async function importExtensions(plan) {
 
 export async function planImport(input) {
   const options = validate(input);
+  const destinations = importDestinations(options.root, options.destinations);
   if (inside(options.root, options.user) || inside(options.root, options.extensions))
     throw new Error('Cursor source directories must be outside OpenVision.');
+  for (const source of [options.user, options.extensions])
+    if (['user', 'extensions', 'backups'].some(key => inside(destinations[key], source) || inside(source, destinations[key])))
+      throw Error('Import sources and destinations must not overlap.');
   await safeDestination(options.user, options.user);
   const info = await lstat(options.user);
   if (!info.isDirectory() || info.isSymbolicLink()) throw new Error('Cursor User directory is unavailable.');
-  const plan = { root: options.root, options, changes: [], missing: [] };
+  const plan = { root: options.root, destinations, options, changes: [], missing: [] };
   for (const category of options.categories) {
     if (category === 'settings') await importPreference(plan, 'settings.json', category, mergeSettings);
     if (category === 'keybindings') await importPreference(plan, 'keybindings.json', category, mergeKeybindings);
@@ -130,8 +135,9 @@ export async function planImport(input) {
 
 export function summarize(plan) {
   const counts = Object.fromEntries(categories.map(category => [category, plan.changes.filter(change => change.category === category).length]));
-  return { source: plan.options.user, destination: join(plan.root, 'data/local/User'), counts,
+  return { source: plan.options.user, destination: plan.destinations.user, extensionsDestination: plan.destinations.extensions, counts,
     files: plan.changes.length, bytes: plan.changes.reduce((sum, change) => sum + change.bytes, 0),
-    paths: plan.changes.map(change => relative(plan.root, change.path).split(sep).join('/')),
+    paths: plan.changes.map(change => { const owner = destinationOwner(plan.destinations, change.path);
+      return `${owner}/${relative(plan.destinations[owner], change.path).split(sep).join('/')}`; }),
     missing: plan.missing, protectedSettings: [...protectedSettings] };
 }

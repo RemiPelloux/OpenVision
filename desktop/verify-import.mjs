@@ -1,117 +1,155 @@
-import { chromium } from '../tooling/browser.mjs';
-import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
-import { restoreImport } from './import-transaction.mjs';
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { _electron } from '../tooling/browser.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
+import { verificationSettings } from './verification-profile.mjs';
+import { fileHash, optionalFile } from './import-files.mjs';
 import { parseConfiguration } from './import-json.mjs';
-import { cursorLocations } from './platform.mjs';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const launch = JSON.parse(await readFile(join(root, 'logs/desktop-launch.json'), 'utf8'));
-if (!Number.isInteger(launch.debug_port)) throw new Error('Launch OpenVision with --inspect-preview.');
-await waitForDebugPort(launch.debug_port);
-const browser = await chromium.connectOverCDP(`http://127.0.0.1:${launch.debug_port}`);
-const fixture = await mkdtemp(join(tmpdir(), 'openvision-ui-import-'));
-const settingsPath = join(root, 'data/local/User/settings.json');
-const original = await readFile(settingsPath, 'utf8');
-let backup;
-let restored = false;
-const errors = [];
-try {
-  await mkdir(join(fixture, 'User/snippets'), { recursive: true });
-  await mkdir(join(fixture, 'extensions'), { recursive: true });
-  const extensionName = 'openvision.import-verification-1.0.0';
-  await mkdir(join(fixture, 'extensions', extensionName));
-  await writeFile(join(fixture, 'extensions', extensionName, 'package.json'), JSON.stringify({
-    name: 'import-verification', publisher: 'openvision', version: '1.0.0', engines: { vscode: '^1.96.0' },
-    displayName: 'OpenVision Import Verification', description: 'Temporary import fixture',
-  }));
-  await writeFile(join(fixture, 'extensions/extensions.json'), JSON.stringify([{
-    identifier: { id: 'openvision.import-verification' }, version: '1.0.0', relativeLocation: extensionName,
-    location: { scheme: 'file', path: '/old/cursor/location' },
-  }]));
-  await writeFile(join(fixture, 'User/settings.json'), '// Fixture JSONC\n{"openvision.importVerification":true,"window.title":"Wrong title",}');
-  await writeFile(join(fixture, 'User/snippets/openvision-import-verification.code-snippets'), '{"fixture":{"prefix":"ovfixture","body":"fixture"}}');
-  const page = await waitForWorkbench(browser);
-  page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.monaco-workbench').waitFor({ timeout: 30000 });
-  await openGeneralSettings(page);
-  await page.getByRole('button', { name: 'Import from Cursor', exact: true }).click();
-  const dialog = page.locator('.openvision-import-dialog');
-  await dialog.getByLabel('Cursor User directory', { exact: true }).waitFor();
-  assert.equal(await dialog.getByLabel('Cursor User directory', { exact: true }).inputValue(), cursorLocations().user);
-  await dialog.getByLabel('Cursor User directory', { exact: true }).fill(join(fixture, 'User'));
-  await dialog.getByLabel('Cursor extensions directory', { exact: true }).fill(join(fixture, 'extensions'));
-  for (const label of ['Keyboard shortcuts', 'User tasks']) await dialog.getByLabel(label, { exact: true }).uncheck();
-  await dialog.getByRole('button', { name: 'Preview Import', exact: true }).click();
-  await dialog.getByRole('status').filter({ hasText: '4 files to import' }).waitFor();
-  assert.equal(await readFile(settingsPath, 'utf8'), original);
-  await page.screenshot({ path: join(root, 'logs/import-preview.png') });
-  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
-  await dialog.getByRole('status').filter({ hasText: 'Imported 4 files' }).waitFor();
-  backup = (await dialog.locator('pre').innerText()).slice('Backup: '.length);
-  const settings = parseConfiguration(await readFile(settingsPath, 'utf8'));
-  assert.equal(settings['openvision.importVerification'], true);
-  assert.equal(settings['window.title'], parseConfiguration(original)['window.title']);
-  const registry = JSON.parse(await readFile(join(root, 'data/local-extensions/extensions.json'), 'utf8'));
-  assert.ok(registry.some(entry => entry.identifier.id === 'openvision.import-verification' &&
-    entry.location.path.toLowerCase().includes('/openvision/data/local-extensions/')));
-  await dialog.getByRole('button', { name: 'Preview Import', exact: true }).click();
-  await dialog.getByRole('status').filter({ hasText: '0 files to import' }).waitFor();
-  await dialog.getByRole('button', { name: 'Restore Last Import', exact: true }).click();
-  await dialog.getByRole('status').filter({ hasText: 'Restored 4 files' }).waitFor();
-  restored = true;
-  assert.equal(await readFile(settingsPath, 'utf8'), original);
-  await assert.rejects(readFile(join(root, 'data/local/User/snippets/openvision-import-verification.code-snippets')), { code: 'ENOENT' });
-  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
-  const result = { native_ipc: true, settings_button: true, preview_read_only: true, jsonc_import: true,
-    protected_title: true, snippet_import: true, extension_registry_isolated: true, repeat_import_no_changes: true,
-    exact_restore: true, page_errors: errors, backup,
-    checked_at: new Date().toISOString() };
-  await writeFile(join(root, 'logs/import-verification.json'), JSON.stringify(result, null, 2) + '\n');
-  console.log(JSON.stringify(result, null, 2));
-  assert.deepEqual(errors, []);
-} finally {
-  if (backup && !restored) await restoreImport(root, backup);
-  await browser.close();
-  await rm(fixture, { recursive: true, force: true });
+// Never attach to desktop-launch.json: every verification launch has a disposable profile.
+const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
+const directory = await mkdtemp(join(root, 'logs/import-verification-'));
+const source = await mkdtemp(join(tmpdir(), 'openvision-import-source-'));
+const profile = join(directory, 'profile'), extensions = join(directory, 'extensions'), project = join(directory, 'project');
+const user = join(profile, 'User'), sourceUser = join(source, 'User'), sourceExtensions = join(source, 'extensions');
+const settingsPath = join(user, 'settings.json'), extensionName = 'openvision.import-verification-1.0.0';
+const result = { directory, source, checks: {}, errors: [], workbenchHash: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+  scope: 'Native import IPC and settings dialog with disposable profiles and synthetic files. No AI requests.',
+  limitations: ['Windows native check; named profile import fails closed until profile resource ownership is supported.',
+    'Interrupted process, physical full-disk and multi-file restore I/O failure are not established.'] };
+let app, page;
+const preserved = new Map();
+const normalPaths = [join(root, 'data/local/User/settings.json'), join(root, 'data/local/User/keybindings.json'), join(root, 'data/local-extensions/extensions.json')];
+const normalHashes = await Promise.all(normalPaths.map(fileHash));
+
+async function file(path, content) {
+  await mkdir(join(path, '..'), { recursive: true }); await writeFile(path, content);
+}
+const invoke = request => page.evaluate(request => window.vscode.ipcRenderer.invoke('vscode:openvision-cursor-import', request), request);
+async function ok(request) {
+  const value = await invoke(request); assert.equal(value.ok, true, value.error); return value;
+}
+async function rejected(request, pattern) {
+  const value = await invoke(request); assert.equal(value.ok, false); assert.match(value.error, pattern); return value;
 }
 
-async function waitForDebugPort(port) {
-  const deadline = Date.now() + 30000;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(1000) });
-      if (response.ok) return;
-    } catch {}
-    await new Promise(resolve => setTimeout(resolve, 250));
-  }
-  throw new Error('OpenVision debugging port did not become ready within 30 seconds.');
+async function prepare() {
+  await Promise.all([mkdir(user, { recursive: true }), mkdir(extensions), mkdir(project), mkdir(sourceUser), mkdir(sourceExtensions)]);
+  await file(settingsPath, '// Byte-exact settings backup — 日本語\r\n' + JSON.stringify({ ...verificationSettings,
+    'git.enabled': false, 'editor.fontSize': 13, 'window.restoreWindows': 'none' }, null, 2) + '\r\n');
+  await file(join(user, 'keybindings.json'), '// retain comment\r\n[{"key":"ctrl+j","command":"old.command"}]\r\n');
+  await file(join(user, 'tasks.json'), '{"version":"2.0.0","tasks":[]}\r\n');
+  await file(join(user, 'snippets/import-fixture.code-snippets'), '{"old":{"prefix":"old","body":"original"}}\r\n');
+  await file(join(sourceUser, 'settings.json'), '{"editor.fontSize":17,"window.title":"Wrong title","openvision.importVerification":true}');
+  await file(join(sourceUser, 'keybindings.json'), '[{"key":"ctrl+j","command":"new.command"}]');
+  await file(join(sourceUser, 'tasks.json'), '{"version":"2.0.0","tasks":[{"label":"fixture","type":"shell","command":"echo fixture"}]}');
+  await file(join(sourceUser, 'snippets/import-fixture.code-snippets'), '{"new":{"prefix":"new","body":"imported"}}');
+  await file(join(sourceExtensions, extensionName, 'package.json'), JSON.stringify({ name: 'import-verification', publisher: 'openvision',
+    version: '1.0.0', engines: { vscode: '^1.96.0' }, displayName: 'Import Fixture' }));
+  await file(join(sourceExtensions, 'extensions.json'), JSON.stringify([{ identifier: { id: 'openvision.import-verification' }, version: '1.0.0', relativeLocation: extensionName }]));
+  await file(join(directory, 'other-profile/User/settings.json'), 'Unrelated profile sentinel');
 }
 
-async function waitForWorkbench(browser) {
-  const deadline = Date.now() + 30000;
-  while (Date.now() < deadline) {
-    const page = browser.contexts().flatMap(context => context.pages()).find(page => page.url().includes('workbench'));
-    if (page) return page;
-    await new Promise(resolve => setTimeout(resolve, 250));
-  }
-  throw new Error('OpenVision workbench did not load within 30 seconds.');
+async function launch() {
+  const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+  app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
+    args: ['--user-data-dir', profile, '--extensions-dir', extensions, '--new-window', '--disable-updates',
+      '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes', project] });
+  page = await app.firstWindow(); page.setDefaultTimeout(20000);
+  page.on('pageerror', error => result.errors.push(error.message));
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  result.nativeOwnership = await app.evaluate(() => {
+    const owner = globalThis.openvisionImportOwner, window = owner?.windowsMainService.getWindows()[0], profile = window?.profile;
+    return { resources: Object.fromEntries(['settingsResource', 'keybindingsResource', 'tasksResource', 'snippetsHome', 'extensionsResource']
+      .map(key => [key, { scheme: profile?.[key]?.scheme, fsPath: profile?.[key]?.fsPath }])),
+      isDefault: profile?.isDefault, userDataPath: owner?.environmentMainService.userDataPath, extensionsPath: owner?.environmentMainService.extensionsPath };
+  });
 }
 
-async function openGeneralSettings(page) {
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor();
+async function dialogPreview(options) {
   const general = page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^General$/ });
   for (let attempt = 0; attempt < 3; attempt++) {
     const tab = page.locator('.tabs-container .tab').filter({ hasText: 'OpenVision Settings' });
     if (await tab.count()) await tab.first().click();
     else await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
-    try {
-      await general.waitFor({ state: 'attached', timeout: 5000 });
-      await general.locator('..').click({ timeout: 5000 });
-      return;
-    } catch (error) { if (attempt === 2) throw error; }
+    try { await general.waitFor({ state: 'attached', timeout: 5000 }); await general.locator('..').click(); break; }
+    catch (error) { if (attempt === 2) throw error; }
   }
+  await page.getByRole('button', { name: 'Import from Cursor', exact: true }).click();
+  const dialog = page.locator('.openvision-import-dialog');
+  await dialog.getByLabel('Cursor User directory', { exact: true }).fill(options.user);
+  await dialog.getByLabel('Cursor extensions directory', { exact: true }).fill(options.extensions);
+  await dialog.getByRole('button', { name: 'Preview Import', exact: true }).click();
+  await dialog.getByRole('status').filter({ hasText: '6 files to import' }).waitFor();
+  assert.ok((await dialog.locator('pre').innerText()).toLowerCase().includes(user.toLowerCase()));
+  await page.screenshot({ path: join(directory, 'preview.png') });
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  result.checks.native_dialog_previews_selected_profile = true;
+}
+
+async function verify() {
+  const options = { user: sourceUser, extensions: sourceExtensions, categories: ['settings', 'keybindings', 'tasks', 'snippets', 'extensions'], overwrite: true };
+  const paths = [settingsPath, join(user, 'keybindings.json'), join(user, 'tasks.json'), join(user, 'snippets/import-fixture.code-snippets'),
+    join(extensions, 'extensions.json'), join(extensions, extensionName, 'package.json')];
+  for (const path of paths) preserved.set(path, await optionalFile(path));
+  await dialogPreview(options);
+  for (const [path, before] of preserved) assert.deepEqual(await optionalFile(path), before);
+  result.checks.preview_read_only = true;
+  let preview = await ok({ action: 'preview', options });
+  await writeFile(settingsPath, '{"changedAfterPreview":true}');
+  await rejected({ action: 'apply', token: preview.token }, /changed since/);
+  await writeFile(settingsPath, preserved.get(settingsPath));
+  result.checks.stale_preview_rejected = true;
+  preview = await ok({ action: 'preview', options });
+  const imported = await ok({ action: 'apply', token: preview.token });
+  result.backup = imported.backup;
+  assert.equal(imported.files, 6);
+  assert.ok(imported.backup.startsWith(join(profile, 'Backups/openvision-import')));
+  const settings = parseConfiguration(await readFile(settingsPath, 'utf8'));
+  assert.equal(settings['editor.fontSize'], 17); assert.equal(settings['openvision.importVerification'], true);
+  const registry = JSON.parse(await readFile(join(extensions, 'extensions.json'), 'utf8'));
+  assert.ok(registry.some(entry => entry.identifier.id === 'openvision.import-verification'
+    && entry.location.path.toLowerCase().includes('/extensions/openvision.import-verification-1.0.0')));
+  result.checks.native_import_targets_selected_profile_and_extensions = true;
+  const repeated = await ok({ action: 'preview', options }); assert.equal(repeated.files, 0);
+  assert.equal((await ok({ action: 'apply', token: repeated.token })).backup, null);
+  result.checks.idempotent_import = true;
+  const importedSettings = await readFile(settingsPath);
+  await writeFile(settingsPath, '{"laterEdit":true}');
+  await rejected({ action: 'restore', backup: imported.backup }, /newer edit/);
+  assert.equal(await readFile(settingsPath, 'utf8'), '{"laterEdit":true}');
+  await writeFile(settingsPath, importedSettings);
+  result.checks.stale_restore_rejected = true;
+  const manifest = JSON.parse(await readFile(join(imported.backup, 'manifest.json'), 'utf8'));
+  const original = join(imported.backup, manifest.records.find(record => record.original).original);
+  const originalBytes = await readFile(original); await writeFile(original, 'tampered');
+  await rejected({ action: 'restore', backup: imported.backup }, /does not match its digest/);
+  await writeFile(original, originalBytes);
+  result.checks.backup_tampering_rejected = true;
+  assert.equal((await ok({ action: 'restore', backup: imported.backup })).restored, 6);
+  for (const [path, before] of preserved) assert.deepEqual(await optionalFile(path), before);
+  assert.equal((await ok({ action: 'restore', backup: imported.backup })).restored, 0);
+  result.checks.byte_exact_restore_and_idempotent_retry = true;
+  assert.deepEqual(await Promise.all(normalPaths.map(fileHash)), normalHashes);
+  assert.equal(await readFile(join(directory, 'other-profile/User/settings.json'), 'utf8'), 'Unrelated profile sentinel');
+  result.checks.normal_and_other_profiles_untouched = true;
+}
+
+try {
+  await prepare(); await launch(); await verify();
+  assert.deepEqual(result.errors, []); result.status = 'passed';
+} catch (error) {
+  result.status = 'failed'; result.error = error.stack; process.exitCode = 1;
+  await page?.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
+} finally {
+  if (app) {
+    const child = app.process();
+    await app.close().catch(error => { result.cleanupError = String(error); process.exitCode = 1; });
+    result.exitCode = child.exitCode;
+    if (child.exitCode !== 0) { result.status = 'failed'; process.exitCode = 1; }
+  }
+  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
+  console.log(JSON.stringify(result, null, 2));
 }

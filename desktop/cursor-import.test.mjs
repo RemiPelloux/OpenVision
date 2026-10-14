@@ -40,6 +40,7 @@ test('preview, JSONC merge, isolated extension registry, repeat import and resto
   assert.deepEqual(parseConfiguration(text), { ...localSettings, 'editor.fontSize': 17, 'window.title': 'OpenVision', 'update.mode': 'none', 'my.setting': true });
   const registry = JSON.parse(await readFile(join(options.root, 'data/local-extensions/extensions.json'), 'utf8'));
   assert.equal(registry[0].location.scheme, 'file');
+  if (process.platform === 'win32') assert.match(registry[0].location.path, /^\/[a-z]:\//, 'Registry URI uses native scanner drive spelling');
   assert.ok(registry[0].location.path.replaceAll('\\', '/').endsWith('/openvision/data/local-extensions/sample.test-1.0.0'));
   assert.equal(registry[0].metadata.installedTimestamp, 1);
   assert.equal(await readFile(join(options.root, 'data/local/User/globalStorage/state.vscdb'), 'utf8'), 'private provider secrets');
@@ -110,7 +111,7 @@ test('missing optional files, profile discovery, backup tampering and source cha
   await assert.rejects(restoreImport(options.root, result.backup), /does not match/);
   const manifestPath = join(result.backup, 'manifest.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-  manifest.records[0].path = 'data/local/User/../../../README.md';
+  manifest.records[0].path = '../../../README.md';
   await file(manifestPath, JSON.stringify(manifest));
   await assert.rejects(restoreImport(options.root, result.backup), /escapes the profile/);
 });

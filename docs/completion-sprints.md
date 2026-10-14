@@ -392,6 +392,15 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+14 October 2026, OV-302/OV-701 import follow-up (owner: OpenVision):
+[Native import ownership](import-profile-verification.md) resolves the requesting
+window's actual profile and extension paths, preserves scoped backup ownership,
+and fixes Windows URI normalization that blocked registry restore. Nine native
+checks and 13 focused tests pass, including exact restore and untouched normal
+profile digests. Named profiles, CLI/native backup interoperability and failure/
+platform gates remain open. Both stories remain Partial; the denominator and
+Verified count are unchanged. The portable payload predates this change.
+
 14 October 2026, parallel local reliability follow-up (owner: OpenVision):
 [Cross-window memory review](project-memories.md#cross-window-workspace-storage)
 now receives owned workspace record changes and rejects stale approvals; the

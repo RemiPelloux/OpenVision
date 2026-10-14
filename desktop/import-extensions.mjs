@@ -11,7 +11,9 @@ export function assertExtensionPlatform(entry, context = process) {
 }
 
 export function extensionRecord(entry, path) {
-  const location = URI.file(path);
+  // The native scanner revives serialized file URIs before persisting them.
+  // Round-trip through the URI owner so Windows drive spelling is canonical too.
+  const location = URI.parse(URI.file(path).toString());
   // The profile scanner persists both URI caches after accessing them.
   void location.fsPath;
   void location.toString();

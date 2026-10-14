@@ -6,6 +6,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | --- | --- |
 | Download and launch OpenVision | [Portable installation, editable code and updates](native-runtime.md) |
 | Configure models, import settings or customize the UI | [User guide](user-guide.md) |
+| Check import isolation and exact restore | [Profile import verification](import-profile-verification.md) |
 | Resume, pin and search projects | [Project home](project-home.md) |
 | See every missing feature and its complexity | [Feature roadmap](roadmap.md) |
 | Follow the eventual Rust rewrite | [Rust core, native shell and migration gates](rust-roadmap.md) |
