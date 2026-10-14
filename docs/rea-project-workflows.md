@@ -34,7 +34,10 @@ The first successful run retained all five assertions: edit/save, undo, redo, mu
 
 ## Acceptance still outstanding
 
-OV-401 remains **Partial**: rename/move/delete, symlinks, permission failures, external changes, session restoration with unsaved edits, large-project watcher behavior and incremental filesystem work are not covered here.
+OV-401 remains **Partial**. The later [native lifecycle check](project-lifecycle-verification.md)
+covers rename/move/delete, directory junctions, actual permission-denied saves,
+external conflicts and graceful unsaved restart. File-symlink cases, large-project
+watcher behavior and incremental filesystem work remain open.
 
 OV-402 remains **Partial**: this verifies text editing and undo/redo, but does not establish a language/extension matrix, diagnostics, rename, references, navigation, formatting, conflicts or large-file performance.
 

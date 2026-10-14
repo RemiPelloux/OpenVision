@@ -56,7 +56,14 @@
     "test:memory": "node --test desktop/memory-customization.test.mjs desktop/workspace-memory.test.mjs desktop/legacy-memory-customization.test.mjs",
     "verify:memory": "node desktop/verify-memory.mjs",
     "verify:mcp-cleanup": "node desktop/verify-mcp-cleanup.mjs",
-    "verify:legacy-memory": "node desktop/verify-legacy-memory.mjs"
+    "verify:legacy-memory": "node desktop/verify-legacy-memory.mjs",
+    "verify:project:lifecycle": "node desktop/verify-project-lifecycle.mjs",
+    "verify:language": "node desktop/verify-language.mjs",
+    "test:save-all": "node --test desktop/save-all.test.mjs",
+    "verify:save-all": "node desktop/save-all-verify.mjs",
+    "verify:memory:filesystem": "node desktop/verify-memory.mjs --filesystem",
+    "setup:cpp": "node desktop/setup-cpp.mjs",
+    "verify:cpp": "node desktop/verify-cpp.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

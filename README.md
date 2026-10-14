@@ -29,6 +29,13 @@ Playground, keeping application internals out of everyday project indexing.
 Open **OpenVision Development.code-workspace** when editing the application itself.
 Existing workspace folders are preserved during builds.
 
+C/C++ support is available on Windows x64 through `npm run setup:cpp`. It installs
+pinned clangd tools into OpenVision's own folders and preserves existing settings.
+See [C/C++ setup and verified workflows](docs/cpp-support.md) for project compiler
+configuration and remaining limits. Global **Save All** also saves modified files
+without editor tabs; [native verification](docs/save-all-verification.md) covers
+extension edits, untitled choices and conflicting disk changes.
+
 The welcome screen features an animated OpenVision eye and an **Enter workspace**
 button for your local profile. Reopen it from the profile button in the title bar
 by choosing **Welcome screen**. It respects the system's reduced-motion preference.

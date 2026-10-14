@@ -6,11 +6,18 @@ import { _electron } from '../tooling/browser.mjs';
 import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { verifyMemoryFilesystem } from './verify-memory-filesystem.mjs';
 
 const root = resolve(import.meta.dirname, '..'), layout = platformLayout(root);
 const directory = await mkdtemp(join(root, 'logs/memory-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project'), other = join(directory, 'other');
+const filesystem = process.argv.includes('--filesystem');
+const secondary = join(directory, 'secondary'), workspace = join(directory, 'fixture.code-workspace');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project); await mkdir(other);
+if (filesystem) {
+  await mkdir(secondary);
+  await writeFile(workspace, JSON.stringify({ folders: [{ path: project }, { path: secondary }] }));
+}
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'git.openRepositoryInParentFolders': 'never' }));
 const proposal = { title: 'Project verification convention', description: 'When asked about the project verification convention',
   content: 'The verification convention is MEMORY_BODY_ONLY_AFTER_READ. 日本語' };
@@ -39,7 +46,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app, page;
 const memoryFiles = async () => (await readdir(memoryDirectory).catch(error => { if (error.code === 'ENOENT') return []; throw error; })).filter(name => name.startsWith('memory-'));
 
-async function launch(folder = project) {
+async function launch(folder = filesystem ? workspace : project) {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
@@ -112,6 +119,7 @@ try {
   result.checks.approval_saves_edited_project_rule = true;
   result.checks.native_save_failure_preserves_file_and_allows_retry = true;
   await page.screenshot({ path: join(directory, 'approved-memory.png') });
+  if (filesystem) await verifyMemoryFilesystem({ page, directory, project, secondary, result, newChat, replyFinished });
   await close(); await launch();
   phase = 'own-project'; await newChat('Inspect the project verification convention.');
   await page.getByText(`Memory context inspected: ${phase}.`, { exact: true }).filter({ visible: true }).first().waitFor(); await replyFinished();

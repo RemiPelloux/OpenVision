@@ -16,6 +16,8 @@ import { customizeWelcome } from './welcome-customization.mjs';
 import { customizePaste } from './paste-customization.mjs';
 import { customizeMemory } from './memory-customization.mjs';
 import { customizeLegacyMemories } from './legacy-memory-customization.mjs';
+import { fixWorkspaceSaveAll } from './save-all-customization.mjs';
+import { fixSaveAllCommands } from './save-all-commands.mjs';
 
 async function customize(root, variant) {
   const relative = `out/vs/workbench/workbench.${variant}.main.js`;
@@ -26,7 +28,7 @@ async function customize(root, variant) {
   const stream = customizeStream(customModels(cloud.text, variant));
   const providers = providerSelectionErrors(requestProviderRouting(stream.text, variant));
   const welcome = customizeWelcome(providerManualRetry(completionCancellation(localUserRules(subagentModelParameters(providers, variant), variant))), variant);
-  const after = customizeLegacyMemories(customizeMemory(customizePaste(welcome, variant), variant), variant);
+  const after = fixSaveAllCommands(fixWorkspaceSaveAll(customizeLegacyMemories(customizeMemory(customizePaste(welcome, variant), variant), variant)));
   if (before === after) return;
   const backup = join(root, 'backups/bundle-customizations', relative);
   await mkdir(dirname(backup), { recursive: true });
@@ -47,6 +49,7 @@ export async function customizeBundles(root) {
     'desktop/paste-customization.mjs',
     'desktop/memory-customization.mjs',
     'desktop/legacy-memory-customization.mjs',
+    'desktop/save-all-customization.mjs', 'desktop/save-all-commands.mjs', 'desktop/save-all-runtime.mjs',
     'desktop/reasoning-selection-customization.mjs',
     'desktop/model-picker-pagination.mjs',
     'desktop/model-picker-labels.mjs',

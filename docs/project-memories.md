@@ -154,11 +154,28 @@ To repeat the live check, using the saved provider and real API quota:
 npm run verify:agent:live -- --live --model gpt-6.1-sol --memory
 ```
 
-Remaining gates: native multi-root choice,
-links and actual permission/full-disk failures, cross-window memory edits, and
+Remaining gates: physical full-disk/I/O failures, cross-window memory edits, and
 other provider/platform behavior. The inline-edit filter has recovered-function
 tests; a native inline-edit request carrying seeded legacy records remains
 unverified. No macOS/Linux or complete story claim follows from these checks.
+
+## Native filesystem verification, 14 October
+
+`npm run verify:memory:filesystem` passed all 11 checks at
+`logs/memory-verification-WFzy10/result.json`. The real two-root Windows desktop
+rejects a rules-directory junction without writing to its target. Replacing the
+fixture junction with an ordinary directory allows retry. A real deny ACL rejects
+creation while retaining the already-approved file and the review card; restoring
+the original ACL allows retry. Approved files appear only in the selected second
+root. Restart still loads the description without the body, and another project
+receives no memory. All three owned hosts exited 0; no renderer errors occurred.
+
+This uses controlled HTTP replies to exercise the real review/save flow, not live
+AI inference. `verification-write-denial.mjs` restricts ACL changes to ordinary
+descendants of the disposable fixture, retains the original descriptor outside
+the denied directory, restores it in `finally`, and verifies exact restoration.
+These checks close multi-root, junction and permission-denial coverage, not the
+remaining physical full-disk, stale cross-window or native inline-edit gates.
 
 ## Legacy import verification, 14 October
 

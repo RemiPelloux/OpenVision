@@ -8,6 +8,13 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+14 October language follow-up: [TS/JS](rea-language-workflows.md) and
+[C/C++](cpp-support.md) native checks now cover diagnostics, completion (C/C++),
+cross-file definitions/references/rename (TS/C++), formatting and undo/redo.
+[Save All](save-all-verification.md) now persists dirty files without tabs through
+both global commands and the extension API. Native conflicts remain protected.
+OV-402 stays Partial for its remaining matrix, concurrency and resource gates.
+
 14 October local-rules follow-up: [native concurrency and live context](local-rules-concurrency.md)
 fixes hidden rules caused by concurrent storage metadata updates and waits for
 SQLite acknowledgement before reporting a saved rule. Two real windows, profile
@@ -16,8 +23,9 @@ rule consumption pass. [Approved project memories](project-memories.md) now pass
 native suggestion/dismiss/save/restart/project isolation and real GPT on-demand
 recall. Customize → Rules now supports reviewed legacy-memory import while
 preserving original records; native paging/import/restart/isolation checks pass.
-OV-301 stays Partial pending remaining native filesystem failure/multi-root
-gates. The count remains 5/42 Verified.
+Native two-root selection, junction rejection and real ACL-denied writes/retry
+also pass. OV-301 stays Partial pending physical full-disk/I/O, stale cross-window
+review and seeded native inline-edit gates. The count remains 5/42 Verified.
 
 14 October MCP cleanup follow-up: [retained cleanup ownership](rea-mcp-cleanup.md)
 prevents reconnect starting a replacement after an unresolved transport close.
@@ -36,6 +44,8 @@ baseline in [feature-acceptance.json](feature-acceptance.json). Run
 must be fully Verified; Partial receives no credit. This measures acceptance
 stories, not recovered source, working code, effort or original-product parity.
 The script rejects added, removed or duplicate IDs until the baseline is reviewed.
+The [gate ownership clarification](acceptance-gate-ownership.md) assigns overlapping
+local, remote, authentication and platform requirements without deleting them.
 Platform and independent-build gates remain required.
 The user confirmed that only Windows is currently available for native testing.
 macOS/Linux checks remain unverified and retain their acceptance gates.
@@ -254,6 +264,12 @@ limits; a rendered editor or command declaration does not close a workflow.
 proves Unicode edit/save/undo/redo, search across two roots and a configured Node
 process task with the expected working directory/environment. OV-401–403 remain
 Partial; the untested clauses above remain release gates.
+
+14 October Windows follow-up: [project lifecycle verification](project-lifecycle-verification.md)
+passes native rename/move/delete, external reload and conflicting saves, directory
+junction edits, actual ACL-denied writes/retry, and restoration of unsaved edits
+after normal shutdown. OV-401 remains Partial for file-symlink and large-project
+watcher/filesystem work; no crash or other-platform guarantee is inferred.
 
 ## Sprint 5 — Build local project intelligence
 

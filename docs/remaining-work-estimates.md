@@ -89,7 +89,7 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Estimated remaining effort | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-301 / Partial | Approved project memories pass native save/restart/isolation and live GPT recall; reviewed legacy import preserves originals and passes native paging/restart/isolation. Remaining: multi-root selection, native links/write failures, cross-window memory edits and physical full-disk/I/O recovery | 1–2 days | [Rules](local-rules-concurrency.md) and [approved memories](project-memories.md); OV-103 and isolated native profiles; medium |
+| OV-301 / Partial | Approved project memories pass native save/restart/isolation and live GPT recall; reviewed legacy import preserves originals. Two-root selection, junction rejection and real ACL-denied write/retry pass. Remaining: stale cross-window review, seeded native inline-edit exclusion and physical full-disk/I/O recovery | 1–2 days | [Rules](local-rules-concurrency.md) and [approved memories](project-memories.md); OV-103 and isolated native profiles; medium |
 | OV-302 / Partial | Complete global path-owner audit and additive migration; two profiles and another installation; watcher consumers | 3–6 days | Recovered producer/consumer paths and native fixtures; medium |
 | OV-303 / Partial | Native multi-window/remote ownership and additional lifecycle failure cases, including HTTP close rejection and native session reinitialization | 1–3 days | [Repeated STDIO cleanup failure/recovery](rea-mcp-cleanup.md) and HTTP/STDIO approval, Stop, disconnect, timeout and restart pass; medium |
 | OV-304 / Planned | OAuth canceled consent, expiry/refresh and secret storage; discovery precedence, invalid config and watcher disposal | 3–6 days | Owned OAuth server and supported auth contracts; medium |
@@ -98,8 +98,8 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Estimated remaining effort | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-401 / Partial | Rename/move/delete, links, external edits, permissions, unsaved session recovery; incremental watcher measurements | 3–6 days | Owned large multi-root fixture; medium |
-| OV-402 / Partial | Pinned language matrix, diagnostics/rename/references/navigation/formatting; large files and conflicts | 3–6 days | OV-401 and compatible language extensions; medium |
+| OV-401 / Partial | File-symlink cases and large-project incremental watcher/filesystem measurements. Native rename/move/delete, external conflicts, junctions, actual permission-denial recovery and graceful unsaved restart now pass | 2–4 days | [Native lifecycle evidence](project-lifecycle-verification.md); large multi-root fixture and instrumentation; medium |
+| OV-402 / Partial | TS/JS and pinned clangd C/C++ native checks pass; Save All now persists hidden-document edits. Remaining: JS/C cross-file matrix, full SDK/large-project coverage, concurrent request/edit behavior and filesystem/CPU/RAM budgets | 2–5 days | OV-401; [language evidence](rea-language-workflows.md), [C/C++](cpp-support.md), [Save All](save-all-verification.md); medium |
 | OV-403 / Partial | Shell resize/Unicode/environment/restart, task problem matchers, debugger break/step/stop and cleanup | 3–5 days | Native shell/debugger matrix; medium |
 | OV-404 / Partial | Branch/worktree creation, merge conflicts, dirty/untracked preservation and interruption recovery | 2–4 days | OV-401/103 and disposable repositories; medium |
 | OV-501 / Unknown | File-service JS/native/server boundaries, loaded addons and actual project-data destinations | 3–7 days investigation | Owned networking/runtime evidence; low; unknowns may require replacement |
