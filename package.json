@@ -26,7 +26,7 @@
     "test:feature-status": "node --test desktop/feature-status.test.mjs",
     "test:agent-process": "node --test desktop/agent-process.test.mjs",
     "test:context-work": "node --test desktop/context-customization.test.mjs desktop/context-work.test.mjs",
-    "test:provider-probe": "node --test desktop/live-provider-probe.test.mjs",
+    "test:provider-probe": "node --test desktop/live-provider-probe.test.mjs desktop/live-payload-probe.test.mjs",
     "verify:providers:live": "node desktop/verify-live-providers.mjs",
     "verify:agent:live": "node desktop/verify-live-agent.mjs",
     "test:agent-relay": "node --test desktop/live-agent-relay.test.mjs",

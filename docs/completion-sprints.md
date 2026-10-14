@@ -152,6 +152,18 @@ and OV-203 retain Partial status.
 
 ## Sprint 2 — Complete provider settings and model interaction
 
+14 October live history follow-up: the [compatibility report](live-provider-compatibility.md)
+records GPT 6.1 Sol High, DeepSeek V4 Flash High and Grok 4.7 Provider default
+native Read, app restart,
+same-chat recall, Fork Chat and fork recall. Real requests preserve the selected
+model/effort and contain the original assistant answer; recall uses no new file
+tool or auxiliary title request. After exit, read-only database checks establish
+separate identities, an unchanged source transcript, and the fork's copied prefix
+plus exactly one new exchange. DeepSeek's earlier HTTP 400s remain failures;
+unchanged payload replays now pass and no deterministic encoder defect is proven.
+OV-102/203 stay Partial; retry, Stop/timeout and remaining provider/lifecycle gates
+remain. The denominator and 5/42 Verified count are unchanged.
+
 Outcome: usable model selection with capabilities owned by the provider contract.
 
 13 October reasoning follow-up: [capability lifecycle evidence](reasoning-capability-lifecycle.md)

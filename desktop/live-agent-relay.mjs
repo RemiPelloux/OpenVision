@@ -54,7 +54,7 @@ async function requestBody(request) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export async function createLiveAgentRelay({ provider, model, marker }) {
+export async function createLiveAgentRelay({ provider, model, marker, captureRequest }) {
   const requests = [], controllers = new Set(), pending = new Set();
   const failed = Promise.withResolvers();
   let key;
@@ -79,6 +79,8 @@ export async function createLiveAgentRelay({ provider, model, marker }) {
       roles: payload.messages?.map(message => message.role),
       messageShapes: payload.messages?.map(message => ({ role: message.role, content: message.content === null ? 'null' : typeof message.content,
         keys: Object.keys(message), toolCalls: message.tool_calls?.map(call => ({ keys: Object.keys(call), functionKeys: Object.keys(call.function ?? {}) })) })),
+      assistantHistoryContainsMarker: payload.messages?.some(message => message.role === 'assistant' &&
+        typeof message.content === 'string' && message.content.includes(marker)) ?? false,
       tools: payload.tools?.map(tool => tool.function?.name ?? tool.name),
       toolResults: payload.messages?.filter(message => message.role === 'tool').map(message => ({
         callId: redact(message.tool_call_id ?? ''), containsFileMarker: JSON.stringify(message.content).includes(marker),
@@ -88,6 +90,7 @@ export async function createLiveAgentRelay({ provider, model, marker }) {
       actualFileInToolResult: payload.messages?.some(message => message.role === 'tool' && JSON.stringify(message.content).includes(marker)) ||
         payload.input?.some(item => item.type === 'function_call_output' && JSON.stringify(item.output).includes(marker)) || false };
     requests.push(record);
+    if (requests.length === 1 && captureRequest) await captureRequest(redact(body));
     const controller = new AbortController(); controllers.add(controller);
     const timer = setTimeout(() => controller.abort(), 60000), started = performance.now();
     const cancel = () => { if (!response.writableFinished) controller.abort(); };

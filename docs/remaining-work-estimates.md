@@ -50,10 +50,10 @@ do not turn a test passing on a fixture into a provider/platform support claim.
 
 | Story / current state | Missing functions or acceptance evidence | Estimated remaining effort | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-102 / Partial | Live GPT/DeepSeek/Grok retry, timeout, Stop, saved history and branching; no duplicate submit | 3–6 days | Provider availability/quota and known DeepSeek failures; medium |
+| OV-102 / Partial | Live GPT/DeepSeek/Grok retry, timeout, Stop and no duplicate submit after retry; remaining interruption/history cases. GPT High, DeepSeek High and Grok default restart/fork recall and persisted isolation now pass | 2–5 days | Provider availability/quota and intermittent DeepSeek failures; medium |
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | 2–5 days | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | 2–5 days | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
-| OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | 1–2 days | OV-104 and provider capability contracts; low because current DeepSeek explicit reasoning fails |
+| OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | 1–2 days | OV-104 and provider capability contracts; low because DeepSeek High has both failures and successful native rechecks |
 | OV-204 / Partial | Remaining DNS/TLS, inference timeout and malformed/oversized stream cases; actual capability inputs and live/platform gates. Native manual retries, context/capability error responses, bounded/stalled diagnostics, connection refusal and Stop now checked | 2–4 days | OV-102/201; medium; live/platform gates remain |
 
 The [provider identity change](provider-model-identity.md) removes raw-model-ID

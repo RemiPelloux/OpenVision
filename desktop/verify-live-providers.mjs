@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
-import { mkdir, mkdtemp, readFile, writeFile, unlink } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile, unlink, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -10,9 +10,10 @@ import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { probeProvider } from './live-provider-probe.mjs';
+import { payloadComparisons, probeNativePayload } from './live-payload-probe.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-providers.mjs --live [--model SAVED_ID] [--mode tools|chat] [--reasoning omit|none|low|medium|high|xhigh|max] [--thinking enabled|disabled]\nProbe saved providers with small synthetic requests. Uses real API quota.');
+  console.log('Usage: node desktop/verify-live-providers.mjs --live [--model SAVED_ID] [--mode tools|chat] [--reasoning omit|none|low|medium|high|xhigh|max] [--thinking enabled|disabled]\nOptional: --native-payload PATH with --model compares five variants of a captured disposable Agent request; --comparison structure|output-limit selects the variants. Every response has a byte/time bound. Do not combine with mode/reasoning/thinking. Uses real API quota.');
   process.exit(0);
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -53,6 +54,24 @@ if (modeIndex >= 0) {
   providers = providers.map(provider => ({ ...provider, probeMode: mode }));
 }
 const { layout } = await loadRuntime(root);
+const payloadIndex = process.argv.indexOf('--native-payload');
+const comparisonIndex = process.argv.indexOf('--comparison');
+assert.ok(comparisonIndex < 0 || payloadIndex >= 0, '--comparison requires --native-payload');
+let nativePayload;
+if (payloadIndex >= 0) {
+  assert.ok(selectedModel && providers.length === 1, 'Payload comparison requires exactly one saved provider via --model');
+  assert.ok(effortIndex < 0 && thinkingIndex < 0 && modeIndex < 0, 'Payload comparison preserves captured options');
+  const path = process.argv[payloadIndex + 1];
+  assert.ok(path && !path.startsWith('--'), '--native-payload requires a file');
+  assert.ok((await stat(resolve(path))).size <= 4 * 1024 * 1024, 'Captured request exceeds probe limit');
+  const body = await readFile(resolve(path));
+  assert.ok(body.length <= 4 * 1024 * 1024, 'Captured request exceeds probe limit');
+  nativePayload = JSON.parse(body);
+  const comparison = comparisonIndex < 0 ? 'structure' : process.argv[comparisonIndex + 1];
+  assert.ok(['structure', 'output-limit'].includes(comparison), 'Unknown payload comparison');
+  payloadComparisons(nativePayload, selectedModel, comparison);
+  providers = providers.map(provider => ({ ...provider, probeComparison: comparison }));
+}
 const directory = await mkdtemp(join(root, 'logs/live-provider-verification-'));
 const profile = join(directory, 'profile');
 await mkdir(join(profile, 'User'), { recursive: true });
@@ -74,6 +93,8 @@ const result = { checkedAt: new Date().toISOString(),
   verifierSha256: await fileHash(fileURLToPath(import.meta.url)),
   probeSha256: await fileHash(join(root, 'desktop/live-chat-probe.mjs')),
   discoveryProbeSha256: await fileHash(join(root, 'desktop/live-provider-probe.mjs')),
+  ...(nativePayload ? { payloadProbeSha256: await fileHash(join(root, 'desktop/live-payload-probe.mjs')),
+    capturedPayloadSha256: await fileHash(resolve(process.argv[payloadIndex + 1])) } : {}),
   providers: [], success: false };
 let app;
 try {
@@ -91,13 +112,17 @@ try {
     }, provider.encrypted);
     const observed = { id: provider.id, name: provider.name, baseUrl: provider.url,
       credentialAvailable: !!credential.key,
-      ...(credential.error ? { error: credential.error } : await probeProvider({ ...provider, key: credential.key }, { fetch })) };
+      ...(credential.error ? { error: credential.error } : nativePayload
+        ? { diagnostic: await probeNativePayload({ ...provider, key: credential.key }, nativePayload,
+          { fetch, progress: stage => console.log(JSON.stringify(stage)) }) }
+        : await probeProvider({ ...provider, key: credential.key }, { fetch })) };
     credential.key = undefined;
     result.providers.push(observed);
     await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
     console.log(JSON.stringify(observed));
   }
-  result.success = result.providers.length > 0 && result.providers.every(provider => provider.discovery?.ok && provider.chat?.ok);
+  result.success = result.providers.length > 0 && result.providers.every(provider => nativePayload
+    ? provider.diagnostic?.ok : provider.discovery?.ok && provider.chat?.ok);
 } catch {
   result.success = false; result.error = 'Probe execution failed before completing all checks.';
 } finally {

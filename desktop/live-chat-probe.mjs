@@ -81,7 +81,7 @@ async function readEvents(response, collected) {
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
 }
 
-async function chat(provider, payload, transport) {
+export async function probeChatPayload(provider, payload, transport) {
   const controller = new AbortController(), started = performance.now();
   const timeout = setTimeout(() => controller.abort(), transport.timeoutMs ?? requestTimeoutMs);
   const collected = accumulator(provider.key);
@@ -112,7 +112,7 @@ async function chat(provider, payload, transport) {
 export async function probeLiveChat(provider, model, transport) {
   const messages = [{ role: 'user', content: `Call openvision_probe once with token "${probeToken}". After its result, reply exactly with the returned text.` }];
   const common = { ...requestOptions(provider, model), tools: [tool] };
-  const first = await chat(provider, { ...common, messages, tool_choice: 'auto' }, transport);
+  const first = await probeChatPayload(provider, { ...common, messages, tool_choice: 'auto' }, transport);
   const stages = [{ stage: 'tool-request', ...first.result }];
   if (!first.result.ok) return { ok: false, stages };
   const call = first.calls[0];
@@ -123,14 +123,14 @@ export async function probeLiveChat(provider, model, transport) {
   messages.push({ role: 'assistant', content: first.result.text || null, tool_calls: first.calls,
     ...(first.reasoning ? { reasoning_content: first.reasoning } : {}) },
     { role: 'tool', tool_call_id: call.id, content: expectedReply });
-  const second = await chat(provider, { ...common, messages, tool_choice: 'auto' }, transport);
+  const second = await probeChatPayload(provider, { ...common, messages, tool_choice: 'auto' }, transport);
   stages.push({ stage: 'tool-continuation', ...second.result });
   return { ok: second.result.ok && second.result.finishReason === 'stop' && second.calls.length === 0 && second.result.text.trim() === expectedReply, stages, toolArgumentsVerified: true,
     toolResultConsumed: second.result.text?.trim() === expectedReply };
 }
 
 export async function probeLiveReply(provider, model, transport) {
-  const response = await chat(provider, { ...requestOptions(provider, model),
+  const response = await probeChatPayload(provider, { ...requestOptions(provider, model),
     messages: [{ role: 'user', content: `Reply exactly ${expectedReply}.` }] }, transport);
   return { ok: response.result.ok && response.result.finishReason === 'stop' && response.result.text.trim() === expectedReply,
     stages: [{ stage: 'text-reply', ...response.result }] };

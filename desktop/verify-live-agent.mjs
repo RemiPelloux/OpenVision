@@ -11,9 +11,10 @@ import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { createLiveAgentRelay } from './live-agent-relay.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
+import { verifyLiveHistory, verifyPersistedLiveHistory } from './verify-live-history.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -21,6 +22,7 @@ assert.ok(modelIndex >= 0 && model && !model.startsWith('--'), 'Select an enable
 const reasoningIndex = process.argv.indexOf('--reasoning');
 const reasoning = reasoningIndex < 0 ? 'default' : process.argv[reasoningIndex + 1];
 const subagent = process.argv.includes('--subagent');
+const history = process.argv.includes('--history');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const db = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
@@ -44,16 +46,40 @@ if (process.platform === 'win32') {
   await writeFile(join(profile, 'Local State'), JSON.stringify({ os_crypt: { encrypted_key: state.os_crypt.encrypted_key } }));
 }
 const { layout } = await loadRuntime(root);
-const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, provider: { name: provider.name, url: provider.url },
+const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, historyRequested: history, provider: { name: provider.name, url: provider.url },
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
   scope: `Windows native Agent selection, live stream and real ${subagent ? 'Task child Read and parent' : 'Read'} continuation in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`,
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['agent', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['relay', join(root, 'desktop/live-agent-relay.mjs')],
+    ...(history ? [['historyVerifier', join(root, 'desktop/verify-live-history.mjs')]] : []),
   ].map(async ([name, path]) => [name, await fileHash(path)]))), success: false };
-const relay = await createLiveAgentRelay({ provider, model, marker });
+const captureRequest = process.argv.includes('--capture-payload')
+  ? body => writeFile(join(directory, 'native-request.json'), body) : undefined;
+const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest });
 let app, page;
+async function launch() {
+  const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+  app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
+    args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window', '--disable-updates',
+      '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
+  page = await app.firstWindow(); page.setDefaultTimeout(15000);
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.waitForTimeout(8000);
+  return page;
+}
+async function closeOwnedApp() {
+  if (!app) return;
+  const child = app.process(), exited = new Promise(resolve => child.once('exit', resolve));
+  const closing = app.close();
+  await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 3000 }).catch(() => {});
+  await closing; if (child.exitCode === null && child.signalCode === null) await exited;
+  result.ownedHostExit = { exitCode: child.exitCode, signalCode: child.signalCode };
+  (result.ownedHostExits ??= []).push(result.ownedHostExit);
+  app = undefined;
+}
 async function dismissMenu() {
   if (!page || page.isClosed()) return;
   await page.mouse.move(0, 0);
@@ -62,16 +88,9 @@ async function dismissMenu() {
   await backdrop.waitFor({ state: 'hidden' });
 }
 try {
-  const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
-  app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
-    args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window', '--disable-updates',
-      '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
-      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
-  page = await app.firstWindow(); page.setDefaultTimeout(15000);
+  await launch();
   const key = await app.evaluate(({ safeStorage }, saved) => safeStorage.decryptString(Buffer.from(JSON.parse(String(saved)).data)), encrypted);
   relay.setKey(key);
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
-  await page.waitForTimeout(8000);
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
   await page.locator('.openvision-model-settings').getByRole('button', { name: 'Add Provider', exact: true }).click();
@@ -118,6 +137,9 @@ try {
       request.toolResults?.some(result => result.callId === task.id && result.containsFileMarker)), 'The parent must receive the Task result and return its marker');
     result.subagentContinuationVerified = true;
   }
+  if (history) await verifyLiveHistory({ page, relay, marker, result, restart: async () => {
+    await closeOwnedApp(); return launch();
+  } });
   assert.ok(relay.requests.every(request => reasoning === 'default' ? request.reasoning === undefined :
     (request.reasoning?.effort ?? request.reasoning) === reasoning), 'Wire effort must match the explicit native selection');
   assert.equal(await readFile(file, 'utf8'), marker + '\n');
@@ -142,13 +164,13 @@ try {
           await stop.waitFor({ state: 'hidden', timeout: 15000 });
         }
       } catch { cleanupErrors.push('Native Stop or menu cleanup failed'); }
-      const child = app.process(), exited = new Promise(resolve => child.once('exit', resolve));
-      const closing = app.close();
-      await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 3000 }).catch(() => {});
-      await closing; if (child.exitCode === null && child.signalCode === null) await exited;
-      result.ownedHostExit = { exitCode: child.exitCode, signalCode: child.signalCode };
+      await closeOwnedApp();
     }
   } catch { cleanupErrors.push('Owned host cleanup failed'); }
+  if (!cleanupErrors.length && result.history?.restartAndForkRecallVerified) {
+    try { verifyPersistedLiveHistory(profile, result); }
+    catch (error) { result.success = false; result.historyError = error.message; }
+  }
   if (!cleanupErrors.length && process.platform === 'win32') await unlink(join(profile, 'Local State')).catch(error => {
     if (error.code !== 'ENOENT') cleanupErrors.push('Encrypted profile state cleanup failed');
   });
