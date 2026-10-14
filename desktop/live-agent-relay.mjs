@@ -19,6 +19,7 @@ function streamEvidence(record, marker, redact) {
       if (event.model) record.responseModel = redact(event.model);
       const content = event.type === 'response.output_text.delta' ? event.delta : event.choices?.[0]?.delta?.content;
       if (typeof content === 'string') {
+        if (content.length) record.assistantContentObserved = true;
         output += content;
         if (output.includes(marker)) record.assistantReturnedMarker = true;
         output = output.slice(-marker.length);
@@ -54,7 +55,7 @@ async function requestBody(request) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest }) {
+export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest, allowDownstreamCancellation = false }) {
   const requests = [], controllers = new Set(), pending = new Set();
   const failed = Promise.withResolvers();
   let key;
@@ -94,7 +95,12 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
     if (requests.length === 1 && captureRequest) await captureRequest(redact(body));
     const controller = new AbortController(); controllers.add(controller);
     const timer = setTimeout(() => controller.abort(), 60000), started = performance.now();
-    const cancel = () => { if (!response.writableFinished) controller.abort(); };
+    const cancel = () => {
+      if (!response.writableFinished) {
+        record.downstreamClosedAt = performance.now();
+        controller.abort();
+      }
+    };
     response.once('close', cancel);
     try {
       const upstream = await fetch(provider.url + request.url.slice('/v1'.length), { method: 'POST', redirect: 'error',
@@ -117,10 +123,15 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       let bytes = 0;
       for await (const chunk of upstream.body) {
         bytes += chunk.length; if (bytes > byteLimit) throw new Error('Live response exceeds verification limit');
+        record.bytes = bytes;
         observe(chunk);
         if (!response.write(chunk)) await once(response, 'drain', { signal: controller.signal });
       }
-      record.bytes = bytes; response.end();
+      record.streamCompleted = true; response.end();
+    } catch (error) {
+      if (!allowDownstreamCancellation || record.downstreamClosedAt === undefined) throw error;
+      record.cancelled = true;
+      record.abortSettledMs = Math.round(performance.now() - record.downstreamClosedAt);
     } finally {
       record.elapsedMs = Math.round(performance.now() - started);
       clearTimeout(timer); response.off('close', cancel); controllers.delete(controller);

@@ -7,6 +7,44 @@ Windows Agent checks below exercise selection, rendering and Read continuation.
 Each run establishes only its named workflow; none establishes complete model
 support or reliability across all requests. Scoped subagent evidence is linked below.
 
+## Native Stop and same-chat resubmission
+
+The native `--stop` check first completes a real Read roundtrip, then asks for
+80 short testing tips. After actual assistant content arrives, it clicks Stop
+while the stream is incomplete. It requires transport cancellation within five
+seconds, no extra inference request during the following second, and exactly one
+new request when the user submits again. That request must retain the previous
+assistant answer and visibly recall the file marker without another tool call.
+
+| Run | Model / reasoning | Click to transport cancellation | Relay abort settled | Result |
+| --- | --- | --- | --- | --- |
+| `fOvYMl` | GPT 6.1 Sol / Provider default | 203 ms | 3 ms | Four real inference requests; Stop and same-chat recall pass |
+| `LqWSzy` | DeepSeek V4 Flash / Provider default | 168 ms | 3 ms | Same scoped check passes; response model `deepseek-flash` |
+| `ZoHk6m` | Grok 4.7 / Provider default | 242 ms | 4 ms | Same scoped check passes |
+
+Each run is retained at `logs/live-agent-verification-<run>/result.json`.
+Inference bodies were forwarded unchanged to the saved Codex Easy connection;
+catalog responses mirror saved capability hints and are simulated. The native
+workbench digest is `42b189a00a9c54629b458bfec622be8eb4a8e04d26c02f1500efd59f7e696bd0`.
+The Windows launcher exited 0 in each run; older reports call this field
+`ownedHostExit`, which does not independently establish native main-process exit.
+
+This proves client transport closure, not that upstream computation or billing
+stopped. These are individual observations, not comparative latency benchmarks.
+CPU, peak process-family memory and token costs were not measured. Live error
+Retry, controlled timeout recovery and other reasoning choices remain open.
+Earlier GPT High run `B1qsQj` received no headers/content on its third request
+within the relay's 60-second bound. It failed before Stop could be exercised;
+that retained failure is not timeout-recovery acceptance evidence.
+
+```sh
+npm run verify:agent:live -- --live --model gpt-6.1-sol --stop
+npm run verify:agent:live -- --live --model deepseek-v4-flash --stop
+npm run verify:agent:live -- --live --model grok-4.7 --stop
+```
+
+These commands consume real provider quota. No acceptance story is promoted.
+
 ## Native history and branching
 
 The opt-in `--history` acceptance extends Read with a full app restart, recall of
@@ -48,8 +86,9 @@ npm run verify:agent:live -- --live --model deepseek-v4-flash --reasoning high -
 npm run verify:agent:live -- --live --model grok-4.7 --history
 ```
 
-OV-102 remains Partial: live retry, Stop, controlled timeout and remaining lifecycle
-cases are not established by recall. No additional story receives Verified credit.
+OV-102 remains Partial: live retry, controlled timeout and remaining lifecycle
+cases are not established by recall. Provider-default Stop is covered separately
+above. No additional story receives Verified credit.
 
 ## Latest recheck after provider selection changes
 
@@ -214,9 +253,10 @@ requests, 60 seconds each and 4 MiB per request/response. It does not rewrite th
 native token limit. Reports contain sanitized request metadata, not full prompts,
 keys or reasoning text by default. `--capture-payload` explicitly saves the first
 request, including its disposable project context, under the ignored run directory;
-the configured transport key is redacted. Eight offline HTTP tests verify unchanged forwarding,
+the configured transport key is redacted. Nine offline HTTP tests verify unchanged forwarding,
 authentication, marker evidence, redaction and cancellation/cleanup of active
-connections. They do not establish live provider cancellation.
+connections, including a partial stream followed by another request. The offline
+tests do not establish live provider cancellation; the native Stop runs above do.
 
 ### Diagnose a rejected captured request
 

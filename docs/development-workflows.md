@@ -20,21 +20,54 @@ mock terminal, task or debugger providers. Small synthetic Node workloads make
 process identity, output and expected debugger values explicit. No AI requests
 are sent, and the normal user profile is not modified.
 
+## Launcher and native shutdown evidence
+
+On Windows, Playwright launches Electron through `cmd.exe`; `app.process()`
+identifies that launcher. Earlier reports called its exit code `hostExit`.
+Those results establish the launcher exit only. In particular, the retained
+`AYXW1r` code 134 does not identify a native crash or its cause.
+
+The verifier now records the actual main PID, parent, executable and versions
+inside Electron, plus separate launcher exit/close events. Before closing the
+owned app it adds synchronous diagnostic breadcrumbs for native quit, process
+exit and uncaught exceptions. It neither suppresses errors nor changes shutdown
+behavior. Missing or malformed diagnostics fail verification; success requires
+a code-0 process-exit event from the recorded native main PID.
+
+Runs `EXDDWn` and `VW33w4` passed the full terminal/task/debugger matrix, child
+release and persisted-state checks. Native main PIDs 21028 and 9584 respectively
+recorded process-exit/quit code 0; both launchers also exited/closed with code 0.
+`VW33w4` includes the fail-closed evidence assertion. Its main/workbench digests
+are `165b5b1d9651f215d9d9321c212345d6da17b1fa97aceec13e556f3f0295a318` /
+`42b189a00a9c54629b458bfec622be8eb4a8e04d26c02f1500efd59f7e696bd0`.
+Retained stderr includes a mutex-already-exists diagnostic while another app
+instance was running; it does not explain the earlier exit 134.
+
+Final runner check `Id9taJ` also passed the complete matrix after making malformed
+breadcrumb handling fail closed. Native PID 8832 recorded process-exit code 0,
+the launcher exited 0, children were released and shutdown state was saved.
+
+Initial diagnostic run `KyuBKQ` passed the workflows but could not install the
+breadcrumbs because dynamic import was unavailable in the evaluation context.
+Its old success flag is not native clean-exit evidence. The final runner uses
+the built-in filesystem module and rejects missing evidence. No product crash
+fix is claimed; OV-403 remains Partial until the earlier exit is understood.
+
 ## Pinned result and acceptance mapping
 
 Successful run after the state-flush fix:
 `logs/development-verification-qsrEut/result.json`, 14 October 2026. Driver interval:
 `13:17:32.686Z`–`13:17:47.627Z` (14.941 seconds; excludes initial application launch
-and final shutdown). All listed checks passed, the host exited 0 and the final
+and final shutdown). All listed checks passed, the launcher exited 0 and the final
 shutdown state was persisted. No renderer page errors occurred. An earlier run,
-`development-verification-AYXW1r`, passed its driver but exited 134 during host
+`development-verification-AYXW1r`, passed its driver but its launcher exited 134 during app
 shutdown. That failure is retained and unresolved; a later passing run does not
 establish its cause or a fix. This is functional verification, not a speed
 benchmark or proof that every diagnostic log is error-free.
 
 The final runner revision also passed at
 `logs/development-verification-N6n805/result.json`: all workflow, child-release
-and persisted-state checks succeeded, host exit was 0, and the captured stderr
+and persisted-state checks succeeded, launcher exit was 0, and the captured stderr
 had no storage-provider error. Its driver interval was 15.808 seconds. This
 confirms the final harness against the same runtime hashes; it does not explain
 the earlier intermittent exit.

@@ -65,7 +65,12 @@ try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--extensionDevelopmentPath', driver,
-      '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', project] });
+      '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--log', 'trace', project] });
+  result.launcherPid = app.process().pid;
+  result.nativeMain = await app.evaluate(() => ({ pid: process.pid, ppid: process.ppid,
+    executable: process.execPath, versions: process.versions }));
+  app.process().once('exit', (code, signal) => { result.launcherExit = { code, signal }; });
+  app.process().once('close', (code, signal) => { result.launcherClose = { code, signal }; });
   const diagnosticTailLimit = 16384;
   app.process().stderr?.on('data', chunk => {
     result.hostStderrTail = ((result.hostStderrTail ?? '') + chunk.toString()).slice(-diagnosticTailLimit);
@@ -115,11 +120,29 @@ try {
 } finally {
   if (app) {
     const child = app.process();
+    const breadcrumbs = join(directory, 'native-shutdown.jsonl');
+    try {
+      await app.evaluate(async ({ app }, path) => {
+        const { appendFileSync } = process.getBuiltinModule('fs');
+        const record = (event, code) => appendFileSync(path, JSON.stringify({ event, code,
+          pid: process.pid, at: new Date().toISOString() }) + '\n');
+        for (const event of ['before-quit', 'will-quit']) app.on(event, () => record(event));
+        app.on('quit', (_event, code) => record('quit', code));
+        process.on('exit', code => record('process.exit', code));
+        process.on('uncaughtExceptionMonitor', error => record('uncaughtExceptionMonitor', error.stack));
+      }, breadcrumbs);
+    } catch (error) { result.diagnosticError = error.message; }
     try { await app.close(); }
     catch (error) { result.success = false; result.failure ??= error.stack; process.exitCode = 1; }
-    result.hostExit = child.exitCode;
+    result.launcherExit ??= { code: child.exitCode, signal: child.signalCode };
+    try {
+      result.nativeShutdown = (await readFile(breadcrumbs, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
+    } catch (error) { result.diagnosticError ??= error.message; result.nativeShutdown = []; }
     if (child.exitCode !== 0) {
-      result.success = false; result.failure ??= `Owned host exited ${child.exitCode}`; process.exitCode = 1;
+      result.success = false; result.failure ??= `Owned launcher exited ${child.exitCode}; inspect native shutdown evidence`; process.exitCode = 1;
+    }
+    if (result.diagnosticError || !result.nativeShutdown.some(event => event.event === 'process.exit' && event.code === 0 && event.pid === result.nativeMain?.pid)) {
+      result.success = false; result.failure ??= 'Native clean-exit evidence missing'; process.exitCode = 1;
     }
   }
   if (result.native?.success) {

@@ -498,6 +498,18 @@ and no RAM/token savings claim. [Provider failure checks](provider-failure-handl
 now include actual self-signed certificate rejection and explicit retry. These
 narrow checks leave the story-level acceptance count at **6/42 Verified**.
 
+14 October 2026, OV-102/OV-403 verification follow-up (owner: OpenVision):
+[Real provider Stop checks](live-provider-compatibility.md#native-stop-and-same-chat-resubmission)
+pass for GPT 6.1 Sol, DeepSeek V4 Flash and Grok 4.7 at Provider default, with
+same-chat recall and no duplicate submission. Live error Retry and controlled
+timeout recovery remain open; the earlier GPT High pre-stream timeout is retained.
+[Shutdown diagnostics](development-workflows.md#launcher-and-native-shutdown-evidence)
+now distinguish the Windows launcher from the native main process and require
+native code-0 exit evidence. Three full workflow runs provide that evidence;
+the earlier launcher exit 134 remains unexplained. These are verifier changes,
+not product performance or crash fixes. Both stories remain Partial, the portable
+payload is unchanged, and the ledger stays **6/42 Verified (14.29%)**.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

@@ -6,17 +6,42 @@ import { createLiveAgentRelay } from './live-agent-relay.mjs';
 const model = 'fixture-model', marker = 'OPENVISION_READ_fixture', key = 'fixture-transport-secret';
 const headers = { Authorization: 'Bearer native-probe-key', 'Content-Type': 'application/json' };
 
-async function fixture(t, handler, captureRequest, inspectRequest) {
+async function fixture(t, handler, captureRequest, inspectRequest, allowDownstreamCancellation = false) {
   const server = createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); });
-  const relay = await createLiveAgentRelay({ model, marker, captureRequest, inspectRequest, provider: {
+  const relay = await createLiveAgentRelay({ model, marker, captureRequest, inspectRequest, allowDownstreamCancellation, provider: {
     url: `http://127.0.0.1:${server.address().port}/v1`,
     models: [{ id: model, capabilities: { reasoningEffortValues: [{ id: 'high', value: 'high' }] } }],
   } });
   relay.setKey(key); t.after(() => relay.close());
   return relay;
 }
+
+test('expected native cancellation records partial stream evidence and permits a later live request', { timeout: 5000 }, async t => {
+  const closed = Promise.withResolvers(); let count = 0;
+  const relay = await fixture(t, (_request, response) => {
+    if (count++) { sse(response, [{ choices: [{ delta: { content: marker } }] }]); return; }
+    response.once('close', closed.resolve);
+    response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    response.write('data: {"choices":[{"delta":{"content":"start"}}]}\n\n');
+  }, undefined, undefined, true);
+  const controller = new AbortController();
+  const body = JSON.stringify({ model, stream: true });
+  const response = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body, signal: controller.signal });
+  const reader = response.body.getReader(); await reader.read(); controller.abort();
+  await closed.promise;
+  await reader.cancel().catch(() => {}); reader.releaseLock();
+  while (!relay.requests[0].cancelled) await new Promise(resolve => setTimeout(resolve, 5));
+  assert.equal(relay.requests[0].assistantContentObserved, true);
+  assert.ok(relay.requests[0].bytes > 0);
+  assert.equal(relay.requests[0].streamCompleted, undefined);
+  const resumed = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body });
+  await resumed.text();
+  assert.equal(relay.requests[1].streamCompleted, true);
+  assert.equal(relay.requests[1].assistantReturnedMarker, true);
+  assert.equal(count, 2);
+});
 
 function sse(response, events) {
   response.writeHead(200, { 'Content-Type': 'text/event-stream' });

@@ -72,7 +72,7 @@ available native test platform; other systems require access before verification
 
 | Area | Still needed before its full acceptance gate closes |
 | --- | --- |
-| AI conversations and agents | Live retry/timeout/Stop behavior, interrupted sessions, remaining edit/undo paths and subagent override/reasoning cases |
+| AI conversations and agents | Live retry/timeout and additional Stop cases, interrupted sessions, remaining edit/undo paths and subagent override/reasoning cases |
 | Local customization | Complete profile-path isolation, stale memory review handling, disk-failure recovery and MCP authentication/lifecycle cases |
 | Projects and languages | Large-project watcher measurements, remaining language navigation/edit matrix and reliable shutdown diagnosis |
 | Retrieval and indexing | Establish data destinations and helper ownership, implement/verify search relevance, incremental updates and index recovery |
@@ -90,7 +90,7 @@ missing-work column together.
 
 | Story / current state | Missing functions or acceptance evidence | Complexity points | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-102 / Partial | Live GPT/DeepSeek/Grok retry, timeout, Stop and no duplicate submit after retry; remaining interruption/history cases. GPT High, DeepSeek High and Grok default restart/fork recall and persisted isolation now pass | **8 points** | Provider availability/quota and intermittent DeepSeek failures; medium |
+| OV-102 / Partial | Live GPT/DeepSeek/Grok error retry, timeout and no duplicate submit after retry; remaining interruption/history and reasoning cases. Provider-default Stop/same-chat resubmission pass for all three. GPT High, DeepSeek High and Grok default restart/fork recall and persisted isolation pass | **8 points** | [Live provider evidence](live-provider-compatibility.md); provider availability/quota and intermittent failures; medium |
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | **8 points** | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | **8 points** | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
 | OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | **5 points** | OV-104 and provider capability contracts; low because DeepSeek High has both failures and successful native rechecks |
@@ -140,7 +140,7 @@ not proof of why a past live catalog shrank.
 | --- | --- | --- | --- |
 | OV-401 / Partial | File-symlink cases and OS-level filesystem work measurements. Native lifecycle checks pass; 100-file/10,000-file projects now pass incremental notifications and stable recursive watcher checks. Windows denied file-symlink creation | **5 points** | [Native lifecycle](project-lifecycle-verification.md), [project scale evidence](project-scale-verification.md); broader operations and filesystem instrumentation; medium |
 | OV-402 / Partial | TS/JS and pinned clangd C/C++ native checks pass; Save All now persists hidden-document edits. Remaining: JS/C cross-file matrix, full SDK/large-project coverage, concurrent request/edit behavior and filesystem/CPU/RAM budgets | **8 points** | OV-401; [language evidence](rea-language-workflows.md), [C/C++](cpp-support.md), [Save All](save-all-verification.md); medium |
-| OV-403 / Partial | Windows cmd/PowerShell shell matrix, task matcher, Node debugging and child cleanup pass; final state-save ordering fixed. Remaining: diagnose intermittent host exit 134 and verify shutdown reliability | **8 points** | [Native development evidence](development-workflows.md); low until native exit cause is established |
+| OV-403 / Partial | Windows cmd/PowerShell shell matrix, task matcher, Node debugging and child cleanup pass; final state-save ordering fixed. Native clean exits now distinguished from launcher exits. Remaining: diagnose earlier launcher exit 134 and verify shutdown reliability | **8 points** | [Native development evidence](development-workflows.md); low until earlier exit cause is established |
 | OV-501 / Unknown | File-service JS/native/server boundaries, loaded addons and actual project-data destinations | **13 points** | Owned networking/runtime evidence; low; unknowns may require replacement |
 | OV-502 / Planned | Parsing/chunking/embedding/ranking and endpoint behavior; pinned retrieval relevance measurements | **13 points** | OV-501 and available/replacement backend; low |
 | OV-503 / Planned | Incremental invalidation for edits, renames, deletes, ignores, links, branches and configuration; counters | **8 points** | OV-401/502; medium after retrieval ownership is established |
