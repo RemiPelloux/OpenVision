@@ -75,6 +75,9 @@ this preview. [Setup, imports and troubleshooting →](docs/user-guide.md)
 
 ## Bring your own AI
 
+Explore [Codex Everywhere](https://codex-everywhere.com/home?aff=KTCCGGAS9R2Q)
+through the project author's affiliate link.
+
 Open **OpenVision Settings → Models → Custom Providers**:
 
 1. Choose **Add Provider**, **Add Codex Easy**, or **Add OpenAI**.
