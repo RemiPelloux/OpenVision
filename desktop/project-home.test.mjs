@@ -25,6 +25,15 @@ test('clone bypasses provider picker, waits for Git and explicitly opens only a 
   assert.equal(repositoryLocation('file:///local/repo'), 'file:///local/repo');
 });
 
+test('theme and appearance actions use native commands', async () => {
+  const calls = [];
+  const owner = { commandService: { executeCommand: async (...args) => calls.push(args) } };
+  const service = createProjectHomeService(owner, () => undefined);
+  await service.theme();
+  await service.appearance();
+  assert.deepEqual(calls, [['workbench.action.selectTheme'], ['workbench.action.openSettings', 'workbench.color']]);
+});
+
 test('project identity preserves folder/workspace and remote identity, deduplicates and focuses serialized window URIs', () => {
   const rows = projectRows({ workspaces: [folder, folder, workspace, { ...folder, remoteAuthority: 'ssh-host' }] },
     [{ id: 7, workspace: { uri: { scheme: 'file', path: '/projects/alpha' } } }], { pinned: () => false });

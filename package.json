@@ -1,6 +1,6 @@
 {
   "name": "openvision",
-  "version": "0.2.0-preview.4",
+  "version": "0.2.0-preview.5",
   "private": true,
   "type": "module",
   "description": "Experimental AI coding workspace customization with local profiles, custom providers, agents, Tab autocomplete and MCP.",
@@ -27,6 +27,7 @@
     "test:project-home": "node --test desktop/project-home.test.mjs desktop/project-home-browser.test.mjs desktop/welcome-customization.test.mjs",
     "verify:project-home": "node desktop/verify-project-home.mjs",
     "verify:project-clone": "node desktop/verify-project-clone.mjs",
+    "verify:project-themes": "node desktop/verify-project-themes.mjs",
     "test:paste": "node --test desktop/large-paste.test.mjs desktop/paste-customization.test.mjs",
     "test:namespace": "node --test desktop/project-namespace.test.mjs desktop/project-namespace-migration.test.mjs desktop/namespace-plans.test.mjs",
     "migrate:project": "node desktop/migrate-project.mjs",

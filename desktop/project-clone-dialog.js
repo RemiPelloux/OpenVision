@@ -23,9 +23,8 @@ export function showCloneDialog() {
   const actions = element('div', '', { class: 'ov-clone-actions' });
   actions.append(element('button', 'Cancel', { type: 'button', class: 'ov-clone-cancel' }),
     element('button', 'Choose location & clone', { type: 'submit', class: 'ov-clone-submit' }));
-  form.append(element('div', 'START FROM A REPOSITORY', { class: 'ov-clone-eyebrow' }),
-    element('h2', 'Bring your code into OpenVision', { id: 'ov-clone-title' }),
-    element('p', 'Paste a repository URL. Next, choose where to save it on your computer.'),
+  form.append(element('h2', 'Clone repository', { id: 'ov-clone-title' }),
+    element('p', 'Enter a repository URL, then choose a destination folder.'),
     element('label', 'Repository URL', { for: 'ov-clone-url' }),
     element('input', '', { id: 'ov-clone-url', name: 'repository', type: 'text', spellcheck: 'false',
       autocomplete: 'off', placeholder: 'https://github.com/owner/project.git', 'aria-describedby': 'ov-clone-help ov-clone-error' }),

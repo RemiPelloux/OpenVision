@@ -1,6 +1,6 @@
 # OpenVision feature roadmap
 
-Updated 14 October 2026 for **0.2.0-preview.4**. The verified-coverage target is **80%**.
+Updated 14 October 2026 for **0.2.0-preview.5**. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.

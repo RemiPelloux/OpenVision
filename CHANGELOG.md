@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0-preview.5 — 2026-10-14
+
+- Simplify Project Home and cloning to match the selected editor theme, with compact controls and a monochrome eye.
+- Replace fixed green accents in home, clone, profile and model settings with native theme colors.
+- Add a Color theme shortcut on Project Home and Appearance settings in the local profile menu.
+- Document theme choices and custom colors, fonts and icons in the [appearance guide](docs/appearance.md).
+
 ## 0.2.0-preview.4 — 2026-10-14
 
 - Fix Project Home cloning with a direct repository URL form, destination selection and explicit opening of successful checkouts.

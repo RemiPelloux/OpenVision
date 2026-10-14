@@ -7,7 +7,7 @@ No separate editor installation, Node.js or npm is needed to run it.
 ## Download and launch
 
 1. Open the [OpenVision releases](https://github.com/RemiPelloux/OpenVision/releases).
-2. Download **OpenVision-0.2.0-preview.4-win32-x64.zip** and extract it to a writable folder.
+2. Download **OpenVision-0.2.0-preview.5-win32-x64.zip** and extract it to a writable folder.
 3. Double-click **OpenVision.cmd**.
 4. Use **Project Home** to open a folder, resume recent work or pin a favorite project.
 5. Open **OpenVision Settings → Models**, add a provider URL and your key, and discover models.
@@ -92,7 +92,7 @@ guaranteed: re-enter your keys on a new machine.
 Windows files do not run natively on macOS or Linux. Native tests used disposable
 profiles and controlled local HTTP responses; they establish the package wiring
 and named workflows, not blanket live-model compatibility. See
-[portable verification](portable-preview4.md) and
+[portable verification](portable-preview5.md) and
 [release claims](release-claims.md) for the exact evidence.
 GitHub Actions remains disabled.
 

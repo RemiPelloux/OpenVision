@@ -33,7 +33,10 @@ function editProfile() {
   const welcome = document.createElement('button');
   welcome.textContent = 'Welcome screen';
   welcome.onclick = () => { dialog.close(); showWelcomeScreen(); };
-  dialog.append(heading, label, welcome, cancel, save);
+  const appearance = document.createElement('button');
+  appearance.textContent = 'Appearance settings';
+  appearance.onclick = () => { dialog.close(); void window.openvisionProjectHome?.appearance().catch(console.error); };
+  dialog.append(heading, label, welcome, appearance, cancel, save);
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   document.body.append(dialog);
   dialog.showModal();

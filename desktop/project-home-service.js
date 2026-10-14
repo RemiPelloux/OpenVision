@@ -63,6 +63,8 @@ export function createProjectHomeService(owner, getWorkspaces) {
     },
     folder: () => owner.nativeHostService.pickFolderAndOpen({ forceNewWindow: true, cursorForceNewWindow: true }),
     workspace: () => owner.nativeHostService.pickWorkspaceAndOpen({ forceNewWindow: true, cursorForceNewWindow: true }),
+    theme: () => owner.commandService.executeCommand('workbench.action.selectTheme'),
+    appearance: () => owner.commandService.executeCommand('workbench.action.openSettings', 'workbench.color'),
     async clone(location) {
       const path = await owner.commandService.executeCommand('git.clone', repositoryLocation(location), undefined,
         { openAfterClone: false });

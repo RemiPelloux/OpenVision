@@ -81,6 +81,10 @@ try {
   await editor.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
   result.localWorkspaceEntry = true;
   await editor.locator('.part.titlebar .openvision-local-profile').click();
+  await editor.getByRole('button', { name: 'Appearance settings', exact: true }).click();
+  await editor.locator('.settings-editor').waitFor({ timeout: 30000 });
+  result.appearanceSettingsEntry = true;
+  await editor.locator('.part.titlebar .openvision-local-profile').click();
   await editor.getByRole('button', { name: 'Welcome screen', exact: true }).click();
   const dialog = editor.getByRole('dialog', { name: 'Welcome to OpenVision' });
   await dialog.waitFor();

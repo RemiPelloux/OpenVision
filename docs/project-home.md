@@ -1,9 +1,10 @@
 # Project home
 
 OpenVision opens to a project dashboard with a blinking eye, a responsive layout
-and immediate access to your work. It is included in the **0.2.0-preview.4**
+and immediate access to your work. It is included in the **0.2.0-preview.5**
 portable app, with relocated native verification recorded in
-[the package report](portable-preview4.md).
+[the package report](portable-preview5.md). Home and cloning follow your
+[selected theme and custom colors](appearance.md).
 
 ## Start and resume
 
@@ -26,6 +27,7 @@ home window's **Enter workspace** action.
 | Clone repository | Paste a URL, choose a destination, clone and open a new editor |
 | Remove from history | Remove the recent entry and its pin; keep project files |
 | Refresh | Refresh history and current-window state on demand |
+| Color theme | Choose a theme through the native theme picker |
 
 A missing local path produces an actionable message. Its history entry remains
 until you remove it or open its new location. Project opening uses the native
@@ -131,3 +133,8 @@ These are single-run observations, not comparative benchmarks. The stress test
 also verifies in-flight refresh coalescing and disposal before an outstanding
 response resolves. Native macOS/Linux and remote-workspace execution remain
 unverified. No accepted feature story is promoted solely by this dashboard.
+
+Preview.5 uses a compact native-theme layout and a Color theme action.
+Windows restart/custom colors/installed theme evidence is recorded in
+[preview.5 verification](portable-preview5.md). Earlier benchmark figures above
+are unchanged historical observations, not measurements of this redesign.

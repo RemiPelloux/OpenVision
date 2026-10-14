@@ -30,7 +30,7 @@ async function until(probe) {
   throw Error('Timed out waiting for clone state');
 }
 const home = () => page.getByRole('region', { name: 'Welcome to OpenVision' });
-const form = () => page.getByRole('dialog', { name: 'Bring your code into OpenVision' });
+const form = () => page.getByRole('dialog', { name: 'Clone repository', exact: true });
 async function openForm() {
   await home().getByRole('button', { name: 'Clone repository', exact: true }).click();
   await form().getByRole('textbox', { name: 'Repository URL', exact: true }).waitFor();

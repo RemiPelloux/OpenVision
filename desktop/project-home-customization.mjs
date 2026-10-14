@@ -1,11 +1,19 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
-const marker = '/* OpenVision project home service v1 */';
+const marker = '/* OpenVision project home service v3 */';
 
 export function customizeProjectHome(text, variant) {
   if (!['desktop', 'glass'].includes(variant)) throw Error('Unknown project-home variant.');
   text = deferHomeRemoteInstall(text, variant);
   if (text.includes(marker)) return text;
+  const previousMarker = ['/* OpenVision project home service v1 */', '/* OpenVision project home service v2 */'].find(value => text.includes(value));
+  if (previousMarker) {
+    const start = text.indexOf('installOpenVisionProjectHome(this,', text.indexOf(previousMarker));
+    if (start < 0) throw Error('Previous project-home service registration missing.');
+    const call = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
+    if (call.type !== 'CallExpression' || ![2, 3].includes(call.arguments.length)) throw Error('Previous project-home service registration changed.');
+    return (text.slice(0, call.arguments[1].end) + text.slice(call.end - 1)).replace(previousMarker, marker);
+  }
   const anchor = '(this.nativeHostService =', position = text.indexOf(anchor);
   if (position < 0) throw Error('Native project-home service owner missing.');
   const start = text.lastIndexOf('class ', position);

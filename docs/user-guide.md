@@ -17,6 +17,10 @@ double-click **Run-OpenVision.cmd** to verify, extract and launch the included a
 No Node.js, npm or separate editor installation is needed.
 See [installation and updates](native-runtime.md).
 
+Use **Project Home → Color theme** to choose a dark, light or high-contrast theme.
+In the editor, **Local Profile → Appearance settings** opens color options.
+[Appearance customization](appearance.md) covers custom colors, fonts and icons.
+
 The launcher opens **OpenVision** with its own preferences and extensions. Open
 your project with **File > Open Folder**. Editable application files live under
 `electron-host/resources/app/` in the extracted package. Close the app before
