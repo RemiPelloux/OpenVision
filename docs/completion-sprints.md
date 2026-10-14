@@ -8,6 +8,11 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+14 October follow-up: [large clipboard pastes](rea-large-paste.md) now use local
+files and compact prompt references. Native paste/failure checks and a real
+Codex Easy Read continuation pass; this scoped addition does not close the
+broader chat/context acceptance gates or change the fixed progress denominator.
+
 The accepted **80% local feature verification** target uses the fixed 42-story
 baseline in [feature-acceptance.json](feature-acceptance.json). Run
 `npm run status:features` for the current counts. At least **34 of 42** stories

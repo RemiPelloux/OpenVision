@@ -25,7 +25,7 @@ does not modify the environment, and throws if no local file profile is availabl
 The reader rejects an absent or relative directory instead of falling back to an
 original global folder. With external symlinks disabled, traversal of the user
 directory is bounded to that directory. Existing explicit third-party import
-behavior and project `.cursor/agents` compatibility remain supported by their
+behavior and project `.openvision/agents` remain supported by their
 original branches.
 
 This is deliberately narrower than moving every `homedir()` call: the same

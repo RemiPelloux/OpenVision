@@ -12,9 +12,10 @@ import { fileHash } from './import-files.mjs';
 import { createLiveAgentRelay } from './live-agent-relay.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { verifyLiveHistory, verifyPersistedLiveHistory } from './verify-live-history.mjs';
+import { prepareLivePaste, inspectPasteRequest, verifySavedLivePaste } from './verify-live-paste.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Capture saves the first request locally with the transport key redacted.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--paste] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Paste checks native large clipboard text saved to a file and read on demand. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -23,6 +24,8 @@ const reasoningIndex = process.argv.indexOf('--reasoning');
 const reasoning = reasoningIndex < 0 ? 'default' : process.argv[reasoningIndex + 1];
 const subagent = process.argv.includes('--subagent');
 const history = process.argv.includes('--history');
+const paste = process.argv.includes('--paste');
+assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to-Read probe');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const db = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
@@ -39,7 +42,8 @@ const profile = join(directory, 'profile'), project = join(directory, 'project')
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'git.openRepositoryInParentFolders': 'never' }));
 const marker = `OPENVISION_READ_${randomUUID().replaceAll('-', '')}`;
-const file = join(project, 'probe.txt'); await writeFile(file, marker + '\n');
+const file = join(project, 'probe.txt');
+if (!paste) await writeFile(file, marker + '\n');
 if (process.platform === 'win32') {
   const state = JSON.parse(await readFile(join(root, 'data/local/Local State'), 'utf8'));
   assert.equal(typeof state.os_crypt?.encrypted_key, 'string');
@@ -55,8 +59,14 @@ const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent
     ['verifier', fileURLToPath(import.meta.url)], ['relay', join(root, 'desktop/live-agent-relay.mjs')],
     ...(history ? [['historyVerifier', join(root, 'desktop/verify-live-history.mjs')]] : []),
   ].map(async ([name, path]) => [name, await fileHash(path)]))), success: false };
-const captureRequest = process.argv.includes('--capture-payload')
-  ? body => writeFile(join(directory, 'native-request.json'), body) : undefined;
+if (paste) result.paste = {};
+const captureRequest = async body => {
+  if (paste) {
+    inspectPasteRequest(body, result.paste);
+    assert.ok(!body.includes(marker), 'The provider must learn the unique marker only from the file Read');
+  }
+  if (process.argv.includes('--capture-payload')) await writeFile(join(directory, 'native-request.json'), body);
+};
 const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest });
 let app, page;
 async function launch() {
@@ -117,10 +127,14 @@ try {
   }
   await dismissMenu();
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
-  await input.fill(subagent
+  let pasted;
+  if (paste) pasted = await prepareLivePaste({ app, input, project, marker });
+  else {
+    await input.fill(subagent
     ? 'Use exactly one Task subagent with the inherited model. Ask it to use Read on probe.txt and return exactly the single line in that file. After the Task finishes, reply with exactly the returned line. Do not read the file yourself, edit files, run commands or use other tools.'
     : 'Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
-  await input.press('Enter');
+    await input.press('Enter');
+  }
   await Promise.race([
     page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: subagent ? 180000 : 90000 }),
     relay.failure.then(message => { throw new Error(message); }),
@@ -142,7 +156,8 @@ try {
   } });
   assert.ok(relay.requests.every(request => reasoning === 'default' ? request.reasoning === undefined :
     (request.reasoning?.effort ?? request.reasoning) === reasoning), 'Wire effort must match the explicit native selection');
-  assert.equal(await readFile(file, 'utf8'), marker + '\n');
+  if (paste) await verifySavedLivePaste(pasted, result.paste);
+  else assert.equal(await readFile(file, 'utf8'), marker + '\n');
   result.success = true; result.readContinuationVerified = true;
   await page.screenshot({ path: join(directory, 'native-agent.png') });
 } catch (error) {

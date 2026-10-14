@@ -156,6 +156,7 @@ export async function installLocalProfile(root) {
     await copyFile(join(root, `desktop/local-profile.${extension}`), join(workbench, `openvision-local-profile.${extension}`));
   for (const extension of ['js', 'css'])
     await copyFile(join(root, `desktop/welcome-screen.${extension}`), join(workbench, `openvision-welcome-screen.${extension}`));
+  await copyFile(join(root, 'desktop/large-paste.js'), join(workbench, 'openvision-large-paste.js'));
   await copyFile(join(root, 'desktop/import-ui.js'), join(workbench, 'openvision-import-ui.js'));
   await languageBranding(root, app);
 }

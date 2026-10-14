@@ -29,6 +29,7 @@ import { installMcpReconnect } from './mcp-reconnect-customization.mjs';
 import { installAgentProviders } from './agent-provider-customization.mjs';
 import { installProviderErrorPolicy } from './provider-error-customization.mjs';
 import { installWelcomeStartup } from './welcome-customization.mjs';
+import { installProjectNamespace, restoreNamespaceInputs } from './namespace-build.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -43,6 +44,7 @@ if (await exists(marker)) {
 } else manifest = await assembleSource(root, recovery);
 
 await mkdir(join(root, 'build'), { recursive: true });
+await restoreNamespaceInputs(root);
 const layout = platformLayout(root);
 await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
 await customizeBundles(root);
@@ -62,13 +64,15 @@ await installCoreTelemetryPolicy(root);
 await installExtensionTelemetryPolicy(root);
 await installCompletion(root);
 await installLocalChatTitles(root);
-const integrity = await buildExtensionIntegrity(root);
-console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 await installLocalProfile(root);
 await installModelSettings(root);
 await copyFile(join(root, 'desktop/local-rules.js'),
   join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js'));
 await installCursorImport(root);
+await installProjectNamespace(root, { afterExtensions: async () => {
+  const integrity = await buildExtensionIntegrity(root);
+  console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
+} });
 const settings = join(root, 'data/local/User/settings.json');
 if (!await exists(settings)) {
   await mkdir(dirname(settings), { recursive: true });

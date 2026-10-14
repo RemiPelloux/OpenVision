@@ -20,7 +20,7 @@ falling back to an original or remote home directory. `HOME`, `USERPROFILE` and
 the original installation remain untouched.
 
 Project-managed configurations keep their intentional
-`<project>/.cursor/mcp.json` compatibility path. Existing global settings are not
+`<project>/.openvision/mcp.json` path (updated by the project namespace pass). Existing global settings are not
 silently imported. To import a global configuration, review its servers and place
 the desired entries in OpenVision's global MCP configuration file. The generic
 settings importer does not currently import that file.

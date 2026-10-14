@@ -6,11 +6,15 @@ import net from 'node:net';
 import { loadRuntime } from './source-assembly.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { projectPaths } from './project-workspace.mjs';
+import { migrateProjectNamespace } from './project-namespace-migration.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
 const executable = layout.executable;
 const project = await projectPaths(root);
+const migration = await migrateProjectNamespace(project.project);
+if (migration.copied || migration.conflicts.length || migration.errors.length || migration.skippedLinks.length)
+  console.log('Project namespace migration:', JSON.stringify(migration));
 const argumentsList = [
   '--user-data-dir', join(root, 'data/local'), '--extensions-dir', join(root, 'data/local-extensions'),
   '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',

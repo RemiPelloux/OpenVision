@@ -35,6 +35,16 @@ by choosing **Welcome screen**. It respects the system's reduced-motion preferen
 Run `npm run verify:welcome` to check the real desktop screen in a disposable
 profile, including workspace entry, layout, blink and dismissal.
 
+Large chat pastes (10,000 characters or more) automatically become UTF-8 files in
+your project's `.openvision/paste/` folder. The prompt keeps a short file reference;
+the agent reads the text when needed. Files stay available for saved chats and
+can be removed manually when no longer needed. See [paste behavior and live
+verification](docs/rea-large-paste.md).
+
+Project rules, plans, agents, skills, commands and MCP configuration use
+`.openvision/`. See [project folders and safe migration](docs/project-configuration.md)
+for the layout and migration command.
+
 Release work targets **80% of the fixed 42 acceptance stories**, plus a usable
 development workflow. Current evidence, missing functions and conditional ETAs
 are in [remaining work and estimates](docs/remaining-work-estimates.md).
