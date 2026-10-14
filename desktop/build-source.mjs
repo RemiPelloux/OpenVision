@@ -30,6 +30,7 @@ import { installAgentProviders } from './agent-provider-customization.mjs';
 import { installProviderErrorPolicy } from './provider-error-customization.mjs';
 import { installWelcomeStartup } from './welcome-customization.mjs';
 import { installProjectNamespace, restoreNamespaceInputs } from './namespace-build.mjs';
+import { installRuleDurability } from './rules-durability-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -69,6 +70,7 @@ await installModelSettings(root);
 await copyFile(join(root, 'desktop/local-rules.js'),
   join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js'));
 await installCursorImport(root);
+await installRuleDurability(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);

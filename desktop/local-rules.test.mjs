@@ -7,75 +7,124 @@ import { LocalRules } from './local-rules.js';
 import { localUserRules } from './rules-customization.mjs';
 
 function storageFixture(values = new Map()) {
-  const workspace = new Map(), listeners = new Set();
+  const workspace = new Map(), listeners = new Set(), owners = new Map();
   const at = scope => { assert.ok(scope === 0 || scope === 1); return scope === 0 ? values : workspace; };
   const fire = (scope, key) => { for (const item of listeners) if (item.scope === scope) item.callback({key}); };
+  for (const scope of [0, 1]) {
+    const persisted = new Map(at(scope));
+    const profile = scope === 0 ? { id: 'test-profile' } : undefined;
+    const project = scope === 1 ? { id: 'test-workspace' } : undefined;
+    owners.set(scope, { items: at(scope), persisted,
+      database: { profile, workspace: project, channel: {
+        async call(command, request) {
+          assert.equal(command, 'openvisionRulesUpdate');
+          assert.equal(request.profile, profile); assert.equal(request.workspace, project);
+          if (request.value === null) persisted.delete(request.key);
+          else persisted.set(request.key, request.value);
+        },
+      } },
+      acceptExternal(key, value) {
+        if (value === undefined) at(scope).delete(key); else at(scope).set(key, value);
+        fire(scope, key);
+      },
+    });
+  }
   return { values, listeners,
-    getStorage: scope => ({ items: at(scope) }),
+    getStorage: scope => owners.get(scope),
     keys: (scope, target) => { assert.equal(target, 1); return [...at(scope).keys()]; },
     get: (key, scope) => at(scope).get(key),
-    store(key, value, scope, target) {
-      assert.equal(target, 1);
-      at(scope).set(key, value); fire(scope, key);
-    },
-    remove(key, scope) { at(scope).delete(key); fire(scope, key); },
     onDidChangeValue: scope => callback => { const item = {scope, callback}; listeners.add(item); return {dispose: () => listeners.delete(item)}; },
   };
 }
 
-test('local rules survive a new owner, preserve unrelated writes and migrate legacy text once', () => {
+test('local rules survive a new owner, preserve unrelated writes and migrate legacy text once', async () => {
   const storage = storageFixture();
   const first = new LocalRules(storage), second = new LocalRules(storage);
-  first.migrateLegacy('Use meaningful names.');
-  second.migrateLegacy('Use meaningful names.');
-  const id = first.add('  Tests ', 'Test changed behavior.');
-  second.add('Docs', 'Document configuration.');
-  first.update(id, 'Tests', 'Test failures too.');
+  await first.migrateLegacy('Use meaningful names.');
+  await second.migrateLegacy('Use meaningful names.');
+  const id = await first.add('  Tests ', 'Test changed behavior.');
+  await second.add('Docs', 'Document configuration.');
+  await first.update(id, 'Tests', 'Test failures too.');
   assert.equal(new LocalRules(storage).read().length, 3);
   assert.equal(second.read().find(item => item.id === id).knowledge, 'Test failures too.');
-  first.clear();
-  second.migrateLegacy('Use meaningful names.');
+  await first.clear();
+  await second.migrateLegacy('Use meaningful names.');
   assert.deepEqual(second.read(), [], 'Deleted legacy rules must not reappear after restart');
   assert.deepEqual(new LocalRules(storageFixture()).read(), [], 'Another profile is isolated');
 });
 
-test('rules survive missing or stale shared key-target metadata', () => {
+test('rules survive missing or stale shared key-target metadata', async () => {
   const storage = storageFixture(), rules = new LocalRules(storage);
-  rules.add('Window A', 'Keep first');
-  rules.add('Window B', 'Keep second');
+  await rules.add('Window A', 'Keep first');
+  await rules.add('Window B', 'Keep second');
   storage.keys = () => [];
   assert.equal(new LocalRules(storage).read().length, 2);
   storage.getStorage = () => undefined;
   assert.throws(() => rules.read(), /storage is unavailable/);
 });
 
-test('user rules follow the profile but generated memories stay in their workspace', () => {
+test('user rules follow the profile but generated memories stay in their workspace', async () => {
   const storage = storageFixture(), first = new LocalRules(storage);
-  first.add('User preference', 'Use tests.');
-  first.add('Project note', 'Internal API detail.', 'conversation');
+  await first.add('User preference', 'Use tests.');
+  await first.add('Project note', 'Internal API detail.', 'conversation');
   const otherProject = new LocalRules(storageFixture(storage.values));
   assert.equal(first.read().length, 2);
   assert.equal(otherProject.read().length, 1);
   assert.equal(otherProject.read()[0].isGenerated, false);
 });
 
-test('malformed and failed storage writes preserve prior rule data', () => {
+test('malformed and failed storage writes preserve prior rule data', async () => {
   const storage = storageFixture(), rules = new LocalRules(storage);
-  const id = rules.add('Keep', 'Original');
+  const id = await rules.add('Keep', 'Original');
   const before = new Map(storage.values);
-  const save = storage.store;
-  storage.store = () => { throw new Error('storage unavailable'); };
-  assert.throws(() => rules.update(id, 'Change', 'New'), /storage unavailable/);
+  const { channel } = storage.getStorage(0).database, save = channel.call;
+  channel.call = async () => { throw new Error('storage unavailable'); };
+  await assert.rejects(rules.update(id, 'Change', 'New'), /storage unavailable/);
+  await assert.rejects(rules.remove(id), /storage unavailable/);
   assert.deepEqual(storage.values, before);
-  storage.store = save;
+  assert.deepEqual(storage.getStorage(0).persisted, before);
+  channel.call = save;
+  await rules.update(id, 'Recovered', 'Saved after recovery');
+  assert.equal(rules.read()[0].knowledge, 'Saved after recovery');
   const key = [...storage.values.keys()][0];
   storage.values.set(key, '{broken');
   assert.throws(() => rules.read(), /invalid JSON/);
-  assert.throws(() => rules.add('New', 'Text'), /invalid JSON/);
-  assert.throws(() => rules.clear(), /invalid JSON/);
+  await assert.rejects(rules.add('New', 'Text'), /invalid JSON/);
+  await assert.rejects(rules.clear(), /invalid JSON/);
   assert.equal(storage.values.get(key), '{broken');
   storage.values.set(key, JSON.stringify({id:'different', title:'x', knowledge:'y', isGenerated:false}));
   assert.throws(() => rules.read(), /unsupported format/);
+});
+
+test('rule cache and completion wait for the native storage acknowledgement', async () => {
+  const storage = storageFixture(), rules = new LocalRules(storage);
+  const { channel } = storage.getStorage(0).database, save = channel.call;
+  const pending = Promise.withResolvers();
+  channel.call = async (...args) => { await pending.promise; return save(...args); };
+  let completed = false;
+  const adding = rules.add('Pending', 'Only show after commit').then(id => { completed = true; return id; });
+  await Promise.resolve();
+  assert.deepEqual(rules.read(), []);
+  assert.equal(completed, false);
+  pending.resolve();
+  const id = await adding;
+  assert.equal(rules.read()[0].id, id);
+  assert.equal(storage.getStorage(0).persisted.size, 1);
+});
+
+test('interrupted legacy migration retries without duplicating its saved rule', async () => {
+  const storage = storageFixture(), rules = new LocalRules(storage);
+  const { channel } = storage.getStorage(0).database, save = channel.call;
+  channel.call = async (command, request) => {
+    if (request.key === 'openvision.user-rules.legacy-migrated.v1') throw new Error('migration marker failure');
+    return save(command, request);
+  };
+  await assert.rejects(rules.migrateLegacy('Legacy instructions'), /migration marker failure/);
+  assert.equal(rules.read().length, 1);
+  channel.call = save;
+  await rules.migrateLegacy('Legacy instructions');
+  assert.equal(rules.read().length, 1);
+  assert.equal(storage.values.get('openvision.user-rules.legacy-migrated.v1'), 'true');
 });
 
 class Disposable {
@@ -119,6 +168,12 @@ for (const variant of ['desktop', 'glass']) {
     const patched = localUserRules(source, variant);
     assert.equal(localUserRules(patched, variant), patched);
     const body = extractClass(patched, variant);
+    const prior = patched.replace('/* OpenVision local user rules v3 */', '/* OpenVision local user rules v2 */')
+      .replace(body, `class extends ${variant === 'desktop' ? 'Se' : 'ot'} { oldService() {} }`);
+    const upgraded = localUserRules(prior, variant);
+    assert.equal(extractClass(upgraded, variant), body);
+    assert.equal(localUserRules(upgraded, variant), upgraded);
+    assert.equal([...upgraded.matchAll(/import \{LocalRules as OpenvisionLocalRules\}/g)].length, 1);
     assert.doesNotMatch(body, /knowledgeBase(?:List|Add|Update|Remove)|aiClientService|cursorAuthenticationService/);
     const Service = runInNewContext(`(${body})`, {
       Se:Disposable, ot:Disposable, me:Emitter, Xe:Emitter, tg:atomStore, Wh:atomStore, Lt:signal, Bt:signal,
@@ -156,5 +211,26 @@ for (const variant of ['desktop', 'glass']) {
     assert.equal(restarted.items.length, 0);
     restarted.dispose();
     assert.deepEqual(errors, []);
+
+    const recoveringStorage = storageFixture(), migrationErrors = [];
+    const { channel } = recoveringStorage.getStorage(0).database, save = channel.call;
+    channel.call = async () => { throw new Error('temporarily unavailable'); };
+    const recovering = new Service(recoveringStorage, {getPersonalContext: () => 'Existing legacy rule'},
+      {error: value => migrationErrors.push(value)});
+    await assert.rejects(recovering.ensureReady(), /temporarily unavailable/);
+    await assert.rejects(recovering.addItem('New', 'Wait for persistence'), /temporarily unavailable/);
+    assert.equal(recovering.items.length, 0);
+    channel.call = save;
+    const recoveredId = await recovering.addItem('New', 'Saved after recovery');
+    assert.equal(recovering.items.length, 2, 'Migration and CRUD recover without a restart');
+    assert.ok(migrationErrors.length > 0, 'Startup migration failures reach the native log');
+    channel.call = async () => { throw new Error('temporarily unavailable'); };
+    await assert.rejects(recovering.updateItem(recoveredId, 'New', 'Unsaved edit'), /temporarily unavailable/);
+    assert.equal(recovering.items.find(item => item.id === recoveredId).knowledge, 'Saved after recovery');
+    channel.call = save;
+    await recovering.updateItem(recoveredId, 'New', 'Committed edit');
+    assert.equal(recovering.items.find(item => item.id === recoveredId).knowledge, 'Committed edit');
+    recovering.dispose();
+    assert.equal(recoveringStorage.listeners.size, 0);
   });
 }

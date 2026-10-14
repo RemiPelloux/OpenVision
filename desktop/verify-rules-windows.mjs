@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
+import { fileHash } from './import-files.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const layout = platformLayout(root);
@@ -21,10 +22,15 @@ const sandbox = process.platform === 'linux' ? await linuxSandboxArguments(layou
 const apps = new Set();
 const requests = [];
 const result = {checked_at:new Date().toISOString(), platform:process.platform, node:process.version,
+  hashes: {
+    main: await fileHash(join(root, 'source/app/out/main.js')),
+    durableRules: await fileHash(join(root, 'source/app/out/openvision-rules-durable.js')),
+    rendererRules: await fileHash(join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js')),
+  },
   directory, profile, isolatedProfile, projects, checks:{}, host_exits:[], limitations:[
     'No AI inference or generated workspace rules were exercised. The native Customize UI filters generated rules out.',
     'Renderer request observations do not cover every native process.',
-    'Malformed-record testing seeds synthetic corrupt data into a closed disposable database; it does not simulate a disk or SQLite write failure.',
+    'Malformed-record testing seeds synthetic corrupt data; separate SQLite abort triggers exercise real statement failures, not physical full-disk or filesystem I/O failures.',
     'Same-rule conflicting edits are not a merge test; this verifies preservation of unrelated rules.'
   ]};
 
@@ -101,19 +107,27 @@ async function submitNew(page, text) {
 }
 
 async function edit(page, oldText, newText) {
-  await page.getByText(oldText, {exact:true}).click();
-  await page.locator('textarea').fill(newText);
-  await page.getByRole('button', {name:'Save', exact:true}).click();
+  await submitEdit(page, oldText, newText);
   await page.getByText(newText, {exact:true}).waitFor();
 }
 
+async function submitEdit(page, oldText, newText) {
+  await page.getByText(oldText, {exact:true}).click();
+  await page.locator('textarea').fill(newText);
+  await page.getByRole('button', {name:'Save', exact:true}).click();
+}
+
 async function remove(page, text) {
+  await submitRemove(page, text);
+  await page.getByText(text, {exact:true}).waitFor({state:'hidden'});
+}
+
+async function submitRemove(page, text) {
   await page.getByText(text, {exact:true}).hover();
   await page.getByRole('button', {name:`${text} options`, exact:true}).click();
   await page.getByRole('menuitem', {name:'Delete', exact:true}).click();
   await page.getByText('Delete Rule', {exact:true}).waitFor();
   await page.locator('span.truncate').filter({hasText:/^Delete$/}).click();
-  await page.getByText(text, {exact:true}).waitFor({state:'hidden'});
 }
 
 async function visible(pages, texts) {
@@ -182,6 +196,70 @@ async function verifyMalformedRecovery() {
   result.checks.malformed_fixture_removal_restores_existing_rules_and_creation = true;
 }
 
+function failingWriteFixture(insert) {
+  assert.equal(apps.size, 0, 'Install/remove SQLite triggers only with owned hosts closed');
+  const db = new DatabaseSync(join(profile, 'User/globalStorage/state.vscdb'));
+  try {
+    for (const operation of ['INSERT', 'UPDATE', 'DELETE']) {
+      const name = `openvision_verify_reject_rule_${operation.toLowerCase()}`;
+      if (insert) {
+        const row = operation === 'DELETE' ? 'OLD' : 'NEW';
+        db.exec(`CREATE TRIGGER ${name} BEFORE ${operation} ON ItemTable
+          WHEN ${row}.key LIKE 'openvision.user-rule.v1.%'
+          BEGIN SELECT RAISE(ABORT, 'OpenVision verification: rejected rule write'); END`);
+      } else {
+        db.exec(`DROP TRIGGER ${name}`);
+      }
+    }
+  } finally { db.close(); }
+}
+
+async function verifyFailedWriteRecovery() {
+  const before = persistedRules();
+  failingWriteFixture(true);
+  let {app, page} = await launch(profile, projects[0]);
+  const observer = await secondWindow(app, projects[1]);
+  await submitNew(page, durableNew);
+  await page.getByText('Could not create rule.', {exact:true}).waitFor();
+  await absent([page, observer], [durableNew]);
+  assert.deepEqual(persistedRules(), before, 'Rejected creation preserves committed rows');
+  result.checks.sqlite_failed_create_visible_and_disk_unchanged = true;
+  await submitEdit(page, updated, durableUpdated);
+  await page.getByText('Could not update rule.', {exact:true}).waitFor();
+  await visible([observer], [updated, third, recoveryRule]);
+  await absent([observer], [durableUpdated]);
+  assert.deepEqual(persistedRules(), before, 'Rejected edit preserves the old committed value');
+  result.checks.sqlite_failed_edit_visible_and_disk_unchanged = true;
+  await submitRemove(observer, third);
+  await observer.getByText('Could not delete rule.', {exact:true}).waitFor();
+  await visible([observer], [updated, third, recoveryRule]);
+  assert.deepEqual(persistedRules(), before, 'Rejected deletion preserves the committed rule');
+  result.checks.sqlite_failed_delete_visible_and_disk_unchanged = true;
+  await page.screenshot({path:join(directory, 'sqlite-write-failed-editor.png')});
+  await observer.screenshot({path:join(directory, 'sqlite-write-failed-observer.png')});
+  await close(app);
+  assert.deepEqual(persistedRules(), before, 'Shutdown must not later persist rejected mutations');
+  result.checks.rejected_writes_not_deferred_until_shutdown = true;
+  failingWriteFixture(false);
+  assert.deepEqual(persistedRules(), before, 'Fixture removal changes no rule bytes');
+  ({app, page} = await launch(profile, projects[0]));
+  await visible([page], [updated, third, recoveryRule]);
+  await absent([page], [durableNew, durableUpdated]);
+  await add(page, durableNew);
+  await edit(page, updated, durableUpdated);
+  await remove(page, third);
+  await close(app);
+  ({app, page} = await launch(profile, projects[1]));
+  await visible([page], [durableNew, durableUpdated, recoveryRule]);
+  await absent([page], [updated, third]);
+  await page.screenshot({path:join(directory, 'sqlite-write-recovered-after-restart.png')});
+  await close(app);
+  const saved = persistedRules().map(row => JSON.parse(row.raw).knowledge);
+  assert(saved.includes(durableNew) && saved.includes(durableUpdated) && saved.includes(recoveryRule));
+  assert(!saved.includes(updated) && !saved.includes(third));
+  result.checks.sqlite_failure_removal_restores_crud_and_restart_persistence = true;
+}
+
 const first = 'OpenVision window A: keep descriptive names.';
 const second = 'OpenVision window B: retain unrelated additions.';
 const updated = 'OpenVision window A: edited while B adds another rule.';
@@ -190,6 +268,8 @@ const privateRule = 'OpenVision isolated profile: only visible here.';
 const corruptKey = 'openvision.user-rule.v1.native-corrupt-fixture';
 const rejectedRule = 'OpenVision malformed fixture: this addition must be rejected.';
 const recoveryRule = 'OpenVision recovered fixture: rule creation works again.';
+const durableNew = 'OpenVision durability fixture: creation requires a committed write.';
+const durableUpdated = 'OpenVision durability fixture: edited only after storage recovery.';
 
 try {
   let {app, page:a} = await launch(profile, projects[0]);
@@ -200,6 +280,8 @@ try {
   // Both writers start from the same empty profile state; each creates its own key.
   await Promise.all([add(a, first), add(b, second)]);
   await visible([a, b], [first, second]);
+  assert.deepEqual(persistedRules().map(row => JSON.parse(row.raw).knowledge).sort(), [first, second].sort());
+  result.checks.successful_additions_committed_before_shutdown = true;
   result.checks.cross_project_user_rules = true;
   result.checks.unrelated_simultaneous_additions = true;
   console.log('Two real windows: additions propagated across projects');
@@ -228,6 +310,7 @@ try {
   await a.screenshot({path:join(directory, 'after-restart.png')});
   await close(app);
   await verifyMalformedRecovery();
+  await verifyFailedWriteRecovery();
   assert.equal(requests.length, 0);
   result.checks.no_renderer_knowledge_base_requests = true;
   result.status = 'passed';

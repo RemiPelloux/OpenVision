@@ -1,6 +1,6 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
-const marker = '/* OpenVision local user rules v2 */';
+const marker = '/* OpenVision local user rules v3 */';
 const helperImport = 'import {LocalRules as OpenvisionLocalRules} from "../code/electron-sandbox/workbench/openvision-local-rules.js";';
 const symbols = {
   desktop: { owner: 'w$i', base: 'Se', emitter: 'me', store: 'tg', signal: 'Lt', disposable: 'en',
@@ -31,8 +31,9 @@ function localClass(s) {
         }));
       }
       // Load synchronously so the first Agent request sees persisted rules.
-      try { this.localRules.migrateLegacy(this.aiService.getPersonalContext()); this.reloadLocalRules(); }
+      try { this.reloadLocalRules(); }
       catch (error) { this.logService.error(error); }
+      this.ensureReady().catch(error => this.logService.error(error));
     }
     get items() { return this.itemsSignal(); }
     get isLoading() { return this.isLoadingSignal(); }
@@ -41,15 +42,21 @@ function localClass(s) {
     notifyItemsChanged() { this._onDidChangeItems.fire(this.items.map(item => ({...item}))); }
     reloadLocalRules() { this.setItems(this.localRules.read()); this.setIsLoading(false); this.notifyItemsChanged(); }
     async refresh() { this.reloadLocalRules(); }
+    ensureReady() {
+      return this.ready ??= this.localRules.migrateLegacy(this.aiService.getPersonalContext())
+        .then(() => this.reloadLocalRules())
+        .catch(error => { this.ready = undefined; throw error; });
+    }
     async addItem(title, knowledge, composerId) {
-      const id = this.localRules.add(title, knowledge, composerId);
+      await this.ensureReady();
+      const id = await this.localRules.add(title, knowledge, composerId);
       this.reloadLocalRules();
       return id;
     }
-    async updateItem(id, title, knowledge) { this.localRules.update(id, title, knowledge); this.reloadLocalRules(); }
-    async removeItem(id) { this.localRules.remove(id); this.reloadLocalRules(); }
-    async removeAll() { this.localRules.clear(); this.reloadLocalRules(); }
-    async maybeAddOldUserRules() { this.localRules.migrateLegacy(this.aiService.getPersonalContext()); this.reloadLocalRules(); }
+    async updateItem(id, title, knowledge) { await this.ensureReady(); await this.localRules.update(id, title, knowledge); this.reloadLocalRules(); }
+    async removeItem(id) { await this.ensureReady(); await this.localRules.remove(id); this.reloadLocalRules(); }
+    async removeAll() { await this.ensureReady(); await this.localRules.clear(); this.reloadLocalRules(); }
+    async maybeAddOldUserRules() { await this.localRules.migrateLegacy(this.aiService.getPersonalContext()); this.reloadLocalRules(); }
   }`;
 }
 
@@ -63,6 +70,8 @@ export function localUserRules(text, variant) {
   const start = position + `${s.owner} = `.length;
   const node = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
   const original = text.slice(start, node.end);
+  if (text.includes('/* OpenVision local user rules v2 */'))
+    return (text.slice(0, start) + localClass(s) + text.slice(node.end)).replace('/* OpenVision local user rules v2 */', marker);
   for (const name of ['knowledgeBaseList', 'knowledgeBaseAdd', 'knowledgeBaseUpdate', 'knowledgeBaseRemove', 'notifyItemsChanged'])
     if (!original.includes(name)) throw new Error(`User rule service contract changed: ${name}`);
   const decoration = `${s.owner} = `;

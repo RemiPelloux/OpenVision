@@ -4,7 +4,6 @@ const prefix = 'openvision.user-rule.v1.';
 const migrationKey = 'openvision.user-rules.legacy-migrated.v1';
 const profileScope = 0;
 const workspaceScope = 1;
-const machineTarget = 1;
 const scopeOf = item => item.isGenerated ? workspaceScope : profileScope;
 
 function parseRule(raw, id) {
@@ -46,42 +45,51 @@ export class LocalRules {
     return [...items.keys()];
   }
 
-  write(item) {
-    this.storage.store(prefix + item.id, JSON.stringify(item), scopeOf(item), machineTarget);
+  async commit(key, value, scope) {
+    const owner = this.storage.getStorage(scope), database = owner?.database;
+    if (!database?.channel || !owner.acceptExternal) throw new Error('Persistent OpenVision rule storage is unavailable.');
+    await database.channel.call('openvisionRulesUpdate', {
+      profile: database.profile, workspace: database.workspace, key, value,
+    });
+    owner.acceptExternal(key, value === null ? undefined : value);
   }
 
-  add(title, knowledge, composerId) {
+  async write(item) {
+    await this.commit(prefix + item.id, JSON.stringify(item), scopeOf(item));
+  }
+
+  async add(title, knowledge, composerId) {
     this.read(); // Refuse to hide or overwrite an unreadable saved state.
     const item = { ...textFields(title, knowledge), id: crypto.randomUUID(),
       createdAt: new Date().toISOString(), isGenerated: !!composerId };
-    this.write(item);
+    await this.write(item);
     return item.id;
   }
 
-  update(id, title, knowledge) {
+  async update(id, title, knowledge) {
     const item = this.read().find(rule => rule.id === id);
     if (!item) throw new Error('User rule not found.');
-    this.write({ ...item, ...textFields(title, knowledge) });
+    await this.write({ ...item, ...textFields(title, knowledge) });
   }
 
-  remove(id) {
+  async remove(id) {
     const item = this.read().find(rule => rule.id === id);
-    if (item) this.storage.remove(prefix + id, scopeOf(item));
+    if (item) await this.commit(prefix + id, null, scopeOf(item));
   }
 
-  clear() {
-    for (const item of this.read()) this.storage.remove(prefix + item.id, scopeOf(item));
+  async clear() {
+    for (const item of this.read()) await this.commit(prefix + item.id, null, scopeOf(item));
   }
 
-  migrateLegacy(knowledge) {
+  async migrateLegacy(knowledge) {
     if (this.storage.get(migrationKey, profileScope) === 'true' || typeof knowledge !== 'string' || !knowledge.trim()) return;
     const items = this.read();
     if (!items.some(item => !item.isGenerated && item.knowledge === knowledge)) {
       // A stable ID makes an interrupted migration or simultaneous windows safe.
       const id = 'legacy-personal-context';
       if (items.some(item => item.id === id)) throw new Error('Legacy rule migration conflicts with an existing rule.');
-      this.write({ id, title: 'Migrated User Rules', knowledge, isGenerated: false, createdAt: new Date().toISOString() });
+      await this.write({ id, title: 'Migrated User Rules', knowledge, isGenerated: false, createdAt: new Date().toISOString() });
     }
-    this.storage.store(migrationKey, 'true', profileScope, machineTarget);
+    await this.commit(migrationKey, 'true', profileScope);
   }
 }
