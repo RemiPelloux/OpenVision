@@ -8,6 +8,7 @@ import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { verifyLegacyMemoryStale } from './verify-legacy-memory-stale.mjs';
+import { verifyLegacyMemoryWindows } from './verify-legacy-memory-windows.mjs';
 
 const root = resolve(import.meta.dirname, '..'), layout = platformLayout(root);
 await mkdir(join(root, 'logs'), { recursive: true });
@@ -63,16 +64,16 @@ async function close() {
   assert.equal(child.exitCode, 0, 'Owned native host exits cleanly');
 }
 
-async function openRules() {
-  const rules = page.getByRole('button', { name: 'Rules', exact: true });
+async function openRules(target = page) {
+  const rules = target.getByRole('button', { name: 'Rules', exact: true });
   if (!await rules.isVisible()) {
-    await page.keyboard.press('ControlOrMeta+Shift+P');
-    await page.locator('.quick-input-widget input[type="text"]').fill('>Open Customize');
-    await page.locator('.quick-input-widget').getByText('Open Customize', { exact: true }).first().waitFor();
-    await page.keyboard.press('Enter');
+    await target.keyboard.press('ControlOrMeta+Shift+P');
+    await target.locator('.quick-input-widget input[type="text"]').fill('>Open Customize');
+    await target.locator('.quick-input-widget').getByText('Open Customize', { exact: true }).first().waitFor();
+    await target.keyboard.press('Enter');
   }
   await rules.click();
-  await section().waitFor();
+  await target.locator('.openvision-legacy-memories').waitFor();
 }
 
 const section = () => page.locator('.openvision-legacy-memories');
@@ -180,6 +181,11 @@ try {
   if (process.argv.includes('--stale')) {
     result.limitations.push('Stale-source mutation uses the real mounted knowledge service in the review window; no second-window broadcast is claimed.');
     await verifyLegacyMemoryStale({ page, fixtures, result, memoryFiles, memoryDirectory });
+    originalsUnchanged();
+  }
+  if (process.argv.includes('--windows')) {
+    await verifyLegacyMemoryWindows({ app, page, fixtures, result, memoryFiles, memoryDirectory,
+      layout, profile, directory, other, openRules, errors, requests });
     originalsUnchanged();
   }
   await close(); originalsUnchanged();

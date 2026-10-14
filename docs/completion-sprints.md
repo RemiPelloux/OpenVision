@@ -392,6 +392,21 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+14 October 2026, parallel local reliability follow-up (owner: OpenVision):
+[Cross-window memory review](project-memories.md#cross-window-workspace-storage)
+now receives owned workspace record changes and rejects stale approvals; the
+native two-renderer fixture passed 11 checks and preserved original database
+bytes. [Provider failure handling](provider-failure-handling.md#dns-and-tls-recovery-guidance)
+passed 16 native scenarios, including DNS/HTTPS protocol errors and explicit
+recovery, with 36 expected requests and no synthetic-key log matches.
+[Large-project verification](project-scale-verification.md) passed incremental
+notifications and stable recursive watcher checks at 100 and 10,000 files.
+All owned hosts exited 0. These fixtures use no paid inference; their reports
+state the IPC fixture and resource-measurement limits. Physical I/O recovery,
+certificate/inference-timeout cases, file symlinks and filesystem work bounds
+remain open. OV-301, OV-204 and OV-401 remain Partial: six of 42 stories are
+fully Verified, with the same 34-story target. The portable payload is unchanged.
+
 13 October 2026, OV-1001/OV-1003 follow-up (owner: OpenVision):
 [workspace context optimization](context-memory-optimization.md) removes repeated
 status/branch reads for shared repository roots and bounds foreground/background

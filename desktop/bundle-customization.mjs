@@ -59,7 +59,7 @@ export async function customizeBundles(root) {
     'desktop/model-picker-labels.mjs',
     'desktop/stream-customization.mjs',
     'desktop/provider-routing.mjs',
-    'desktop/rules-customization.mjs', 'desktop/subagent-model-customization.mjs',
+    'desktop/rules-customization.mjs', 'desktop/workspace-rule-events.mjs', 'desktop/subagent-model-customization.mjs',
     'desktop/subagent-settings-customization.mjs',
     'desktop/completion-cancellation.mjs',
     'tooling/dependencies.mjs', 'tooling/package-lock.json'];

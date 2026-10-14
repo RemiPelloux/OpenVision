@@ -18,6 +18,8 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
 | Edit a selection with AI | [Development-build Quick Edit](rea-inline-edit.md) |
 | Understand resource usage | [Performance review](performance.md) · [Native baseline](native-performance-baseline.md) |
+| Inspect large-project watcher behavior | [100-file and 10,000-file native verification](project-scale-verification.md) |
+| Understand provider errors and manual retries | [Provider failure handling](provider-failure-handling.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |
 | Read this release's scope | [0.2.0-preview.2 portable desktop](releases/0.2.0-preview.2.md) |
 | Review the packaged-app tests | [Portable verification](portable-verification.md) |

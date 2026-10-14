@@ -20,6 +20,34 @@ export function requireContextRecovery(error) {
   return error;
 }
 
+const connectionGuidance = new Map([
+  ['ENOTFOUND', 'The API hostname could not be resolved. Check the API base URL and your DNS connection, then try again.'],
+  ['EAI_AGAIN', 'The DNS lookup temporarily failed. Check your connection and try again.'],
+  ['ECONNREFUSED', 'The API server refused the connection. Check the API base URL and that the server is running, then try again.'],
+  ['ECONNRESET', 'The API connection was interrupted. Check your connection and try again.'],
+]);
+const certificateCodes = new Set(['DEPTH_ZERO_SELF_SIGNED_CERT', 'SELF_SIGNED_CERT_IN_CHAIN',
+  'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'CERT_HAS_EXPIRED',
+  'CERT_NOT_YET_VALID', 'ERR_TLS_CERT_ALTNAME_INVALID']);
+const timeoutCodes = new Set(['ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT']);
+
+function connectionFailureGuidance(error) {
+  const pending = [error], seen = new WeakSet();
+  while (pending.length) {
+    const value = pending.pop();
+    if (!value || typeof value !== 'object' || seen.has(value)) continue;
+    seen.add(value);
+    const code = value.code;
+    if (connectionGuidance.has(code)) return connectionGuidance.get(code);
+    if (certificateCodes.has(code)) return 'The API TLS certificate could not be verified. Check the server certificate, hostname and system date; keep certificate verification enabled.';
+    if (code === 'ERR_SSL_WRONG_VERSION_NUMBER' || code === 'ERR_SSL_PACKET_LENGTH_TOO_LONG')
+      return 'The API server could not establish HTTPS. Check the API base URL scheme and the server TLS configuration, then try again.';
+    if (timeoutCodes.has(code)) return 'The API connection timed out. Check that the server is available and try again.';
+    pending.push(value.cause, value.lastError);
+    if (Array.isArray(value.errors)) pending.push(...value.errors);
+  }
+}
+
 export function providerFailureDetail(error, detail) {
   if (!error || typeof error !== 'object') return detail;
   let guidance;
@@ -28,6 +56,7 @@ export function providerFailureDetail(error, detail) {
   else if (error.data?.error?.code === 'unsupported_image') guidance = 'This model does not support the attached image. Remove it or choose a model with image support.';
   else if (error.statusCode === 429) guidance = 'The provider is rate limiting requests. Wait before choosing Try again.';
   else if (error.statusCode >= 500) guidance = 'The provider reported a server error. Try again when the service is available.';
+  else guidance = connectionFailureGuidance(error);
   return guidance ? `${guidance}\n\n${detail}` : detail;
 }
 

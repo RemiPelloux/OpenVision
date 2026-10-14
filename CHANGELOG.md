@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Add Project Home with searchable recent projects, saved favorites, open-window focus and bounded lists.
+- Route native Quick Edit through the selected custom provider, model and reasoning setting, with cancellation and native diff review.
+- Explain DNS, refused connections and TLS failures using structured transport errors while preserving manual retry control.
+- Extend local verification with cross-window memory review and large-project watcher workloads. Evidence and remaining gates are recorded in the [roadmap](docs/roadmap.md).
+
+These development changes are newer than the Windows portable payload below.
+
 ## 0.2.0-preview.2 — 2026-10-14
 
 - Ship the complete Windows x64 portable app, including editable application JavaScript, bundled extensions and native runtime support.

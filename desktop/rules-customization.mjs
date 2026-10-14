@@ -1,4 +1,5 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { workspaceRuleEvents } from './workspace-rule-events.mjs';
 
 const marker = '/* OpenVision local user rules v3 */';
 const helperImport = 'import {LocalRules as OpenvisionLocalRules} from "../code/electron-sandbox/workbench/openvision-local-rules.js";';
@@ -61,6 +62,7 @@ function localClass(s) {
 }
 
 export function localUserRules(text, variant) {
+  text = workspaceRuleEvents(text, variant);
   if (text.includes(marker)) return text;
   const s = symbols[variant];
   if (!s) throw new Error(`Unknown workbench variant: ${variant}`);

@@ -60,9 +60,18 @@ permission testing was added. Original failed artifacts remain available.
 
 ## Remaining requirements
 
-OV-401 remains Partial. This is a small two-root fixture, not proof of bounded
-filesystem work in a large project. File-symlink behavior, large-project watcher
-counts and incremental filesystem costs remain unverified. A graceful hot exit
+The companion [project scale verifier](project-scale-verification.md) passed
+eight assertions across 100-file and 10,000-file projects in final run
+`logs/project-scale-verification-QhYlDX/result.json`. Each case delivered exactly
+five create, five change and five delete notifications, none for unrelated files,
+and no recursive project watcher restart during the edits. Both hosts exited 0.
+Native watcher traces and CPU/memory snapshots are retained with that evidence.
+Actual Windows file-symlink creation returned `EPERM`, so file-symlink behavior
+remains unverified; the test did not substitute a directory junction.
+
+OV-401 remains Partial. The lifecycle fixture is small, and the larger watcher
+fixture does not measure OS directory traversal/read counts or establish bounded
+filesystem work across all project operations. A graceful hot exit
 does not establish crash/power-loss recovery. Write denial is not full-disk or
 physical I/O failure. macOS/Linux remain untested. No universal speed/RAM
 improvement or independent native rebuild is claimed.

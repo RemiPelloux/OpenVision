@@ -138,7 +138,8 @@ catalog/error fixtures cannot establish Codex Easy, DeepSeek or Grok behavior.
 
 ## Remaining acceptance work
 
-- Native DNS/TLS failures and successful-response/header/stream inactivity timeouts.
+- TLS certificate rejection and successful-response/header/stream inactivity
+  timeouts. Native DNS and TLS protocol failures now pass as detailed below.
 - Unsupported capability behavior against actual tool/image inputs and providers;
   error-response fixtures do not establish the model's capability contract.
 - Remaining malformed/truncated/oversized successful stream shapes and downstream
@@ -150,3 +151,48 @@ catalog/error fixtures cannot establish Codex Easy, DeepSeek or Grok behavior.
 Remaining OV-204 work is sized at **5 complexity points**. Live provider
 availability and native platform access remain verification prerequisites.
 The [feature roadmap](roadmap.md) owns the current score and acceptance gates.
+
+## DNS and TLS recovery guidance
+
+The connection-error producer now adds actionable guidance from structured
+transport error codes. DNS lookup failures explain the hostname/DNS checks;
+connection refusal explains server availability; TLS certificate and HTTPS
+protocol failures have distinct guidance. Certificate failures never recommend
+disabling verification. Known transport timeout codes also receive guidance;
+this does **not** introduce an inference timeout or prove the native timeout path.
+Unknown codes retain their existing details. The underlying error, code, URL,
+request identity and retry classification are preserved.
+
+Focused verification on 14 October 2026 passed **25 tests**, including the
+recovered production HTTP/retry owners against an actual reserved `.invalid`
+DNS failure and an HTTPS handshake sent to a local plain HTTP fixture. Each
+failed submission made one fetch attempt, remained terminal for automatic
+retries, and allowed one explicit successful recovery. These tests use a
+synthetic credential and no paid inference. Certificate/timeout-code cases are
+structured-error unit tests, not actual certificate expiry or inference timeouts.
+Desktop JavaScript syntax checks also passed.
+
+`desktop/verify-provider-errors.mjs` now includes native DNS and TLS scenarios:
+the controlled provider redirects to the reserved invalid hostname or to its
+own plain HTTP port with an HTTPS URL, then returns a successful stream on an
+explicit retry. This deliberately tests transport failure after a redirect;
+it does not test user entry of an invalid provider URL.
+
+The rebuilt native Windows run `logs/provider-errors-NvvxqH/result.json` passed
+all **16 scenarios and manual retries**, including observed `ENOTFOUND` DNS
+resolution failure and `WRONG_VERSION_NUMBER` HTTPS protocol failure. Each
+scenario made exactly one initial request to the fixture, displayed the new
+guidance and a usable Try again action, and recovered with the original prompt,
+model and synthetic credential. No automatic retry reached the fixture. The run
+observed **36 requests**, passed connection-refusal recovery, Stop closing its
+active SSE socket and error dismissal, and found no synthetic-credential matches
+in **43 native log files**. The owned host exited 0 with no cleanup errors.
+
+The evidence records Agent SHA-256
+`c98bea7ed5f084c3c47d136ae1fd5f3e9a69b97f8497c9e7ea945014b8c48d97`, helper
+`10f04dea5b7c308ee27e8ca4d3b698064f13962f81b1ed6f4bc7b02c1cadc464` and workbench
+`9251426f04943379ff29248049f3d2dbb3290e1a68172f852bbc180ead11a503`.
+This closes the Windows native DNS-resolution and HTTPS-protocol failure/recovery
+subcases. Actual certificate expiry/trust/hostname rejection, inference timeouts,
+successful-stream size/truncation and live-provider/platform gates remain open.
+OV-204 remains Partial; no story or percentage is promoted.

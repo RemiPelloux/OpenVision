@@ -27,6 +27,7 @@ const scenarios = [
   ['server-error', 503], ['bad-gateway', 502], ['internal-error', 500],
   ['malformed-stream', 200], ['stream-error', 200],
   ['disconnected', 0],
+  ['dns-failure', 0], ['tls-failure', 0],
   ['context-limit', 400], ['unsupported-tools', 400], ['unsupported-images', 400],
   ['oversized-error', 503], ['stalled-error', 429],
 ];
@@ -44,6 +45,12 @@ const server = createServer(async (request, response) => {
   const record = { scenario, authorized: request.headers.authorization === 'Bearer secret-fixture-key', model: body.model };
   if (scenario.startsWith('recovery:')) record.originalPromptRetained = JSON.stringify(body.messages).includes(`Trigger ${scenario.slice(9)}`);
   requests.push(record);
+  if (scenario === 'dns-failure' || scenario === 'tls-failure') {
+    response.writeHead(307, { location: scenario === 'dns-failure'
+      ? 'http://openvision-provider-fixture.invalid/v1/chat/completions'
+      : `https://127.0.0.1:${server.address().port}/v1/chat/completions` });
+    return response.end();
+  }
   if (scenario === 'disconnected') return response.destroy();
   if (scenario === 'stop') {
     response.writeHead(200, { 'content-type': 'text/event-stream' });
@@ -143,7 +150,8 @@ try {
     const before = requests.length;
     await input.fill(`Trigger ${name}. Do not use tools.`);
     await input.press('Enter');
-    const expected = { disconnected: /Cannot connect to API/, 'oversized-error': /Provider error details exceeded 65536 bytes/,
+    const expected = { disconnected: /Cannot connect to API/, 'dns-failure': /The API hostname could not be resolved/,
+      'tls-failure': /The API server could not establish HTTPS/, 'oversized-error': /Provider error details exceeded 65536 bytes/,
       'stalled-error': /Timed out reading provider error details/ }[name] ?? new RegExp(`fixture ${name} \\[redacted\\]`);
     await page.getByText(expected).filter({ visible: true }).last().waitFor({ timeout: 30000 });
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });

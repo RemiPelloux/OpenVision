@@ -72,6 +72,49 @@ test('recovery guidance uses parsed provider facts without inventing capability 
   assert.equal(policy.providerFailureDetail({ statusCode: 400, data: { error: { code: 'unknown' } } }, 'detail'), 'detail');
 });
 
+test('network guidance follows exact transport codes through cyclic causes and leaves unknown failures alone', () => {
+  for (const [code, expected] of [['CERT_HAS_EXPIRED', /certificate could not be verified/],
+    ['ERR_TLS_CERT_ALTNAME_INVALID', /hostname and system date/], ['UND_ERR_HEADERS_TIMEOUT', /connection timed out/],
+    ['UND_ERR_BODY_TIMEOUT', /connection timed out/], ['ECONNREFUSED', /server refused/], ['EAI_AGAIN', /DNS lookup temporarily/]]) {
+    const cause = Object.assign(new Error('original evidence'), { code });
+    const error = new Error('wrapper', { cause }); cause.cause = error;
+    assert.match(policy.providerFailureDetail(error, 'original detail'), expected);
+    assert.equal(cause.code, code); assert.equal(cause.message, 'original evidence');
+  }
+  const unknown = new Error('ENOTFOUND is text, not a transport code'); unknown.cause = unknown;
+  assert.equal(policy.providerFailureDetail(unknown, 'original detail'), 'original detail');
+  assert.match(policy.providerFailureDetail({ errors: [{ code: 'ECONNRESET' }] }, 'detail'), /connection was interrupted/);
+});
+
+test('real DNS and TLS failures keep useful diagnostics, one attempt and explicit successful recovery', async () => {
+  let accepted = 0;
+  const server = createServer((_, response) => { accepted++; response.end('recovered'); });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const base = `127.0.0.1:${server.address().port}`;
+    for (const [url, expected] of [['http://openvision-provider-fixture.invalid', /hostname could not be resolved/],
+      [`https://${base}`, /could not establish HTTPS/]]) {
+      let attempts = 0;
+      const submit = target => transport({ url: target, headers: { Authorization: 'Bearer secret-fixture-key' },
+        body: { content: '{}', values: { model: 'failure-fixture' } }, abortSignal: AbortSignal.timeout(10000),
+        fetch: (...args) => { attempts++; return fetch(...args); },
+        successfulResponseHandler: async ({ response }) => ({ value: await response.text() }),
+      });
+      await assert.rejects(retry(() => submit(url), { maxRetries: 3, delayInMs: 1, backoffFactor: 1 }), error => {
+        assert.match(policy.providerFailureDetail(error, error.message), expected);
+        assert.equal(agentRetry(error), false);
+        assert.ok(error.cause.code);
+        assert.equal(error.url, url);
+        assert.ok(!error.stack.includes('secret-fixture-key'));
+        return true;
+      });
+      assert.equal(attempts, 1); assert.equal(accepted, 0);
+      assert.equal((await submit(`http://${base}`)).value, 'recovered');
+      assert.equal(attempts, 2); assert.equal(accepted, 1); accepted = 0;
+    }
+  } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+});
+
 test('recovered HTTP owner sanitizes actual responses before SDK and Agent retry decisions', async () => {
   let count = 0;
   const server = createServer((request, response) => {

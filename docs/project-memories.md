@@ -154,10 +154,10 @@ To repeat the live check, using the saved provider and real API quota:
 npm run verify:agent:live -- --live --model gpt-6.1-sol --memory
 ```
 
-Remaining gates: physical full-disk/I/O failures, cross-window memory edits, and
-other provider/platform behavior. The inline-edit filter has recovered-function
-tests; a native inline-edit request carrying seeded legacy records remains
-unverified. No macOS/Linux or complete story claim follows from these checks.
+Remaining gates: physical full-disk/I/O failures and other provider/platform
+behavior. Later checks below cover native inline editing and controlled
+cross-window IPC changes. No macOS/Linux or complete story claim follows from
+these checks.
 
 ## Native filesystem verification, 14 October
 
@@ -233,6 +233,47 @@ That gate and physical full-disk/I/O recovery remain open. The later
 [native Quick Edit check](rea-inline-edit.md) passes seeded approved-rule inclusion,
 hidden-memory exclusion and preservation of both original records. OV-301 stays
 Partial; the 42-story denominator is unchanged.
+
+## Cross-window workspace storage
+
+The native workspace storage adapter originally forwarded only one built-in
+storage key. It discarded external changes to generated memory records, so an
+open review could retain stale source data even after another renderer committed
+a revision. OpenVision now forwards changes and deletions for its owned
+`openvision.user-rule.v1.` records at that adapter boundary. Other workspace
+keys keep their existing filtering. No polling or extra full-database read was
+added to the notification path.
+
+The verifier supports `node desktop/verify-legacy-memory.mjs --windows`.
+It opens two real native windows on different disposable projects because normal
+same-folder opens reuse the existing window. The second renderer uses its real
+native storage IPC channel with a test-only descriptor selecting the review
+workspace. This exercises IPC persistence, notification delivery and the actual
+review UI; it is not a user-facing editor for legacy records or proof that two
+normal editor windows can own the same workspace. Fixture revisions are restored
+through that channel, and original SQLite bytes are checked after shutdown.
+
+The first run, `logs/legacy-memory-verification-frDc3a/result.json`, reproduced
+the discarded notification and failed waiting for the updated review list.
+Both owned hosts exited 0 and the originals remained unchanged. After the
+adapter fix, `logs/legacy-memory-verification-jYlwbe/result.json` passed all
+11 checks. Window IDs 1 and 2 used distinct renderer processes. The changed
+source appeared in the review list while the existing card retained the text
+previously reviewed. Import rejected that stale card without changing approved
+rule files. Selecting the revision displayed the updated content; dismissing it
+saved nothing. Restart, other-project isolation, idempotent approval and exact
+original SQLite bytes after final shutdown also passed. All four owned hosts
+exited 0; there were no uncaught renderer errors or observed renderer
+knowledge-base requests. No AI inference was made.
+
+Passing desktop workbench SHA-256:
+`9251426f04943379ff29248049f3d2dbb3290e1a68172f852bbc180ead11a503`.
+The focused rule/event suite passed 10 tests, including both workbench transforms,
+changed/deleted rule notifications and suppression of unrelated storage events.
+Eight memory review/persistence tests also passed. Deletion notification handling
+has boundary coverage; this native run changes a record and restores it rather
+than deleting it. Physical full-disk/I/O recovery and other platforms remain
+unverified, so OV-301 remains Partial.
 
 ## Build verification follow-up
 
