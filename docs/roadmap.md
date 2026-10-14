@@ -162,7 +162,7 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Complexity points | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-801 / Partial | All 52 PE and 15 WASM roles/source/license/version/ABI/rebuild dispositions; five remaining full WASM records | **13 points** | Loaded-role evidence from OV-501; medium for inventory, low for closed dependencies |
+| OV-801 / Partial | All 52 PE and 15 WASM roles/source/license/version/ABI/rebuild dispositions; one remaining full WASM record | **13 points** | Loaded-role evidence from OV-501; medium for inventory, low for closed dependencies; [14/15 records complete](rea-wasm-inventory.md) |
 | OV-802 / Planned | Pinned host/addon sources and lockfiles; rebuild storage/watcher/terminal/OS bindings; ABI/provenance checks | **13 points** | OV-801 and obtainable sources/toolchains; low |
 | OV-803 / Planned | Replace required proprietary/native/server contracts with behaviorally verified implementations | **13 points** | OV-501/601/801; very low; split replacement work after interface inventory |
 | OV-804 / Planned | Build and launch from a clean checkout/machine without ignored recovery tree or original installation | **8 points** | OV-802/803; build prerequisites unresolved |

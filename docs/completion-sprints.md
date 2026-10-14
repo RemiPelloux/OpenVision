@@ -106,7 +106,7 @@ complexity points and the usability release gate.
 | Subagent reasoning | Recovered selection callback now retains explicit/saved parameters in both workbench variants; boundary tests pass | Live subagent request and provider acceptance |
 | Last local validation | Desktop, completion/profile and telemetry checks pass; syntax/build, bounded 10,000-model UI and native autocomplete/project/Agent fixtures pass | [Agent evidence](rea-agent-runtime.md), [project evidence](rea-project-workflows.md), [autocomplete evidence](rea-custom-autocomplete.md); these do not cover every story below |
 | Native recovery | PE metadata for 52/52 files; pseudocode for 1/52 files and its 626 identified procedures | 51/52 files lack pseudocode; native source rebuild unproven |
-| WASM recovery | 15/15 distinct payloads decoded to WAT; complete REA records for 10/15 | Five complete records and independently buildable source/binding verification |
+| WASM recovery | 15/15 distinct payloads decoded to WAT; complete REA records for 14/15 | One complete record and independently buildable source/binding verification |
 | Platform coverage | Windows native checks; portable preparation fixtures | Real macOS/Linux launch and workflow evidence |
 
 **There is no defensible overall percentage of the original product recovered.**
@@ -361,7 +361,7 @@ Outcome: clean-checkout build ownership with replaceable native/service contract
 
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
-| OV-801 / Partial | As a maintainer, I can account for every runtime dependency. | OV-501; native inventory | Map all 52 PE paths and 15 distinct WASM payloads to digests, loaded role, source/license/version, ABI and rebuild/replacement disposition. Complete five missing WASM REA records. Keep pseudocode counts separate from source/build availability. |
+| OV-801 / Partial | As a maintainer, I can account for every runtime dependency. | OV-501; native inventory | Map all 52 PE paths and 15 distinct WASM payloads to digests, loaded role, source/license/version, ABI and rebuild/replacement disposition. Complete the original five missing WASM REA records (four now evidenced; one remains). Keep pseudocode counts separate from source/build availability. |
 | OV-802 / Planned | As a maintainer, I can build the host and upstream dependencies. | OV-801 | Pin Electron/runtime/addon/toolchain sources and lockfiles; rebuild storage, watcher, terminal and OS bindings where required. Verify ABI and behavioral fixtures; record binary provenance and applicable distribution terms. |
 | OV-803 / Planned | As a maintainer, required proprietary helpers and hosted contracts are replaceable. | OV-501; OV-601; OV-801 | Prioritize loaded file-service, parsing and Agent/sandbox helpers by measured dependency. Recover interfaces or implement replacements; test authority, malformed input, process identity and cleanup. Pseudocode is analysis evidence, not buildable source. |
 | OV-804 / Planned | As a contributor, I can build OpenVision without the original installation. | OV-802; OV-803 | Clean machine/checkout with documented sources and pinned tools builds, launches and passes core acceptance. No ignored recovery tree, original install or undocumented local file needed; repeat build and explain non-deterministic outputs. |

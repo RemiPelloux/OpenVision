@@ -1,5 +1,8 @@
 # Native recovery checklist
 
+The original audit below is retained. The [14 October WASM follow-up](rea-wasm-inventory.md)
+updates complete record coverage to **14/15**; decoded-WAT coverage remains **15/15**.
+
 Audit snapshot: 12 October 2026. Original Windows installation: Cursor 3.21.13.
 Read alongside the [feature gap audit](feature-gap-audit.md).
 

@@ -1,5 +1,8 @@
 # WASM recovery follow-up
 
+Historical results below are superseded for record counts by the
+[14 October follow-up](rea-wasm-inventory.md): **14/15** complete REA records.
+
 Audit date: 13 October 2026. Input: the existing Windows 3.21.13 installation
 snapshot. This follow-up preserves the original artifacts and the earlier REA
 records. It does not execute WASM or modify the native analysis databases.
