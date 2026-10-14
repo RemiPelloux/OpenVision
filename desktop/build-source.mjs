@@ -70,7 +70,7 @@ await installLocalProfile(root);
 await installModelSettings(root);
 await copyFile(join(root, 'desktop/local-rules.js'),
   join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js'));
-for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspace-memory-card.css'])
+for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspace-memory-card.css', 'legacy-memory.js', 'legacy-memory-review.js'])
   await copyFile(join(root, 'desktop', file), join(root, 'source/app/out/vs/code/electron-sandbox/workbench', `openvision-${file}`));
 await installCursorImport(root);
 await installRuleDurability(root);

@@ -46,11 +46,12 @@ for (const [name, relative, logger] of variants) {
     const { attempt, Type, errors } = instance(closeOwnedMcpTransports(await source), logger);
     const failure = new Error('fixture close failed'); let calls = 0;
     const resource = { close: async () => { if (++calls === 1) throw failure; } };
-    attempt.setClient({ transport: resource }); await attempt.requestClose('first');
+    attempt.setClient({ transport: resource }); const result = await attempt.requestClose('first');
+    assert.equal(result.ok, false); assert.equal(result.failures[0].error, failure);
     assert.equal(attempt.openvisionFailedClosures.get(resource), failure);
-    assert.ok(Type.openvisionFailedAttempts.has(attempt)); assert.equal(errors.length, 1);
+    assert.ok(Type.openvisionCleanupOwners.has(attempt)); assert.equal(errors.length, 1);
     attempt.setClient({ transport: undefined }); await attempt.requestClose('retry');
     assert.equal(calls, 2); assert.equal(attempt.openvisionFailedClosures.size, 0);
-    assert.equal(Type.openvisionFailedAttempts.has(attempt), false);
+    assert.equal(Type.openvisionCleanupOwners.has(attempt), false);
   });
 }

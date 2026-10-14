@@ -14,11 +14,13 @@ function field(label, value, multiline = false) {
   return { wrapper, input };
 }
 
-export function createMemoryCard({ text, isStreaming, workspace, files, rules, editor, URI, Buffer, isMissing }) {
+export function createMemoryCard({ text, isStreaming, workspace, files, rules, editor, URI, Buffer, isMissing, legacy }) {
   const element = node('section'); element.className = 'openvision-memory-card';
-  element.setAttribute('aria-label', 'Suggested project memory');
-  const heading = node('strong', 'Suggested project memory');
-  const status = node('p', isStreaming ? 'Receiving suggestion…' : 'Review before saving. Nothing is saved automatically.');
+  const label = legacy ? 'Review legacy memory' : 'Suggested project memory';
+  element.setAttribute('aria-label', label);
+  const heading = node('strong', label);
+  const status = node('p', legacy ? 'Review and edit before importing. The original record will remain unchanged.' :
+    isStreaming ? 'Receiving suggestion…' : 'Review before saving. Nothing is saved automatically.');
   status.setAttribute('role', 'status');
   element.append(heading, status);
   let disposed = false;
@@ -38,7 +40,7 @@ export function createMemoryCard({ text, isStreaming, workspace, files, rules, e
     option.value = String(index); folderSelect.append(option);
   }
   folderLabel.append(folderSelect);
-  const actions = node('div'), save = node('button', 'Save project memory'), dismiss = node('button', 'Dismiss');
+  const actions = node('div'), save = node('button', legacy ? 'Import project memory' : 'Save project memory'), dismiss = node('button', 'Dismiss');
   save.type = dismiss.type = 'button'; actions.className = 'openvision-memory-actions';
   actions.append(save, dismiss);
   element.append(title.wrapper, description.wrapper, content.wrapper, folderLabel, actions);
@@ -53,11 +55,12 @@ export function createMemoryCard({ text, isStreaming, workspace, files, rules, e
     try {
       const approved = JSON.stringify({ title: title.input.value, description: description.input.value, content: content.input.value });
       const uri = await saveApprovedMemory(approved, snapshot.folders[Number(folderSelect.value)],
-        { snapshot, workspace, files, URI, Buffer, isMissing });
+        { snapshot, workspace, files, URI, Buffer, isMissing, assertCurrent: legacy?.assertCurrent });
       let refreshFailed = false;
       try { await rules.refresh(); } catch { refreshFailed = true; }
       if (disposed) return;
-      status.textContent = refreshFailed ? 'Saved. Reload the window if the memory does not appear in project rules.' : 'Saved to this project. Agent can read it when relevant.';
+      status.textContent = refreshFailed ? 'Saved. Reload the window if the memory does not appear in project rules.' :
+        legacy ? 'Imported to project rules. The original record is preserved.' : 'Saved to this project. Agent can read it when relevant.';
       save.textContent = 'Saved';
       dismiss.remove();
       const open = node('button', 'Open memory'); open.type = 'button';

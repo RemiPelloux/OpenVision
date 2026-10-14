@@ -8,3 +8,12 @@
 .openvision-memory-actions button { padding: 6px 12px; cursor: pointer; border: 0; border-radius: 5px; background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); font: inherit; }
 .openvision-memory-actions button:first-child { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
 .openvision-memory-actions button:disabled { opacity: .6; cursor: default; }
+.openvision-legacy-memories { margin: 8px 16px; padding: 12px; border: 1px solid var(--vscode-widget-border); border-radius: 8px; font: 13px/1.5 var(--vscode-font-family, system-ui, sans-serif); }
+.openvision-legacy-memories > div:not([hidden]) { display: grid; gap: 10px; margin-top: 10px; }
+.openvision-legacy-memories p { margin: 0; color: var(--vscode-descriptionForeground); }
+.openvision-legacy-memories button, .openvision-legacy-memories input { padding: 6px 10px; border: 1px solid var(--vscode-widget-border); border-radius: 5px; background: var(--vscode-input-background); color: var(--vscode-foreground); font: inherit; }
+.openvision-legacy-memories button { cursor: pointer; text-align: left; }
+.openvision-legacy-memories button:hover { background: var(--vscode-list-hoverBackground); }
+.openvision-legacy-memories :focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
+.openvision-legacy-memory-list { display: grid; gap: 4px; max-height: 200px; overflow: auto; }
+.openvision-legacy-memories [hidden] { display: none; }

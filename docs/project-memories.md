@@ -44,12 +44,32 @@ the review form and hashing work. It is not a provider context-window limit.
 Memory folders reported by the native file service as links are rejected.
 This does not establish protection against concurrent filesystem link swaps.
 
-Legacy generated records in workspace SQLite storage remain preserved. They
-are not silently exported, reapproved or removed. Agent already excluded those
-records; inline editing now applies the same exclusion instead of concatenating
-hidden generated records into explicit context. Native Customize still hides
-them. A reviewed legacy import/disposition flow remains open; new approved
-memories use project rule files exclusively.
+Legacy generated records in workspace SQLite storage remain preserved. Agent
+and inline editing exclude them from automatic context. Customize now offers
+explicit review and import; approved memories use project rule files exclusively.
+
+## Review older memories
+
+Open **Customize → Rules → Review legacy memories**. The entry shows the count
+for the current workspace. Search by title or browse pages of 20 records, then
+select one to open its review card. Edit its title, relevance description and
+content, choose a project, and click **Import project memory**. Dismiss writes
+nothing. Import saves an on-demand project rule while retaining the original
+database record unchanged. Repeating an identical import does not duplicate files.
+An imported record therefore remains available in this list as a backup.
+
+The review consumes the knowledge service's validated workspace records; it does
+not independently parse storage or expose legacy records as editable user rules.
+Only one review card is mounted at a time. The original's identity and fields
+are checked before saving and after asynchronous directory preparation. A changed
+or removed source requires a fresh review. Workspace changes invalidate the
+destination snapshot. These checks are not a transaction spanning the database
+and filesystem; a change after the final check remains possible.
+
+Customize passes its native services through its existing component properties.
+It does not depend on chat's workspace provider. Leaving Rules unmounts the
+review and releases its subscriptions. Import never calls the legacy add,
+update or delete operations, and no AI request is needed.
 
 ## Recovered-source evidence
 
@@ -134,11 +154,39 @@ To repeat the live check, using the saved provider and real API quota:
 npm run verify:agent:live -- --live --model gpt-6.1-sol --memory
 ```
 
-Remaining gates: legacy generated-record disposition, native multi-root choice,
+Remaining gates: native multi-root choice,
 links and actual permission/full-disk failures, cross-window memory edits, and
 other provider/platform behavior. The inline-edit filter has recovered-function
 tests; a native inline-edit request carrying seeded legacy records remains
 unverified. No macOS/Linux or complete story claim follows from these checks.
+
+## Legacy import verification, 14 October
+
+`npm run verify:legacy-memory` passed on the built Windows desktop at
+`logs/legacy-memory-verification-vTENjR/result.json`. It seeded 23 synthetic
+generated records while the owned application was closed, then used the actual
+Customize UI. All nine checks passed: bounded paging, search/review without
+writes, dismissal, edited approval, idempotent approval, restart persistence,
+other-workspace isolation, observed renderer errors/requests, and original bytes
+after final shutdown. SQLite `hex(value)` for every original record remained
+identical. All four owned hosts exited 0; no page errors were recorded. The
+renderer request observation is not an all-process network capture.
+
+The earlier `D3WZ9a` attempt exposed an incorrect dependency on chat's workspace
+provider. It failed before an import and preserved the originals. The final
+implementation passes the Customize service object through the existing prop
+chain instead; the failed evidence stays local.
+
+Workbench SHA-256 for the passing run:
+`2112b9f58f07c174d282a9ec2885df1b26a9bcfd56c8473904b8c203ae3f7b30`.
+The existing native Agent suggestion/failure/restart/isolation verifier also
+passed all six checks at `logs/memory-verification-WbZ24K/result.json`; all three
+hosts exited 0 without page errors. The 13 focused memory tests passed, including
+both workbench variants and stale-source rejection before/during directory
+preparation. Stale-source races and workspace changes use boundary fixtures;
+native multi-window races remain unverified. These new runs use synthetic data
+and controlled responses, not live AI. Earlier real-provider evidence above
+remains scoped to its recorded build and requests.
 
 ## Build verification follow-up
 

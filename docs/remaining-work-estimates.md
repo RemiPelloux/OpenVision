@@ -89,9 +89,9 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Estimated remaining effort | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-301 / Partial | Approved project memories now pass native save/restart/isolation and live GPT recall. Remaining: legacy generated-record disposition, multi-root selection, native links/write failures and physical full-disk/I/O recovery | 1–2 days | [Rules](local-rules-concurrency.md) and [approved memories](project-memories.md); OV-103 and isolated native profiles; medium |
+| OV-301 / Partial | Approved project memories pass native save/restart/isolation and live GPT recall; reviewed legacy import preserves originals and passes native paging/restart/isolation. Remaining: multi-root selection, native links/write failures, cross-window memory edits and physical full-disk/I/O recovery | 1–2 days | [Rules](local-rules-concurrency.md) and [approved memories](project-memories.md); OV-103 and isolated native profiles; medium |
 | OV-302 / Partial | Complete global path-owner audit and additive migration; two profiles and another installation; watcher consumers | 3–6 days | Recovered producer/consumer paths and native fixtures; medium |
-| OV-303 / Partial | Native failed-cleanup recovery and remaining lifecycle/ownership cases | 1–3 days | HTTP/STDIO approval, Stop, disconnect, timeout and restart now have scoped evidence; medium |
+| OV-303 / Partial | Native multi-window/remote ownership and additional lifecycle failure cases, including HTTP close rejection and native session reinitialization | 1–3 days | [Repeated STDIO cleanup failure/recovery](rea-mcp-cleanup.md) and HTTP/STDIO approval, Stop, disconnect, timeout and restart pass; medium |
 | OV-304 / Planned | OAuth canceled consent, expiry/refresh and secret storage; discovery precedence, invalid config and watcher disposal | 3–6 days | Owned OAuth server and supported auth contracts; medium |
 
 ## Projects and local intelligence

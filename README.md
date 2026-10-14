@@ -214,7 +214,10 @@ not require a cloud account. Agent can suggest a project memory in a review card
 Edit it, choose its project, then click **Save project memory**; dismissing writes
 nothing. Approved memories live in `.openvision/rules/memory-*.mdc`. Only their
 descriptions enter new chat context; Agent reads their contents when relevant.
-See [project memories](docs/project-memories.md) for usage and verified limits.
+For older workspace memories, open **Customize > Rules > Review legacy memories**.
+Search, review and edit a record, then choose **Import project memory**. Original
+records remain in local storage. See [project memories](docs/project-memories.md)
+for usage and verified limits.
 See [local rules and reasoning implementation](docs/rea-local-rules.md) for
 migration, verification and remaining limits.
 

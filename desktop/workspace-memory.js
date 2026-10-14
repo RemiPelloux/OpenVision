@@ -29,6 +29,7 @@ function assertWorkspace(context, folder) {
   const current = context.workspace.getWorkspace();
   if (current.id !== context.snapshot.id || !current.folders.some(item => item.uri.toString() === folder.uri.toString()))
     throw new Error('The project changed. Review this suggestion again in its original project.');
+  context.assertCurrent?.();
 }
 
 async function ensureDirectory(context, uri) {

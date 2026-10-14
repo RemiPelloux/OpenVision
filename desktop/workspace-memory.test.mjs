@@ -4,6 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, lstat, readdir, rm } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseMemoryProposal, memoryRuleText, captureMemoryWorkspace, saveApprovedMemory } from './workspace-memory.js';
+import { reviewLegacyMemory, legacyMemories } from './legacy-memory.js';
 
 const proposal = { title: 'Build notes', description: 'When building: "desktop"', content: 'Use the pinned toolchain. 日本語\n' };
 const text = JSON.stringify(proposal);
@@ -60,4 +61,27 @@ test('workspace changes, failed writes and linked directories cannot silently sa
   await assert.rejects(saveApprovedMemory(text, f.folder, f.context), /not links/);
   f.changeWorkspace();
   await assert.rejects(saveApprovedMemory(text, f.folder, f.context), /project changed/);
+});
+
+test('legacy approval preserves originals and refuses stale review before or during preparation', async t => {
+  const f = await fixture(t);
+  const source = { id: 'legacy-one', title: 'Legacy fact', knowledge: 'A project fact', isGenerated: true, createdAt: '2026-01-01' };
+  const knowledge = { items: [source, { ...source, id: 'personal', isGenerated: false }] };
+  const before = JSON.stringify(knowledge.items);
+  assert.deepEqual(legacyMemories(knowledge), [source]);
+  const review = reviewLegacyMemory(knowledge, source.id);
+  const context = { ...f.context, assertCurrent: review.assertCurrent };
+  const uri = await saveApprovedMemory(review.text, f.folder, context);
+  assert.equal(JSON.stringify(knowledge.items), before);
+  assert.equal((await saveApprovedMemory(review.text, f.folder, context)).fsPath, uri.fsPath);
+  source.knowledge = 'Changed in another window';
+  await assert.rejects(saveApprovedMemory(review.text, f.folder, context), /original memory changed/);
+  const refreshed = reviewLegacyMemory(knowledge, source.id);
+  const stat = context.files.stat;
+  context.files.stat = async path => { source.knowledge = 'Changed during directory inspection'; return stat(path); };
+  await assert.rejects(saveApprovedMemory(refreshed.text, f.folder, { ...context, assertCurrent: refreshed.assertCurrent }), /original memory changed/);
+  assert.equal((await readdir(join(f.path, '.openvision/rules'))).length, 1);
+  knowledge.items = [];
+  assert.throws(() => review.assertCurrent(), /original memory changed/);
+  assert.throws(() => reviewLegacyMemory(knowledge, source.id), /no longer available/);
 });

@@ -3,9 +3,10 @@ import { dirname, join } from 'node:path';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { cachedFile } from './build-cache.mjs';
 import { digest, fileHash } from './import-files.mjs';
-import { closeMcpAttempt } from './mcp-attempt-runtime.mjs';
+import { closeMcpAttempt, retryMcpCleanup } from './mcp-attempt-runtime.mjs';
+import { ownMcpLifecycleCleanup } from './mcp-lifecycle-cleanup-customization.mjs';
 
-const marker = '/* OpenVision MCP transport close ownership v1 */';
+const marker = '/* OpenVision MCP transport close ownership v2 */';
 export function mcpAttemptOwner(text) {
   const anchor = 'this.closePromises = new WeakMap()';
   const index = text.indexOf(anchor);
@@ -21,23 +22,23 @@ export function closeOwnedMcpTransports(text) {
   const owner = mcpAttemptOwner(text);
   const method = owner.body.body.find(method => method.key?.name === 'closeCurrent');
   const body = text.slice(method.value.body.start, method.value.body.end);
-  if (body.includes(marker)) return text;
+  if (body.includes(marker)) return ownMcpLifecycleCleanup(text);
   if (!body.includes('this.closePromises.get(') || !body.includes('.close()') || !body.includes('this.client'))
     throw new Error('MCP attempt cleanup contract changed');
-  const logger = method.value.body.body.find(statement => statement.type === 'ExpressionStatement' &&
-    statement.expression.callee?.property?.name === 'debug')?.expression.callee.object;
-  if (!logger) throw new Error('MCP attempt logger contract changed');
-  const log = text.slice(logger.start, logger.end);
+  const log = /([\w$]+\(this.identifier\))\.(?:debug|error)\(/.exec(body)?.[1];
+  if (!log) throw new Error('MCP attempt logger contract changed');
   const implementation = closeMcpAttempt.toString();
   const replacement = `closeCurrent(reason) ${implementation.slice(implementation.indexOf('{'))
     .replace('{', `{ ${marker}`)
     .replace('console.error(', `${log}.error(`)}`;
-  return text.slice(0, method.start) + replacement + text.slice(method.end);
+  const retry = retryMcpCleanup.toString();
+  const retryMethod = `\nstatic async retryCleanup(identifier) ${retry.slice(retry.indexOf('{'))}\n`;
+  return ownMcpLifecycleCleanup(text.slice(0, method.start) + replacement + retryMethod + text.slice(method.end));
 }
 
 export async function installMcpAttemptCleanup(root) {
   const recipe = digest(JSON.stringify(await Promise.all(['desktop/mcp-attempt-customization.mjs',
-    'desktop/mcp-attempt-runtime.mjs', 'desktop/build-cache.mjs', 'desktop/import-files.mjs',
+    'desktop/mcp-attempt-runtime.mjs', 'desktop/mcp-lifecycle-cleanup-customization.mjs', 'desktop/build-cache.mjs', 'desktop/import-files.mjs',
     'tooling/dependencies.mjs', 'tooling/package-lock.json'].map(path => fileHash(join(root, path))))));
   for (const relative of ['out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', 'extensions/cursor-mcp/dist/main.js']) {
     const path = join(root, 'source/app', relative);
