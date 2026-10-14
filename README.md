@@ -40,6 +40,10 @@ Git worktree commands list worktrees on demand even with automatic detection
 disabled. Native Windows checks cover branch/worktree isolation, conflict
 resolution, safe cleanup and restart recovery; see [Git workflows](docs/git-workflows.md).
 
+Windows terminals, tasks and Node debugging have a repeatable native check:
+`npm run verify:development`. See [development workflows](docs/development-workflows.md)
+for the tested shells, process cleanup and remaining shutdown investigation.
+
 The welcome screen features an animated OpenVision eye and an **Enter workspace**
 button for your local profile. Reopen it from the profile button in the title bar
 by choosing **Welcome screen**. It respects the system's reduced-motion preference.

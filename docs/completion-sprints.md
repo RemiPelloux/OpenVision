@@ -8,6 +8,12 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+14 October development follow-up: [native terminals/tasks/debugging](development-workflows.md)
+passes Windows shell resize/Unicode/environment/cancellation, task diagnostics,
+Node debugger break/step/Stop and child release. Fixed disposal of the file
+service before final shutdown-state persistence. OV-403 stays Partial because
+an earlier intermittent host exit 134 is not yet explained; no score increase.
+
 14 October Git follow-up: [native Git/worktree acceptance](git-workflows.md)
 passes branch/worktree creation, isolation, diff review, refused checkout,
 dirty-delete cancellation, selected cleanup, merge resolution and recovery after
@@ -261,7 +267,7 @@ Outcome: complete everyday editor workflows with incremental filesystem behavior
 | --- | --- | --- | --- |
 | OV-401 / Partial | As a developer, I can manage large and multi-root projects. | OV-101 | Exercise open/save/rename/move/delete, symlinks, external changes, permissions and restored sessions. Preserve unsaved edits; record watcher and filesystem work for small edits in a large fixture. |
 | OV-402 / Partial | As a developer, language features stay correct while I edit. | OV-401 | Pin language/extension matrix; test diagnostics, rename, references, navigation, formatting and large files. Incremental patches retain undo/redo and conflict handling; no repeated full scan without a justified contract. |
-| OV-403 / Partial | As a developer, I can use terminals, tasks and debuggers. | OV-401 | Native shells: resize, Unicode, environment, exit/cancel/restart, task problem matching and debugger break/step/stop. Check child ownership and release after window/session closure. |
+| OV-403 / Partial | As a developer, I can use terminals, tasks and debuggers. | OV-401 | Native shells: resize, Unicode, environment, exit/cancel/restart, task problem matching and debugger break/step/stop. Check child ownership and release after window/session closure. [Windows native evidence](development-workflows.md) passes these workflows; intermittent host exit 134 remains unresolved. |
 | OV-404 / Verified | As a developer, Git and worktrees protect my work. | OV-401; OV-103 | Branch/worktree creation, diff review, conflicting edits and merge resolution in disposable repositories. Clean up only owned worktrees; preserve dirty/untracked data and prove recovery after interruption. [Native Windows clause-by-clause evidence](git-workflows.md), including abnormal-host restart. |
 
 Sprint exit: publish the tested language/shell/debugger matrix and unresolved

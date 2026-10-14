@@ -33,6 +33,7 @@ import { installWelcomeStartup } from './welcome-customization.mjs';
 import { installProjectNamespace, restoreNamespaceInputs } from './namespace-build.mjs';
 import { installRuleDurability } from './rules-durability-customization.mjs';
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
+import { installShutdownOwnership } from './shutdown-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -64,6 +65,7 @@ await installProviderErrorPolicy(root);
 await installOwnedShellProcesses(root);
 await installContextRuntime(root);
 await installCoreTelemetryPolicy(root);
+await installShutdownOwnership(root);
 await installExtensionTelemetryPolicy(root);
 await installCompletion(root);
 await installLocalChatTitles(root);

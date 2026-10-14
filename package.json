@@ -65,7 +65,9 @@
     "setup:cpp": "node desktop/setup-cpp.mjs",
     "verify:cpp": "node desktop/verify-cpp.mjs",
     "test:git-worktrees": "node --test desktop/git-worktree.test.mjs",
-    "verify:git": "node desktop/verify-git.mjs"
+    "verify:git": "node desktop/verify-git.mjs",
+    "verify:development": "node desktop/verify-development.mjs",
+    "test:shutdown": "node --test desktop/shutdown.test.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

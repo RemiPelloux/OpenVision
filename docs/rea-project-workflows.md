@@ -41,7 +41,11 @@ watcher behavior and incremental filesystem work remain open.
 
 OV-402 remains **Partial**: this verifies text editing and undo/redo, but does not establish a language/extension matrix, diagnostics, rename, references, navigation, formatting, conflicts or large-file performance.
 
-OV-403 remains **Partial**: one configured process task passes. Interactive shell resize and input, task cancellation/restart, problem matching, debugger break/step/stop, and ownership/cleanup of descendants remain open. Closing the owned Electron application does not by itself establish that all possible terminal children are released.
+OV-403 remains **Partial**. The later [native development matrix](development-workflows.md)
+passes Command Prompt/PowerShell resize, Unicode, environment, cancellation,
+restart, task problem matching and Node debugger break/step/Stop. It checks actual
+child release and fixes final state persistence. An intermittent host exit 134
+remains unexplained; a successful later run does not close that failure gate.
 
 This initial fixture does not exercise Git or worktree behavior. The later
 [native Git matrix](git-workflows.md) verifies OV-404 separately, including
