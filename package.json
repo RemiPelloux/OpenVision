@@ -22,6 +22,8 @@
     "verify:desktop": "node desktop/verify.mjs",
     "verify:welcome": "node desktop/verify-welcome.mjs",
     "test:welcome": "node --test desktop/welcome-customization.test.mjs",
+    "test:project-home": "node --test desktop/project-home.test.mjs desktop/project-home-browser.test.mjs desktop/welcome-customization.test.mjs",
+    "verify:project-home": "node desktop/verify-project-home.mjs",
     "test:paste": "node --test desktop/large-paste.test.mjs desktop/paste-customization.test.mjs",
     "test:namespace": "node --test desktop/project-namespace.test.mjs desktop/project-namespace-migration.test.mjs desktop/namespace-plans.test.mjs",
     "migrate:project": "node desktop/migrate-project.mjs",

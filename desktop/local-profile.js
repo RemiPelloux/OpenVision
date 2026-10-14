@@ -63,6 +63,15 @@ async function mount() {
     const titlebar = document.querySelector('.part.titlebar .titlebar-right') ?? document.querySelector('.part.titlebar');
     if (titlebar) {
       titlebar.prepend(createButton());
+      const projects = document.createElement('button');
+      projects.className = 'openvision-project-home-button';
+      projects.textContent = 'Projects'; projects.title = 'Project home'; projects.onclick = showWelcomeScreen;
+      titlebar.prepend(projects);
+      const openEmptyHome = () => {
+        void window.openvisionProjectHome?.showOnStartup().then(show => { if (show) showWelcomeScreen(); }).catch(console.error);
+      };
+      if (window.openvisionProjectHome) openEmptyHome();
+      else window.addEventListener('openvision-project-home-ready', openEmptyHome, { once: true });
       return;
     }
     await new Promise(resolve => setTimeout(resolve, 500));

@@ -29,6 +29,7 @@ options without an OpenVision account.
 | Capability | What you can do today | Evidence and limits |
 | --- | --- | --- |
 | Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/provider-selection-lifecycle.md) |
+| Project home (development build) | Search recent projects, pin favorites, focus open windows and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); newer than the portable preview |
 | AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/rea-agent-runtime.md); broader workflow coverage remains open |
 | Code autocomplete | Select a separate completion model, accept with Tab, undo, cancel pending work | [Windows editing checks](docs/rea-custom-autocomplete.md); predictive navigation is unfinished |
 | Project development | Explore projects, search, edit, Save All, run terminals/tasks and debug Node | [Development workflows](docs/development-workflows.md); one intermittent host-exit issue remains under investigation |

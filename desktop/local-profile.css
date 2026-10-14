@@ -18,6 +18,8 @@
   -webkit-app-region: no-drag;
 }
 .openvision-local-profile img { width: 22px; height: 22px; transition: transform 180ms ease; }
+.openvision-project-home-button { position: relative; z-index: 10; margin: 3px 4px; padding: 0 9px; height: 28px; border: 1px solid var(--vscode-widget-border, #444); border-radius: 5px; color: var(--vscode-titleBar-activeForeground); background: transparent; font: 12px sans-serif; cursor: pointer; -webkit-app-region: no-drag; }
+.openvision-project-home-button:hover { background: var(--vscode-toolbar-hoverBackground, #ffffff0b); }
 .openvision-local-profile:hover { background: var(--vscode-toolbar-hoverBackground, #ffffff0b); border-color: var(--vscode-widget-border, #444); }
 .openvision-local-profile:hover img { transform: scale(1.08); }
 .openvision-local-profile span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

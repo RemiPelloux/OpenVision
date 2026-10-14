@@ -37,9 +37,13 @@ Windows terminals, tasks and Node debugging have a repeatable native check:
 `npm run verify:development`. See [development workflows](development-workflows.md)
 for the tested shells, process cleanup and remaining shutdown investigation.
 
-The welcome screen features an animated OpenVision eye and an **Enter workspace**
-button for your local profile. Reopen it from the profile button in the title bar
-by choosing **Welcome screen**. It respects the system's reduced-motion preference.
+The development build opens to **Project home**, with recent folders/workspaces,
+pinned favorites, search and an **Open now** filter. Choose a project to open it
+or focus its existing window. Use **Projects** in the titlebar to return. Open a
+folder/workspace or clone a repository from the home actions. The animated
+OpenVision eye respects the system's reduced-motion preference.
+See [project home, performance and verification](project-home.md) for details.
+The portable 0.2.0-preview.2 payload still has the earlier welcome screen.
 Run `npm run verify:welcome` to check the real desktop screen in a disposable
 profile, including workspace entry, layout, blink and dismissal.
 

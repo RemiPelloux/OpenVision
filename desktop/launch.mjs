@@ -5,21 +5,16 @@ import { fileURLToPath } from 'node:url';
 import net from 'node:net';
 import { loadRuntime } from './source-assembly.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
-import { projectPaths } from './project-workspace.mjs';
-import { migrateProjectNamespace } from './project-namespace-migration.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
 const executable = layout.executable;
-const project = await projectPaths(root);
-const migration = await migrateProjectNamespace(project.project);
-if (migration.copied || migration.conflicts.length || migration.errors.length || migration.skippedLinks.length)
-  console.log('Project namespace migration:', JSON.stringify(migration));
+const requested = process.argv.slice(2).filter(argument => argument !== '--inspect-preview');
 const argumentsList = [
   '--user-data-dir', join(root, 'data/local'), '--extensions-dir', join(root, 'data/local-extensions'),
   '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
   '--disable-telemetry', '--disable-crash-reporter',
-  project.workspace, join(project.project, 'src/main.js')
+  ...(requested.length ? requested : ['--glass'])
 ];
 if (process.platform === 'linux') argumentsList.unshift(...await linuxSandboxArguments(layout.host));
 let debugPort;

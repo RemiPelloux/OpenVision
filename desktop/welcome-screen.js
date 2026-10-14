@@ -1,3 +1,4 @@
+import { createProjectList } from './project-home-list.js';
 const svgNamespace = 'http://www.w3.org/2000/svg';
 
 function element(tag, className, text) {
@@ -28,33 +29,52 @@ function eye() {
   return svg;
 }
 
-export function createWelcomeScreen({ onContinue }) {
+export function createWelcomeScreen({ onContinue, onProjectOpen, service = window.openvisionProjectHome }) {
   const screen = element('section', 'ov-welcome');
   screen.setAttribute('aria-label', 'Welcome to OpenVision');
   const header = element('header', 'ov-welcome-top');
-  header.append(element('span', 'ov-welcome-wordmark', 'OpenVision'), element('span', 'ov-local-badge', 'LOCAL WORKSPACE'));
+  header.append(element('span', 'ov-welcome-wordmark', 'OpenVision'), element('span', 'ov-local-badge', 'YOUR LOCAL WORKSPACE'));
   const main = element('div', 'ov-welcome-main');
   const visual = element('div', 'ov-welcome-visual');
   visual.append(element('div', 'ov-eye-orbit'), eye());
-  const title = element('h1', 'ov-welcome-title', 'Open');
-  title.append(element('span', '', 'Vision'));
-  const eyebrow = element('p', 'ov-welcome-eyebrow', 'A NEW WAY TO SEE YOUR CODE');
-  const description = element('p', 'ov-welcome-description', 'Your ideas. Your models. Your workspace.');
-  const enter = element('button', 'ov-welcome-enter', 'Enter workspace');
-  const arrow = svgElement('svg', { viewBox: '0 0 24 24', fill: 'none', 'aria-hidden': 'true' });
-  arrow.append(svgElement('path', { d: 'M5 12h14m-6-6 6 6-6 6', stroke: 'currentColor', 'stroke-width': '1.5', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
-  enter.append(arrow);
+  const title = element('h1', 'ov-welcome-title', 'Make room');
+  title.append(element('br'), element('span', '', 'for your next idea.'));
+  const eyebrow = element('p', 'ov-welcome-eyebrow', 'A CLEAR START');
+  const description = element('p', 'ov-welcome-description', 'Pick up where you left off. Everything you’re building, one place to begin.');
   const status = element('p', 'ov-welcome-status'); status.setAttribute('role', 'status');
-  enter.onclick = async () => {
-    enter.disabled = true; status.textContent = '';
-    try { await onContinue(); }
-    catch { status.textContent = 'Could not open your workspace. Please try again.'; }
-    finally { if (enter.isConnected) enter.disabled = false; }
+  const action = (label, className, callback) => {
+    const button = element('button', className, label);
+    button.setAttribute('aria-label', label);
+    button.onclick = async () => {
+      button.disabled = true; status.textContent = '';
+      try { await callback(); }
+      catch { status.textContent = 'Could not complete this action. Please try again.'; }
+      finally { if (button.isConnected) button.disabled = false; }
+    };
+    return button;
   };
-  main.append(visual, eyebrow, title, description, enter, element('p', 'ov-welcome-note', 'Start with your local profile.'), status);
+  const intro = element('div', 'ov-welcome-intro'), actions = element('div', 'ov-welcome-actions');
+  const projects = element('div', 'ov-welcome-projects');
+  projects.append(element('h2', '', 'Your projects'), element('p', 'ov-project-subtitle', 'Less finding. More creating.'));
+  let browser, disposed = false;
+  const connect = () => {
+    if (disposed || browser) return;
+    service ??= window.openvisionProjectHome;
+    if (!service) return;
+    actions.prepend(action('Open folder', 'ov-welcome-enter', () => service.folder()),
+      action('Open workspace', 'ov-welcome-secondary', () => service.workspace()),
+      action('Clone repository', 'ov-welcome-secondary', () => { onProjectOpen?.(); return service.clone(); }));
+    browser = createProjectList(service, message => { status.textContent = message; }, onProjectOpen);
+    projects.append(browser.root);
+  };
+  actions.append(action('Enter workspace', 'ov-welcome-tertiary', onContinue));
+  intro.append(visual, eyebrow, title, description, actions);
+  main.append(intro, projects);
   const footer = element('footer', 'ov-welcome-footer');
-  footer.append(element('span', 'ov-welcome-ready', 'Ready when you are'), element('span', '', 'Built around you.'));
-  screen.append(header, main, footer);
+  footer.append(element('span', 'ov-welcome-ready', 'Your projects stay yours'), element('span', '', 'Your models. Your workflow.'));
+  screen.append(header, main, status, footer);
+  window.addEventListener('openvision-project-home-ready', connect); connect();
+  screen.dispose = () => { disposed = true; browser?.dispose(); window.removeEventListener('openvision-project-home-ready', connect); screen.remove(); };
   return screen;
 }
 
@@ -64,8 +84,9 @@ export function showWelcomeScreen() {
   const previousFocus = document.activeElement;
   const dialog = element('dialog', 'ov-welcome-dialog');
   dialog.setAttribute('aria-label', 'Welcome to OpenVision');
-  dialog.append(createWelcomeScreen({ onContinue: () => dialog.close() }));
-  dialog.addEventListener('close', () => { dialog.remove(); previousFocus?.focus?.(); }, { once: true });
+  const screen = createWelcomeScreen({ onContinue: () => dialog.close(), onProjectOpen: () => dialog.close() });
+  dialog.append(screen);
+  dialog.addEventListener('close', () => { screen.dispose(); dialog.remove(); previousFocus?.focus?.(); }, { once: true });
   document.body.append(dialog); dialog.showModal();
   return dialog;
 }

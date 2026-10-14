@@ -18,7 +18,14 @@ function ownedFunction(text, anchor, evidence) {
 }
 
 export function customizeWelcome(text, variant) {
-  if (variant !== 'glass' || text.includes(marker)) return text;
+  if (variant !== 'glass') return text;
+  if (text.includes(marker)) {
+    const owner = ownedFunction(text, 'function yHC() {', /OpenVision local welcome screen v3/);
+    const body = text.slice(owner.start, owner.end);
+    if (body.includes('return () => screen.dispose();')) return text;
+    if (!body.includes('return () => screen.remove();')) throw Error('Welcome cleanup owner changed.');
+    return text.slice(0, owner.start) + body.replace('return () => screen.remove();', 'return () => screen.dispose();') + text.slice(owner.end);
+  }
   const node = ownedFunction(text, 'function yHC() {', /"logged-out-glass-screen"/);
   const replacement = `function yHC() {
     ${marker}
@@ -26,7 +33,7 @@ export function customizeWelcome(text, variant) {
     openvisionWelcomeEffect(() => {
       const screen = createOpenVisionWelcome({onContinue: () => nativeHost.cursorFocusOrOpenEditorWindow()});
       root.current.replaceChildren(screen);
-      return () => screen.remove();
+      return () => screen.dispose();
     }, [nativeHost]);
     return xBe("div", {className: "ov-welcome-shell", children: [
       xBe("div", {ref: root, className: "ov-welcome-host"}, "welcome"),
