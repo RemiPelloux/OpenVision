@@ -12,7 +12,10 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 rejects provider-truncated code, refusal/function/tool output and invalid UTF-8.
 The native 13-case failure matrix and recovery pass. Separate real Codex Easy
 GPT/DeepSeek/Grok probes each returned a valid sum expression. Broader live quality,
-native live acceptance and editing/latency gates remain open; OV-602/603 stay Partial.
+native live acceptance and broader editing/latency gates remain open; OV-602/603 stay Partial.
+Native Windows partial word/Tab remainder/undo and pending typing, Escape and
+file-switch cancellation now pass. Fixed pending Escape and partial-undo grouping;
+the controlled local workload meets a 1,000 ms cancellation budget.
 
 14 October development follow-up: [native terminals/tasks/debugging](development-workflows.md)
 passes Windows shell resize/Unicode/environment/cancellation, task diagnostics,
@@ -312,7 +315,7 @@ Outcome: a tested completion contract, separate from chat model discovery.
 | --- | --- | --- | --- |
 | OV-601 / Verified | As a maintainer, I can explain the completion request and result contracts. | REA StreamCpp client; OV-101 | [Autocomplete contract findings](rea-autocomplete-contract.md) records request context, streaming events, replacement ranges, prediction data, cancellation and required server behavior with source Evidence IDs. Recovered client facts remain separate from unverified server assumptions. |
 | OV-602 / Partial | As a developer, my configured completion backend offers useful suggestions. | OV-601; OV-201 | Custom Chat Completions adapter implemented; native Windows suggestions and 13-case empty/partial/malformed/unsupported-response matrix pass. Real GPT/DeepSeek/Grok each completed one sum-expression fixture. See [implementation and limits](rea-custom-autocomplete.md). Remaining: representative multi-language/project quality and native live-provider acceptance. |
-| OV-603 / Partial | As a developer, accepting a suggestion never corrupts my edits. | OV-602; OV-402 | Native Windows single/multiline Unicode Tab accept/save/undo verified; focused tests cover CRLF/Unicode, stale versions/cursors, cancellation and real HTTP abort. See [evidence](rea-custom-autocomplete.md). Remaining: native partial acceptance, typing during requests, measured cancellation/latency and platform matrix. |
+| OV-603 / Partial | As a developer, accepting a suggestion never corrupts my edits. | OV-602; OV-402 | Native Windows single/multiline Unicode Tab and partial-word accept/save/undo verified. Pending typing, Escape and file-switch cancellation preserve exact text and close upstream within a 1,000 ms local-fixture budget. Fixed Escape before display and partial-undo grouping. See [evidence](rea-custom-autocomplete.md). Remaining: broader editing/latency workloads and platform matrix. |
 | OV-604 / Planned | As a developer, next-edit predictions are understandable and fast. | OV-603; OV-503 | Explicit supported prediction contract or documented release-scope decision. Verify navigation/range correctness and stale results; record first/subsequent suggestion latency and acceptance quality on fixed workloads. |
 
 Sprint exit: advertise only supported completion modes. Preserve the separate

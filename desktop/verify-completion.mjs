@@ -9,16 +9,19 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { writeCompletionFailure, verifyCompletionFailures } from './verify-completion-failures.mjs';
 import { fileHash } from './import-files.mjs';
+import { createCompletionEditingFixture, verifyCompletionEditing } from './verify-completion-editing.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/completion-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
+const editing = process.argv.includes('--editing'), editingFixture = createCompletionEditingFixture();
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never',
-  'editor.autoIndent': 'none', 'editor.autoClosingBrackets': 'never', 'editor.formatOnType': false }));
+  'editor.autoIndent': 'none', 'editor.autoClosingBrackets': 'never', 'editor.formatOnType': false,
+  ...(editing ? { 'cursor.cpp.enablePartialAccepts': true } : {}) }));
 const file = join(project, 'completion.js');
 await writeFile(file, 'const answer = ');
 const requests = [], inference = Promise.withResolvers(), multiline = Promise.withResolvers();
@@ -33,6 +36,7 @@ const server = createServer(async (request, response) => {
   requests.push({ phase, model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
     context, stream: payload.stream });
   if (writeCompletionFailure(phase, response)) return;
+  if (phase === 'editing' && editingFixture.respond(context, response)) return;
   const matchesMultiline = phase === 'multiline' && /const items = \[\r?\n  $/.test(context.prefix);
   const content = phase === 'simple' ? '42' : matchesMultiline ? '"café 日本語",\n  "😀"' : '';
   response.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }] }));
@@ -107,7 +111,12 @@ try {
   await page.keyboard.press('ControlOrMeta+s');
   await page.waitForTimeout(500);
   assert.equal((await readFile(file, 'utf8')).replaceAll('\r\n', '\n'), 'const items = [\n  \n];');
-  const failures = await verifyCompletionFailures({ page, file, directory, requests, setPhase: value => { phase = value; } });
+  let failures, editingResult;
+  if (editing) {
+    phase = 'editing';
+    result.editing = {};
+    editingResult = await verifyCompletionEditing({ page, file, directory, fixture: editingFixture }, result.editing);
+  } else failures = await verifyCompletionFailures({ page, file, directory, requests, setPhase: value => { phase = value; } });
   phase = 'simple';
   await page.keyboard.press('Escape'); await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.insertText('const recovered ='); await page.keyboard.press('End');
@@ -120,9 +129,11 @@ try {
   assert.deepEqual(errors, []);
   Object.assign(result, { success: true, checked_at: new Date().toISOString(), platform: process.platform,
     native_suggestion: true, tab_accept: true, undo: true, multiline_unicode_accept_undo: true, failures,
-    recovery_after_rejection: true, requests, errors,
+    ...(editing ? { editing: editingResult } : { recovery_after_rejection: true }), requests, errors,
     hashes: { completionHttp: await fileHash(join(root, 'desktop/completion-http.mjs')),
-      completionIpc: await fileHash(join(root, 'source/app/out/openvision-completion-ipc.js')) },
+      completionIpc: await fileHash(join(root, 'source/app/out/openvision-completion-ipc.js')),
+      workbench: await fileHash(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')),
+      provider: await fileHash(join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-completion-provider.js')) },
     provider_scope: 'Controlled local HTTP fixture; external provider quality/compatibility not established.' });
 } catch (error) {
   const page = app?.windows()[0];
@@ -131,6 +142,7 @@ try {
     await writeFile(join(directory, 'failure.txt'), await page.locator('body').innerText()).catch(() => {});
   }
   await writeFile(join(directory, 'requests.json'), JSON.stringify(requests, null, 2));
+  result.editingEvents = editingFixture.events;
   result.success = false; result.failure = error.stack; process.exitCode = 1;
 } finally {
   if (app) {

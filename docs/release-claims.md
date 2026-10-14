@@ -69,6 +69,11 @@ used the production non-streaming adapter against GPT‑6.1 Sol, DeepSeek‑V4 F
 and Grok‑4.7. Each returned a valid sum expression in one actual API request.
 This limited direct probe does not establish native live acceptance, broad
 suggestion quality or latency budgets.
+The native Windows [editing fixture](rea-custom-autocomplete.md#pending-requests-and-partial-accept-undo)
+verifies partial-word acceptance, Tab remainder, exact undo and pending
+typing/Escape/file-switch cancellation below a 1,000 ms local-server budget.
+Pending Escape and partial-undo grouping were fixed. This is controlled-response
+evidence; broader editing, live latency and other platforms remain unverified.
 Native live Read uses unchanged inference bodies through an authenticated relay;
 its catalog mirrors saved capability hints. None of the three real catalogs
 advertised reasoning metadata. Provider default omits effort; explicit menu tiers

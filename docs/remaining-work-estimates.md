@@ -111,7 +111,7 @@ not proof of why a past live catalog shrank.
 | Story / current state | Missing functions or acceptance evidence | Estimated remaining effort | Dependencies / confidence |
 | --- | --- | --- | --- |
 | OV-602 / Partial | Native 13-case response matrix and one real GPT/DeepSeek/Grok sum-expression sample pass. Remaining: representative multi-language/project quality and native live-provider acceptance | 2–4 days | [Autocomplete evidence](rea-custom-autocomplete.md); OV-201 and live model availability; medium |
-| OV-603 / Partial | Native partial acceptance, typing during requests and measured latency/cancellation on supported platforms | 2–4 days per available platform | OV-602/402; macOS/Linux dates unknown without machines; medium |
+| OV-603 / Partial | Windows partial acceptance, exact undo and pending typing/Escape/file-switch cancellation pass a controlled local workload. Remaining: broader editing/latency workloads and supported-platform matrix | 2–4 days per available platform | [Autocomplete evidence](rea-custom-autocomplete.md); OV-602/402; macOS/Linux dates unknown without machines; medium |
 | OV-604 / Planned | Next-edit prediction contract, implementation, navigation/range correctness, stale results and latency/quality | 5–15 days | OV-603/503 and a suitable prediction backend; low; not silently excluded |
 | OV-701 / Partial | Real-profile/platform import preview, JSONC/snippets, extension registration, idempotency and exact restore | 2–4 days per available platform | OV-302 and source-profile fixtures; medium |
 | OV-702 / Partial | Extension install/update/uninstall, language packs, native ABI compatibility and clear failures | 3–6 days per available platform | OV-402/403 and package sources; medium |

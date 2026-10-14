@@ -62,7 +62,7 @@ the saved file with Undo. An earlier run exposed native chunking that displayed
 only the first line of a complete insertion. Local mode now uses the existing
 full-text consumer before display; the online chunking branch retains its contract.
 Focused tests cover bounded context, CRLF/Unicode, cancellation/stale results,
-HTTP response limits and upstream abort. These observations do not establish
+HTTP response limits and upstream abort. Those initial observations did not establish
 external GPT/DeepSeek/Grok compatibility, suggestion quality, partial acceptance,
 latency budgets or macOS/Linux behavior. OV-602 and OV-603 remain **Partial**.
 
@@ -131,6 +131,50 @@ to reports. Token usage, CPU time and peak process-family memory were not measur
 OV-602 remains Partial: native failure handling and this live compatibility
 sample are established, but representative multi-language/project suggestions,
 larger live quality samples and native live-provider acceptance remain open.
-OV-603 still requires partial acceptance, typing-during-request behavior and the
-supported latency/cancellation/platform matrix. No extra acceptance credit is
-claimed for these individual checks.
+OV-603 also requires the native editing and supported latency/cancellation/platform
+matrix below. No extra acceptance credit is claimed for individual checks.
+
+## Pending requests and partial-accept undo
+
+Run `npm run verify:completion -- --editing` for native Windows word acceptance,
+remaining-text Tab acceptance, undo, typing during a request, Escape and file
+switching. This uses a disposable profile with the existing partial-accept setting
+enabled and a controlled HTTP server that deliberately holds requests open.
+It measures action-to-upstream-close against a 1,000 ms cancellation budget and
+checks saved file contents. Completed results survive later test failures.
+
+The initial `completion-verification-4UG62G` run found that Escape did not abort a
+pending request within the budget. The recovered keyboard owner only called the
+completion cancellation lifecycle when a suggestion was already visible. Local
+mode now also aborts pending streams on Escape before a suggestion appears,
+without intercepting the key or adding another global listener.
+
+Runs `kogBIn` and `QcLBNV` then exposed intermittent partial-accept undo grouping.
+In the detailed second trace, undoing the accepted word also removed the preceding
+typed space. The recovered partial edit owner used `pushEditOperations` without
+undo boundaries. Local partial acceptance now opens and closes an undo boundary
+at that owner, retaining its returned selection and existing edit lifecycle.
+Both transformations validate source structure, preserve backups, work for desktop
+and glass, and are idempotent. Original failed runs remain retained locally.
+
+The repaired native run `completion-verification-BjiwWb` passed partial word
+acceptance, Tab remainder without duplication, exact undo in two steps, single
+and multiline Unicode acceptance, pending typing/Escape/file-switch cancellation,
+unchanged files and subsequent successful completion. No renderer errors; host
+exit 0. Action-to-upstream-close samples were 412 ms for typing, 34 ms for Escape
+and 93 ms for switching files, all below the declared 1,000 ms budget. The local
+fixture response became visible 23 ms after server receipt; the complete input
+sequence to visible suggestion took 534 ms, including native debounce.
+The same-build repeat `completion-verification-0YrmCL` also passed, including
+exact two-step undo and clean host exit. Its typing/Escape/switch cancellation
+samples were 423/2/64 ms. No additional production changes separated these runs.
+
+These single-workload samples are not live-provider latency or large-project
+performance claims. CPU time, peak process-family RAM and token usage were not
+measured. The normal profile's opt-in partial-accept preference is preserved;
+Ctrl+Right accepts the next word when it is enabled. Line acceptance is unverified.
+OV-603 remains Partial for broader editing/latency workloads and platform checks;
+OV-602 retains its separate live-quality/native-live-acceptance gaps.
+
+Verified Windows workbench SHA-256:
+`7616cbe676459332496caae085d0cfc7120777ab9ec11dfa60ce03293a35632a`.

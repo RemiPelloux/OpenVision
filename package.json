@@ -27,7 +27,7 @@
     "test:mcp": "node --test test/mcp.mjs",
     "test:telemetry": "node --test desktop/telemetry-core.test.mjs desktop/telemetry-extensions.test.mjs desktop/telemetry-workbench.test.mjs",
     "verify:telemetry": "node desktop/verify-telemetry.mjs",
-    "test:completion": "node --test desktop/completion-provider.test.mjs desktop/completion-response.test.mjs desktop/profile-paths.test.mjs desktop/subagent-paths.test.mjs",
+    "test:completion": "node --test desktop/completion-provider.test.mjs desktop/completion-response.test.mjs desktop/completion-keyboard.test.mjs desktop/completion-undo.test.mjs desktop/profile-paths.test.mjs desktop/subagent-paths.test.mjs",
     "verify:completion": "node desktop/verify-completion.mjs",
     "status:features": "node desktop/feature-status.mjs",
     "test:feature-status": "node --test desktop/feature-status.test.mjs",
