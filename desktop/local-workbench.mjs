@@ -154,6 +154,8 @@ export async function installLocalProfile(root) {
   const workbench = join(app, 'out/vs/code/electron-sandbox/workbench');
   for (const extension of ['js', 'css'])
     await copyFile(join(root, `desktop/local-profile.${extension}`), join(workbench, `openvision-local-profile.${extension}`));
+  for (const extension of ['js', 'css'])
+    await copyFile(join(root, `desktop/welcome-screen.${extension}`), join(workbench, `openvision-welcome-screen.${extension}`));
   await copyFile(join(root, 'desktop/import-ui.js'), join(workbench, 'openvision-import-ui.js'));
   await languageBranding(root, app);
 }

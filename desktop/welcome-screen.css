@@ -1,0 +1,42 @@
+.ov-welcome-shell { position: fixed; inset: 0; background: #101515; }
+.ov-welcome-host { position: absolute; inset: 32px 0 0; min-height: 0; }
+.ov-welcome-titlebar { position: absolute; inset: 0 0 auto; height: 32px; display: flex; justify-content: flex-end; color: #adbbb5; -webkit-app-region: drag; }
+.ov-welcome-titlebar button { -webkit-app-region: no-drag; }
+.ov-welcome-dialog { position: fixed; inset: 32px 0 0; width: 100vw; height: calc(100dvh - 32px); max-width: none; max-height: none; margin: 0; padding: 0; border: 0; color: #eaf4f0; background: #101515; }
+.ov-welcome-dialog::backdrop { background: #101515; }
+.ov-welcome { --ov-mint: #8ee8ca; box-sizing: border-box; position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 100%; height: 100%; overflow: auto; padding: 34px 48px 28px; color: #eaf4f0; background: radial-gradient(ellipse at 50% 40%, #19312b66, transparent 55%), #101515; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.ov-welcome *, .ov-welcome *::before, .ov-welcome *::after { box-sizing: border-box; }
+.ov-welcome::before { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(#b5e6d51a .6px, transparent .6px); background-size: 26px 26px; mask-image: radial-gradient(ellipse at center, #0008, transparent 72%); }
+.ov-welcome-top, .ov-welcome-footer { display: flex; flex: 0 0 auto; align-items: center; justify-content: space-between; gap: 16px; }
+.ov-welcome-wordmark { font-size: 15px; font-weight: 600; letter-spacing: -.5px; }
+.ov-local-badge { display: inline-flex; align-items: center; gap: 9px; border: 1px solid #9cd7c322; border-radius: 100px; padding: 8px 12px; color: #b4c9c2; font: 10px ui-monospace, monospace; letter-spacing: 1.7px; }
+.ov-local-badge::before, .ov-welcome-ready::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--ov-mint); }
+.ov-welcome-main { display: flex; flex: 1 0 auto; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 34px 0 28px; }
+.ov-welcome-visual { position: relative; width: 320px; height: 228px; display: grid; place-items: center; margin-bottom: 26px; animation: ov-welcome-reveal 1000ms both; }
+.ov-eye-orbit { position: absolute; width: 224px; height: 224px; border: 1px solid #9dd6c213; border-radius: 50%; }
+.ov-eye-orbit::before, .ov-eye-orbit::after { content: ''; position: absolute; inset: -28px; border: 1px solid #9dd6c20b; border-radius: 50%; }
+.ov-eye-orbit::after { inset: 24px; border-color: #9dd6c214; }
+.ov-welcome-eye { position: relative; width: 272px; height: 170px; color: var(--ov-mint); overflow: visible; }
+.ov-eye-lids { transform-origin: 160px 100px; animation: ov-eye-blink 6.8s 1.1s infinite; }
+.ov-eye-iris { animation: ov-eye-look 13.6s 1.1s infinite; }
+.ov-welcome-eyebrow { margin: 0 0 14px; color: #94b2a7; font: 10px ui-monospace, monospace; letter-spacing: 3px; animation: ov-welcome-reveal 800ms 100ms both; }
+.ov-welcome-title { margin: 0; color: #f2f8f5; font-size: clamp(48px, 5.1vw, 76px); font-weight: 500; line-height: 1.15; letter-spacing: -4px; animation: ov-welcome-reveal 800ms 180ms both; }
+.ov-welcome-title span { color: var(--ov-mint); }
+.ov-welcome-description { max-width: 380px; margin: 20px 0 34px; color: #adbbb5; font-size: 15px; line-height: 1.7; animation: ov-welcome-reveal 800ms 260ms both; }
+.ov-welcome-enter { display: inline-flex; justify-content: space-between; align-items: center; gap: 60px; min-height: 49px; padding: 0 20px; border: 1px solid #b0f0dc; border-radius: 8px; background: #a3ebd3; color: #10261f; font: 500 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; cursor: pointer; transition: background 160ms ease, transform 160ms ease; animation: ov-welcome-reveal 800ms 340ms both; -webkit-app-region: no-drag; }
+.ov-welcome-enter svg { width: 19px; height: 19px; transition: transform 180ms ease; }
+.ov-welcome-enter:hover { background: #c0f5e3; }
+.ov-welcome-enter:hover svg { transform: translateX(3px); }
+.ov-welcome-enter:active { transform: translateY(1px); }
+.ov-welcome-enter:focus-visible { outline: 2px solid #effff8; outline-offset: 5px; }
+.ov-welcome-enter:disabled { opacity: .6; cursor: progress; }
+.ov-welcome-note { margin: 15px 0 0; color: #8d9c95; font-size: 11px; animation: ov-welcome-reveal 800ms 420ms both; }
+.ov-welcome-status { min-height: 18px; max-width: 360px; margin: 12px 0 0; color: #f0b9a9; font-size: 12px; }
+.ov-welcome-footer { color: #879a91; font-size: 11px; letter-spacing: .2px; }
+.ov-welcome-ready { display: inline-flex; align-items: center; gap: 9px; }
+@keyframes ov-eye-blink { 0%, 40%, 46%, 100% { transform: scaleY(1); } 43% { transform: scaleY(.045); } }
+@keyframes ov-eye-look { 0%, 10%, 35%, 55%, 80%, 100% { transform: translateX(0); } 18%, 27% { transform: translateX(9px); } 63%, 72% { transform: translateX(-7px); } }
+@keyframes ov-welcome-reveal { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-height: 690px) { .ov-welcome { padding-top: 22px; padding-bottom: 20px; } .ov-welcome-main { padding: 12px 0; } .ov-welcome-visual { width: 260px; height: 154px; margin-bottom: 18px; } .ov-welcome-eye { width: 220px; height: 138px; } .ov-eye-orbit { width: 148px; height: 148px; } .ov-welcome-description { margin: 14px 0 22px; } .ov-welcome-title { font-size: 54px; } }
+@media (max-width: 560px) { .ov-welcome { padding: 24px; } .ov-local-badge { font-size: 8px; letter-spacing: 1px; } .ov-welcome-visual { max-width: 100%; } .ov-welcome-title { letter-spacing: -2.5px; } .ov-welcome-eyebrow { letter-spacing: 1.8px; font-size: 9px; } .ov-welcome-description { font-size: 13px; } .ov-welcome-footer { font-size: 10px; } }
+@media (prefers-reduced-motion: reduce) { .ov-welcome *, .ov-welcome *::before, .ov-welcome *::after { animation: none !important; transition: none !important; } }

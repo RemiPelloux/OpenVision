@@ -1,4 +1,5 @@
 import { importCursor } from './openvision-import-ui.js';
+import { showWelcomeScreen } from './openvision-welcome-screen.js';
 
 const storageKey = 'openvision.local-profile.v1';
 let profile;
@@ -29,7 +30,10 @@ function editProfile() {
   const cancel = document.createElement('button');
   cancel.textContent = 'Cancel';
   cancel.onclick = () => dialog.close();
-  dialog.append(heading, label, cancel, save);
+  const welcome = document.createElement('button');
+  welcome.textContent = 'Welcome screen';
+  welcome.onclick = () => { dialog.close(); showWelcomeScreen(); };
+  dialog.append(heading, label, welcome, cancel, save);
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   document.body.append(dialog);
   dialog.showModal();
@@ -50,7 +54,7 @@ function createButton() {
   return button;
 }
 
-window.openvisionLocalProfile = { open: editProfile, createButton, importCursor,
+window.openvisionLocalProfile = { open: editProfile, createButton, importCursor, welcome: showWelcomeScreen,
   logo: new URL('./openvision-logo.svg', import.meta.url).href,
   get name() { return profile.name; } };
 

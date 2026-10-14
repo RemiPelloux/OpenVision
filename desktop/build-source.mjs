@@ -28,6 +28,7 @@ import { installMcpCancellation } from './mcp-cancel-customization.mjs';
 import { installMcpReconnect } from './mcp-reconnect-customization.mjs';
 import { installAgentProviders } from './agent-provider-customization.mjs';
 import { installProviderErrorPolicy } from './provider-error-customization.mjs';
+import { installWelcomeStartup } from './welcome-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -45,6 +46,7 @@ await mkdir(join(root, 'build'), { recursive: true });
 const layout = platformLayout(root);
 await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
 await customizeBundles(root);
+await installWelcomeStartup(root);
 await installProfilePathIsolation(root);
 await installLazyMcpChannels(root);
 await installMcpAttemptCleanup(root);

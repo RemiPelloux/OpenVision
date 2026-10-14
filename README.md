@@ -29,6 +29,12 @@ Playground, keeping application internals out of everyday project indexing.
 Open **OpenVision Development.code-workspace** when editing the application itself.
 Existing workspace folders are preserved during builds.
 
+The welcome screen features an animated OpenVision eye and an **Enter workspace**
+button for your local profile. Reopen it from the profile button in the title bar
+by choosing **Welcome screen**. It respects the system's reduced-motion preference.
+Run `npm run verify:welcome` to check the real desktop screen in a disposable
+profile, including workspace entry, layout, blink and dismissal.
+
 Release work targets **80% of the fixed 42 acceptance stories**, plus a usable
 development workflow. Current evidence, missing functions and conditional ETAs
 are in [remaining work and estimates](docs/remaining-work-estimates.md).

@@ -90,6 +90,8 @@ export async function workbenchAssets(app, svg, png) {
   const hasHref = value => links.some(node => node.attrs.some(attribute => attribute.name === 'href' && attribute.value === value));
   if (!hasHref('./openvision-local-profile.css'))
     append(head, parseFragment('<link rel="stylesheet" href="./openvision-local-profile.css">').childNodes[0]);
+  if (!hasHref('./openvision-welcome-screen.css'))
+    append(head, parseFragment('<link rel="stylesheet" href="./openvision-welcome-screen.css">').childNodes[0]);
   if (!hasHref('./openvision-logo.svg'))
     append(head, parseFragment('<link rel="icon" href="./openvision-logo.svg">').childNodes[0]);
   if (!body.childNodes.some(node => node.tagName === 'script' &&
