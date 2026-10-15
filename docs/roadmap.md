@@ -12,6 +12,12 @@ clauses remain in [completion-sprints.md](completion-sprints.md). Original accou
 billing and hosted cloud agents remain excluded. Native macOS, the remaining Linux gates and
 independent-build requirements remain in the denominator.
 
+Latest scoped REA follow-up: [control-plane MCP lifecycle](control-plane-mcp-lifecycle.md)
+now coalesces initialization, replaces changed definitions, retains rejected cleanup
+and orders reconciliation with config saves. Its loopback/child tests do not close
+native acceptance gates. Full-workbench startup remains blocked; see the
+[current Windows evidence](model-discovery-resources.md#full-app-startup-gate).
+
 ## Critical-first backlog and ETA
 
 **36 unfinished stories · 322 provisional complexity points.** The order below

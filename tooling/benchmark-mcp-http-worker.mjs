@@ -5,7 +5,7 @@ import { gzipSync } from "node:zlib";
 import { pathToFileURL } from "node:url";
 
 const [modulePath, workload] = process.argv.slice(2);
-const { McpHttpClient } = await import(pathToFileURL(modulePath));
+const { McpHttpClient, McpManager } = await import(pathToFileURL(modulePath));
 const errorDecodedBytes = 32 * 1024 * 1024;
 const compressedError = workload === "error-recovery" ? gzipSync(Buffer.alloc(errorDecodedBytes, 120)) : undefined;
 const text = "a".repeat(8192);
@@ -23,7 +23,9 @@ const server = createServer(async (request, response) => {
     result: message.method === "initialize" ? { capabilities: {} } : { content: [{ type: "text", text }] } }));
 });
 server.listen(0, "127.0.0.1"); await once(server, "listening");
-const client = new McpHttpClient({ transport: "http", url: `http://127.0.0.1:${server.address().port}` });
+const definition = { transport: "http", url: `http://127.0.0.1:${server.address().port}` };
+const manager = workload === "manager-reuse" ? new McpManager() : undefined;
+const client = manager ? await manager.client("fixture", definition) : new McpHttpClient(definition);
 try {
   await client.ready;
   const samples = [];
@@ -33,7 +35,8 @@ try {
     for (let i = 0; i < count; i++) {
       if (workload === "error-recovery")
         await assert.rejects(client.request("tools/call", { name: "error" }), /MCP HTTP 503:/);
-      const result = await client.request("tools/call", { name: "healthy" });
+      const result = manager ? await manager.callTool("fixture", definition, "healthy", {}) :
+        await client.request("tools/call", { name: "healthy" });
       assert.equal(result.content[0].text, text);
     }
     const elapsedMs = performance.now() - started, used = process.cpuUsage(cpu);
@@ -44,5 +47,6 @@ try {
     errorDecodedBytes: compressedError ? errorDecodedBytes : undefined, errorWireBytes: compressedError?.length,
     processes: 1, memoryScope: "worker plus in-process HTTP fixture; lifetime OS high-water RSS" }));
 } finally {
-  await client.close(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+  if (manager) await manager.closeAll(); else await client.close();
+  server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
 }

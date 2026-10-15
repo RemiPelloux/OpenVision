@@ -6,11 +6,16 @@ import { createHash } from "node:crypto";
 const root = resolve(import.meta.dirname, "..");
 const workerTimeoutMs = 60_000;
 const baseline = execFileSync("git", ["rev-parse", "--verify", `${process.argv[2] ?? "499fc4e"}^{commit}`], { cwd: root, encoding: "utf8" }).trim();
+const workloads = process.argv[3] ? [process.argv[3]] : ["normal", "error-recovery"];
+if (workloads.some(workload => !["normal", "error-recovery", "manager-reuse"].includes(workload)))
+  throw new Error("Unknown MCP benchmark workload.");
 await mkdir(join(root, "logs"), { recursive: true });
 const directory = await mkdtemp(join(root, "logs/mcp-http-performance-"));
 const baselineSource = join(directory, "baseline"); await mkdir(baselineSource);
 for (const file of ["mcp.mjs", "config.mjs"])
   await writeFile(join(baselineSource, file), execFileSync("git", ["show", `${baseline}:src/${file}`], { cwd: root }));
+if (execFileSync("git", ["show", `${baseline}:src/mcp.mjs`], { cwd: root, encoding: "utf8" }).includes('./mcp-http-response.mjs'))
+  await writeFile(join(baselineSource, "mcp-http-response.mjs"), execFileSync("git", ["show", `${baseline}:src/mcp-http-response.mjs`], { cwd: root }));
 const sourceDigests = {};
 for (const file of ["src/mcp.mjs", "src/mcp-http-response.mjs", "tooling/benchmark-mcp-http-worker.mjs"])
   sourceDigests[file] = createHash("sha256").update(await readFile(join(root, file))).digest("hex");
@@ -34,7 +39,7 @@ async function run(modulePath, workload) {
 }
 
 const runs = [];
-for (const workload of ["normal", "error-recovery"]) {
+for (const workload of workloads) {
   for (let repetition = 0; repetition < 3; repetition++) {
     for (const candidate of repetition % 2 ? ["after", "before"] : ["before", "after"]) {
       const modulePath = candidate === "before" ? join(baselineSource, "mcp.mjs") : join(root, "src/mcp.mjs");
@@ -44,7 +49,7 @@ for (const workload of ["normal", "error-recovery"]) {
 }
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 const summary = [];
-for (const workload of ["normal", "error-recovery"]) for (const candidate of ["before", "after"]) {
+for (const workload of workloads) for (const candidate of ["before", "after"]) {
   const selected = runs.filter(run => run.workload === workload && run.candidate === candidate);
   for (const temperature of ["first", "warm"]) {
     const samples = selected.map(run => run.samples.find(sample => sample.temperature === temperature));

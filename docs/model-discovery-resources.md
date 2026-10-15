@@ -100,12 +100,16 @@ The unchanged adapter also fails startup (`logs/model-discovery-WikBMz/result.js
 These are failed runs, not evidence that the discovery UI works.
 
 A locally captured Windows minidump of an owned disposable app process records
-the exception in **`urlmon.dll + 0x112b86`**. The signed on-disk DLL has version
-11.00.26100.8875; the workstation reports Windows 10.0.26200. Recorded memory near
-the instruction differs from the corresponding disk bytes; the reason is unknown.
-Raw stack address candidates are not an unwound call stack. No system DLL or
-runtime memory is patched as a workaround. Local dump and decoded metadata remain
-ignored under `logs/startup-dump-mM0mlj/` and are not uploaded.
+the exception in **`urlmon.dll + 0x112b86`**, RIP `0x7fff2eb72b86`.
+CDB unwinding shows a shell/path stack through `windows_storage`, including
+`SHCreateShellItemArrayFromIDLists`. Offsets from nearest exports do not establish
+exact function identities without matching symbols. The loaded module reports
+**11.0.26100.9711**, while FileVersionInfo on the signed disk DLL reported
+**11.00.26100.8875**; the workstation reports Windows 10.0.26200. This identity
+discrepancy is unresolved. Recorded memory/disk byte differences do not establish
+corruption while that mismatch remains. No system DLL or runtime memory is
+patched. Dump, decoded metadata and CDB output remain ignored under
+`logs/startup-dump-mM0mlj/` and are not uploaded.
 
 The same executable runs the minimal native host successfully. This narrows the
 next investigation to full-app startup and its dependencies; it does not prove
@@ -116,6 +120,8 @@ retention, package and long-session gates must be rerun once startup is repaired
 The final post-build full-workbench repeat also exits 0xC000001D with zero
 discovery requests (`logs/model-discovery-JZWnxQ/result.json`). A separate
 read-only PowerShell `Get-AppxPackage Microsoft.WinDbg` query fails with the same
-code while reading `ABI.Windows.ApplicationModel.IPackage.get_InstalledLocation`.
-That is evidence of a failure outside OpenVision too, not proof of a shared root
+code and recorded RIP. Its CDB stack includes `SHCreateItemFromParsingName` and
+`ABI.Windows.ApplicationModel.IPackage.get_InstalledLocation`. Evidence remains
+under ignored `logs/windows-package-control/`. The matching fault site narrows
+investigation beyond app-specific JavaScript; it does not establish a shared root
 cause or permission to repair the OS. Preserve both investigations separately.

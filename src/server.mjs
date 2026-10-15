@@ -129,8 +129,9 @@ async function addServer(input, response) {
   const definition = { ...input, kind: input.kind ?? "mcp" };
   validateServer(input.id, definition);
   if (input.id === "rea") return json(response, 409, { error: "The built-in rea server cannot be replaced." });
-  const server = { kind: "mcp", transport: input.transport ?? "stdio", enabled: input.enabled !== false, command: input.command, args: input.args, url: input.url, headers: input.headers, env: input.env ?? {} };
-  await mutateConfig((config) => { config.servers[input.id] = server; });
+  const server = { kind: "mcp", transport: input.transport ?? "stdio", enabled: input.enabled !== false, command: input.command, args: input.args, cwd: input.cwd, url: input.url, headers: input.headers, env: input.env ?? {} };
+  await mutateConfig((config) => { config.servers[input.id] = server; },
+    { afterSave: () => mcp.reconcile(input.id, server) });
   return json(response, 201, { server: safeServerView(input.id, server) });
 }
 
@@ -144,12 +145,11 @@ async function addApi(input, response) {
 
 async function removeServer(id, response) {
   if (id === "rea") return json(response, 409, { error: "The built-in rea server cannot be removed." });
-  await mcp.close(id);
   const removed = await mutateConfig((config) => {
     if (!Object.hasOwn(config.servers, id)) return false;
     delete config.servers[id];
     return true;
-  });
+  }, { afterSave: () => mcp.close(id) });
   if (!removed) return json(response, 404, { error: "Server not found." });
   return json(response, 200, { removed: id });
 }
@@ -219,5 +219,17 @@ function page(response) {
 
 const server = createServer((request, response) => route(request, response).catch((error) => json(response, error?.statusCode ?? 500, { error: error instanceof Error ? error.message : String(error) })));
 server.listen(port, host, () => console.log(`OpenVision listening at http://${host}:${server.address().port}`));
-process.once("SIGINT", () => { mcp.closeAll().finally(() => server.close(() => process.exit(0))); });
-process.once("SIGTERM", () => { mcp.closeAll().finally(() => server.close(() => process.exit(0))); });
+let shuttingDown = false;
+async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  server.close();
+  try { await mcp.closeAll(); }
+  catch {
+    // Failed resources remain owned by the manager; do not report a clean exit.
+    process.exitCode = 1;
+    console.error("OpenVision MCP cleanup failed during shutdown.");
+  }
+}
+process.once("SIGINT", shutdown);
+process.once("SIGTERM", shutdown);

@@ -34,11 +34,13 @@ export async function saveConfig(config) {
   return configPath;
 }
 
-export function mutateConfig(mutator) {
+export function mutateConfig(mutator, { afterSave } = {}) {
   const operation = mutationQueue.then(async () => {
     const { config } = await loadConfig();
     const result = await mutator(config);
     await saveConfig(config);
+    // Keep resource reconciliation ordered with the configuration that produced it.
+    await afterSave?.(result);
     return result;
   });
   mutationQueue = operation.catch(() => undefined);

@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
+import { isDeepStrictEqual } from "node:util";
 import { expand } from "./config.mjs";
 import { readMcpHttpResponse } from "./mcp-http-response.mjs";
 
@@ -13,12 +14,16 @@ function errorFrom(value, fallback = "MCP request failed.") {
 
 function expandedServer(definition, environment) {
   const expandValue = value => typeof value === "string" ? expand(value, environment) : value;
+  const transport = definition.transport ?? "stdio";
+  if (transport === "http") return {
+    transport, url: expandValue(definition.url),
+    headers: Object.fromEntries([...new Headers(definition.headers)].map(([key, value]) => [key, expandValue(value)])),
+  };
   return {
-    ...definition,
+    transport,
     command: expandValue(definition.command),
     args: (definition.args ?? []).map(expandValue),
-    cwd: expandValue(definition.cwd),
-    url: expandValue(definition.url),
+    cwd: expandValue(definition.cwd) || undefined,
     env: Object.fromEntries(Object.entries(definition.env ?? {}).map(([key, value]) => [key, expandValue(value)])),
   };
 }
@@ -175,17 +180,46 @@ export class McpManager {
     this.environment = environment;
     this.timeoutMs = timeoutMs;
     this.clients = new Map();
+    this.closed = false;
   }
 
   async client(id, definition) {
-    if (definition.enabled === false) throw new Error(`MCP server is disabled: ${id}`);
-    const current = this.clients.get(id);
-    if (current) return current;
+    while (true) {
+      if (this.closed) throw new Error("MCP manager is closed.");
+      const current = this.clients.get(id);
+      if (!current) {
+        if (definition.enabled === false) throw new Error(`MCP server is disabled: ${id}`);
+        return this.#connect(id, definition);
+      }
+      if (current.cleanupError) throw new Error("MCP cleanup failed; retry closing this server before reconnecting.", { cause: current.cleanupError });
+      if (current.closing) { await current.closing; continue; }
+      if (definition.enabled === false || current.client.closed ||
+          !isDeepStrictEqual(current.client.definition, expandedServer(definition, this.environment))) {
+        await this.#closeEntry(id, current);
+        continue;
+      }
+      return this.#readyClient(id, current);
+    }
+  }
+
+  #connect(id, definition) {
     const Client = (definition.transport ?? "stdio") === "http" ? McpHttpClient : McpStdioClient;
     const client = new Client(definition, { environment: this.environment, timeoutMs: this.timeoutMs });
-    this.clients.set(id, client);
-    try { await client.ready; return client; }
-    catch (error) { this.clients.delete(id); await client.close(); throw error; }
+    const entry = { client };
+    this.clients.set(id, entry);
+    entry.ready = client.ready.catch(async error => {
+      try { await this.#closeEntry(id, entry); }
+      catch (cleanupError) { throw new AggregateError([error, cleanupError], "MCP initialization and cleanup failed."); }
+      throw error;
+    });
+    return this.#readyClient(id, entry);
+  }
+
+  async #readyClient(id, entry) {
+    await entry.ready;
+    if (this.closed || this.clients.get(id) !== entry || entry.closing || entry.client.closed)
+      throw new Error("MCP connection changed or closed during initialization.");
+    return entry.client;
   }
 
   async listTools(id, definition, options) {
@@ -199,10 +233,32 @@ export class McpManager {
   }
 
   async close(id) {
-    const client = this.clients.get(id);
-    this.clients.delete(id);
-    await client?.close();
+    const entry = this.clients.get(id);
+    if (entry) await this.#closeEntry(id, entry);
   }
 
-  async closeAll() { for (const id of [...this.clients.keys()]) await this.close(id); }
+  async reconcile(id, definition) {
+    const entry = this.clients.get(id);
+    if (entry && (!definition || definition.enabled === false ||
+        !isDeepStrictEqual(entry.client.definition, expandedServer(definition, this.environment))))
+      await this.#closeEntry(id, entry);
+  }
+
+  async #closeEntry(id, entry) {
+    if (entry.closing) return entry.closing;
+    entry.closing = Promise.resolve().then(() => entry.client.close());
+    try {
+      await entry.closing;
+      if (this.clients.get(id) === entry) this.clients.delete(id);
+      entry.cleanupError = undefined;
+    } catch (error) { entry.cleanupError = error; throw error; }
+    finally { entry.closing = undefined; }
+  }
+
+  async closeAll() {
+    this.closed = true;
+    const results = await Promise.allSettled([...this.clients].map(([id, entry]) => this.#closeEntry(id, entry)));
+    const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
+    if (errors.length) throw new AggregateError(errors, "MCP cleanup failed for one or more servers.");
+  }
 }
