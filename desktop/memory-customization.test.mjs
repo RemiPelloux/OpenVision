@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { customizeMemory } from './memory-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 function extract(text, name) {
   const start = text.indexOf(`function ${name}(`);
@@ -18,7 +19,7 @@ const variants = {
 };
 
 for (const [variant, names] of Object.entries(variants)) {
-  for (const [label, directory] of [['original', '../../cursor/readable'], ['prepared', '../source']]) {
+  for (const [label, directory] of [['original', new URL('..', readableApp).href.slice(0, -1)], ['prepared', '../source']]) {
     test(`${variant} ${label}: approved project memories retain native rules and own their React lifecycle`, async t => {
       let source;
       try { source = await readFile(new URL(`${directory}/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8'); }

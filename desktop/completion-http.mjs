@@ -17,5 +17,6 @@ export async function fetchCompletion(input, { fetch, signal }) {
       messages: [{ role: 'system', content: 'Complete code at the cursor. Return only the text to INSERT between prefix and suffix. Do not repeat either. No explanation, Markdown fences, or tool calls. Return an empty string when no useful insertion is possible.' },
         { role: 'user', content: JSON.stringify({ language: input.language, prefix: input.prefix, suffix: input.suffix }) }] }),
   });
-  return readCodeResponse(response, { label: 'Completion', bytes: 64 * 1024, characters: 8000 });
+  return readCodeResponse(response, { label: 'Completion', bytes: 64 * 1024, characters: 8000,
+    truncatedHint: 'Try a shorter context or another autocomplete model.' });
 }

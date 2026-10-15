@@ -24,7 +24,7 @@ Verified model/configuration stories follow this same scoped rule.
 | OAuth consent cancellation, expiry/refresh and secret storage | OV-304 | Has its own explicit acceptance clause; no OAuth pass is implied by unauthenticated MCP fixtures |
 | Remote-host resource ownership and native extension-host MCP behavior | OV-703 | Depends on OV-303 and the declared SSH/WSL/container host matrix |
 | Long-session memory, watcher/timer ownership, idle/reactivation and resource budgets | OV-1003 | Includes MCP, extensions, editors and remote sessions; short cleanup tests do not close it |
-| Native macOS and Linux launch/workflows, storage, sandbox and permissions | OV-902 / OV-903 | Windows-only native evidence remains explicitly limited |
+| Native macOS and Linux launch/workflows, storage, sandbox and permissions | OV-902 / OV-903 | Windows and Linux x64 native evidence; macOS unverified |
 | Clean independent build without ignored input artifacts | OV-804 | Depends on native/helper replacement stories; no assembled-runtime claim satisfies it |
 
 The 14 October audit inspected actual result JSON, not just report summaries.

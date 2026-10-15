@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableModelMenu } from './model-picker-layout.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 function applyGuard(source, marker, variant, props) {
   const index = source.indexOf(marker);
@@ -15,7 +16,7 @@ function applyGuard(source, marker, variant, props) {
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} native menu separates model identity from provider-specific reasoning`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const patched = readableModelMenu(source, variant);
     assert.equal(readableModelMenu(patched, variant), patched);
     const model = { name: 'custom/id', inputboxShortModelName: 'My model', providerId: 'saved-provider',

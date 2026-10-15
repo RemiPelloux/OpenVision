@@ -36,6 +36,8 @@ import { installProjectNamespace, restoreNamespaceInputs } from './namespace-bui
 import { installRuleDurability } from './rules-durability-customization.mjs';
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
 import { installShutdownOwnership } from './shutdown-customization.mjs';
+import { installLinuxKeyringSelection } from './linux-keyring-customization.mjs';
+import { installApprovalDefault } from './autorun-customization.mjs';
 import { installWindowTitles } from './source-branding.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -70,9 +72,11 @@ await installOwnedShellProcesses(root);
 await installContextRuntime(root);
 await installCoreTelemetryPolicy(root);
 await installShutdownOwnership(root);
+await installLinuxKeyringSelection(root);
 await installExtensionTelemetryPolicy(root);
 await installCompletion(root);
 await installInlineEdit(root);
+await installApprovalDefault(root);
 await installLocalChatTitles(root);
 await installExplicitWorktrees(root);
 await installLocalProfile(root);

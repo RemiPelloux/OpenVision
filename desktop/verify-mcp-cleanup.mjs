@@ -9,8 +9,8 @@ import { createRuntimeOverlay } from './verification-runtime-overlay.mjs';
 import { injectMcpCloseFailure } from './verify-mcp-cleanup-injection.mjs';
 import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
 import { closeOwnedMcpTransports } from './mcp-attempt-customization.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'This native cleanup verifier currently targets Windows');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/mcp-cleanup-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
@@ -29,7 +29,7 @@ const transport = await createMcpStdioFixture();
 const configPath = join(profile, 'User/mcp.json');
 const config = { mcpServers: { 'openvision-verify': transport.configuration } };
 const result = { directory, platform: process.platform, candidate, persistent, checkedAt: new Date().toISOString(),
-  scope: `Native Windows MCP utility and real STDIO child; ${persistent ? 'two transport close rejections' : 'one transport close rejection'} injected into a disposable runtime copy. No AI inference.`,
+  scope: `Native ${process.platform} MCP utility and real STDIO child; ${persistent ? 'two transport close rejections' : 'one transport close rejection'} injected into a disposable runtime copy. No AI inference.`,
   overlay: overlay.records, checks: {}, events: [], connections: transport.connections };
 let app, page;
 const errors = [];
@@ -51,7 +51,7 @@ try {
   for (const stream of [app.process().stdout, app.process().stderr]) stream?.on('data', chunk => childOutput.push(chunk.toString()));
   result.hostOutput = childOutput;
   page = await app.firstWindow({ timeout: 60000 }); page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await writeFile(configPath, JSON.stringify(config));
   await until('native shared MCP discovery', async () => transport.requests.some(request => request.method === 'tools/list') &&
     (await events()).some(event => event.event === 'attempt-committed') &&

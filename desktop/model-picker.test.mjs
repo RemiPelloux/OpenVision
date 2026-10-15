@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { localModelPicker } from './model-picker.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const marker = '/* OpenVision local model parameter menu */';
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} native picker enables local provider submenus without changing model capabilities`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const patched = localModelPicker(source, variant);
     assert.equal(localModelPicker(patched, variant), patched);
     const index = patched.indexOf(marker);

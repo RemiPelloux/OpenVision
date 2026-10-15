@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { chromium } from '../tooling/browser.mjs';
+import { chromium, browserLaunchOptions } from '../tooling/browser.mjs';
 
 test('10,000-project UI bounds DOM, filters without requests and releases pending work on disposal', async t => {
-  const browser = await chromium.launch({ channel: process.env.OPENVISION_BROWSER_CHANNEL || 'msedge', headless: true });
+  const browser = await chromium.launch(browserLaunchOptions());
   t.after(() => browser.close());
   const page = await browser.newPage();
   await page.setContent('<main></main>');

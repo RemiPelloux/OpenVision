@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 // This verifier uses the real storage channel from a second native window.
 // The UI intentionally reuses an already-open folder, so the fixture explicitly
@@ -48,7 +49,7 @@ async function secondWindow(context) {
     if (/\/KnowledgeBase(?:Add|List|Update|Remove)(?:\?|$)/i.test(request.url()))
       requests.push(new URL(request.url()).pathname);
   });
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
   await context.openRules(page);
   return page;

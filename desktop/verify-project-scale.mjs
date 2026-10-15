@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, copyFile, readdir, symlink, unlink, rename } from 'node:fs/promises';
-import { join, resolve, relative } from 'node:path';
+import { join, resolve, relative, sep } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'This native scale verifier currently covers Windows');
 const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/project-scale-verification-'));
 const sizes = [100, 10000], filesPerFolder = 100, rounds = 5;
@@ -69,7 +69,7 @@ async function launch(run) {
   page.on('pageerror', error => result.errors.push(error.message));
   const diagnosticTailLimit = 16384;
   app.process().stderr?.on('data', chunk => { run.stderrTail = ((run.stderrTail ?? '') + chunk).slice(-diagnosticTailLimit); });
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await until('watcher driver readiness', () => readOptional(join(run.base, 'ready.json')));
   run.launchToDriverMs = Math.round(performance.now() - started);
   await delay(3000);
@@ -96,13 +96,15 @@ async function nativeWatcherLines(run) {
 }
 
 function checkNativeWatchers(run, before, after) {
-  const project = run.project.toLowerCase(), isProject = path => path.toLowerCase() === project || path.toLowerCase().startsWith(`${project}\\`);
+  // Windows paths are case-insensitive; Linux paths are compared exactly.
+  const fold = path => process.platform === 'win32' ? path.toLowerCase() : path;
+  const project = fold(run.project), isProject = path => fold(path) === project || fold(path).startsWith(`${project}${sep}`);
   const starts = before.map(line => line.match(/Started watching: '([^']+)' with backend '([^']+)'/))
     .filter(match => match && isProject(match[1])).map(match => ({ path: match[1], backend: match[2] }));
   assert.ok(starts.length > 0, 'Native recursive project watcher must start');
-  assert.deepEqual([...new Set(starts.map(item => item.path.toLowerCase()))], [project]);
+  assert.deepEqual([...new Set(starts.map(item => fold(item.path)))], [project]);
   const changes = after.slice(before.length).filter(line => /Started watching:|stopping file watcher/.test(line)
-    && line.toLowerCase().includes(project));
+    && fold(line).includes(project));
   assert.deepEqual(changes, [], 'Edits must not restart the recursive project watcher');
   run.nativeWatcher = { initialStarts: starts, distinctProjectPaths: 1, restartsDuringEdits: changes.length };
   run.checks.shared_recursive_watcher_remains_active_during_edits = true;

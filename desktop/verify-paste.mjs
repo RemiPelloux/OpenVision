@@ -5,6 +5,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const { layout } = await loadRuntime(root);
@@ -47,7 +48,7 @@ async function launch() {
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, file] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
 }
 try {

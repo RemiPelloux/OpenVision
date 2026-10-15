@@ -6,12 +6,15 @@ import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import * as policy from './provider-error-policy.js';
 import { redactProviderErrors } from './provider-error-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
-const original = await readFile(new URL('../../cursor/readable/app/extensions/cursor-agent-exec/dist/main.js', import.meta.url), 'utf8');
+const original = await readFile(new URL('extensions/cursor-agent-exec/dist/main.js', readableApp), 'utf8');
 const patched = redactProviderErrors(original);
 
-function expression(anchor, offset = 0) {
-  const start = patched.indexOf(anchor) + offset;
+// Minified helper names repeat across webpack modules, and module order differs
+// between platform builds. `owner` selects the occurrence nearest before it.
+function expression(anchor, offset = 0, owner) {
+  const start = (owner ? patched.lastIndexOf(anchor, patched.indexOf(owner)) : patched.indexOf(anchor)) + offset;
   assert.ok(start >= offset);
   const node = parseExpressionAt(patched, start, { ecmaVersion: 'latest' });
   return patched.slice(node.start, node.end);
@@ -51,7 +54,7 @@ test('diagnostic graph redaction preserves identity, status, retryability and un
 
 test('native context-error classification preserves provider failures without starting paid summary retries', () => {
   class InputTokenLimitError extends Error {}
-  const classify = runInNewContext(`${expression('function vi(e, t)')}\n${expression('function wi(e)')}\n${expression('function bi(e)')}\n(${expression('function pEe(e)')})`, {
+  const classify = runInNewContext(`${expression('function vi(e, t)', 0, 'function pEe(e)')}\n${expression('function wi(e)', 0, 'function pEe(e)')}\n${expression('function bi(e)', 0, 'function pEe(e)')}\n(${expression('function pEe(e)')})`, {
     ...context, jo: InputTokenLimitError,
   });
   const provider = new ApiError({ message: 'context_length_exceeded', statusCode: 400 });

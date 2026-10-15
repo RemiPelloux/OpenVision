@@ -6,12 +6,13 @@ import { dirname, join } from 'node:path';
 import vm from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { localChatTitles, installLocalChatTitles } from './local-chat-title.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const originals = new Map();
 for (const extension of ['cursor-agent-exec', 'cursor-local-agent-runtime']) {
   test(`${extension}: recovered title owner preserves local formatting and Promise contract without a provider`, async t => {
     let source;
-    try { source = await readFile(new URL(`../../cursor/readable/app/extensions/${extension}/dist/main.js`, import.meta.url), 'utf8'); }
+    try { source = await readFile(new URL(`extensions/${extension}/dist/main.js`, readableApp), 'utf8'); }
     catch (error) { if (error.code === 'ENOENT') return t.skip('Recovered extension required'); throw error; }
     originals.set(extension, source);
     const after = localChatTitles(source);

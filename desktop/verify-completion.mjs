@@ -10,6 +10,7 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { writeCompletionFailure, verifyCompletionFailures } from './verify-completion-failures.mjs';
 import { fileHash } from './import-files.mjs';
 import { createCompletionEditingFixture, verifyCompletionEditing } from './verify-completion-editing.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { portable, runtimeRoot, appRoot, layout } = await verificationRuntime(root);
@@ -57,7 +58,7 @@ try {
   const page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();

@@ -8,6 +8,7 @@ import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { execFileSync } from 'node:child_process';
 import { arch, release } from 'node:os';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const { layout } = await loadRuntime(root);
@@ -42,7 +43,7 @@ try {
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', project] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   const trigger = page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first();
   const started = performance.now(); await trigger.click({ timeout: 60000 });
   const menu = page.getByTestId('model-picker-menu').filter({ visible: true });

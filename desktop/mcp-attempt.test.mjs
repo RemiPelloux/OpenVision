@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { closeOwnedMcpTransports, mcpAttemptOwner } from './mcp-attempt-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const variants = [
   ['process', 'out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', 'Y'],
@@ -17,7 +18,7 @@ function instance(text, loggerName, logError) {
   return { attempt: new Type('fixture'), Type, errors };
 }
 for (const [name, relative, logger] of variants) {
-  const source = readFile(new URL(`../../cursor/readable/app/${relative}`, import.meta.url), 'utf8');
+  const source = readFile(new URL(`${relative}`, readableApp), 'utf8');
   test(`${name}: cancellation before transport attachment closes the late resource; original code reproduces the leak`, async () => {
     const original = await source, patched = closeOwnedMcpTransports(original);
     assert.equal(closeOwnedMcpTransports(patched), patched);

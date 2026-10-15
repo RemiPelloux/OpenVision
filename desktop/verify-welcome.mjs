@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { basename, resolve, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
@@ -29,7 +29,7 @@ try {
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   const screen = page.getByRole('region', { name: 'Welcome to OpenVision' });
   await screen.waitFor({ timeout: 60000 });
-  assert.ok(page.url().includes(portable ? '/electron-host/resources/app/' : '/openvision/source/app/'),
+  assert.ok(page.url().includes(portable ? '/electron-host/resources/app/' : `/${basename(root)}/source/app/`),
     'Welcome must run in the selected editable OpenVision application');
   await page.waitForTimeout(1500);
   result.nativeWindowTitle = await app.evaluate(({ BrowserWindow }) =>

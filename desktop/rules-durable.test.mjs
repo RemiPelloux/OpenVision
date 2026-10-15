@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { DatabaseSync } from 'node:sqlite';
 import { commitRules } from './rules-durable.js';
 import { durableRuleIpc } from './rules-durability-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const prefix = 'openvision.user-rule.v1.';
 const migrationKey = 'openvision.user-rules.legacy-migrated.v1';
@@ -117,7 +118,7 @@ test('database connection failure reaches the caller before any rule cache publi
 
 test('native main storage IPC gains an idempotent durable rule operation at its selected storage owner', async t => {
   let source;
-  try { source = await readFile(new URL('../../cursor/readable/app/out/main.js', import.meta.url), 'utf8'); }
+  try { source = await readFile(new URL('out/main.js', readableApp), 'utf8'); }
   catch (error) { if (error.code === 'ENOENT') return t.skip('Recovered native main bundle required'); throw error; }
   const patched = durableRuleIpc(source);
   assert.equal(durableRuleIpc(patched), patched);

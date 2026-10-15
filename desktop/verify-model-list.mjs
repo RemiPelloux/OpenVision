@@ -1,4 +1,4 @@
-import { chromium } from '../tooling/browser.mjs';
+import { chromium, browserLaunchOptions } from '../tooling/browser.mjs';
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
@@ -25,7 +25,7 @@ const server = createServer(async (request, response) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let browser;
 try {
-  browser = await chromium.launch({ channel: process.env.OPENVISION_BROWSER_CHANNEL || 'msedge', headless: true });
+  browser = await chromium.launch(browserLaunchOptions());
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));

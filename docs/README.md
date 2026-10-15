@@ -5,6 +5,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | I want to… | Read |
 | --- | --- |
 | Download and launch OpenVision | [Portable installation, editable code and updates](native-runtime.md) |
+| Build and run OpenVision on Linux | [Linux guide](linux.md) · [Linux verification](linux-verification.md) |
 | Configure models, import settings or customize the UI | [User guide](user-guide.md) |
 | Check import isolation and exact restore | [Profile import verification](import-profile-verification.md) |
 | Resume, pin and search projects | [Project home](project-home.md) |

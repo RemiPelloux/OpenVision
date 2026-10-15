@@ -5,15 +5,21 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { fileHash } from './import-files.mjs';
 import { verificationSettings } from './verification-profile.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'Native development matrix currently covers Windows');
 const root = resolve(import.meta.dirname, '..'), { layout } = await loadRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/development-verification-'));
 const project = join(directory, 'project'), profile = join(directory, 'profile'), driver = join(directory, 'driver');
 await Promise.all([mkdir(project), mkdir(join(profile, 'User'), { recursive: true }), mkdir(driver)]);
-const config = { node: process.execPath, cmd: join(process.env.SystemRoot, 'System32/cmd.exe'),
-  powershell: join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
-  powershellModules: join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/Modules') };
+// Two real native shells per platform, each with its own quoting rules.
+const shells = process.platform === 'win32' ? [
+  { name: 'cmd', path: join(process.env.SystemRoot, 'System32/cmd.exe'), args: ['/d', '/q'], quoting: 'cmd', width: 1100 },
+  { name: 'powershell', path: join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
+    args: ['-NoLogo', '-NoProfile'], quoting: 'powershell', width: 1450,
+    env: { PSModulePath: join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/Modules') } }] : [
+  { name: 'bash', path: '/bin/bash', args: ['--noprofile', '--norc'], quoting: 'posix', width: 1100 },
+  { name: 'sh', path: '/bin/sh', args: [], quoting: 'posix', width: 1450 }];
+const config = { node: process.execPath, shells };
 await writeFile(join(directory, 'config.json'), JSON.stringify(config));
 await copyFile(join(root, 'desktop/verify-development-process.cjs'), join(directory, 'process.cjs'));
 await writeFile(join(project, 'problem.c'), 'int main() {\n  int value = 0;\n  return value;\n}\n');
@@ -39,7 +45,7 @@ const result = { directory, platform: process.platform, launcher: process.versio
   main: await fileHash(join(root, 'source/app/out/main.js')),
   workbench: await fileHash(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')),
   debugger: await fileHash(join(root, 'source/app/extensions/ms-vscode.js-debug/src/extension.js')),
-  scope: 'Real Windows shells, native tasks/problem matcher and shipped Node debugger; declared synthetic workloads; no AI requests.' };
+  scope: `Real ${shells.map(shell => shell.name).join('/')} shells, native tasks/problem matcher and shipped Node debugger; declared synthetic workloads; no AI requests.` };
 let app, page;
 async function phase(expected) {
   const deadline = Date.now() + 90000;
@@ -77,8 +83,8 @@ try {
   });
   page = await app.firstWindow(); page.setDefaultTimeout(30000);
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
-  for (const [name, width] of [['cmd', 1100], ['powershell', 1450]]) {
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
+  for (const { name, width } of shells) {
     await phase(`${name}-resize`);
     const initial = JSON.parse(await readFile(join(directory, `${name}.json`), 'utf8'));
     await app.evaluate(({ BrowserWindow }, width) => {

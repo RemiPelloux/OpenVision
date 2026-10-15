@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { customizePaste } from './paste-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 for (const [variant, owner, props] of [['desktop', 'Dxv', 'e'], ['glass', 'VAm', 't']]) {
   test(`${variant}: recovered clipboard owner receives the file path before rich text expansion`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const result = customizePaste(source, variant);
     assert.equal(customizePaste(result, variant), result);
     const anchor = `${owner} = `, start = result.indexOf(anchor) + anchor.length;

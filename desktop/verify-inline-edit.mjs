@@ -7,6 +7,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const { layout, appRoot } = await verificationRuntime(root);
@@ -47,7 +48,7 @@ async function launch() {
       '--disable-updates', '--skip-welcome', '--skip-release-notes', project, file] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
 }
 

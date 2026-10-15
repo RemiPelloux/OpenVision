@@ -96,9 +96,11 @@ guaranteed: re-enter your keys on a new machine.
 | Windows x64 | Full portable package; relocated native autocomplete/editing and repository extraction verified |
 | Windows ARM64 | No native release package yet |
 | macOS Intel / Apple Silicon | Native packaging and verification remain on the roadmap |
-| Linux x64 / ARM64 | Native packaging and verification remain on the roadmap |
+| Linux x64 | Native local build and portable package (`npm run package:linux`); see the [Linux guide](linux.md) |
+| Linux ARM64 | Needs a pinned ARM64 input; not yet verified |
 
-Windows files do not run natively on macOS or Linux. Native tests used disposable
+Windows files do not run natively on macOS or Linux; Linux builds use the native
+Linux input described in the [Linux guide](linux.md). Native tests used disposable
 profiles and controlled local HTTP responses; they establish the package wiring
 and named workflows, not blanket live-model compatibility. See
 [portable verification](portable-preview6.md) and

@@ -26,19 +26,20 @@ async function record(directory, name) {
 async function absent(pid) {
   await until(() => { try { process.kill(pid, 0); return false; } catch (error) { if (error.code === 'ESRCH') return true; throw error; } }, `process ${pid} exits`);
 }
-function invocation(config, directory, name, powershell) {
-  const values = [config.node, path.join(directory, 'process.cjs'), 'terminal', directory, name];
-  return powershell ? '& ' + values.map(value => `'${value.replaceAll("'", "''")}'`).join(' ')
-    : values.map(value => `"${value}"`).join(' ');
+function command(values, quoting) {
+  if (quoting === 'powershell') return '& ' + values.map(value => `'${value.replaceAll("'", "''")}'`).join(' ');
+  if (quoting === 'posix') return values.map(value => `'${value.replaceAll("'", "'\\''")}'`).join(' ');
+  return values.map(value => `"${value}"`).join(' ');
+}
+function invocation(config, directory, name, quoting) {
+  return command([config.node, path.join(directory, 'process.cjs'), 'terminal', directory, name], quoting);
 }
 
 async function terminalMatrix(config, directory, project, result) {
-  for (const [name, shellPath, shellArgs, powershell] of [
-    ['cmd', config.cmd, ['/d', '/q'], false], ['powershell', config.powershell, ['-NoLogo', '-NoProfile'], true]]) {
+  for (const { name, path: shellPath, args: shellArgs, quoting, env = {} } of config.shells) {
     const terminal = vscode.window.createTerminal({ name: `OpenVision ${name} fixture`, shellPath, shellArgs,
-      cwd: project, env: { OPENVISION_DEVELOPMENT_FIXTURE: 'terminal-only',
-        ...(powershell ? { PSModulePath: config.powershellModules } : {}) } });
-    terminal.show(); terminal.sendText(invocation(config, directory, name, powershell));
+      cwd: project, env: { OPENVISION_DEVELOPMENT_FIXTURE: 'terminal-only', ...env } });
+    terminal.show(); terminal.sendText(invocation(config, directory, name, quoting));
     const first = await record(directory, name);
     assert.equal(first.fixtureEnv, 'terminal-only'); assert.equal(first.cwd.toLowerCase(), project.toLowerCase());
     assert.equal(first.tty, true); assert.ok(first.columns > 0 && first.rows > 0);
@@ -47,11 +48,11 @@ async function terminalMatrix(config, directory, project, result) {
     assert.notDeepEqual([resized.columns, resized.rows], [first.columns, first.rows]);
     await phase(directory, `${name}-interrupt`);
     await absent(first.pid);
-    terminal.sendText(invocation(config, directory, `${name}-restart`, powershell));
+    terminal.sendText(invocation(config, directory, `${name}-restart`, quoting));
     const restarted = await record(directory, `${name}-restart`); assert.notEqual(restarted.pid, first.pid);
     terminal.dispose(); await absent(restarted.pid); await absent(first.parent);
     const reopened = vscode.window.createTerminal({ name: `OpenVision ${name} reopened shell`, shellPath, shellArgs,
-      cwd: project, ...(powershell ? { env: { PSModulePath: config.powershellModules } } : {}) });
+      cwd: project, env });
     let closed = false;
     const closeListener = vscode.window.onDidCloseTerminal(item => { if (item === reopened) closed = true; });
     try {
@@ -146,10 +147,11 @@ async function run() {
     await terminalMatrix(config, directory, project, result);
     await taskMatrix(config, directory, project, result);
     await debuggerMatrix(config, directory, project, result);
-    const terminal = vscode.window.createTerminal({ name: 'OpenVision window-close fixture', shellPath: config.cmd,
-      shellArgs: ['/d', '/q'], cwd: project });
+    const [shell] = config.shells;
+    const terminal = vscode.window.createTerminal({ name: 'OpenVision window-close fixture', shellPath: shell.path,
+      shellArgs: shell.args, cwd: project, env: shell.env });
     terminal.show();
-    terminal.sendText([config.node, path.join(directory, 'process.cjs'), 'tree', directory, 'window-close'].map(value => `"${value}"`).join(' '));
+    terminal.sendText(command([config.node, path.join(directory, 'process.cjs'), 'tree', directory, 'window-close'], shell.quoting));
     result.closeParent = await record(directory, 'window-close');
     result.closeChild = await record(directory, 'window-close-child');
     result.success = true;

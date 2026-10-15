@@ -1,15 +1,15 @@
 # OpenVision feature roadmap
 
-Updated 14 October 2026 for **0.2.0-preview.6**. The verified-coverage target is **80%**.
+Updated 15 October 2026 for **0.2.0-preview.6** (Linux x64 port). The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
-Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
+Verified**. Current ledger: **6 Verified, 22 Partial, 12 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 
 Use `npm run status:features` for the authoritative current count. The acceptance
 clauses remain in [completion-sprints.md](completion-sprints.md). Accounts,
-billing and hosted cloud agents remain excluded. Native macOS/Linux and
+billing and hosted cloud agents remain excluded. Native macOS, the remaining Linux gates and
 independent-build requirements remain in the denominator.
 
 ## What is usable today
@@ -189,7 +189,7 @@ not proof of why a past live catalog shrank.
 | OV-804 / Planned | Build and launch from a clean checkout/machine without ignored recovery tree or original installation | **8 points** | OV-802/803; build prerequisites unresolved |
 | OV-901 / Partial | Clean Windows install, complete critical suite, all identity surfaces and claimed architectures | **8 points** | OV-804 and core acceptance; medium |
 | OV-902 / Planned | Native macOS workflows, keychain/permissions/sandbox/addons; signing/notarization if claimed | **13 points** | Mac unavailable; signing credentials if required; native prerequisites unresolved |
-| OV-903 / Planned | Native Linux distro/display matrix, secrets/sandbox/shell/addons and critical suite | **13 points** | Linux desktop unavailable; native prerequisites unresolved |
+| OV-903 / Partial | Linux x64 builds, packages and launches natively on Wayland; keyring, namespace sandbox, approval-first Agent commands, bash/sh terminals, Git, completion and the native suite pass except the items in the [evidence](linux-verification.md). Remaining: project-rule discovery isolation (shared with Windows), other distributions/X11/KDE and ARM64 | **5 points** | OV-804 for independent builds; medium |
 | OV-904 / Planned | Manual installer/update/rollback, interrupted upgrades, migration, uninstall/data retention and release provenance | **13 points** | OV-901–903 on claimed targets; medium after build ownership |
 
 ## Performance and release hardening

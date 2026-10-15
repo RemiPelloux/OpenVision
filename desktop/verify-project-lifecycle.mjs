@@ -7,8 +7,8 @@ import { platformLayout } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { denyFixtureWrites } from './verification-write-denial.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'This native lifecycle verifier currently covers Windows');
 const root = resolve(import.meta.dirname, '..'), layout = platformLayout(root);
 const directory = await mkdtemp(join(root, 'logs/project-lifecycle-verification-'));
 const profile = join(directory, 'profile'), primary = join(directory, 'primary'), secondary = join(directory, 'secondary');
@@ -28,7 +28,7 @@ await writeFile(join(secondary, 'linked.txt'), 'Native junction target\n');
 await symlink(secondary, join(primary, 'linked-folder'), 'junction');
 const result = { checkedAt: new Date().toISOString(), directory, platform: process.platform, node: process.version,
   hashes: { workbench: await fileHash(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')) },
-  checks: {}, hostExits: [], errors: [], scope: 'Native Windows editor and Explorer with two disposable roots; no AI requests.',
+  checks: {}, hostExits: [], errors: [], scope: `Native ${process.platform} editor and Explorer with two disposable roots; no AI requests.`,
   limitations: ['Directory junction evidence does not establish file-symlink behavior.',
     'Large-project filesystem work, physical full-disk and crash recovery require separate checks.'] };
 let app, page;
@@ -47,7 +47,7 @@ async function launch() {
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('close', () => { (result.windowCloses ??= []).push({ at: new Date().toISOString(), step: result.step }); });
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await delay(8000);
 }
 async function close() {

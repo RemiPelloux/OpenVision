@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Linux x64
+
+- Run OpenVision natively on Linux x64: `npm run prepare:desktop` downloads the pinned Cursor 3.21.13 AppImage, verifies its SHA-256 and recovers readable sources; `npm start` builds and launches. See the [Linux guide](docs/linux.md).
+- Add `npm run package:linux` with an `./OpenVision` launcher and an optional desktop entry.
+- Store API keys in the desktop keyring (Secret Service) on desktops Chromium does not recognize, such as Hyprland, Sway and i3, instead of the plaintext `basic_text` fallback; keep KDE, explicit choices and keyring-less systems unchanged. Add `npm run verify:linux-secrets`.
+- Keep Agent commands approval-first on Linux instead of auto-running them in the upstream command sandbox.
+- Fix Linux profiles being redirected by portable-mode detection, the `cursor.desktop` window identity, and a launch-argument bug where `--disable-setuid-sandbox` swallowed the following folder path.
+- Recover every application script in readable form during preparation, reject mismatched input versions with a clear message, and make native verifiers platform-aware (POSIX write denial, bash/sh terminals, Linux paths, layout-independent shortcuts, Project Home startup). See [Linux verification](docs/linux-verification.md).
+
 ## 0.2.0-preview.6 — 2026-10-14
 
 - Open recent projects, folders, saved workspaces and completed clones in the current window; focus projects that are already open.

@@ -7,8 +7,8 @@ import { createRuntimeOverlay } from './verification-runtime-overlay.mjs';
 import { fixWorkspaceSaveAll } from './save-all-customization.mjs';
 import { fixSaveAllCommands } from './save-all-commands.mjs';
 import { fileHash } from './import-files.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'Native Save All verifier currently targets Windows');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/save-all-verification-'));
 const project = join(directory, 'project'), profile = join(directory, 'profile'), driver = join(directory, 'driver');
@@ -35,7 +35,7 @@ try {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--extensionDevelopmentPath', driver,
       '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', project] });
   page = await app.firstWindow();
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   const deadline = Date.now() + 90000;
   while (Date.now() < deadline) {
     try { result.native = JSON.parse(await readFile(join(directory, 'extension-result.json'), 'utf8')); break; }

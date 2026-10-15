@@ -7,11 +7,12 @@ import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import * as policy from './provider-error-policy.js';
 import { redactProviderErrors } from './provider-error-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 class ApiError extends Error {
   constructor(options) { super(options.message); Object.assign(this, options); }
 }
-const source = redactProviderErrors(await readFile(new URL('../../cursor/readable/app/extensions/cursor-agent-exec/dist/main.js', import.meta.url), 'utf8'));
+const source = redactProviderErrors(await readFile(new URL('extensions/cursor-agent-exec/dist/main.js', readableApp), 'utf8'));
 const start = source.indexOf('({ errorSchema: e, errorToMessage: t, isRetryable: r }) =>');
 const parsed = parseExpressionAt(source, start, { ecmaVersion: 'latest' });
 const owner = parsed.type === 'SequenceExpression' ? parsed.expressions[0] : parsed;

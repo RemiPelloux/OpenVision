@@ -12,7 +12,7 @@ Git and custom AI providers. Connect an OpenAI-compatible API or your own server
 with a base URL, model name and API key. Discover models and choose reasoning
 options without an OpenVision account.
 
-**Development preview · Windows x64 tested · macOS/Linux unverified**
+**Development preview · Windows x64 and Linux x64 tested · macOS unverified**
 
 [Get started](#get-started) · [Configure AI](#bring-your-own-ai) ·
 [Feature roadmap](docs/roadmap.md) ·
@@ -23,6 +23,10 @@ options without an OpenVision account.
 > [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6),
 > extract it, and double-click **OpenVision.cmd**. The complete app payload is
 > also included in this Git repository. No separate editor, Node.js or npm setup.
+>
+> **Runs natively on Linux x64.** Build it locally from a pinned, checksum-verified
+> input with `npm run prepare:desktop && npm start`, or package it with
+> `npm run package:linux`. See the [Linux guide](docs/linux.md).
 
 ## A workspace built around your choices
 
@@ -64,7 +68,23 @@ ZIP works too. The package is approximately **327 MiB**; allow **2 GiB** free.
 | Windows x64 | Complete portable download and repository payload; native package checks passed |
 | Windows ARM64 | Native release package still planned |
 | macOS Intel / Apple Silicon | Native release and desktop verification still planned |
-| Linux x64 / ARM64 | Native release and desktop verification still planned |
+| Linux x64 | Native local build and portable package; Wayland desktop suite, keyring and sandbox checks passed ([evidence](docs/linux-verification.md)) |
+| Linux ARM64 | Needs a pinned ARM64 input; not yet verified |
+
+### Linux
+
+```sh
+git clone https://github.com/RemiPelloux/OpenVision.git
+cd OpenVision
+npm ci --prefix tooling
+npm run prepare:desktop   # downloads the pinned Linux input and verifies its SHA-256
+npm start                 # builds once, then opens Project Home
+```
+
+API keys use your desktop keyring (gnome-keyring, KWallet or KeePassXC) on any
+desktop, including Hyprland, Sway and i3. `npm run package:linux` creates a
+portable folder with an `./OpenVision` launcher and an optional launcher entry.
+[Linux guide, requirements and capability differences →](docs/linux.md)
 
 [Installation, editable code and updates →](docs/native-runtime.md) ·
 [Models, imports and project customization →](docs/user-guide.md)
@@ -111,15 +131,16 @@ Not every displayed model or reasoning tier has passed a live test.
 ## Roadmap and honest progress
 
 **6 of 42 acceptance stories fully verified · 14.29%.**
-Another **21 are Partial**, **13 Planned** and **2 Unknown**. Partial stories
+Another **22 are Partial**, **12 Planned** and **2 Unknown**. Partial stories
 already contain working features; this score measures complete acceptance gates,
 not the percentage of code implemented or decompiled.
 
 The next product target is **34/42 verified stories (at least 80%)**, together
 with the critical development workflow. The largest remaining areas are live
 Agent coverage, retrieval/indexing ownership, next-edit prediction, independent
-source rebuilds, upgrade/rollback verification, remote development and native
-macOS/Linux releases. The Windows portable package is delivered in this preview.
+source rebuilds, upgrade/rollback verification, remote development and a native
+macOS release. The Windows portable package is delivered in this preview, and
+Linux x64 now builds, packages and passes its native suite locally.
 
 The [feature roadmap](docs/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
@@ -139,6 +160,10 @@ npm run verify:completion -- --editing --portable ./OpenVision-portable
 npm run verify:welcome -- --portable ./OpenVision-portable
 npm run status:features
 ```
+
+On Linux, the same native verifiers run against the local build, plus
+`npm run verify:linux-secrets` for keyring selection. See
+[Linux verification](docs/linux-verification.md).
 
 Development tooling uses **Node.js 24.18.0** and `npm ci --prefix tooling`.
 The portable package contains editable code under
