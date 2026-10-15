@@ -1,6 +1,7 @@
 # OpenVision ETA and priorities
 
-Updated 15 October 2026 against the acceptance ledger and source commit `47ad155`.
+Updated 15 October 2026 against the acceptance ledger and the
+[control-plane HTTP follow-up](control-plane-http-resources.md).
 The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
@@ -20,8 +21,10 @@ for the 80% target. The 322 points cover the entire unfinished scope; a reliable
 point estimate for the 80% subset requires choosing its stories and dependencies.
 Account work packages overlap this scope and must not be added twice.
 
-Next: restore the missing provider-error fixture and close P0 failure checks;
-then bound control-plane output/cache memory and cancel timed-out HTTP work,
+The missing provider-error fixture is restored and its 25 focused checks pass.
+Control-plane HTTP deadlines/disconnects now cancel actual work, with bounded
+response bodies and passing real HTTP/public-route checks. Next: close remaining
+P0 failure checks; bound control-plane subprocess output/cache memory,
 measure whole-app long sessions, and refresh the Windows package after its
 declared checks pass. GPT-6 account eligibility, the last observed API balance
 failure and access to further native platform environments remain blockers for

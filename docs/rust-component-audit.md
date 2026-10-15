@@ -61,9 +61,12 @@ Gains in these tables are expectations, not measured Rust improvements.
 | MCP lifecycle: [attempt owner](../desktop/mcp-attempt-runtime.mjs), [cancel owner](../desktop/mcp-cancel-runtime.mjs) | Rewrite adapter/supervision; retain protocol/servers · 06 | Lazy shared connections and cancellation through to I/O. Preserve session identity, chosen transport, permission checks and ownership across windows |
 | Optional HTTP control plane: [server](../src/server.mjs), [MCP](../src/mcp.mjs), [REA adapter](../src/rea.mjs) | Rewrite if retained in supported scope; bridge REA CLI/MCP · 06 | Bound subprocess output/cache bytes and cancel transport on timeout. Keep this distinct from native editor Agent; pin loopback access/auth contracts |
 
-The control plane's REA adapter currently has an entry-count cache bound but no
-total-byte bound and accumulates subprocess stdout/stderr. Its MCP timeout can
-finish the pending result without aborting the effective HTTP signal. Discovery
+The control plane's REA adapter has an entry-count cache bound but no
+total-byte bound and accumulates subprocess stdout/stderr. At the pinned audit
+revision, its MCP timeout could finish the pending result without aborting HTTP.
+The subsequent [HTTP ownership fix](control-plane-http-resources.md) now cancels
+timed-out/disconnected work and bounds decoded response bytes; real loopback
+socket tests verify it. Other control-plane lifecycle gates remain open. Discovery
 HTTP has a timeout but lacks renderer-lifetime cancellation and an explicit
 non-OK-body cancel. These are source-observed cleanup targets; they can and should
 be fixed in the current app without waiting for Rust. Rust can reproduce all of

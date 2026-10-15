@@ -560,6 +560,19 @@ The [priority queue and ETA](roadmap.md#critical-first-backlog-and-eta) now orde
 all 36 unfinished stories by impact and dependencies, totaling 322 provisional
 points without counting overlapping account packages twice.
 
+15 October 2026, OV-303/1001/1003/204 control-plane follow-up (owner: OpenVision;
+parent commit `499fc4e`): [HTTP resource ownership](control-plane-http-resources.md)
+now cancels request-owned I/O on deadlines, browser disconnect and close. JSON/SSE
+responses and decompressed error diagnostics have explicit byte bounds; matching
+SSE responses complete without EOF. Actual loopback socket and spawned public
+server checks pass. Authentic recovery restored the missing provider fixture;
+its 25 focused checks pass. The combined run passes 46 tests, including ledger
+validation. Benchmarks report improved oversized-error recovery, unchanged normal
+memory and slower/noisy normal warm latency; they do not establish desktop RAM
+savings. STDIO/manager/REA-cache ownership, native profile cases, long sessions,
+live providers and platform gates remain open. Preview.6 is unchanged; no story
+is promoted: **6/42 Verified (14.29%)**.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

@@ -120,10 +120,10 @@ five-item shortlist. The next concrete actions are:
 
 | Order | Existing story / points | Next action and required evidence |
 | --- | --- | --- |
-| 1 | OV-204 / 5; OV-1004 / 13 | Restore the missing original recovered Agent execution fixture through the supported recovery path, then rerun the provider-error policy/body suites. Their initialization failures are an open verification blocker, not passing tests |
+| 1 | OV-204 / 5; OV-1004 / 13 | The authentic recovered Agent fixture is restored and all 25 focused provider-error checks pass. Continue certificate expiry/hostname, inference timeout, capability-input and remaining native/live-provider gates; [restoration evidence](provider-failure-handling.md#recovered-fixture-restoration-follow-up) |
 | 2 | OV-103/302/303/301, then OV-204/102/403 / points above | Close the P0 edit/data/profile ownership, retry/timeout and shutdown cases, retaining failed-close and earlier exit-134 evidence; never substitute passing happy paths for these gates |
 | 3 | OV-501 / 13; OV-1005 / 8 | Establish actual project-data destinations and extend process-family traffic checks, including authenticated integration behavior |
-| 4 | OV-1003 / 8; OV-1001 / 8 | Bound optional control-plane subprocess output and cached bytes/expiry; make timed-out MCP HTTP work abort its transport. Reproduce at those owners and verify cleanup/cancellation, without claiming these are native Agent RAM leaks |
+| 4 | OV-1003 / 8; OV-1001 / 8 | HTTP deadlines/disconnects now cancel transport and response bodies are bounded; [socket checks and benchmarks](control-plane-http-resources.md) pass in their declared scope. Next bound optional REA subprocess output/cache bytes and reconcile STDIO/manager lifetimes, without claiming native Agent RAM savings |
 | 5 | OV-1003 / 8; OV-1002 / 8 | Measure idle, large-project, long-session and close/reopen process-family memory/CPU; define budgets, investigate reasoning-session retention and discovery-body cleanup, and check incremental filesystem/UI work |
 | 6 | OV-102/104/203/602 / points above | Repeat live retry/tool/reasoning/completion gates when the selected provider is available; GPT-6 account eligibility and the last observed API balance failure remain external blockers |
 | 7 | OV-901 / 8; OV-1004 / 13 | Refresh the Windows preview only after its declared safety/regression gates pass; verify relocated payload and repository extraction, record exact source identity and disclose remaining gaps |
@@ -142,9 +142,13 @@ about 55 → 2 MiB. Forty-three focused tests, syntax/source build and native
 Windows Agent/autocomplete checks passed. Valid-stream parsing added about 6 ms
 in the warm benchmark sample. See [measurements and remaining findings](autocomplete-stream-performance.md).
 
-This is scoped evidence for OV-1001/1002/1003/204/603. Whole-app RAM was not
-remeasured, two additional provider-error suites lack their original fixture,
-and the preview.6 download is unchanged. No full acceptance story is promoted.
+This is scoped evidence for OV-1001/1002/1003/204/603. The subsequent
+[provider fixture restoration](provider-failure-handling.md#recovered-fixture-restoration-follow-up)
+allows all 25 focused error/probe checks to pass. The
+[control-plane HTTP follow-up](control-plane-http-resources.md) adds actual
+deadline/disconnect cancellation and decoded-body bounds, with passing socket
+tests and scoped measurements. Whole-app RAM was not remeasured and preview.6
+is unchanged. No full acceptance story is promoted.
 
 ### Next reliability checks
 
@@ -155,7 +159,7 @@ evidence of clean startup, zero cloud traffic or bounded long-session resources:
 | Existing story | Next check | Acceptance evidence needed |
 | --- | --- | --- |
 | OV-1005 · 8 points | Extend traffic verification after removing the local hosted metadata contribution | [Windows title/history restart checks](local-conversation-metadata.md) pass with zero contribution/client invocations; process-family traffic, broader workloads and native platform gates remain open |
-| OV-1003 · 8 points | Bound control-plane output/cache resources and measure long-session memory and repeated service restarts | [Autocomplete/stream fixes](autocomplete-stream-performance.md) and [account route/retry/stream fixes](account-performance.md) have scoped measurements; [native utility ownership](utility-process-ownership.md) removes reproduced listener accumulation. Control-plane bounds/cancellation, whole-app peak memory and long-session/platform gates remain open |
+| OV-1003 · 8 points | Bound remaining control-plane output/cache resources and measure long-session memory and repeated service restarts | [Autocomplete/stream fixes](autocomplete-stream-performance.md), [HTTP bounds/cancellation](control-plane-http-resources.md) and [account route/retry/stream fixes](account-performance.md) have scoped measurements; [native utility ownership](utility-process-ownership.md) removes reproduced listener accumulation. REA output/cache, STDIO/manager lifecycle, whole-app peak memory and long-session/platform gates remain open |
 | OV-403 · 8 points | Investigate remaining duplicate command and mutex diagnostics alongside shutdown | [Local startup ordering](local-startup.md) now passes a native candidate and reproducing control; verify the broader startup/closure matrix and retain the earlier unexplained exit 134 until diagnosed |
 | OV-303 · 5 points | Extend profile/configuration ownership coverage | Named profiles inside one host, same-name project overrides, simultaneous configuration changes and cross-window failed-close recovery |
 
@@ -227,7 +231,7 @@ missing-work column together.
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | **8 points** | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | **8 points** | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
 | OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | **5 points** | OV-104 and provider capability contracts; low because DeepSeek High has both failures and successful native rechecks |
-| OV-204 / Partial | Certificate trust/expiry, inference timeout, actual capability inputs and malformed/oversized stream cases beyond the reasoning observer; live/platform gates. That observer now rejects unfinished events over 4 MiB and passes real HTTP disconnect tests; original recovered fixtures for two provider-error suites are missing | **5 points** | [Provider failure evidence](provider-failure-handling.md), [stream limits and fixture gap](autocomplete-stream-performance.md); OV-102/201; medium; live/platform gates remain |
+| OV-204 / Partial | Certificate trust/expiry, inference timeout, actual capability inputs and malformed/oversized stream cases beyond the reasoning observer; live/platform gates. That observer rejects unfinished events over 4 MiB and passes real HTTP disconnect tests; authentic recovered fixtures are restored and 25 focused provider-error checks pass | **5 points** | [Provider failure evidence](provider-failure-handling.md), [stream limits and restoration follow-up](autocomplete-stream-performance.md); OV-102/201; medium; live/platform gates remain |
 
 The [provider identity change](provider-model-identity.md) removes raw-model-ID
 deduplication. A native Windows fixture verifies two providers with the same ID,
@@ -308,7 +312,7 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Complexity points | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-1001 / Partial | Live input-token/context/duplicate-request/history measurements; branch/tool reasoning and session disposal; optional control-plane timeout must cancel transport work | **8 points** | OV-101/103/503; medium; local titles/coalescing implemented, N+1 protections rechecked; [latest scope](autocomplete-stream-performance.md) |
+| OV-1001 / Partial | Live input-token/context/duplicate-request/history measurements; branch/tool reasoning and session disposal; broader protocol lifecycle checks. Optional control-plane HTTP timeout/disconnect now cancels transport work | **8 points** | OV-101/103/503; medium; local titles/coalescing implemented, N+1 protections rechecked; [latest scope](autocomplete-stream-performance.md), [HTTP ownership](control-plane-http-resources.md) |
 | OV-1002 / Partial | Frame/input latency, transcript/model row bounds, heap and filesystem work; incremental edits on fixed workloads. Early autocomplete preparation avoids discarded document/hook work in measured fixtures | **8 points** | OV-202/402/603; [before/after and parsing cost](autocomplete-stream-performance.md); medium; no whole-app RAM claim |
 | OV-1003 / Partial | Bound control-plane subprocess output/cache bytes/expiry; idle/reactivation and long-session memory; reasoning-session retention, discovery cleanup and complete watcher/timer/process ownership | **8 points** | OV-504/703/901–903; [remaining source findings](autocomplete-stream-performance.md); medium; event limit and listener cleanup are scoped fixes |
 | OV-1004 / Planned | Release matrix, secret/log/authority failures, corrupt state, failed cleanup/crash recovery and recovery instructions | **13 points** | All accepted release dependencies; medium after implementation stabilizes |

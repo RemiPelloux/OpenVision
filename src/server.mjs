@@ -20,6 +20,7 @@ const operations = new Set([
 const mcp = new McpManager();
 
 function json(response, status, body) {
+  if (response.destroyed) return;
   response.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
   response.end(JSON.stringify(body));
 }
@@ -51,7 +52,7 @@ async function route(request, response) {
   const toolsMatch = url.pathname.match(/^\/api\/servers\/([^/]+)\/tools$/u);
   if (method === "GET" && toolsMatch) return listServerTools(decodeURIComponent(toolsMatch[1]), response);
   const callMatch = url.pathname.match(/^\/api\/servers\/([^/]+)\/call$/u);
-  if (method === "POST" && callMatch) return callServerTool(decodeURIComponent(callMatch[1]), request, await body(request), response);
+  if (method === "POST" && callMatch) return callServerTool(decodeURIComponent(callMatch[1]), await body(request), response);
   if (method === "GET" && url.pathname === "/api/apis") {
     const { config } = await loadConfig();
     return json(response, 200, { apis: (config.apis ?? []).map(({ id, baseUrl, enabled = true }) => ({ id, baseUrl, enabled })) });
@@ -166,12 +167,19 @@ async function listServerTools(id, response) {
   return json(response, 200, { id, tools });
 }
 
-async function callServerTool(id, request, input, response) {
-  const definition = await serverDefinition(id);
+async function callServerTool(id, input, response) {
   const controller = new AbortController();
-  request.once("close", () => controller.abort(new Error("MCP client disconnected.")));
-  const result = await mcp.callTool(id, definition, input.tool, input.arguments, { signal: controller.signal, timeoutMs: input.timeoutMs });
-  return json(response, 200, { id, result });
+  const disconnect = () => {
+    if (!response.writableFinished) controller.abort(new Error("MCP client disconnected."));
+  };
+  response.once("close", disconnect);
+  if (response.destroyed) disconnect();
+  try {
+    const definition = await serverDefinition(id);
+    controller.signal.throwIfAborted();
+    const result = await mcp.callTool(id, definition, input.tool, input.arguments, { signal: controller.signal, timeoutMs: input.timeoutMs });
+    return json(response, 200, { id, result });
+  } finally { response.removeListener("close", disconnect); }
 }
 
 async function removeApi(id, response) {
@@ -210,6 +218,6 @@ function page(response) {
 }
 
 const server = createServer((request, response) => route(request, response).catch((error) => json(response, error?.statusCode ?? 500, { error: error instanceof Error ? error.message : String(error) })));
-server.listen(port, host, () => console.log(`OpenVision listening at http://${host}:${port}`));
+server.listen(port, host, () => console.log(`OpenVision listening at http://${host}:${server.address().port}`));
 process.once("SIGINT", () => { mcp.closeAll().finally(() => server.close(() => process.exit(0))); });
 process.once("SIGTERM", () => { mcp.closeAll().finally(() => server.close(() => process.exit(0))); });

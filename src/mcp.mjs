@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { expand } from "./config.mjs";
+import { readMcpHttpResponse } from "./mcp-http-response.mjs";
 
 const PROTOCOL_VERSION = "2024-11-05";
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -35,13 +36,14 @@ class JsonRpcClient {
     if (this.closed) return Promise.reject(new Error("MCP client is closed."));
     if (signal?.aborted) return Promise.reject(errorFrom(signal.reason, "MCP request canceled."));
     const id = this.nextId++;
-    const effectiveSignal = signal ? AbortSignal.any([signal, this.closeController.signal]) : this.closeController.signal;
+    const controller = new AbortController();
+    const effectiveSignal = AbortSignal.any([controller.signal, this.closeController.signal, ...(signal ? [signal] : [])]);
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => this.finish(id, new Error(`MCP request timed out: ${method}`)), timeoutMs);
+      const timer = setTimeout(() => controller.abort(new Error(`MCP request timed out: ${method}`)), timeoutMs);
       timer.unref?.();
       const abort = () => this.finish(id, errorFrom(effectiveSignal.reason, "MCP request canceled."));
       effectiveSignal.addEventListener("abort", abort, { once: true });
-      this.pending.set(id, { resolve, reject, timer, abort, signal: effectiveSignal });
+      this.pending.set(id, { resolve, reject, timer, abort, signal: effectiveSignal, controller });
       this.send({ jsonrpc: "2.0", id, method, params }, { signal: effectiveSignal, timeoutMs }).catch(error => this.finish(id, error));
     });
   }
@@ -52,6 +54,7 @@ class JsonRpcClient {
     this.pending.delete(id);
     clearTimeout(pending.timer);
     pending.signal?.removeEventListener("abort", pending.abort);
+    pending.controller.abort(error ?? new Error("MCP request completed."));
     if (error) pending.reject(error);
     else pending.resolve(result);
   }
@@ -151,17 +154,13 @@ export class McpHttpClient extends JsonRpcClient {
   async send(message, { signal, timeoutMs } = {}) {
     const headers = { "content-type": "application/json", accept: "application/json, text/event-stream", ...(this.definition.headers ?? {}) };
     if (this.sessionId) headers["mcp-session-id"] = this.sessionId;
-    const response = await fetch(this.definition.url, { method: "POST", headers, body: JSON.stringify(message), signal: signal ?? AbortSignal.timeout(timeoutMs ?? this.timeoutMs) });
+    const effectiveSignal = signal ?? AbortSignal.any([this.closeController.signal, AbortSignal.timeout(timeoutMs ?? this.timeoutMs)]);
+    const response = await fetch(this.definition.url, { method: "POST", headers, body: JSON.stringify(message), signal: effectiveSignal });
     const session = response.headers.get("mcp-session-id");
     if (session) this.sessionId = session;
-    const type = response.headers.get("content-type") ?? "";
-    if (!response.ok) throw new Error(`MCP HTTP ${response.status}: ${(await response.text()).slice(0, 512)}`);
-    if (response.status === 202 || !response.body) return undefined;
-    if (type.includes("application/json")) return response.json().then(value => { this.handle(value); return value; });
-    const text = await response.text();
-    const data = text.split(/\r?\n/gu).find(line => line.startsWith("data:"))?.slice(5).trim();
-    if (!data) throw new Error("MCP HTTP response did not contain JSON or SSE data.");
-    const value = JSON.parse(data); this.handle(value); return value;
+    const value = await readMcpHttpResponse(response, message.id, effectiveSignal);
+    if (value !== undefined) this.handle(value);
+    return value;
   }
 
   async close() {

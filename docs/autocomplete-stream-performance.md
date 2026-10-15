@@ -130,3 +130,18 @@ SHA-256 `336726b33495436623578e485c4428e2b9a64faa580f8b56ce98714a4a741443`.
 
 These remaining items were inspected in source, not reproduced as native RAM
 leaks, and are not marked fixed by this change.
+
+## Subsequent verification and control-plane fixes
+
+The [provider fixture restoration](provider-failure-handling.md#recovered-fixture-restoration-follow-up)
+resolved the initialization blocker above; all 25 provider-error/body/UI/probe
+checks now pass against the authentic recovered owners. The earlier failed
+initialization remains historical evidence, not the current verification state.
+
+The [control-plane HTTP follow-up](control-plane-http-resources.md) fixes finding
+2 at its request/response owners. Deadlines now abort actual HTTP work, JSON/SSE
+and error bodies have decoded-byte bounds, matched SSE replies finish before EOF,
+and browser disconnects cancel upstream work. Actual socket/subprocess tests and
+scoped benchmarks establish those results. Finding 1, session retention and
+discovery cleanup remain open; whole-app RAM and native platform coverage are
+not established by these local HTTP checks. No full story is promoted.

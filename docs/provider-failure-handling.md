@@ -1,6 +1,6 @@
 # Provider failure handling
 
-Updated 14 October 2026. OV-204 is **Partial**, not Verified. The acceptance
+Updated 15 October 2026. OV-204 is **Partial**, not Verified. The acceptance
 baseline remains 42 stories. These changes address the local Agent transport;
 they do not establish complete provider compatibility or application-wide
 credential redaction.
@@ -214,3 +214,24 @@ The owned host exited 0 without cleanup errors. This extends controlled native
 transport coverage, not live-provider inference. Expired certificates, hostname
 mismatches, inference timeouts and other remaining gates above are still open.
 OV-204 remains Partial.
+
+## Recovered-fixture restoration follow-up
+
+On 15 October the missing local formatted Agent execution fixture was regenerated
+from the retained shipped artifact, using the same formatter/options as the
+recovery workflow. Its raw input SHA-256 matches the installation manifest:
+`5ac0e5c250b7b87b503ac3c4a9929f60e5b78bf02ef15e51afaf322e5b667063`.
+The regenerated readable output SHA-256 is
+`0df300c9865f395a02337ac880339c216ac44b45ada445daa46cae4c80a6e5c2`;
+the independently retained readable recovery has the same output. The local
+readability report was backed up before adding its provenance record. Recovered
+bundles and local manifests remain ignored; no synthetic replacement was added.
+
+All **25 provider-error/body/UI/probe tests** now pass, including execution of
+the recovered HTTP and SDK/Agent retry owners, real loopback HTTP/gzip/stalled
+body cancellation, DNS/TLS failures and manual-retry UI boundaries. This resolves
+the missing-fixture initialization blocker recorded in the
+[earlier performance review](autocomplete-stream-performance.md#verification).
+It does not close remaining native/live-provider OV-204 gates or repeat earlier
+native runs. The [control-plane report](control-plane-http-resources.md) records
+the combined 46-test run and its separate transport scope.
