@@ -46,10 +46,17 @@ function createReasoningRelay(normalizeId, normalizeReasoning) {
   };
 }
 
+// Bound one unfinished event, not the response or the transport chunk size.
+const MAX_EVENT_BYTES = 4 * 1024 * 1024;
+const DECODE_BLOCK_BYTES = 64 * 1024;
+const LINE_FRAGMENT_CHARS = 4096;
 function eventParser(observe) {
   const decoder = new TextDecoder();
   let buffer = '';
+  let fragments = [];
   let data = [];
+  let eventBytes = 0;
+  let lineBytes = 0, lastByte;
   const dispatch = () => {
     if (data.length) {
       try { observe(JSON.parse(data.join('\n'))); } catch { /* Provider parser owns errors. */ }
@@ -60,17 +67,57 @@ function eventParser(observe) {
     if (!value) return dispatch();
     if (value.startsWith('data:')) data.push(value.slice(5).replace(/^ /, ''));
   };
+  const reserve = bytes => {
+    for (let start = 0; start < bytes.length;) {
+      const newline = bytes.indexOf(10, start);
+      const end = newline < 0 ? bytes.length : newline + 1;
+      const size = end - start;
+      eventBytes += size; lineBytes += size;
+      if (eventBytes > MAX_EVENT_BYTES) {
+        const error = new Error('Provider SSE event exceeds the 4 MiB safety limit');
+        error.code = 'OPENVISION_PROVIDER_STREAM_LIMIT';
+        throw error;
+      }
+      if (newline >= 0) {
+        const previous = newline > start ? bytes[newline - 1] : lastByte;
+        if (lineBytes === 1 || lineBytes === 2 && previous === 13) eventBytes = 0;
+        lineBytes = 0;
+      }
+      lastByte = bytes[end - 1];
+      start = end;
+    }
+  };
+  const append = text => {
+    buffer += text;
+    if (buffer.length >= LINE_FRAGMENT_CHARS) { fragments.push(buffer); buffer = ''; }
+  };
+  const finishLine = () => {
+    const value = fragments.length ? fragments.join('') + buffer : buffer;
+    fragments = []; buffer = '';
+    line(value.replace(/\r$/, ''));
+  };
+  const decode = bytes => {
+    const text = decoder.decode(bytes, { stream: true });
+    let start = 0, end = text.indexOf('\n');
+    while (end >= 0) {
+      append(text.slice(start, end)); finishLine();
+      start = end + 1; end = text.indexOf('\n', start);
+    }
+    append(text.slice(start));
+  };
   return {
     write(bytes, done = false) {
-      buffer += decoder.decode(bytes, { stream: !done });
-      let end;
-      while ((end = buffer.indexOf('\n')) !== -1) {
-        line(buffer.slice(0, end).replace(/\r$/, ''));
-        buffer = buffer.slice(end + 1);
+      for (let offset = 0; offset < (bytes?.length ?? 0); offset += DECODE_BLOCK_BYTES) {
+        const block = bytes.subarray(offset, offset + DECODE_BLOCK_BYTES);
+        reserve(block); decode(block);
       }
-      if (done) { if (buffer) line(buffer.replace(/\r$/, '')); dispatch(); buffer = ''; }
+      if (done) {
+        append(decoder.decode());
+        if (buffer || fragments.length) finishLine();
+        dispatch(); buffer = '';
+      }
     },
-    clear() { buffer = ''; data = []; },
+    clear() { buffer = ''; fragments = []; data = []; eventBytes = 0; lineBytes = 0; lastByte = undefined; },
   };
 }
 
@@ -88,7 +135,11 @@ function observeEventStream(response, observe, release) {
         if (result.done) { cleanup(); controller.close(); }
         else controller.enqueue(result.value);
       } catch (error) {
-        if (!closed) { cleanup(); controller.error(error); }
+        if (!closed) {
+          closed = true;
+          try { await reader.cancel(error); } catch { /* Preserve the stream failure. */ }
+          finally { cleanup(); controller.error(error); }
+        }
       }
     },
     async cancel(reason) {

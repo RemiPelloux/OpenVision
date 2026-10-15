@@ -1,5 +1,10 @@
 # Performance review — 2026-10-12
 
+The [15 October autocomplete and stream review](autocomplete-stream-performance.md)
+moves debounce ahead of document/hook preparation and bounds unfinished Agent
+SSE events. It includes before/after measurements, native verification, parsing
+overhead and remaining control-plane memory findings.
+
 The [15 October account performance review](account-performance.md) fixes
 unchanged-catalog route rebuilds, repeated failed-host queries and duplicate
 retention of streamed output. It includes equivalent before/after measurements,
