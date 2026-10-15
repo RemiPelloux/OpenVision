@@ -79,7 +79,7 @@ class JsonRpcClient {
 export class McpStdioClient extends JsonRpcClient {
   constructor(definition, options = {}) {
     super(options);
-    this.definition = expandedServer(definition, options.environment ?? process.env);
+    this.definition = options.expandedDefinition ?? expandedServer(definition, options.environment ?? process.env);
     this.child = undefined;
     this.stderr = "";
     this.ready = this.start();
@@ -150,7 +150,7 @@ export class McpStdioClient extends JsonRpcClient {
 export class McpHttpClient extends JsonRpcClient {
   constructor(definition, options = {}) {
     super(options);
-    this.definition = expandedServer(definition, options.environment ?? process.env);
+    this.definition = options.expandedDefinition ?? expandedServer(definition, options.environment ?? process.env);
     this.sessionId = undefined;
     this.ready = this.start();
   }
@@ -185,6 +185,8 @@ export class McpHttpClient extends JsonRpcClient {
 }
 
 export class McpManager {
+  #admissions = new Map();
+
   constructor({ environment = process.env, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
     this.environment = environment;
     this.timeoutMs = timeoutMs;
@@ -193,27 +195,40 @@ export class McpManager {
   }
 
   async client(id, definition) {
+    const admission = { definition: expandedServer(definition, this.environment), revoked: false };
+    let admissions = this.#admissions.get(id);
+    if (!admissions) this.#admissions.set(id, admissions = new Set());
+    admissions.add(admission);
+    try { return await this.#admitClient(id, definition, admission); }
+    finally {
+      admissions.delete(admission);
+      if (admissions.size === 0) this.#admissions.delete(id);
+    }
+  }
+
+  async #admitClient(id, definition, admission) {
     while (true) {
       if (this.closed) throw new Error("MCP manager is closed.");
+      if (admission.revoked) throw new Error("MCP configuration changed during admission.");
       const current = this.clients.get(id);
       if (!current) {
         if (definition.enabled === false) throw new Error(`MCP server is disabled: ${id}`);
-        return this.#connect(id, definition);
+        return this.#connect(id, definition, admission);
       }
       if (current.cleanupError) throw new Error("MCP cleanup failed; retry closing this server before reconnecting.", { cause: current.cleanupError });
       if (current.closing) { await current.closing; continue; }
       if (definition.enabled === false || current.client.closed || current.client.failure ||
-          !isDeepStrictEqual(current.client.definition, expandedServer(definition, this.environment))) {
+          !isDeepStrictEqual(current.client.definition, admission.definition)) {
         await this.#closeEntry(id, current);
         continue;
       }
-      return this.#readyClient(id, current);
+      return this.#readyClient(id, current, admission);
     }
   }
 
-  #connect(id, definition) {
+  #connect(id, definition, admission) {
     const Client = (definition.transport ?? "stdio") === "http" ? McpHttpClient : McpStdioClient;
-    const client = new Client(definition, { environment: this.environment, timeoutMs: this.timeoutMs });
+    const client = new Client(definition, { expandedDefinition: admission.definition, timeoutMs: this.timeoutMs });
     const entry = { client };
     this.clients.set(id, entry);
     entry.ready = client.ready.catch(async error => {
@@ -221,12 +236,12 @@ export class McpManager {
       catch (cleanupError) { throw new AggregateError([error, cleanupError], "MCP initialization and cleanup failed."); }
       throw error;
     });
-    return this.#readyClient(id, entry);
+    return this.#readyClient(id, entry, admission);
   }
 
-  async #readyClient(id, entry) {
+  async #readyClient(id, entry, admission) {
     await entry.ready;
-    if (this.closed || this.clients.get(id) !== entry || entry.closing || entry.client.closed)
+    if (this.closed || admission.revoked || this.clients.get(id) !== entry || entry.closing || entry.client.closed)
       throw new Error("MCP connection changed or closed during initialization.");
     return entry.client;
   }
@@ -242,15 +257,22 @@ export class McpManager {
   }
 
   async close(id) {
+    this.#revokeAdmissions(id);
     const entry = this.clients.get(id);
     if (entry) await this.#closeEntry(id, entry);
   }
 
   async reconcile(id, definition) {
+    const desired = definition && definition.enabled !== false ? expandedServer(definition, this.environment) : undefined;
+    this.#revokeAdmissions(id, desired);
     const entry = this.clients.get(id);
-    if (entry && (!definition || definition.enabled === false ||
-        !isDeepStrictEqual(entry.client.definition, expandedServer(definition, this.environment))))
+    if (entry && (!desired || !isDeepStrictEqual(entry.client.definition, desired)))
       await this.#closeEntry(id, entry);
+  }
+
+  #revokeAdmissions(id, desired) {
+    for (const admission of this.#admissions.get(id) ?? [])
+      if (!desired || !isDeepStrictEqual(admission.definition, desired)) admission.revoked = true;
   }
 
   async #closeEntry(id, entry) {

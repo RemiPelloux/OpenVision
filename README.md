@@ -142,7 +142,10 @@ an already extracted portable app; [build the editable source](docs/native-runti
 to use changes made after preview.6.
 
 The optional Node control plane also bounds STDIO response accumulation and
-recovers after malformed output. See [validation and scoped RAM measurements](docs/control-plane-stdio-resources.md);
+recovers after malformed output. Request admission is ordered with settings
+saves to prevent stale connections after disable or replacement; see
+[MCP lifecycle verification](docs/control-plane-mcp-lifecycle.md).
+See [validation and scoped RAM measurements](docs/control-plane-stdio-resources.md);
 these do not establish a whole-desktop RAM reduction.
 
 **Latest real Windows checks, 15 October 2026:** signed-in Claude read and edited

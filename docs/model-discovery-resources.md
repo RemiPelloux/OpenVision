@@ -103,12 +103,21 @@ A locally captured Windows minidump of an owned disposable app process records
 the exception in **`urlmon.dll + 0x112b86`**, RIP `0x7fff2eb72b86`.
 CDB unwinding shows a shell/path stack through `windows_storage`, including
 `SHCreateShellItemArrayFromIDLists`. Offsets from nearest exports do not establish
-exact function identities without matching symbols. The loaded module reports
-**11.0.26100.9711**, while FileVersionInfo on the signed disk DLL reported
-**11.00.26100.8875**; the workstation reports Windows 10.0.26200. This identity
-discrepancy is unresolved. Recorded memory/disk byte differences do not establish
-corruption while that mismatch remains. No system DLL or runtime memory is
-patched. Dump, decoded metadata and CDB output remain ignored under
+exact function identities without matching symbols. The loaded module's numeric
+version **11.0.26100.9711** matches the disk DLL's fixed version fields.
+FileVersionInfo's display string is **11.00.26100.8875**; the apparent version
+discrepancy was a comparison of different metadata fields. Both dumps and disk
+also match timestamp `0x8B1366E6`, checksum `0x1E6C33` and image size `0x1DE000`.
+The workstation reports Windows 10.0.26200.
+
+A read-only MINIDUMP parser confirms that both dumps directly capture the same
+32 bytes at the fault site; these are not debugger fallbacks to the disk image.
+Compared with the disk bytes at the matching PE RVA, offsets 0, 8, 16 and 24 each
+contain `c5` instead. Disk SHA-256:
+`ed9262ab87744cf701e2cdd6a3714c3d1bdd30a1985f0d97a76c4bd35b03e239`.
+The shared memory/disk differences are observed; their cause remains unknown.
+They do not establish corruption, a particular interfering component or a fix.
+No system DLL or runtime memory is patched. Dump, decoded metadata and CDB output remain ignored under
 `logs/startup-dump-mM0mlj/` and are not uploaded.
 
 The same executable runs the minimal native host successfully. This narrows the

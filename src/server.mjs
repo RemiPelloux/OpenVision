@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { loadConfig, mutateConfig, paths, publicConfig, validateServer } from "./config.mjs";
+import { loadConfig, mutateConfig, selectConfig, paths, publicConfig, validateServer } from "./config.mjs";
 import { McpManager } from "./mcp.mjs";
 import { runRea } from "./rea.mjs";
 
@@ -154,16 +154,16 @@ async function removeServer(id, response) {
   return json(response, 200, { removed: id });
 }
 
-async function serverDefinition(id) {
-  const { config } = await loadConfig();
-  const definition = config.servers[id];
-  if (!definition) throw Object.assign(new Error("MCP server not found."), { statusCode: 404 });
-  return definition;
+function withServer(id, admit) {
+  return selectConfig(({ config }) => {
+    const definition = config.servers[id];
+    if (!definition) throw Object.assign(new Error("MCP server not found."), { statusCode: 404 });
+    return admit(definition);
+  });
 }
 
 async function listServerTools(id, response) {
-  const definition = await serverDefinition(id);
-  const tools = await mcp.listTools(id, definition);
+  const tools = await withServer(id, definition => mcp.listTools(id, definition));
   return json(response, 200, { id, tools });
 }
 
@@ -175,9 +175,10 @@ async function callServerTool(id, input, response) {
   response.once("close", disconnect);
   if (response.destroyed) disconnect();
   try {
-    const definition = await serverDefinition(id);
-    controller.signal.throwIfAborted();
-    const result = await mcp.callTool(id, definition, input.tool, input.arguments, { signal: controller.signal, timeoutMs: input.timeoutMs });
+    const result = await withServer(id, definition => {
+      controller.signal.throwIfAborted();
+      return mcp.callTool(id, definition, input.tool, input.arguments, { signal: controller.signal, timeoutMs: input.timeoutMs });
+    });
     return json(response, 200, { id, result });
   } finally { response.removeListener("close", disconnect); }
 }

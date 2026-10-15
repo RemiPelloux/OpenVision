@@ -6,7 +6,7 @@ const repoRoot = resolve(appRoot, "..");
 const defaultPath = resolve(appRoot, "config", "servers.json");
 const tokenPattern = /\$\{([A-Z][A-Z0-9_]*)\}/gu;
 const idPattern = /^[a-z][a-z0-9_-]{0,63}$/u;
-let mutationQueue = Promise.resolve();
+let configQueue = Promise.resolve();
 
 export function paths() {
   return { appRoot, repoRoot, configPath: resolve(process.env.OPENVISION_CONFIG ?? process.env.CURSOR_APP_CONFIG ?? defaultPath) };
@@ -34,8 +34,21 @@ export async function saveConfig(config) {
   return configPath;
 }
 
+function queueConfig(operation) {
+  const pending = configQueue.then(operation);
+  configQueue = pending.catch(() => undefined);
+  return pending;
+}
+
+// Reserve work synchronously from an ordered snapshot; do not hold the queue
+// while that work initializes a connection or executes a tool.
+export async function selectConfig(select) {
+  const { selection } = await queueConfig(async () => ({ selection: select(await loadConfig()) }));
+  return selection;
+}
+
 export function mutateConfig(mutator, { afterSave } = {}) {
-  const operation = mutationQueue.then(async () => {
+  return queueConfig(async () => {
     const { config } = await loadConfig();
     const result = await mutator(config);
     await saveConfig(config);
@@ -43,8 +56,6 @@ export function mutateConfig(mutator, { afterSave } = {}) {
     await afterSave?.(result);
     return result;
   });
-  mutationQueue = operation.catch(() => undefined);
-  return operation;
 }
 
 export function validateConfig(config) {

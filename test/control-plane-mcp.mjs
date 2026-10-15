@@ -97,3 +97,44 @@ test("public MCP configuration changes route to the new endpoint/key and disabli
   assert.match((await list()).error, /not found/);
   assert.equal(JSON.parse(await readFile(configPath, "utf8")).servers.fixture, undefined);
 });
+
+for (const operation of ["list", "call"]) {
+  test(`public ${operation} admission cannot lock a config save during unfinished initialization`, { timeout: 10000 }, async t => {
+    let started; let closed; let stall = true;
+    const initializing = new Promise(resolve => { started = resolve; });
+    const records = [];
+    const upstream = createServer(async (request, response) => {
+      const chunks = []; for await (const chunk of request) chunks.push(chunk);
+      const message = JSON.parse(Buffer.concat(chunks)); records.push(message);
+      if (message.id === undefined) { response.writeHead(202); response.end(); return; }
+      response.writeHead(200, { "content-type": "application/json" });
+      if (message.method === "initialize" && stall) {
+        stall = false; closed = once(response, "close"); response.write('{"jsonrpc":'); started(); return;
+      }
+      response.end(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: message.method === "initialize" ?
+        { capabilities: {} } : { tools: [{ name: "healthy" }], content: [{ type: "text", text: "healthy" }] } }));
+    });
+    upstream.listen(0, "127.0.0.1"); await once(upstream, "listening");
+    t.after(async () => { upstream.closeAllConnections(); await new Promise(resolve => upstream.close(resolve)); });
+    const definition = { kind: "mcp", transport: "http", url: `http://127.0.0.1:${upstream.address().port}` };
+    const { url } = await controlPlane(t, { fixture: definition });
+    const execute = () => operation === "list" ? fetch(url + "/api/servers/fixture/tools") :
+      fetch(url + "/api/servers/fixture/call", { method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tool: "healthy" }) });
+    const pending = execute();
+    await within(initializing);
+    const update = enabled => fetch(url + "/api/servers", { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: "fixture", ...definition, enabled }) });
+    const disabled = await within(update(false));
+    assert.equal(disabled.status, 201); await disabled.json(); await within(closed);
+    const canceled = await within(pending);
+    assert.equal(canceled.status, 500); assert.match((await canceled.json()).error, /closed|changed/);
+    assert.equal(records.filter(row => row.method !== "initialize").length, 0, "the canceled tool is never replayed");
+    const enabled = await update(true); assert.equal(enabled.status, 201); await enabled.json();
+    const recovered = await execute(); assert.equal(recovered.status, 200);
+    const data = await recovered.json();
+    assert.deepEqual(operation === "list" ? data.tools : data.result.content, operation === "list" ?
+      [{ name: "healthy" }] : [{ type: "text", text: "healthy" }]);
+    assert.equal(records.filter(row => row.method === (operation === "list" ? "tools/list" : "tools/call")).length, 1);
+  });
+}

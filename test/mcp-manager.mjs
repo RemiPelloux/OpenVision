@@ -168,3 +168,64 @@ test("closeAll attempts every owner and permanently stops new connections even a
   await manager.closeAll();
   assert.equal(manager.clients.size, 0);
 });
+
+for (const change of ["disable", "delete", "replace"]) {
+  test(`${change} revokes an older admission waiting for cleanup instead of reconnecting its snapshot`, async t => {
+    const upstream = await fixture(t); const replacement = await fixture(t);
+    const manager = managerFixture(t);
+    const client = await manager.client("fixture", upstream.definition);
+    const entered = deferred(); const release = deferred();
+    const close = client.close.bind(client);
+    client.close = async () => { await close(); entered.resolve(); await release.promise; };
+    t.after(() => release.resolve());
+    const closing = manager.close("fixture");
+    await within(entered.promise);
+    const stale = manager.listTools("fixture", upstream.definition);
+    const rejected = assert.rejects(stale, /configuration changed/);
+    const desired = change === "delete" ? undefined : change === "disable" ?
+      { ...upstream.definition, enabled: false } : replacement.definition;
+    const reconciled = manager.reconcile("fixture", desired);
+    release.resolve(); await within(Promise.all([closing, reconciled, rejected]));
+    assert.equal(upstream.records.filter(row => row.method === "initialize").length, 1);
+    assert.equal(upstream.records.filter(row => row.method === "tools/list").length, 0);
+    assert.equal(replacement.records.length, 0, "a stale caller must not replay on the new endpoint");
+    assert.equal(manager.clients.size, 0);
+    assert.deepEqual(await manager.listTools("fixture", replacement.definition), [{ name: "fixture" }]);
+  });
+}
+
+test("equivalent reconciliation preserves initialization", async t => {
+  const entered = deferred(); let acknowledge;
+  const upstream = await fixture(t, (message, response) => {
+    if (message.method !== "initialize") return;
+    acknowledge = () => {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ jsonrpc: "2.0", id: message.id, result: { capabilities: {} } }));
+    };
+    entered.resolve(); return true;
+  });
+  const manager = managerFixture(t);
+  const pending = manager.listTools("fixture", upstream.definition);
+  await within(entered.promise);
+  try { await manager.reconcile("fixture", { ...upstream.definition }); }
+  finally { acknowledge(); }
+  assert.deepEqual(await within(pending), [{ name: "fixture" }]);
+  assert.equal(upstream.records.filter(row => row.method === "initialize").length, 1);
+});
+
+test("admission retains its expanded connection identity while waiting for cleanup", async t => {
+  const upstream = await fixture(t); const replacement = await fixture(t);
+  const environment = { MCP_FIXTURE_KEY: "fixture-at-admission" };
+  const manager = managerFixture(t, { environment });
+  const client = await manager.client("fixture", upstream.definition);
+  const entered = deferred(); const release = deferred();
+  const close = client.close.bind(client);
+  client.close = async () => { await close(); entered.resolve(); await release.promise; };
+  t.after(() => release.resolve());
+  const pending = manager.listTools("fixture", { ...replacement.definition,
+    headers: { authorization: "Bearer ${MCP_FIXTURE_KEY}" } });
+  await within(entered.promise);
+  environment.MCP_FIXTURE_KEY = "fixture-later";
+  release.resolve(); await within(pending);
+  assert.equal(replacement.records.at(-1).authorization, "Bearer fixture-at-admission");
+});
