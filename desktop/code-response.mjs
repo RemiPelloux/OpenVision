@@ -29,7 +29,7 @@ function codeFromBytes(data, limits) {
   try { body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(data)); }
   catch { throw new CodeResponseError('Provider returned invalid completion JSON or UTF-8.'); }
   const choice = Array.isArray(body?.choices) ? body.choices[0] : undefined;
-  if (choice?.finish_reason === 'length') throw new CodeResponseError(`Provider truncated the ${limits.label.toLowerCase()}. Try a smaller selection or another model.`);
+  if (choice?.finish_reason === 'length') throw new CodeResponseError(`Provider truncated the ${limits.label.toLowerCase()}. ${limits.truncatedHint ?? 'Try a smaller selection or another model.'}`);
   const message = choice?.message, text = message?.content;
   if (choice?.finish_reason !== 'stop' || message?.role !== 'assistant' || message.refusal != null ||
       message.function_call != null || (message.tool_calls != null &&

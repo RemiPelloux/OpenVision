@@ -5,14 +5,13 @@ import { join, dirname, resolve, posix, win32 } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runInNewContext } from 'node:vm';
 import { isolateMcpConfiguration, mcpConfigurationOwner, installProfilePathIsolation } from './profile-paths.mjs';
+import { readableAppDirectory } from './recovered-source.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const relative = variant => `out/vs/workbench/workbench.${variant}.main.js`;
 async function original(variant) {
-  for (const base of ['../cursor/readable/app', 'build/recovery/readable/app']) {
-    try { return await readFile(join(root, base, relative(variant)), 'utf8'); }
-    catch (error) { if (error.code !== 'ENOENT') throw error; }
-  }
+  try { return await readFile(join(readableAppDirectory(), relative(variant)), 'utf8'); }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
   throw new Error('Recovered original workbench artifact required for profile path verification');
 }
 

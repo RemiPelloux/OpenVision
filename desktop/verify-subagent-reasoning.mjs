@@ -6,6 +6,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..'), { layout } = await loadRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/subagent-reasoning-'));
@@ -87,7 +88,7 @@ async function launch() {
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', project, file] });
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
 }
 async function close() {

@@ -5,10 +5,11 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { preserveReasoningSelection } from './reasoning-selection-customization.mjs';
 import { readablePickerLabels } from './model-picker-labels.mjs';
 import { unavailableReasoning } from './model-reasoning.js';
+import { readableApp } from './recovered-source.mjs';
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} retains explicit parameters through native normalization and submission`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const patched = preserveReasoningSelection(readablePickerLabels(source, variant), variant);
     assert.equal(preserveReasoningSelection(patched, variant), patched);
     const flag = variant === 'desktop' ? 'zc' : 'Rl';

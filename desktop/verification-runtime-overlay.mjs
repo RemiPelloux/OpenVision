@@ -27,5 +27,5 @@ export async function createRuntimeOverlay(source, destination, overrides) {
   }
   await visit(source, destination);
   if (records.length !== overrides.size) throw new Error('Verification overrides were not all installed');
-  return { executable: join(destination, 'OpenVision.exe'), records };
+  return { executable: join(destination, process.platform === 'win32' ? 'OpenVision.exe' : 'openvision'), records };
 }

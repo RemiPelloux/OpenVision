@@ -16,6 +16,11 @@ async function checkpoint(directory, phase, wait = false) {
 }
 async function replace(project, name, text) {
   const document = await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(project, name)));
+  // Git rewrites files on checkout; wait for the file watcher to refresh a
+  // clean document so the edit cannot race into a save conflict.
+  const deadline = Date.now() + 10000;
+  while (!document.isDirty && document.getText() !== await fs.readFile(path.join(project, name), 'utf8') && Date.now() < deadline)
+    await new Promise(resolve => setTimeout(resolve, 50));
   const editor = await vscode.window.showTextDocument(document);
   assert.equal(await editor.edit(builder => builder.replace(new vscode.Range(document.positionAt(0), document.positionAt(document.getText().length)), text)), true);
   assert.equal(await document.save(), true);

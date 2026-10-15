@@ -5,9 +5,10 @@ import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { subagentModelParameters } from './subagent-model-customization.mjs';
 import { scopedAgentProviders } from './agent-provider-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 test('local Task configuration retains an unavailable explicit override instead of inheriting the parent', async () => {
-  const source = await readFile(new URL('../../cursor/readable/app/extensions/cursor-agent-exec/dist/main.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('extensions/cursor-agent-exec/dist/main.js', readableApp), 'utf8');
   const patched = scopedAgentProviders(source);
   assert.equal(scopedAgentProviders(patched), patched);
   const start = patched.indexOf('function IEe(e) {');

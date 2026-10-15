@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { chromium } from '../tooling/browser.mjs';
+import { chromium, browserLaunchOptions } from '../tooling/browser.mjs';
 
 test('setup is optional, replayable, keyboard dismissible and retains service errors', async t => {
-  const browser = await chromium.launch({ channel: process.env.OPENVISION_BROWSER_CHANNEL || 'msedge', headless: true });
+  const browser = await chromium.launch(browserLaunchOptions());
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 400, height: 850 } });
   const files = new Set(['onboarding.js', 'onboarding.css', 'model-accounts.js', 'account-picker.js', 'model-settings.css']);

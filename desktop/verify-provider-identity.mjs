@@ -9,6 +9,7 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { verifyProviderLifecycle } from './verify-provider-lifecycle.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 import { execFileSync } from 'node:child_process';
 import { arch, release } from 'node:os';
 
@@ -73,6 +74,16 @@ async function launch() {
   page.on('pageerror', error => result.errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
   await page.waitForTimeout(8000);
+  await enterWorkspace(page);
+}
+async function chatInput() {
+  const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  if (!await input.isVisible()) {
+    await page.locator('.tabs-container .tab').filter({ hasText: 'hello.js' }).first().click();
+    await page.keyboard.press('ControlOrMeta+Shift+l');
+  }
+  await input.waitFor();
+  return input;
 }
 async function closeApp() {
   if (!app) return;
@@ -92,6 +103,7 @@ async function settings() {
   await panel.waitFor(); return panel;
 }
 async function selectModel(index) {
+  await chatInput();
   await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
   const menu = page.getByTestId('model-picker-menu').filter({ visible: true });
   const rows = menu.locator('[data-model-picker-item-name]');
@@ -103,7 +115,7 @@ async function selectModel(index) {
 }
 async function infer(provider, label) {
   phase = label;
-  const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  const input = await chatInput();
   await input.fill(label === 'child' ? 'Use provider B in a Task subagent and confirm it worked.' : `Reply with Provider ${provider} ${label} verified. Do not use tools.`);
   await input.press('Enter');
   await page.getByText(`Provider ${provider} ${label} verified.`, { exact: true }).first().waitFor({ timeout: 60000 });
@@ -149,7 +161,7 @@ try {
   const completions = result.requests.filter(request => request.phase === 'completion');
   assert.ok(completions.length > 0 && completions.every(request => request.provider === 'b'));
   assert.ok(result.requests.every(request => request.authorized && request.model === 'shared-coder'));
-  await verifyProviderLifecycle({ page, settings, result, infer, setPhase: label => { phase = label; },
+  await verifyProviderLifecycle({ page, settings, result, infer, chatInput, setPhase: label => { phase = label; },
     restart: async () => { await closeApp(); await launch(); return page; } });
   assert.ok(result.connections.every(connection => connection.authorized));
   assert.deepEqual(result.errors, []); result.success = true;

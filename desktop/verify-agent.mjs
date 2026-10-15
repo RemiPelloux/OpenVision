@@ -14,6 +14,7 @@ import { createAgentEditFixture } from './verify-agent-edits.mjs';
 import { createAgentCommandFixture } from './verify-agent-commands.mjs';
 import { memorySample, requestMeasurement, baselineIdentity } from './native-baseline.mjs';
 import { createAgentMcpFixture } from './verify-agent-mcp.mjs';
+import { enterWorkspace, openChat } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout, manifest, appRoot, portable } = await verificationRuntime(root);
@@ -142,7 +143,7 @@ async function launch() {
   page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   if (measureBaseline) result.baseline.launches.push({ kind: ownedHostExits.length ? 'same-profile restart' : 'fresh profile',
     readyMs: Math.round(performance.now() - started), readyDefinition: 'Native local-profile titlebar visible; excludes the subsequent eight-second settle interval' });
   await page.waitForTimeout(8000);
@@ -212,6 +213,7 @@ try {
   await closeOwnedApp();
   await launch();
   await sample('restarted-idle-after-eight-second-settle');
+  await openChat(page);
   await page.getByText('OpenVision cancellation pending.', { exact: true }).first().waitFor();
   await edits.assertKeptFiles();
   phase = 'resume';

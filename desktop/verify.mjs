@@ -1,6 +1,6 @@
 import { chromium } from '../tooling/browser.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 
@@ -13,7 +13,7 @@ try {
   const page = pages.find(page => page.url().includes('workbench'));
   if (!page) throw new Error('No editor renderer found');
   await page.locator('.monaco-workbench').waitFor({ state: 'visible', timeout: 30000 });
-  assert.ok(page.url().replaceAll('\\', '/').includes('/openvision/source/app/'), 'Renderer must load editable recovered source');
+  assert.ok(page.url().replaceAll('\\', '/').includes(`/${basename(root)}/source/app/`), 'Renderer must load editable recovered source');
   const profileButton = page.locator('.part.titlebar .openvision-local-profile');
   await profileButton.waitFor();
   const originalName = await profileButton.locator('span').innerText();

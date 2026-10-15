@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 
 const root = resolve(import.meta.dirname, '..'), { layout } = await verificationRuntime(root);
@@ -58,7 +59,8 @@ try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--extensionDevelopmentPath', driver, '--new-window',
-      '--disable-updates', '--disable-telemetry', '--disable-crash-reporter', project, file] });
+      '--disable-updates', '--disable-telemetry', '--disable-crash-reporter',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, file] });
   const page = await app.firstWindow(); page.setDefaultTimeout(30000);
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
   for (let attempt = 0; attempt < 240; attempt++) {

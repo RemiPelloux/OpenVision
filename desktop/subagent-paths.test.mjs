@@ -7,6 +7,7 @@ import { runInNewContext } from 'node:vm';
 import { classAt, functionAt, parseExpressionAt } from './telemetry-patches.mjs';
 import { isolateSubagentWorkbench, isolateSubagentReader, subagentReaderOwner, installSubagentPathIsolation,
   isolateHostSubagentReader, isolateHostSubagentActivation, isolateHostSubagentFactory } from './subagent-paths.mjs';
+import { readableAppDirectory } from './recovered-source.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const uri = fsPath => ({scheme: 'file', fsPath, path: fsPath, toString: () => fsPath});
@@ -70,7 +71,7 @@ function workbenchParts(text) {
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant}: native creation, reader and reload use two isolated data directories`, async () => {
-    const before = await readFile(path.join(root, `../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`), 'utf8');
+    const before = await readFile(path.join(readableAppDirectory(), `out/vs/workbench/workbench.${variant}.main.js`), 'utf8');
     const after = isolateSubagentWorkbench(before);
     assert.equal(isolateSubagentWorkbench(after), after);
     assert.match(after, /openvision\.internal\.userAgentsDirectory/);
@@ -178,7 +179,7 @@ test('installer preserves first backups and skips unchanged transformed files', 
     const inputs = new Map();
     for (const variant of ['desktop', 'glass']) {
       const relative = `out/vs/workbench/workbench.${variant}.main.js`;
-      inputs.set(relative, await readFile(path.join(root, '../cursor/readable/app', relative), 'utf8'));
+      inputs.set(relative, await readFile(path.join(readableAppDirectory(), relative), 'utf8'));
     }
     inputs.set('extensions/cursor-agent-exec/dist/main.js', await readerInput());
     for (const filename of ['main.js', '77.js', '980.js']) {

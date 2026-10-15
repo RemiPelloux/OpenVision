@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { lazyMcpRouting } from './mcp-routing-customization.mjs';
 import { recoveredMcpRouting } from './mcp-routing-fixture.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 for (const variant of ['desktop', 'glass']) {
-  const source = readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+  const source = readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
   test(`${variant}: no eligible servers unblocks readiness without migration; late configuration activates routing`, async () => {
     const patched = lazyMcpRouting(await source);
     assert.equal(lazyMcpRouting(patched), patched);

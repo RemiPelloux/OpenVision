@@ -67,6 +67,8 @@ export async function productBranding(app) {
   const packagePath = join(app, 'package.json');
   const packageJson = JSON.parse(await readFile(packagePath, 'utf8'));
   packageJson.name = 'OpenVision';
+  // Linux uses this for the Wayland app ID / X11 window class and launcher matching.
+  if (packageJson.desktopName) packageJson.desktopName = 'openvision.desktop';
   await writeFile(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
   const path = join(app, 'product.json');
   const data = JSON.parse(await readFile(path, 'utf8'));
@@ -75,6 +77,9 @@ export async function productBranding(app) {
     win32NameVersion: 'OpenVision', win32RegValueName: 'OpenVision', win32AppUserModelId: 'Local.OpenVision.Source',
     win32ShellNameShort: 'OpenVision', urlProtocol: 'openvision-local',
     darwinBundleIdentifier: 'local.openvision.source', linuxIconName: 'openvision' });
+  // Without an installer target, Linux treats `<app>/../../data` as portable
+  // mode and ignores --user-data-dir. Windows inputs already carry "user".
+  if (!('target' in data)) data.target = 'archive';
   delete data.updateUrl;
   delete data.backupUpdateUrl;
   delete data.checksums;

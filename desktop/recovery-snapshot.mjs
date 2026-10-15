@@ -10,6 +10,7 @@ import { disableCloudFeatures } from './cloud-features.mjs';
 import { customModels } from './custom-models.mjs';
 
 const slash = path => path.split('\\').join('/');
+export const supportedInputVersion = '3.21.13';
 const required = new Set(['out/main.js', 'out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']);
 
 async function captureFile(context, path) {
@@ -59,14 +60,19 @@ function verifyBundle(text, path) {
   }
 }
 
+// Customizations anchor on formatted source, so every application script is
+// recovered in readable form. Only the required bundles must format cleanly.
 async function recoverFile(context, file) {
   if (file.type === 'symlink' || !file.path.startsWith(context.layout.appPrefix)) return;
   const path = file.path.slice(context.layout.appPrefix.length);
   if (!['.js', '.mjs', '.cjs'].includes(extname(path))) return;
   const text = await readFile(join(context.snapshot, file.path), 'utf8');
-  if (!required.has(path) && !text.includes('buildFlags.js')) return;
   const formatted = await format(path, text, { sortImports: false, sortPackageJson: false, embeddedLanguageFormatting: 'off' });
-  if (formatted.errors.length) throw new Error(`Cannot format application bundle: ${path}`);
+  if (formatted.errors.length) {
+    if (required.has(path)) throw new Error(`Cannot format application bundle: ${path}`);
+    context.unformatted.push(file.path);
+    return;
+  }
   if (required.has(path)) verifyBundle(formatted.code, path);
   const output = `readable/app/${path}`;
   const destination = join(context.recovery, output);
@@ -81,15 +87,26 @@ export async function prepareRecovery(options) {
   const recovery = resolve(options.recovery);
   if (inside(installation, recovery) || inside(recovery, installation)) throw new Error('Installation and recovery directories must be separate.');
   const layout = platformLayout(options.root);
+  // Check the version first: distribution repackages (for example a shell-script
+  // launcher over a system Electron) otherwise fail with an opaque format error.
+  const packageJson = await readFile(join(installation, layout.appPrefix, 'package.json'), 'utf8')
+    .then(JSON.parse, error => { if (error.code === 'ENOENT') return undefined; throw error; });
+  if (packageJson && packageJson.version !== supportedInputVersion && !options.anyVersion)
+    throw new Error(`Native input is version ${packageJson.version}; OpenVision customizations target ${supportedInputVersion}.`);
   const identity = await nativeIdentity(join(installation, layout.installationExecutable));
   assertNativeHost(identity);
-  const packageJson = JSON.parse(await readFile(join(installation, layout.appPrefix, 'package.json'), 'utf8'));
-  const context = { installation, recovery, layout, snapshot: join(recovery, 'artifacts/installation'), files: [], recovered: [] };
+  if (!packageJson) throw new Error('Native input application package.json is missing.');
+  const context = { installation, recovery, layout, snapshot: join(recovery, 'artifacts/installation'), files: [], recovered: [], unformatted: [] };
   await mkdir(dirname(recovery), { recursive: true });
   await mkdir(recovery);
   await captureTree(context);
   console.log(`Captured ${context.files.length} native files and links for ${identity.platform}/${process.arch}`);
-  for (const file of context.files) await recoverFile(context, file);
+  const queue = [...context.files];
+  await Promise.all(Array.from({ length: 8 }, async () => {
+    for (let file = queue.shift(); file; file = queue.shift()) await recoverFile(context, file);
+  }));
+  context.recovered.sort((left, right) => left.input < right.input ? -1 : 1);
+  console.log(`Formatted ${context.recovered.length} application scripts; ${context.unformatted.length} kept as shipped`);
   for (const path of required)
     if (!context.recovered.some(file => file.input === layout.appPrefix + path)) throw new Error(`Required bundle missing: ${path}`);
   await mkdir(join(recovery, 'reports'));
@@ -97,6 +114,7 @@ export async function prepareRecovery(options) {
     original_installation: installation, app_prefix: layout.appPrefix,
     application: { name: packageJson.name, version: packageJson.version, distro: packageJson.distro }, files: context.files };
   await writeFile(join(recovery, 'reports/installation-manifest.json'), JSON.stringify(inventory, null, 2));
-  await writeFile(join(recovery, 'reports/readability.json'), JSON.stringify({ producer: 'oxfmt 0.72.0', files: context.recovered }, null, 2));
+  await writeFile(join(recovery, 'reports/readability.json'), JSON.stringify({ producer: 'oxfmt 0.72.0', files: context.recovered,
+    unformatted: context.unformatted.sort() }, null, 2));
   return { recovery, platform: identity.platform, arch: process.arch, version: packageJson.version, recovered_bundles: context.recovered.length };
 }

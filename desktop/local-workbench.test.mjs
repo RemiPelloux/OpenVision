@@ -4,9 +4,10 @@ import { readFile } from 'node:fs/promises';
 import { localWorkbench } from './local-workbench.mjs';
 import { enableLocalMode } from './source-branding.mjs';
 import { disableCloudFeatures } from './cloud-features.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 for (const variant of ['desktop', 'glass']) {
-  const input = new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url);
+  const input = new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp);
   test(`${variant}: recovered source gains local UI without forging authentication`, async () => {
     const recovered = await readFile(input, 'utf8');
     const originalAuth = /\n  isAuthenticated\(\) \{[\s\S]*?\n  \}/.exec(recovered)?.[0];

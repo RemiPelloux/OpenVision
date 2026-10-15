@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { chromium } from '../tooling/browser.mjs';
+import { chromium, browserLaunchOptions } from '../tooling/browser.mjs';
 
 async function fixture(t) {
-  const browser = await chromium.launch({ channel: process.env.OPENVISION_BROWSER_CHANNEL || 'msedge', headless: true });
+  const browser = await chromium.launch(browserLaunchOptions());
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 850, height: 900 } });
   const files = new Set(['model-settings.js', 'model-accounts.js', 'account-picker.js', 'model-settings.css', 'model-providers.js',

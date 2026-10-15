@@ -9,6 +9,7 @@ import { fileHash, optionalFile } from './import-files.mjs';
 import { parseConfiguration } from './import-json.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 // Never attach to desktop-launch.json: every verification launch has a disposable profile.
 const root = resolve(import.meta.dirname, '..'), { layout, appRoot, runtimeRoot } = await verificationRuntime(root);
@@ -61,7 +62,7 @@ async function launch() {
       '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes', project] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   result.nativeOwnership = await app.evaluate(() => {
     const owner = globalThis.openvisionImportOwner, window = owner?.windowsMainService.getWindows()[0], profile = window?.profile;
     return { resources: Object.fromEntries(['settingsResource', 'keybindingsResource', 'tasksResource', 'snippetsHome', 'extensionsResource']

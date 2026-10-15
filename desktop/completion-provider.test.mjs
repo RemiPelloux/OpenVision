@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { completionContext, localCompletion, completionModel } from './completion-provider.js';
 import { fetchCompletion } from './completion-http.mjs';
 import { customCompletion } from './completion-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 function fixture(text = 'const x = ;\r\n', position = { lineNumber: 1, column: 11 }) {
   const selection = { modelId: 'coder' };
@@ -151,7 +152,7 @@ test('provider Markdown wrappers with leading whitespace are rejected without ch
 
 for (const variant of ['desktop', 'glass']) test(`${variant}: original native completion owners support local mode and repeat safely`, async t => {
   let source;
-  try { source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8'); }
+  try { source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8'); }
   catch (e) { if (e.code === 'ENOENT') return t.skip('Original recovered workbench required'); throw e; }
   const result = customCompletion(source, variant);
   assert.equal(customCompletion(result, variant), result);

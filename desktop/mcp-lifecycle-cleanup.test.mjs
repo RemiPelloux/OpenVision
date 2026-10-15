@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { closeOwnedMcpTransports, mcpAttemptOwner } from './mcp-attempt-customization.mjs';
 import { mcpLifecycleOwner } from './mcp-lifecycle-cleanup-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const variants = [
   ['process', 'out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', 'Y', 's_'],
@@ -40,7 +41,7 @@ function fixture(text, logger, attemptName) {
 }
 
 for (const [name, relative, logger, attemptName] of variants) {
-  const source = readFile(new URL(`../../cursor/readable/app/${relative}`, import.meta.url), 'utf8');
+  const source = readFile(new URL(`${relative}`, readableApp), 'utf8');
   test(`${name}: permanently pending close bounds demand acknowledgement without releasing or replacing its owner`, async () => {
     const current = fixture(closeOwnedMcpTransports(await source), logger, attemptName);
     const pending = Promise.withResolvers(), attempt = new current.Attempt('fixture'); let calls = 0;

@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { customizeMemory } from './memory-customization.mjs';
 import { customizeLegacyMemories } from './legacy-memory-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 function extract(source, name) {
   const start = source.indexOf(`function ${name}(`);
@@ -14,7 +15,7 @@ function extract(source, name) {
 }
 
 for (const variant of ['desktop', 'glass']) {
-  for (const [label, path] of [['original', '../../cursor/readable'], ['prepared', '../source']]) {
+  for (const [label, path] of [['original', new URL('..', readableApp).href.slice(0, -1)], ['prepared', '../source']]) {
     test(`${variant} ${label}: legacy review is mounted only in Rules with owned subscriptions`, async t => {
       let original;
       try { original = await readFile(new URL(`${path}/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8'); }

@@ -6,6 +6,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -58,7 +59,7 @@ async function launch() {
   page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
 }
 

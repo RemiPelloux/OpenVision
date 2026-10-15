@@ -6,6 +6,7 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -39,7 +40,7 @@ let result;
 try {
   const page = await app.firstWindow();
   await page.locator('.monaco-workbench').waitFor({ state: 'visible', timeout: 60000 });
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 30000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 30000 }); await enterWorkspace(page);
   const sentry = await page.evaluate(() => {
     const state = globalThis._CURSOR_SENTRY;
     state.enabled = true;

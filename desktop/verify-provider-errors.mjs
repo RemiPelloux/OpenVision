@@ -10,6 +10,7 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { createUntrustedProvider } from './verify-provider-tls.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -129,7 +130,7 @@ try {
       '--disable-crash-reporter', ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, file] });
   page = await app.firstWindow();
   page.setDefaultTimeout(15000);
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();

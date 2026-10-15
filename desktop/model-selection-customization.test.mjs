@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { strictModelSelection, providerSelectionErrors } from './model-selection-customization.mjs';
 import { modelSelectionError, modelSelectionId } from './model-identity.js';
+import { readableApp } from './recovered-source.mjs';
 
 const options = { ecmaVersion: 'latest' };
 function method(text, name, async = false) {
@@ -19,7 +20,7 @@ function method(text, name, async = false) {
 for (const variant of ['desktop', 'glass']) {
   const flag = variant === 'desktop' ? 'zc' : 'Rl';
   test(`${variant} preserves unavailable and legacy selections at the native normalization owners`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const patched = strictModelSelection(source, variant);
     assert.equal(strictModelSelection(patched, variant), patched);
     const resolve = new Function(flag, `return (${method(patched, 'resolvePersistedModelIdForRead')});`)({ localMode: true });
@@ -43,7 +44,7 @@ for (const variant of ['desktop', 'glass']) {
   });
 
   test(`${variant} selection failures enter the native actionable error contract`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const patched = providerSelectionErrors(source);
     assert.equal(providerSelectionErrors(patched), patched);
     const original = method(source, 'getLocalAgentProviderConfig', true);

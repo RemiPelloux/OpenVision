@@ -7,6 +7,7 @@ import { loadRuntime } from './source-assembly.mjs';
 import { fileHash } from './import-files.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { prepareCpp, cppArguments } from './setup-cpp.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..'), tools = await prepareCpp(root);
 const { layout } = await loadRuntime(root);
@@ -57,7 +58,7 @@ try {
     args: ['--user-data-dir', profile, '--extensions-dir', extensions, '--extensionDevelopmentPath', extension,
       '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', project] });
   page = await app.firstWindow(); page.on('pageerror', error => errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   const deadline = Date.now() + 240000;
   while (Date.now() < deadline) {
     try { result.native = JSON.parse(await readFile(join(directory, 'extension-result.json'), 'utf8')); break; }

@@ -16,6 +16,7 @@ import { prepareLivePaste, inspectPasteRequest, verifySavedLivePaste } from './v
 import { createLiveUserRule, inspectRulesRequest } from './verify-live-rules.mjs';
 import { approveLiveMemory, inspectLiveMemoryContext } from './verify-live-memory.mjs';
 import { verifyLiveStop } from './verify-live-stop.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 if (!process.argv.includes('--live')) {
   console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--stop] [--paste|--rules|--memory] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Stop checks real streaming cancellation and same-chat resubmission. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Capture saves the first request locally with the transport key redacted.');
@@ -108,7 +109,7 @@ async function launch() {
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
   (result.nativeMainProcesses ??= []).push(await app.evaluate(() => ({ pid: process.pid, ppid: process.ppid, executable: process.execPath })));
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
   return page;
 }

@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { completionCancellation } from './completion-cancellation.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 async function recoveredSource(variant) {
   const relative = `out/vs/workbench/workbench.${variant}.main.js`;
-  for (const directory of ['../../cursor/readable/app', '../source/app']) {
+  for (const directory of [readableApp.href.slice(0, -1), '../source/app']) {
     try { return await readFile(new URL(`${directory}/${relative}`, import.meta.url), 'utf8'); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }
   }

@@ -9,6 +9,7 @@ import { createRuntimeOverlay } from './verification-runtime-overlay.mjs';
 import { injectMcpCloseFailure } from './verify-mcp-cleanup-injection.mjs';
 import { createMcpServerFixture } from './verify-mcp-server.mjs';
 import { closeOwnedMcpTransports } from './mcp-attempt-customization.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 assert.equal(process.platform, 'win32', 'This native HTTP cleanup verifier covers Windows');
 const root = resolve(import.meta.dirname, '..');
@@ -62,7 +63,7 @@ try {
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', project] });
   app.process().stderr?.on('data', chunk => { result.stderrTail = ((result.stderrTail ?? '') + chunk).slice(-16384); });
   page = await app.firstWindow(); page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await writeFile(configPath, JSON.stringify(config));
   await until('real HTTP native discovery', async () => count('tools/list') > 0 &&
     (await events()).some(event => event.event === 'attempt-committed') &&

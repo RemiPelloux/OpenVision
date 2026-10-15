@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { lazyMcpChannels } from './mcp-lazy-customization.mjs';
 import { recoveredMcpConnection } from './mcp-lazy-fixture.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
 for (const variant of ['desktop', 'glass']) {
-  const source = readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+  const source = readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
   test(`${variant}: callback registration stays idle; concurrent first demand flushes each latest channel once`, async () => {
     const original = await source, patched = lazyMcpChannels(original);
     assert.equal(lazyMcpChannels(patched), patched);

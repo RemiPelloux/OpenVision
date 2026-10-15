@@ -4,10 +4,11 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { workspaceRuleEvents } from './workspace-rule-events.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant}: workspace storage forwards owned memory changes and preserves unrelated filtering`, async () => {
-    const original = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const original = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const transformed = workspaceRuleEvents(original, variant);
     assert.equal(workspaceRuleEvents(transformed, variant), transformed);
     const [name, base, key] = variant === 'desktop' ? ['vw_', 'pVh', 'Jan'] : ['WH0', 'gfv', 'dGn'];

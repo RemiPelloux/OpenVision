@@ -48,7 +48,7 @@ No independent rebuild of every native component is claimed.
 | OV-602–604 | Custom Chat Completions adapter; native Windows Unicode single/multiline and partial-word acceptance/undo, pending typing/Escape/file-switch cancellation, 13-case response-failure matrix and recovery; one direct live GPT/DeepSeek/Grok sum-expression fixture each | Representative multi-language/project quality, native live-provider acceptance, broader editing/latency workloads and next-edit prediction |
 | OV-701–704 | Settings import and local extension-integrity checks; recovered integration surfaces | Full import rollback/isolation, extension lifecycle, SSH/WSL/container workflows, specialized image/browser/computer modes |
 | OV-801–804 | Inventory of 52 native PE paths and 15 distinct WASM payloads; editable recovered JavaScript | Source/license/ABI/replacement dispositions and clean-checkout independent build |
-| OV-901–904 | Windows x64 assembled editor and scoped native fixtures | Clean installation/package/upgrade/rollback matrix; other native systems and architectures |
+| OV-901–904 | Windows x64 assembled editor and scoped native fixtures; OV-903 Linux x64 native suite ([evidence](linux-verification.md)) | Clean installation/package/upgrade/rollback matrix; other native systems and architectures |
 | OV-1004–1005 | Built-in telemetry transformations, focused tests and bounded native Windows capture | Full release/failure recovery, extended process-tree network workloads and macOS/Linux runtime checks |
 
 See [native Agent evidence](rea-agent-runtime.md), [command cancellation](rea-command-cancellation.md),
@@ -99,7 +99,8 @@ the measured disabled-child model fallback was fixed. OV-104/203 remain Partial.
 | Windows x64, 10.0.26200, current workstation | Assembled desktop, local secrets and listed native fixtures | Development/testing environment; complete Windows release gate remains Partial |
 | Windows ARM64 | None | Unverified; no architecture support inferred from x64 or preparation fixtures |
 | macOS x64 / ARM64 | None; no test machine currently available | Required native gates retained; no launch/keychain/signing claim |
-| Linux x64 / ARM64 | None; no test desktop currently available | Required native gates retained; no distro/display/sandbox/secrets claim |
+| Linux x64, Omarchy (Arch based), kernel 7.2, Hyprland on Wayland | Local build and portable package, Secret Service keyring, namespace sandbox, bash/sh terminals and the native suite in [Linux verification](linux-verification.md) | Other distributions, X11 sessions and KDE/KWallet not run natively |
+| Linux ARM64 | None | Needs a pinned ARM64 input; unverified |
 | Text/JavaScript files in current Windows fixtures | Unicode text editing, search, Agent Read/StrReplace and saved bytes | Not a language-service acceptance result |
 | TypeScript/JavaScript language service and other languages/extensions | Bundles/registrations exist | Diagnostics, navigation, rename, formatting and large-file matrix not yet verified |
 | Windows Command Prompt, Windows PowerShell 5.1 and pinned Node 24.18.0 | Agent command deny/allow/Stop; native shell resize/Unicode/environment/restart, task matcher, Node debugger break/step/Stop and child cleanup | [Declared no-profile shell matrix](development-workflows.md); intermittent launcher exit 134 unresolved; other shells/debuggers and persistent sessions unverified |

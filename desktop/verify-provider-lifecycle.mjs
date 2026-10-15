@@ -2,20 +2,20 @@ import assert from 'node:assert/strict';
 
 // Operates only on the disposable provider-identity verifier's native window.
 export async function verifyProviderLifecycle(context) {
-  const { settings, result, setPhase, infer, restart } = context;
+  const { settings, result, setPhase, infer, restart, chatInput } = context;
   let { page } = context;
   const provider = name => page.locator('.openvision-provider').filter({ hasText: name });
   const settled = () => page.waitForFunction(() => document.querySelector('.openvision-model-settings')?.dataset.busy === 'false');
   const editor = () => page.locator('.tabs-container .tab').filter({ hasText: 'hello.js' }).first().click();
   async function choose(name) {
-    await editor();
+    await editor(); await chatInput();
     await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
     const menu = page.getByTestId('model-picker-menu').filter({ visible: true });
     await menu.getByText(name, { exact: true }).last().click();
   }
   async function blocked(label) {
     setPhase(label); await editor();
-    const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+    const input = await chatInput();
     await input.fill(`Verify ${label}. Do not use tools.`); await input.press('Enter');
     await page.getByText(/The selected model or provider is unavailable/).filter({ visible: true }).first().waitFor({ timeout: 30000 });
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });

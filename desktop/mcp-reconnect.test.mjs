@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { mcpReadinessMethod, reconnectClosedMcp } from './mcp-reconnect-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
-const original = await readFile(new URL('../../cursor/readable/app/out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', import.meta.url), 'utf8');
+const original = await readFile(new URL('out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', readableApp), 'utf8');
 const patched = reconnectClosedMcp(original);
 function fixture(text, type = 'stdio', initial = 'closed') {
   const method = mcpReadinessMethod(text), pending = Promise.withResolvers();

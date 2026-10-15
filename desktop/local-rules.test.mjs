@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { LocalRules } from './local-rules.js';
 import { localUserRules } from './rules-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 function storageFixture(values = new Map()) {
   const workspace = new Map(), listeners = new Set(), owners = new Map();
@@ -158,7 +159,7 @@ for (const variant of ['desktop', 'glass']) {
   test(`${variant} recovered rules service persists CRUD, synchronizes windows, and feeds native Agent context`, async t => {
     let source;
     try {
-      source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8')
+      source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8')
         .catch(error => {
           if (error.code !== 'ENOENT') throw error;
           return readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');

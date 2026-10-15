@@ -10,6 +10,7 @@ import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
@@ -59,7 +60,7 @@ async function launch() {
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, join(project, 'hello.js')] });
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   // Titlebar renders before the native workbench has registered settings actions.
   // Use the same startup settle interval as the Agent acceptance workflow.
   await page.waitForTimeout(8000);

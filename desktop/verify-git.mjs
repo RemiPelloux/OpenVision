@@ -7,8 +7,8 @@ import { _electron } from '../tooling/browser.mjs';
 import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'This native Git matrix currently targets Windows');
 const root = resolve(import.meta.dirname, '..'), { layout } = await loadRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/git-verification-'));
 const abrupt = process.argv.includes('--abrupt');
@@ -47,7 +47,7 @@ async function launch() {
       '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', workspace] });
   page = await app.firstWindow(); page.setDefaultTimeout(30000);
   page.on('pageerror', error => result.errors.push(error.message));
-  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ timeout: 60000 });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
 }
 async function close() {
   if (!app) return;
@@ -64,7 +64,7 @@ async function interrupt() {
   const [code] = await exited;
   result.hostExits.push({ pid: child.pid, code, abrupt: true });
   app = undefined;
-  // Electron on Windows can terminate with a fail-fast status when Node exits
+  // Electron (notably on Windows) can terminate with a fail-fast status when Node exits
   // from this callback. Record the actual status; require an abnormal exit.
   assert.ok(Number.isInteger(code) && code !== 0, 'Owned host must exit abnormally');
 }

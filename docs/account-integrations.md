@@ -131,9 +131,13 @@ preserved conversation fixtures and retained the main process. A second window
 using an account blocked deletion until disconnected. The normal settings screen
 and deletion confirmation were inspected without deleting a real account.
 
-The focused account, settings, setup and project-home suite passed 53 tests;
-the wider desktop regression suite passed 124 tests. The production source build
-and desktop JavaScript syntax checks also passed.
+After merging Linux support, the focused account/settings/setup suite passed
+49 tests on Windows, and the wider desktop suite passed 124 tests with two
+concurrent test workers and the complete recovery explicitly selected through
+`OPENVISION_RECOVERY_DIR`. The production source build, desktop JavaScript syntax
+checks and native account-picker verification also passed. Browser fixtures use
+the platform browser helper; account native verifiers use the Linux sandbox
+argument helper. This wiring does not establish native Linux account verification.
 Controlled tests cover opener failure, cancellation, handoff timeout,
 display-data filtering and UI behavior; these tests do not establish OAuth success.
 

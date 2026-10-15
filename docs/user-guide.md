@@ -118,7 +118,8 @@ network log, screenshot, and result under `logs/telemetry-verification-*`.
 The full Windows x64 application is included in the release ZIP and the Git
 repository. Follow [Download and launch](native-runtime.md#download-and-launch)
 or [Run directly from the repository](native-runtime.md#run-directly-from-the-repository).
-macOS/Linux native releases and verification remain on the roadmap.
+Linux x64 runs natively from a local build; see the [Linux guide](linux.md).
+macOS native releases and verification remain on the roadmap.
 GitHub Actions is disabled.
 
 On first launch, choose **Enter workspace**, open a project, and configure your

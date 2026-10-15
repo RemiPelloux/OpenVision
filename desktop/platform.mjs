@@ -41,5 +41,6 @@ export async function linuxSandboxArguments(host) {
   try { helper = await lstat(join(host, 'chrome-sandbox')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   // A user-owned copy cannot act as Chromium's root-owned setuid helper. Use the namespace sandbox.
-  return helper?.uid === 0 && (helper.mode & 0o4777) === 0o4755 ? [] : ['--disable-setuid-sandbox'];
+  // The explicit value keeps VS Code's argument parser from consuming a following path as the flag value.
+  return helper?.uid === 0 && (helper.mode & 0o4777) === 0o4755 ? [] : ['--disable-setuid-sandbox=true'];
 }

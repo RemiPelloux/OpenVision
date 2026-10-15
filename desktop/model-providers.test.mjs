@@ -6,6 +6,7 @@ import { customModels } from './custom-models.mjs';
 import { providerDefaultReasoning } from './model-reasoning.js';
 import { modelSelectionId } from './model-identity.js';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 const defaultChoice = { value: providerDefaultReasoning, displayName: 'Provider default' };
 const variantFor = (model, value) => model.variants.find(item => item.parameterValues[0].value === value);
@@ -250,7 +251,7 @@ test('combined catalog groups providers while retaining the default connection',
 });
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} custom model integration owns settings and polling and is idempotent`, async () => {
-    const recovered = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const recovered = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const text = customModels(recovered, variant);
     assert.equal(customModels(text, variant), text);
     assert.ok(text.includes('openvisionMountModels(node, bridge)'));

@@ -5,6 +5,7 @@ import { paginateModelPicker } from './model-picker-pagination.mjs';
 import { modelPage, initialModelPage, modelPageSize } from './model-picker-window.js';
 import { readablePickerLabels } from './model-picker-labels.mjs';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 test('all model identities remain reachable across bounded pages, including provider boundaries', () => {
   const models = Array.from({ length: 10000 }, (_, index) => ({ name: `model-${index}`, providerId: `provider-${index % 17}` }));
@@ -23,7 +24,7 @@ test('all model identities remain reachable across bounded pages, including prov
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} unavailable display text never changes a stored identity`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const output = readablePickerLabels(source, variant);
     assert.equal(readablePickerLabels(output, variant), output);
     const index = output.indexOf('/* OpenVision readable unavailable model labels */');
@@ -36,7 +37,7 @@ for (const variant of ['desktop', 'glass']) {
     assert.equal(factory({ localMode: true })({ modelId: 'foreign' }, [], false), 'foreign');
   });
   test(`${variant} patch is idempotent and rejects a changed native result owner`, async () => {
-    const source = await readFile(new URL(`../../cursor/readable/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const source = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
     const output = paginateModelPicker(source, variant);
     assert.equal(paginateModelPicker(output, variant), output);
     assert.throws(() => paginateModelPicker(source.replace('visibleModels:', 'changedModels:'), variant), /owner changed/);

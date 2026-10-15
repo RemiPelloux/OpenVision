@@ -89,8 +89,9 @@ The script rejects added, removed or duplicate IDs until the baseline is reviewe
 The [gate ownership clarification](acceptance-gate-ownership.md) assigns overlapping
 local, remote, authentication and platform requirements without deleting them.
 Platform and independent-build gates remain required.
-The user confirmed that only Windows is currently available for native testing.
-macOS/Linux checks remain unverified and retain their acceptance gates.
+Native testing is available on Windows x64 and, since 15 October 2026, Linux x64
+(Arch-based, Wayland; see [Linux verification](linux-verification.md)).
+macOS checks remain unverified; all platforms retain their acceptance gates.
 
 On 13 October the user changed the target from 95% to 80% and requested a fully
 usable product plus a complete missing-feature backlog. Baseline version 2 changes
@@ -107,7 +108,7 @@ complexity points and the usability release gate.
 | Last local validation | Desktop, completion/profile and telemetry checks pass; syntax/build, bounded 10,000-model UI and native autocomplete/project/Agent fixtures pass | [Agent evidence](rea-agent-runtime.md), [project evidence](rea-project-workflows.md), [autocomplete evidence](rea-custom-autocomplete.md); these do not cover every story below |
 | Native recovery | PE metadata for 52/52 files; pseudocode for 1/52 files and its 626 identified procedures | 51/52 files lack pseudocode; native source rebuild unproven |
 | WASM recovery | 15/15 distinct payloads decoded to WAT; complete REA records for 14/15 | One complete record and independently buildable source/binding verification |
-| Platform coverage | Windows native checks; portable preparation fixtures | Real macOS/Linux launch and workflow evidence |
+| Platform coverage | Windows native checks; Linux x64 native build, keyring, sandbox and most native verifiers ([evidence](linux-verification.md)) | Real macOS launch and workflows; remaining Linux verifiers, distributions and ARM64 |
 
 **There is no defensible overall percentage of the original product recovered.**
 The 98.08% native-file pseudocode gap is not a missing-feature percentage.
@@ -378,7 +379,7 @@ Outcome: installable OpenVision with platform-specific execution evidence.
 | --- | --- | --- | --- |
 | OV-901 / Partial | As a Windows user, I can install and use the complete supported product. | OV-804; core workflow stories | Clean install on each claimed architecture; native editor, secrets, import, terminal, Agent, autocomplete, MCP and extension workflows. Confirm OpenVision identity in all dialogs, launchers and process metadata. |
 | OV-902 / Planned | As a macOS user, I can run the same supported workflows. | OV-804 | Real target-machine/architecture suite, keychain, permissions, sandboxing, paths and native addons; signed/notarized distribution if claimed. Ad-hoc signing and portable fixtures do not close this story. |
-| OV-903 / Planned | As a Linux user, I can run the same supported workflows. | OV-804 | Real supported distributions/architectures and declared display environments; secrets, sandbox, shell, native addons and complete critical suite. Document packaging prerequisites and any capability differences. |
+| OV-903 / Partial | As a Linux user, I can run the same supported workflows. | OV-804 | Real supported distributions/architectures and declared display environments; secrets, sandbox, shell, native addons and complete critical suite. Document packaging prerequisites and any capability differences. |
 | OV-904 / Planned | As a user, upgrades and rollback preserve my work. | OV-901–OV-903 on claimed targets | Manual/local packaging pipeline; installer/uninstaller, signed release provenance, interrupted upgrade, profile migration, rollback and user-data retention tests. Exclude original update endpoints and verify the selected update strategy. |
 
 Sprint exit: a platform is supported only when its required native checks pass.

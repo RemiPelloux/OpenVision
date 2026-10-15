@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { callRendererMcpTool, callProcessMcpTool, cancellableMcpToolChannel } from './mcp-cancel-runtime.mjs';
 import { cancelRendererMcp, cancelProcessMcp } from './mcp-cancel-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
 
 test('renderer cancellation during registry lookup prevents dispatch', async () => {
   const lookup = Promise.withResolvers(), controller = new AbortController(); let calls = 0;
@@ -50,7 +51,7 @@ test('process cancellation before dispatch and normal/failure completion release
 for (const variant of ['desktop', 'glass', 'process']) test(`${variant}: recovered cancellation transformation is idempotent`, async () => {
   const relative = variant === 'process' ? 'out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js' :
     `out/vs/workbench/workbench.${variant}.main.js`;
-  const source = await readFile(new URL(`../../cursor/readable/app/${relative}`, import.meta.url), 'utf8');
+  const source = await readFile(new URL(`${relative}`, readableApp), 'utf8');
   const transform = variant === 'process' ? cancelProcessMcp : cancelRendererMcp;
   const patched = transform(source); assert.equal(transform(patched), patched);
 });
