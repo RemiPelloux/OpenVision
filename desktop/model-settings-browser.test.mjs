@@ -7,7 +7,7 @@ async function fixture(t) {
   const browser = await chromium.launch({ channel: process.env.OPENVISION_BROWSER_CHANNEL || 'msedge', headless: true });
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 850, height: 900 } });
-  const files = new Set(['model-settings.js', 'model-accounts.js', 'model-settings.css', 'model-providers.js',
+  const files = new Set(['model-settings.js', 'model-accounts.js', 'account-picker.js', 'model-settings.css', 'model-providers.js',
     'completion-provider.js', 'model-catalog.js', 'model-reasoning.js', 'model-identity.js']);
   await page.route('http://127.0.0.1/**', async route => {
     const name = new URL(route.request().url()).pathname.slice(1).replace(/^openvision-/, '');
@@ -107,7 +107,7 @@ test('account cards show verified identity and provider models and refresh expli
   await page.getByText('personal@example.invalid', { exact: true }).waitFor();
   assert.deepEqual(await page.evaluate(() => window.lastStatusOptions), { refresh: true });
   assert.equal(await page.getByText('Signed in', { exact: true }).count(), 1);
-  assert.equal(await page.getByRole('combobox', { name: 'Codex account', exact: true }).inputValue(), 'personal');
+  assert.equal(await page.getByRole('combobox', { name: 'Codex account', exact: true }).getAttribute('data-value'), 'personal');
   await page.getByText('Models · 1', { exact: true }).click();
   await page.getByText('Provider-reported model', { exact: true }).waitFor();
 });

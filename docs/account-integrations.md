@@ -103,6 +103,17 @@ versions and the remaining Codex extension error-reporting gap.
 
 ## Verification limits
 
+The account picker follows the editor theme rather than the operating system's
+native select menu. Saved profiles appear first, with a checkmark for the current
+profile and a separate Disconnected option. Long labels truncate visually;
+account controls wrap on narrow panels. Use arrow keys, Home/End or typing to
+find a profile, Enter to switch, and Escape to close without switching.
+
+The picker was checked in dark/light browser layouts and the built Windows app
+with disposable local profiles. Native checks verified persisted switching,
+Escape/focus recovery and cancelling deletion. These checks do not perform
+OAuth or inference.
+
 Windows checks cover real official-extension installation and visible panel
 rendering. Real official clients have returned signed-out status, started Codex
 authorization and its local listener, and emitted Claude's browser/code flow.

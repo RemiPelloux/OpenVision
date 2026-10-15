@@ -22,10 +22,10 @@ export function showOnboarding({ service = window.openvisionProjectHome, errorMe
   const progress = node('p', '', 'ov-setup-progress');
   const footer = node('footer', '', 'ov-setup-footer');
   const status = node('p', errorMessage, 'ov-setup-status'); status.setAttribute('role', 'status');
-  let step = 0, disposed = false;
+  let step = 0, disposed = false, accounts;
   function dispose() {
     if (disposed) return;
-    disposed = true; dialog.remove();
+    disposed = true; accounts?.dispose(); dialog.remove();
     if (active === dialog) active = undefined;
     if (previousFocus?.isConnected) previousFocus.focus();
   }
@@ -40,6 +40,7 @@ export function showOnboarding({ service = window.openvisionProjectHome, errorMe
     catch (error) { showOnboarding({ service, errorMessage: error.message || 'Could not open this tool. Please try again.' }); }
   }
   function render() {
+    accounts?.dispose(); accounts = undefined;
     content.replaceChildren(); footer.replaceChildren();
     progress.textContent = `Step ${step + 1} of 3`;
     if (step === 0) {
@@ -52,7 +53,7 @@ export function showOnboarding({ service = window.openvisionProjectHome, errorMe
       content.append(list);
     } else if (step === 1) {
       content.append(node('h1', 'Connect your AI'), node('p', 'Choose the tools you use. You can add or change connections later.'));
-      const accounts = createAccountSettings(() => ({ ...service,
+      accounts = createAccountSettings(() => ({ ...service,
         connectAccount: id => openAfterSetup(() => service.connectAccount(id)),
         openAccount: id => openAfterSetup(() => service.openAccount(id)),
       }));
@@ -79,7 +80,7 @@ export function showOnboarding({ service = window.openvisionProjectHome, errorMe
   }
   dialog.addEventListener('cancel', event => { event.preventDefault(); finish(); });
   dialog.addEventListener('keydown', event => {
-    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); finish(); }
+    if (event.key === 'Escape' && !dialog.querySelector(':popover-open')) { event.preventDefault(); event.stopPropagation(); finish(); }
   }, { capture: true });
   dialog.addEventListener('close', dispose, { once: true });
   dialog.append(progress, content, status, footer); render();

@@ -111,7 +111,7 @@ try {
   await page.evaluate(() => window.openvisionProjectHome.models());
   await page.locator('.openvision-model-settings').waitFor();
   await page.getByRole('combobox', { name: 'Codex account', exact: true }).waitFor();
-  assert.equal(await page.getByRole('combobox', { name: 'Codex account', exact: true }).inputValue(), accounts.first.id);
+  assert.equal(await page.getByRole('combobox', { name: 'Codex account', exact: true }).getAttribute('data-value'), accounts.first.id);
   await page.screenshot({ path: join(directory, 'account-selectors.png') });
   result.success = true;
   // Dispose only the unsaved document this verifier created.

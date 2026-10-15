@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Replace the account selector's unreadable system menu with an editor-themed, keyboard-accessible list and a separate Disconnected option.
+- Improve account-control spacing, narrow-panel wrapping and focus recovery after switching; close open menus when refreshing or leaving onboarding.
+
 ## 0.2.0-preview.6 — 2026-10-14
 
 - Open recent projects, folders, saved workspaces and completed clones in the current window; focus projects that are already open.

@@ -7,7 +7,7 @@ test('setup is optional, replayable, keyboard dismissible and retains service er
   const browser = await chromium.launch({ channel: process.env.OPENVISION_BROWSER_CHANNEL || 'msedge', headless: true });
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 400, height: 850 } });
-  const files = new Set(['onboarding.js', 'onboarding.css', 'model-accounts.js', 'model-settings.css']);
+  const files = new Set(['onboarding.js', 'onboarding.css', 'model-accounts.js', 'account-picker.js', 'model-settings.css']);
   await page.route('http://127.0.0.1/**', async route => {
     const name = new URL(route.request().url()).pathname.slice(1);
     if (!name) return route.fulfill({ contentType: 'text/html', body: '<link rel="stylesheet" href="/onboarding.css"><link rel="stylesheet" href="/model-settings.css"><button id="origin">Settings</button>' });
@@ -38,7 +38,11 @@ test('setup is optional, replayable, keyboard dismissible and retains service er
   await dialog.getByText('long-personal-account@example.invalid', { exact: true }).waitFor();
   assert.equal(await dialog.evaluate(node => node.scrollWidth > node.clientWidth), false);
   const picker = dialog.getByRole('combobox', { name: 'Codex account', exact: true });
-  assert.equal(await picker.inputValue(), 'personal');
+  assert.equal(await picker.getAttribute('data-value'), 'personal');
+  await picker.click();
+  await dialog.getByRole('listbox', { name: 'Codex account', exact: true }).waitFor();
+  await picker.press('Escape');
+  assert.equal(await dialog.isVisible(), true);
   assert.equal(await picker.evaluate(node => getComputedStyle(node).boxSizing), 'border-box');
   await page.screenshot({ path: 'logs/account-onboarding-narrow.png' });
   await dialog.getByRole('button', { name: 'Set up & sign in · Claude', exact: true }).click();

@@ -1,3 +1,5 @@
+import { createAccountPicker } from './account-picker.js';
+
 const integrations = [
   { id: 'codex', name: 'ChatGPT', agent: 'Codex' },
   { id: 'claude', name: 'Claude', agent: 'Claude Code' },
@@ -23,6 +25,7 @@ export function createAccountSettings(getService = () => window.openvisionProjec
   const status = node('p', '', 'openvision-model-status openvision-account-status'); status.setAttribute('role', 'status');
   const cards = node('div', '', 'openvision-account-grid');
   let records = [], profiles = { accounts: [], active: {} }, busy = false, loaded = false;
+  let pickers = [];
   const refresh = action('Refresh status', () => run(() => load(true)));
   heading.append(node('h3', 'Account integrations'), refresh);
   root.append(heading, node('p', 'Connect your account. Switch between personal and work profiles here.', 'openvision-settings-description'), status, cards);
@@ -38,6 +41,8 @@ export function createAccountSettings(getService = () => window.openvisionProjec
 
   async function run(operation, message = '', success = '') {
     if (busy) return;
+    const focused = root.contains(document.activeElement) ? document.activeElement : null;
+    const focusName = focused?.getAttribute('aria-label') || focused?.textContent;
     busy = true; status.dataset.state = 'busy'; status.textContent = message || 'Checking integrations…'; render();
     const slow = setTimeout(() => {
       status.textContent = `${message || 'Checking integrations…'} ${message.startsWith('Opening secure browser')
@@ -45,7 +50,12 @@ export function createAccountSettings(getService = () => window.openvisionProjec
     }, 8000);
     try { await operation(); status.textContent = success; }
     catch (error) { status.dataset.state = 'error'; status.textContent = error?.message || 'The integration could not be opened. Try again.'; }
-    finally { clearTimeout(slow); busy = false; if (status.dataset.state === 'busy') status.dataset.state = 'ready'; render(); }
+    finally {
+      clearTimeout(slow); busy = false;
+      if (status.dataset.state === 'busy') status.dataset.state = 'ready'; render();
+      if (focusName && document.activeElement === document.body)
+        [...root.querySelectorAll('button')].find(control => (control.getAttribute('aria-label') || control.textContent) === focusName)?.focus();
+    }
   }
 
   function connect(id) {
@@ -77,21 +87,18 @@ export function createAccountSettings(getService = () => window.openvisionProjec
     const accountPicker = node('div', '', 'openvision-account-picker');
     const saved = profiles.accounts.filter(item => item.provider === integration.id);
     if (saved.length) {
-      const label = node('label', 'Account profile');
-      const select = node('select'); select.setAttribute('aria-label', `${integration.agent} account`);
-      const initial = node('option', 'Disconnected'); initial.value = ''; select.append(initial);
-      for (const item of saved) { const option = node('option', item.label); option.value = item.id; select.append(option); }
-      select.value = record?.accountId ?? saved.find(item => item.removing)?.id ?? '';
-      select.onchange = () => run(async () => {
-        if (saved.find(item => item.id === select.value)?.removing) throw Error('Cleanup is pending for this account. Choose Delete account to retry.');
-        await getService().selectAccount(integration.id, select.value || null);
-        await load();
-        const current = records.find(item => item.id === integration.id);
-        if ((current?.accountId ?? '') !== select.value) throw Error('The agent host has not switched yet. Finish any pending operation, then select the account again.');
-      }, 'Switching the agent connection…', 'Account switched. Your project stays open.');
-      label.append(select); accountPicker.append(label);
-      if (getService()?.removeAccount && select.value) {
-        const selected = saved.find(item => item.id === select.value);
+      const selectedId = record?.accountId ?? saved.find(item => item.removing)?.id ?? '';
+      const picker = createAccountPicker({ name: `${integration.agent} account`, accounts: saved, selectedId,
+        onSelect: id => run(async () => {
+          if (saved.find(item => item.id === id)?.removing) throw Error('Cleanup is pending for this account. Choose Delete account to retry.');
+          await getService().selectAccount(integration.id, id || null);
+          await load();
+          const current = records.find(item => item.id === integration.id);
+          if ((current?.accountId ?? '') !== id) throw Error('The agent host has not switched yet. Finish any pending operation, then select the account again.');
+        }, 'Switching the agent connection…', 'Account switched. Your project stays open.') });
+      pickers.push(picker); accountPicker.append(picker.root);
+      if (getService()?.removeAccount && selectedId) {
+        const selected = saved.find(item => item.id === selectedId);
         if (selected) accountPicker.append(action('Delete account', () => removeAccount(integration, selected)));
       }
     }
@@ -122,6 +129,8 @@ export function createAccountSettings(getService = () => window.openvisionProjec
   }
 
   function render() {
+    for (const picker of pickers) picker.dispose();
+    pickers = [];
     cards.replaceChildren(...integrations.map(card));
     for (const control of root.querySelectorAll('button,select')) control.disabled = busy || control.dataset.pending === 'true';
     root.setAttribute('aria-busy', String(busy));
@@ -171,5 +180,5 @@ export function createAccountSettings(getService = () => window.openvisionProjec
     document.body.append(dialog); dialog.showModal(); cancel.focus();
   }
   render();
-  return { root, refresh: () => run(() => load()) };
+  return { root, refresh: () => run(() => load()), dispose: () => pickers.forEach(picker => picker.dispose()) };
 }
