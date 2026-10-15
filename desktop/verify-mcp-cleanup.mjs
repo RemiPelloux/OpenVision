@@ -22,7 +22,8 @@ const originalPath = join(root, 'electron-host', relative), originalHash = await
 const original = await readFile(originalPath, 'utf8');
 const candidate = process.argv.includes('--candidate');
 const persistent = process.argv.includes('--persistent');
-const instrumented = injectMcpCloseFailure(candidate ? closeOwnedMcpTransports(original) : original, reportPath, persistent ? 2 : 1);
+const instrumented = injectMcpCloseFailure(candidate ? closeOwnedMcpTransports(original) : original,
+  { reportPath, failures: persistent ? 2 : 1 });
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, instrumented]]));
 await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
 const transport = await createMcpStdioFixture();

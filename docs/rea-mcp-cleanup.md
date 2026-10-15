@@ -1,6 +1,6 @@
 # MCP cleanup ownership and recovery
 
-14 October 2026. The Windows MCP utility now retains transports whose close
+Updated 15 October 2026. The Windows MCP utility now retains transports whose close
 failed and blocks a replacement for the same scoped server identifier until
 cleanup succeeds. An explicit connection demand retries cleanup; no polling or
 background retry loop is added. This closes a verified part of OV-303, without
@@ -87,6 +87,54 @@ The owned host still exited 0 and all six declared cleanup checks passed, but
 those checks do not establish a clean utility-worker shutdown. Its cause remains
 unverified under OV-403; this result must not be described as an error-free
 process-family exit.
+
+## Native session recovery verification
+
+15 October 2026. Two additional Windows runs exercised the built utility above,
+using real HTTP sessions and the production adapter/lifecycle in disposable
+overlays. Both passed five checks and the owned hosts exited 0:
+
+| Entry point | Evidence under `logs/` | Observed behavior |
+| --- | --- | --- |
+| Tool request receives HTTP 404 for its expired session | `mcp-session-verification-9xVCEM/result.json` | One failed tool request, cleanup error returned, exact transport retained, no replacement or tool replay while cleanup fails |
+| Direct native `handleSessionReinit(adapter)` | `mcp-session-verification-ADVCDC/result.json` | Session-reinitialization retirement rejects cleanup, retains the exact transport and starts no replacement |
+
+Both runs reject the first close and the first explicit cleanup retry. Removing
+and re-adding the server configuration supplies each explicit connection demand.
+The next demand closes the old transport successfully before a replacement
+commits. A newly requested tool call then returns the fixture marker; the owner
+registry is empty for that server. The recorded failed-resource map contains
+the identical injected transport after both rejections. The original utility
+hash remains unchanged in both runs.
+
+The HTTP 404 run showed that the native transport-error callback starts
+`reconnect` retirement before the adapter's session-reinitialization handler
+reaches retirement. The direct lifecycle run therefore checks the separate
+`session reinit` branch explicitly. It does not claim an HTTP 404 traversed that
+branch. The first exploratory run `hU9blD` injected only at `session reinit`,
+observed normal successful reconnect and failed its expected-error assertion;
+its record is retained. Final verification covers both actual entry points.
+
+The driver calls the real adapter from inside the native utility. It replaces
+neither the SDK nor production recovery logic; only the real transport's close
+is faulted. The server supplies deterministic tool output. This verifies native
+production boundaries, not an Agent approval/retry UI flow, live AI behavior or
+OAuth. Playwright `pageerror` and fixture error collections are empty. Host
+stderr retains the mutex warning, and both renderer logs report an onboarding
+contribution failure reading `getActivePaneComposite`. These logged diagnostics
+remain unresolved. No clean process-family shutdown or performance improvement
+is claimed.
+
+After the shared injection helper refactor, Windows HTTP close-failure recovery
+also passes in `mcp-http-cleanup-verification-2QaFQo/result.json` (five checks),
+and persistent STDIO recovery passes in
+`mcp-cleanup-verification-LyCJVO/result.json` (six checks). Both owned hosts exit
+0, all three recorded STDIO child processes are absent after shutdown, and the
+normal utility remains unchanged.
+
+The 31 focused lifecycle tests also pass with `OPENVISION_RECOVERY_DIR` pointing
+to the available original recovery. An initial run selected an incomplete local
+`build/recovery` and failed with missing input files; it was not a behavior pass.
 
 ## Earlier native failure evidence
 
@@ -190,6 +238,8 @@ From the prepared OpenVision folder:
 node desktop/verify-mcp-cleanup.mjs --persistent
 node desktop/verify-mcp-http-cleanup.mjs
 node desktop/verify-mcp-http-cleanup.mjs --pending
+npm run verify:mcp-session
+npm run verify:mcp-session -- --direct
 node --test desktop/mcp-attempt.test.mjs desktop/mcp-lifecycle-cleanup.test.mjs desktop/mcp-reconnect.test.mjs desktop/mcp-cancel.test.mjs
 ```
 
@@ -200,9 +250,10 @@ cancellation, pending-close deadlines with 20 repeated demands sharing one
 acknowledgement, late completion recovery and idempotent transforms. Controlled boundary tests supplement
 native evidence; they do not establish native extension/remote-host parity.
 
-Native fault injection covers Windows STDIO committed disposal/re-addition and
-HTTP close rejection/pending-close acknowledgement/recovery. Native session-reinitialization rejection,
-OAuth, multi-window/profile ownership, forced release of permanently hanging closes,
+Native fault injection covers Windows STDIO committed disposal/re-addition,
+HTTP close rejection/pending-close acknowledgement/recovery, HTTP 404 recovery
+and direct native session-reinitialization rejection. OAuth, multi-window/profile
+ownership, forced release of permanently hanging closes,
 long-session resource growth, remote hosts, macOS, Linux and glass remain
 unverified. The owner registry deliberately retains unresolved resources; there
 is no timeout that discards ownership. The five-second timer bounds caller

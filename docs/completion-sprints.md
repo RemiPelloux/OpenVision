@@ -75,6 +75,15 @@ Native repeated-failure recovery and HTTP/STDIO regressions pass. Multi-window,
 remote, additional lifecycle failures and platform gates remain unverified;
 OV-303 stays Partial.
 
+15 October MCP session follow-up: [native session recovery](rea-mcp-cleanup.md#native-session-recovery-verification)
+passes real HTTP 404 tool-failure recovery and a separate direct native
+session-reinitialization close failure. Each retains the exact failed transport,
+blocks replacement through a second failure and recovers only after successful
+explicit cleanup. The adapter returns a clear error without replaying the failed
+tool. These production-boundary checks do not establish an Agent retry UI flow.
+Multi-window/profile ownership remains open; OV-303 stays Partial and the fixed
+ledger remains **6/42 Verified (14.29%)**.
+
 14 October follow-up: [large clipboard pastes](rea-large-paste.md) now use local
 files and compact prompt references. Native paste/failure checks and a real
 Codex Easy Read continuation pass; this scoped addition does not close the

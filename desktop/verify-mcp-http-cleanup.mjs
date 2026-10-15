@@ -31,7 +31,8 @@ if (pending) {
   source = source.replace(before, "const timer = setTimeout(() => (openvisionVerifyReport('cleanup-pending-ack'), resolve({")
     .replace(after, '})), acknowledgementDeadlineMs);');
 }
-const instrumented = injectMcpCloseFailure(source, reportPath, pending ? 0 : 2, pending ? releasePath : undefined);
+const instrumented = injectMcpCloseFailure(source,
+  { reportPath, failures: pending ? 0 : 2, releasePath: pending ? releasePath : undefined });
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, instrumented]]));
 await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
 const transport = await createMcpServerFixture(), configPath = join(profile, 'User/mcp.json');
