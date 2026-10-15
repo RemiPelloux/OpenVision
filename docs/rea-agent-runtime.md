@@ -123,6 +123,14 @@ close retry/timeout/Stop, DeepSeek/Grok history, branch error handling, or the
 remaining provider and platform gates. The test consumed real provider quota;
 future runs must remain explicit and use disposable profiles.
 
+The separate real cancellation run `logs/live-stop-gpt61.txt` used the same
+saved provider/model and passed native Stop, upstream HTTP cancellation and
+same-chat resubmission. Stop closed the live request in **143 ms**; the relay's
+abort settled in **3 ms**. The resubmission preserved the earlier file-read
+history and returned the marker without rereading the file. The single owned host
+exited 0. This is one live Codex Easy workload, not a provider-wide latency or
+quality claim.
+
 Earlier harness failures are retained: the native picker uses the short model
 name, and Stop is a styled div without a button accessibility role. The verifier
 selects the observed control; its missing role remains an accessibility gap.

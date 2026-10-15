@@ -271,6 +271,12 @@ This closes one real GPT history/branch subcase. Retry, timeout/Stop, DeepSeek/G
 history, branch failure handling, broader reasoning and platform gates remain open;
 OV-102 stays Partial.
 
+The same real GPT-6.1 Sol setup then passed native Stop and same-chat resubmission:
+the upstream request closed in 143 ms, relay abort settled in 3 ms, prior file
+history was retained and the host exited 0. See [live Stop evidence](rea-agent-runtime.md#real-provider-history-and-branching).
+This closes the live GPT Stop/resubmission subcase; retry after provider failure,
+timeout, other providers and the remaining story gates stay open.
+
 ## Sprint 2 — Complete provider settings and model interaction
 
 14 October live history follow-up: the [compatibility report](live-provider-compatibility.md)
