@@ -1,7 +1,6 @@
 import { mkdir, writeFile, copyFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
 import { installLocalProfile } from './local-workbench.mjs';
 import { installProjectWindows } from './project-window-customization.mjs';
 import { projectWorkspace } from './project-workspace.mjs';
@@ -43,6 +42,7 @@ import { installIsolatedNotifications } from './notification-customization.mjs';
 import { installLinuxKeyringSelection } from './linux-keyring-customization.mjs';
 import { installApprovalDefault } from './autorun-customization.mjs';
 import { installWindowTitles } from './source-branding.mjs';
+import { validateGeneratedArtifacts } from './generated-artifact-integrity.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -57,6 +57,7 @@ if (await exists(marker)) {
 } else manifest = await assembleSource(root, recovery);
 
 await mkdir(join(root, 'build'), { recursive: true });
+await validateGeneratedArtifacts(root, { preflight: true });
 await restoreNamespaceInputs(root);
 const layout = platformLayout(root);
 await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
@@ -100,13 +101,8 @@ await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
 } });
-for (const variant of ['desktop', 'glass']) {
-  const path = join(root, `source/app/out/vs/workbench/workbench.${variant}.main.js`);
-  const checked = spawnSync(process.execPath, ['--check', path], { stdio: 'inherit' });
-  if (checked.error) throw checked.error;
-  if (checked.status !== 0) throw new Error(`Generated ${variant} workbench failed syntax validation`);
-}
-console.log('Generated desktop and Glass workbench syntax validated');
+const artifacts = await validateGeneratedArtifacts(root);
+console.log(`Generated artifacts validated: ${artifacts.scripts} scripts, ${artifacts.manifests} manifests, ${artifacts.localModules} local main-process modules`);
 const settings = join(root, 'data/local/User/settings.json');
 if (!await exists(settings)) {
   await mkdir(dirname(settings), { recursive: true });

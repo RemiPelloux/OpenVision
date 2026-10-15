@@ -135,6 +135,12 @@ logging `ENOPRO`, so the two symptoms must not be equated. The verifier now reta
 a bounded stderr tail and records cleanup evidence even after a failed host exit.
 OV-403 stays Partial until that remaining failure is understood.
 
+The later [build-integrity correction](runtime-build-integrity.md) also separates
+these runtime observations from reproducible generation. Fresh generation exposed
+a faulty shell import and damaged Agent/MCP inputs. Those inputs have been
+restored with retained provenance; successful editor-only runs do not validate
+extension workflows or explain the earlier exit 134.
+
 Three further diagnostic runs (`ZykGLe`, `oLPXzL`, `NLKpup`) passed the full
 workflow, process release and state-save checks with exit 0 and no storage error
 in retained stderr. A read-only query of the Windows Application event log for

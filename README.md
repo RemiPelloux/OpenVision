@@ -225,6 +225,9 @@ On Linux, the same native verifiers run against the local build, plus
 [Linux verification](docs/linux-verification.md).
 
 Development tooling uses **Node.js 24.18.0** and `npm ci --prefix tooling`.
+The desktop build validates generated scripts, manifests and local main-process
+imports. See [build integrity and verification limits](docs/runtime-build-integrity.md)
+for the latest recovery and shutdown corrections.
 The portable package contains editable code under
 `electron-host/resources/app/` and helpers under `electron-host/desktop/`;
 changes there load after restarting. Full native-source rebuilds remain planned.

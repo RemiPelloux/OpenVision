@@ -97,12 +97,16 @@ source changes identified below. No result is inferred from commit identity alon
 Earlier full-workbench candidate runs (`logs/model-discovery-4b49n0/result.json`
 and `logs/model-discovery-WikBMz/result.json`) exited **3221225501 /
 0xC000001D** before a usable window. Those runs remain historical evidence.
-The current Windows source build passes the startup gate and native model
+An existing Windows generated runtime passed startup and the native model
 discovery matrix in `logs/model-discovery-8rTqru/result.json`: valid, malformed,
 oversized and UTF-8 catalogs were handled, pending requests were cancelled on
 reload, sibling-window ownership was preserved, and all fixture requests were
 authorized. The fixture uses local HTTP sockets and no AI inference, so it does
-not establish upstream model availability or quality.
+not establish upstream model availability or quality. That run did not establish
+a reproducible build of the committed patch. The subsequent
+[build-integrity correction](runtime-build-integrity.md) records an invalid
+fresh-patch import and damaged generated extension inputs, their recovery and
+new verification. Preserve this older run as evidence for its recorded runtime.
 
 A locally captured Windows minidump of an owned disposable app process records
 the exception in **`urlmon.dll + 0x112b86`**, RIP `0x7fff2eb72b86`.
@@ -132,7 +136,7 @@ unavailable when the helper fails. This is application containment evidence; it
 does not prove an OS-wide fix or identify the underlying Windows fault. Package,
 settings/catalog retention and long-session gates still require their own runs.
 
-The final post-build full-workbench repeat also exits 0xC000001D with zero
+An earlier post-build full-workbench repeat also exited 0xC000001D with zero
 discovery requests (`logs/model-discovery-JZWnxQ/result.json`). A separate
 read-only PowerShell `Get-AppxPackage Microsoft.WinDbg` query fails with the same
 code and recorded RIP. Its CDB stack includes `SHCreateItemFromParsingName` and

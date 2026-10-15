@@ -44,12 +44,7 @@ export async function installMcpAttemptCleanup(root) {
   for (const relative of ['out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js', 'extensions/cursor-mcp/dist/main.js']) {
     const path = join(root, 'source/app', relative);
     await cachedFile({ path, recipe, marker: join(root, `build/cache/mcp-attempt-${relative.startsWith('out') ? 'process' : 'extension'}.json`) }, async () => {
-      const before = await readFile(path, 'utf8');
-      if (!before.includes('this.closePromises = new WeakMap()') && !before.includes(marker)) {
-        if (relative.startsWith('out/')) throw new Error('MCP process attempt owner missing');
-        return;
-      }
-      const after = closeOwnedMcpTransports(before);
+      const before = await readFile(path, 'utf8'), after = closeOwnedMcpTransports(before);
       if (after === before) return;
       const backup = join(root, 'backups/mcp-attempt', relative);
       await mkdir(dirname(backup), { recursive: true });

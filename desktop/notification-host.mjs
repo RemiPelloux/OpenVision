@@ -37,11 +37,14 @@ process.on('message', message => {
     for (const event of ['click', 'reply', 'action']) notification.on(event, (_event, index) =>
       send({ kind: 'event', id: message.id, event, ...(event === 'action' ? { index } : {}) }));
     notification.show();
+    send({ kind: 'event', id: message.id, event: 'shown' });
   } catch { notifications.delete(message.id); send({ kind: 'event', id: message.id, event: 'failed' }); }
 });
 
 const profileIndex = process.argv.indexOf('--user-data-dir');
 if (profileIndex < 0 || !process.argv[profileIndex + 1]) throw Error('Notification host profile is required');
 app.setPath('userData', process.argv[profileIndex + 1]);
-app.setAppUserModelId('com.openvision.desktop');
+const identityIndex = process.argv.indexOf('--app-user-model-id');
+if (identityIndex < 0 || !process.argv[identityIndex + 1]) throw Error('Windows application identity is required');
+app.setAppUserModelId(process.argv[identityIndex + 1]);
 app.whenReady().then(() => send({ kind: 'ready', supported: true }));

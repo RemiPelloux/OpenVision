@@ -53,6 +53,13 @@ export function disableExtensionHostTelemetry(text) {
 }
 
 export function disableAgentTelemetry(text) {
+  // Upgrade the old marker placement before parsing: a hashbang is valid only
+  // at byte zero, including in the daemon's CommonJS entry point.
+  if (text.startsWith(`${marker}\n#!`)) {
+    const end = text.indexOf('\n', marker.length + 1);
+    if (end < 0) throw new Error('Agent daemon hashbang is missing its line ending');
+    return `${text.slice(marker.length + 1, end + 1)}${marker}\n${text.slice(end + 1)}`;
+  }
   if (text.includes(marker)) return text;
   text = replaceMethods(text, /^\s+_submitLogs\(/gm, {
     _isPrivateInferenceLocked: 'return true;',
@@ -68,7 +75,8 @@ export function disableAgentTelemetry(text) {
     sendDistributionEntries: 'return Promise.resolve();',
     getOrCreateClient: 'return undefined;',
   });
-  return `${marker}\n${text}`;
+  const prefix = text.startsWith('#!') ? text.indexOf('\n') + 1 : 0;
+  return `${text.slice(0, prefix)}${marker}\n${text.slice(prefix)}`;
 }
 
 export function disableCompletionTelemetry(text) {

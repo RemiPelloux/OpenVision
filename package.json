@@ -14,6 +14,7 @@
     "package:linux": "node desktop/package-portable.mjs",
     "test:installer": "node --test desktop/portable-installer.test.mjs",
     "build:desktop": "node desktop/build-source.mjs",
+    "test:build-integrity": "node --test desktop/generated-artifact-integrity.test.mjs desktop/notification-isolation.test.mjs desktop/telemetry-extensions.test.mjs",
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",
     "import:settings": "node desktop/import-cli.mjs",

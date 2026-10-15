@@ -20,10 +20,11 @@ connection identities are expanded once per admission. The follow-up
 [STDIO response budget](control-plane-stdio-resources.md) rejects oversized output
 before decoding and recovers on the next call. The 51 focused checks and scoped
 stress measurements do not establish a whole-app RAM reduction or close
-native acceptance gates. The Windows full-workbench startup gate now passes
-after native notification and shell-history calls were moved behind an owned
-helper process; helper failure is reported as unavailable while the editor stays
-open. See the [current Windows evidence](model-discovery-resources.md#full-app-startup-gate).
+native acceptance gates. Windows startup checks passed against an existing
+runtime with isolated shell calls, but did not prove the committed build was
+reproducible. The [build-integrity correction](runtime-build-integrity.md)
+records the faulty import, damaged generated inputs, restoration and new checks.
+See also the [scoped Windows evidence](model-discovery-resources.md#full-app-startup-gate).
 
 ## Critical-first backlog and ETA
 
@@ -176,8 +177,9 @@ is unchanged. No full acceptance story is promoted.
 The [discovery follow-up](model-discovery-resources.md) passes 34 focused checks
 and 12 actual Electron/window/network checks. The original adapter reproduces
 unfinished-body and renderer-lifecycle connection retention. This fixes ownership,
-not measured whole-app RAM. Full-workbench startup is currently contained by the
-native fault above; settings retention and long-session gates remain open.
+not measured whole-app RAM. Shell fault containment and reproducible generation
+have separate [verification gates](runtime-build-integrity.md); settings retention
+and long-session gates remain open.
 
 ### Next reliability checks
 

@@ -3,7 +3,7 @@ import { join, dirname } from 'node:path';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { digest } from './import-files.mjs';
 
-const marker = '/* OpenVision isolated Windows shell v2 */';
+const marker = '/* OpenVision isolated Windows shell v3 */';
 const nativeImport = 'import { app as XYe, Notification as iN } from "electron";';
 function unique(text, anchor) {
   const index = text.indexOf(anchor);
@@ -13,6 +13,17 @@ function unique(text, anchor) {
 
 export function isolateNotifications(text) {
   if (text.includes(marker)) return text;
+  if (text.includes('/* OpenVision isolated Windows shell v2 */')) {
+    const invalidImport = 'import { SafeShellApp as qc, Menu as sJe } from "./notification-bridge.mjs";';
+    unique(text, invalidImport);
+    text = text.replace(invalidImport, 'import { app as qc, Menu as sJe } from "electron";');
+    // Only this native dock operation belongs to the shell boundary. The dock
+    // service still needs Electron app events, dock and Menu on macOS.
+    const call = 'if ((qc.clearRecentDocuments(), !e())) return;';
+    unique(text, call);
+    text = text.replace(call, 'if ((Mw.clearRecentDocuments(), !e())) return;');
+    return text.replace('/* OpenVision isolated Windows shell v2 */', marker);
+  }
   if (text.includes('/* OpenVision isolated Windows notifications v1 */'))
     return isolateShellHistory(text.replace('/* OpenVision isolated Windows notifications v1 */', marker));
   unique(text, nativeImport);
@@ -44,6 +55,23 @@ export function isolateNotifications(text) {
   return isolateShellHistory(`${marker}\n${text.replace(nativeImport, 'import { app as XYe } from "electron";\nimport { SafeNotification as iN } from "./notification-bridge.mjs";')}`);
 }
 
+export function joinShellShutdown(text) {
+  const joined = '/* OpenVision joined shell shutdown v1 */';
+  if (text.includes(joined)) return text;
+  const pattern = /N\.once\((\w+)\.onWillShutdown\)\(\((\w+)\) => \{\s*\(process\.once\("exit",/g;
+  const matches = [...text.matchAll(pattern)];
+  if (matches.length !== 1) throw Error('Shell shutdown owner missing or ambiguous');
+  const [match] = matches;
+  const owner = parseExpressionAt(text, text.lastIndexOf('class ', match.index), { ecmaVersion: 'latest' });
+  const startup = owner.body.body.find(item => item.key?.name === 'startup');
+  if (!startup || startup.start > match.index || startup.end < match.index ||
+      !text.slice(match.index, startup.end).includes('"instanceLockfile"'))
+    throw Error('Shell shutdown lifecycle contract changed');
+  const position = text.indexOf('{', match.index) + 1;
+  return `${joined}\nimport { shutdownShellHost } from "./notification-bridge.mjs";\n` +
+    text.slice(0, position) + `\n${match[2]}.join("openvisionShellHost", shutdownShellHost());\n` + text.slice(position);
+}
+
 function isolateShellHistory(text) {
   const changes = [
     ['import { app as Mw } from "electron";', 'import { SafeShellApp as Mw } from "./notification-bridge.mjs";'],
@@ -51,7 +79,7 @@ function isolateShellHistory(text) {
       'const openvisionJumpSettings = await Mw.getJumpListSettings();\nif (!openvisionJumpSettings) return;\nfor (const s of openvisionJumpSettings.removedItems) {'],
     ['const t = Mw.setJumpList(e);', 'const t = await Mw.setJumpList(e);'],
     ['import { app as Xhe } from "electron";', 'import { SafeShellApp as Xhe } from "./notification-bridge.mjs";'],
-    ['import { app as qc, Menu as sJe } from "electron";', 'import { SafeShellApp as qc, Menu as sJe } from "./notification-bridge.mjs";'],
+    ['if ((qc.clearRecentDocuments(), !e())) return;', 'if ((Mw.clearRecentDocuments(), !e())) return;'],
   ];
   for (const [before, after] of changes) { unique(text, before); text = text.replace(before, after); }
   return text;
@@ -67,7 +95,7 @@ async function save(root, path, before, after) {
 
 export async function installIsolatedNotifications(root) {
   const directory = join(root, 'source/app'), main = join(directory, 'out/main.js');
-  const before = await readFile(main, 'utf8'), after = isolateNotifications(before);
+  const before = await readFile(main, 'utf8'), after = joinShellShutdown(isolateNotifications(before));
   const packagePath = join(directory, 'package.json'), packageText = await readFile(packagePath, 'utf8');
   const manifest = JSON.parse(packageText);
   if (!['./out/main.js', './out/notification-entry.mjs'].includes(manifest.main)) throw Error('Notification entry contract changed');

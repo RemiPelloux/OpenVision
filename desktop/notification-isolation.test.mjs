@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EventEmitter } from 'node:events';
+import { spawn } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableApp } from './recovered-source.mjs';
-import { isolateNotifications } from './notification-customization.mjs';
+import { isolateNotifications, joinShellShutdown } from './notification-customization.mjs';
+import { retainShutdownResources } from './shutdown-customization.mjs';
 import { NotificationHostOwner, notificationProxy } from './notification-host-owner.mjs';
 
 const tick = () => new Promise(resolve => setImmediate(resolve));
@@ -116,6 +118,96 @@ test('close immediately after readiness settles all awaiters without stale host 
     fixture.children[0].emit('close', 1);
     assert.deepEqual(await Promise.all(pending), [false, undefined]);
   } finally { fixture.cleanup(); }
+});
+
+test('notification display acknowledgment bounds a stuck native show without limiting displayed lifetime', async () => {
+  const fixture = setup({ startupMs: 25 });
+  try {
+    const pending = fixture.Notification.isSupported();
+    fixture.children[0].emit('message', { kind: 'ready', supported: true }); await pending;
+    const shown = new fixture.Notification({ title: 'shown' }); shown.show(); await tick();
+    fixture.children[0].emit('message', { kind: 'event', id: shown.id, event: 'shown' });
+    await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(shown.closed, undefined); assert.equal(fixture.owner.host.stopping, false);
+    const stuck = new fixture.Notification({ title: 'stuck' }); stuck.show(); await tick();
+    await new Promise(resolve => setTimeout(resolve, 40));
+    assert.equal(stuck.closed, true); assert.equal(shown.closed, true);
+    assert.equal(fixture.owner.notifications.size, 0);
+    assert.equal(fixture.owner.host.stopping, true);
+    assert.ok(fixture.warnings.some(message => message.includes('display timed out')));
+  } finally { fixture.cleanup(); }
+});
+
+test('shutdown remains pending through failed kill until the owned process confirms close', async () => {
+  const fixture = setup({ shutdownMs: 5 });
+  try {
+    const pending = fixture.Notification.isSupported();
+    fixture.children[0].emit('message', { kind: 'ready', supported: true }); await pending;
+    let settled = false;
+    const shutdown = fixture.owner.dispose().then(() => { settled = true; });
+    await new Promise(resolve => setTimeout(resolve, 15));
+    assert.equal(fixture.children[0].kills, 1); assert.equal(settled, false);
+    assert.ok(fixture.owner.host); assert.equal(await fixture.owner.ready(), false);
+    fixture.children[0].emit('close'); await shutdown;
+    assert.equal(settled, true); assert.equal(fixture.owner.host, undefined);
+  } finally { fixture.cleanup(); }
+});
+
+test('a real unresponsive helper is terminated and joined after its display deadline', async () => {
+  let child;
+  const warnings = [];
+  const owner = new NotificationHostOwner(() => {
+    child = spawn(process.execPath, ['--input-type=module', '-e', `
+      setInterval(() => {}, 1000);
+      process.on('disconnect', () => {});
+      process.on('message', message => {
+        if (message.method === 'notificationSupport')
+          process.send({ kind: 'result', id: message.id, ok: true, value: true });
+      });
+      process.send({ kind: 'ready', supported: true });
+    `], { windowsHide: true, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+    return child;
+  }, message => warnings.push(message), { startupMs: 1000, shutdownMs: 20, idleMs: 5000, capacity: 2 });
+  try {
+    assert.equal(await owner.supported(), true);
+    const Notification = notificationProxy(owner), notification = new Notification({ title: 'stalled' });
+    const closed = new Promise(resolve => notification.once('close', resolve));
+    notification.show(); await closed;
+    await owner.dispose();
+    assert.equal(owner.host, undefined); assert.equal(owner.notifications.size, 0);
+    assert.ok(child.exitCode !== null || child.signalCode !== null);
+    assert.ok(warnings.some(message => message.includes('display timed out')));
+  } finally { await owner.dispose(); }
+});
+
+test('fresh and v2 migration preserve Electron dock APIs and join only committed shutdown', async () => {
+  const original = await readFile(new URL('out/main.js', readableApp), 'utf8');
+  const patched = isolateNotifications(original);
+  assert.ok(patched.includes('import { app as qc, Menu as sJe } from "electron";'));
+  assert.ok(!patched.includes('SafeShellApp as qc'));
+  const v2 = patched.replace('shell v3', 'shell v2')
+    .replace('import { app as qc, Menu as sJe } from "electron";',
+      'import { SafeShellApp as qc, Menu as sJe } from "./notification-bridge.mjs";')
+    .replace('if ((Mw.clearRecentDocuments(), !e())) return;', 'if ((qc.clearRecentDocuments(), !e())) return;');
+  assert.equal(isolateNotifications(v2), patched);
+  assert.throws(() => isolateNotifications(v2.replace('Menu as sJe', 'Menu as drift')), /contract changed/);
+  const joined = joinShellShutdown(retainShutdownResources(patched));
+  assert.equal(joinShellShutdown(joined), joined);
+  const registration = /N\.once\(\w+\.onWillShutdown\)\(\(\w+\) => \{/g;
+  const match = [...joined.matchAll(registration)].find(item => joined.slice(item.index, item.index + 180).includes('openvisionShellHost'));
+  assert.ok(match);
+  const callback = parseExpressionAt(joined, match.index + match[0].indexOf(')((') + 2, { ecmaVersion: 'latest' });
+  const events = new EventEmitter(), joiners = []; let disposed = 0, finish;
+  const closed = new Promise(resolve => { finish = resolve; });
+  const listener = runInNewContext(`(${joined.slice(callback.start, callback.end)})`, {
+    process: events, h: { dispose() {} }, s: { dispose() {} },
+    shutdownShellHost: () => { disposed++; return closed; },
+    WAe: { unlink: async () => {} }, r: { mainLockfile: 'fixture' },
+  });
+  events.emit('before-quit'); assert.equal(disposed, 0, 'a vetoable quit must keep the helper usable');
+  listener({ join: (name, promise) => joiners.push({ name, promise }) });
+  assert.equal(disposed, 1); assert.equal(joiners[0].name, 'openvisionShellHost');
+  assert.equal(joiners[0].promise, closed); finish(); await Promise.all(joiners.map(item => item.promise));
 });
 
 test('recovered service awaits support and preserves unavailable, dedupe and action behavior', async () => {

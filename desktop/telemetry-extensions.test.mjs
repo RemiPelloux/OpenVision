@@ -61,6 +61,14 @@ for (const path of ['extensions/cursor-agent-host/dist/main.js',
     if (!original) return;
     const patched = disableAgentTelemetry(original);
     assert.equal(disableAgentTelemetry(patched), patched);
+    if (original.startsWith('#!')) {
+      assert.equal(patched.split('\n')[0], original.split('\n')[0]);
+      assert.doesNotThrow(() => new Script(patched));
+      const newline = patched.indexOf('\n');
+      const marker = '/* OpenVision extension telemetry disabled v1 */\n';
+      const old = marker + patched.slice(0, newline + 1) + patched.slice(newline + 1 + marker.length);
+      assert.equal(disableAgentTelemetry(old), patched, 'repair previously generated daemon without repatching owners');
+    }
     const classStart = patched.indexOf('class {', patched.indexOf('AggregatingMetricsProvider = class'));
     const metricsNode = parseExpressionAt(patched, classStart, options);
     const unexpected = () => { throw new Error('Telemetry attempted transport or scheduling'); };

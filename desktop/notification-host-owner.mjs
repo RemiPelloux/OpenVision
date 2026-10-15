@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 const defaults = Object.freeze({ startupMs: 10000, idleMs: 30000, shutdownMs: 2000, capacity: 64 });
 
 // Own Windows shell integration separately from the editor. Keep the
-// ChildProcess handle until close, including after a failed kill.
+// ChildProcess handle until confirmed exit/close, including after a failed kill.
 export class NotificationHostOwner {
   constructor(start, warn, limits = defaults) {
     this.start = start; this.warn = warn; this.limits = limits;
@@ -14,11 +14,15 @@ export class NotificationHostOwner {
     if (this.host) return this.host.stopping ? false : this.host.ready;
     const host = { stopping: false };
     host.ready = new Promise(resolve => { host.resolve = resolve; });
+    host.exited = new Promise(resolve => { host.resolveExit = resolve; });
     this.host = host;
     try {
       host.child = this.start();
       host.child.on('message', message => this.message(host, message));
       host.child.once('error', () => this.fail(host, 'Windows shell host failed to start.'));
+      // With ignored stdio, exit fully releases our resources. Node on Windows
+      // can omit close after the IPC channel was explicitly disconnected.
+      host.child.once('exit', () => this.ended(host));
       host.child.once('close', () => this.ended(host));
       host.timer = setTimeout(() => this.fail(host, 'Windows shell host startup timed out.'), this.limits.startupMs);
     } catch { this.fail(host, 'Windows shell host failed to start.'); this.ended(host); }
@@ -65,7 +69,9 @@ export class NotificationHostOwner {
     }
     const item = this.notifications.get(message.id);
     if (!item || item.host !== host || message.kind !== 'event') return;
+    if (message.event === 'shown') { clearTimeout(item.timer); return; }
     if (message.event === 'close' || message.event === 'failed') {
+      clearTimeout(item.timer);
       this.notifications.delete(message.id); item.notification.closed = true;
       item.notification.emit('close'); this.idle(host);
       if (message.event === 'failed') this.warn('Native notification could not be displayed.');
@@ -89,12 +95,14 @@ export class NotificationHostOwner {
       notification.close(); return;
     }
     clearTimeout(host.idle);
-    this.notifications.set(notification.id, { host, notification });
+    const timer = setTimeout(() => this.fail(host, 'Native notification display timed out.'), this.limits.startupMs);
+    this.notifications.set(notification.id, { host, notification, timer });
     if (!this.send(host, { kind: 'show', id: notification.id, options: notification.options })) notification.close();
   }
   close(notification) {
     const item = this.notifications.get(notification.id);
     if (item) {
+      clearTimeout(item.timer);
       this.notifications.delete(notification.id);
       this.send(item.host, { kind: 'close', id: notification.id }); this.idle(item.host);
     }
@@ -113,6 +121,7 @@ export class NotificationHostOwner {
     host.stopping = true; host.resolve(false);
     clearTimeout(host.timer); clearTimeout(host.idle);
     for (const [id, request] of this.requests) if (!request.host || request.host === host) this.finish(id);
+    this.releaseNotifications(host);
     if (host.child?.connected) {
       try { host.child.disconnect(); } catch { this.warn('Native shell disconnect failed; ownership retained.'); }
     }
@@ -122,18 +131,31 @@ export class NotificationHostOwner {
     }, this.limits.shutdownMs);
   }
   ended(host) {
+    if (host.ended) return;
+    host.ended = true;
     const unexpected = !host.stopping; host.stopping = true;
     clearTimeout(host.timer); clearTimeout(host.idle); clearTimeout(host.killTimer);
     host.resolve(false);
     for (const [id, request] of this.requests) if (!request.host || request.host === host) this.finish(id);
     if (unexpected) { this.failed = true; this.warn('Windows shell integration unavailable: host exited unexpectedly.'); }
+    this.releaseNotifications(host);
+    if (this.host === host) this.host = undefined;
+    host.resolveExit();
+  }
+  releaseNotifications(host) {
     for (const [id, item] of this.notifications) {
       if (item.host !== host) continue;
+      clearTimeout(item.timer);
       this.notifications.delete(id); item.notification.closed = true; item.notification.emit('close');
     }
-    if (this.host === host) this.host = undefined;
   }
-  dispose() { this.closed = true; if (this.host) this.stop(this.host); }
+  dispose() {
+    this.closed = true;
+    const host = this.host;
+    if (!host) return Promise.resolve();
+    this.stop(host);
+    return host.exited;
+  }
 }
 
 export function notificationProxy(owner) {
