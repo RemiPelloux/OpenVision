@@ -66,11 +66,13 @@ total-byte bound and accumulates subprocess stdout/stderr. At the pinned audit
 revision, its MCP timeout could finish the pending result without aborting HTTP.
 The subsequent [HTTP ownership fix](control-plane-http-resources.md) now cancels
 timed-out/disconnected work and bounds decoded response bytes; real loopback
-socket tests verify it. Other control-plane lifecycle gates remain open. Discovery
-HTTP has a timeout but lacks renderer-lifetime cancellation and an explicit
-non-OK-body cancel. These are source-observed cleanup targets; they can and should
-be fixed in the current app without waiting for Rust. Rust can reproduce all of
-them if the same ownership design is ported unchanged.
+socket tests verify it. Other control-plane lifecycle gates remain open. The
+subsequent [discovery ownership fix](model-discovery-resources.md) adds
+renderer-lifetime cancellation, non-OK-body disposal and strict UTF-8 validation.
+The original fault is reproduced and the candidate verified in a minimal native
+Electron host; the full-workbench startup gate remains blocked. These fixes do
+not require Rust. Rust can reproduce the original faults if the same ownership
+design is ported unchanged.
 
 ## Desktop UI and editor: the largest compatibility investment
 

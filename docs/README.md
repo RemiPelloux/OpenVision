@@ -17,6 +17,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | See what moves to Rust and what stays | [Component rewrite/retain audit](rust-component-audit.md) |
 | Understand expected Rust gains and their proof | [Performance budgets and measurement plan](rust-performance-plan.md) |
 | Check HTTP MCP cancellation and response memory bounds | [Control-plane HTTP evidence and tradeoffs](control-plane-http-resources.md) |
+| Check discovery cancellation and the latest Windows startup gate | [Native discovery evidence and limits](model-discovery-resources.md) |
 | Review what has actually passed | [Release claims and verification matrix](release-claims.md) |
 | Compare current source changes with the portable download | [Source additions and remaining verification](release-claims.md#source-additions-after-preview6) |
 | Understand the acceptance percentage | [42-story sprint ledger](completion-sprints.md) |

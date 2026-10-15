@@ -573,6 +573,17 @@ savings. STDIO/manager/REA-cache ownership, native profile cases, long sessions,
 live providers and platform gates remain open. Preview.6 is unchanged; no story
 is promoted: **6/42 Verified (14.29%)**.
 
+15 October 2026, OV-201/204/1003 discovery follow-up (owner: OpenVision;
+parent commit `41499a2`): [request ownership](model-discovery-resources.md) now
+cancels renderer-owned I/O and unfinished error bodies, releases readers/listeners
+and rejects invalid UTF-8 under the existing decoded-byte limit. The unchanged
+adapter reproduces connection retention in a real Electron host; the candidate
+passes 12 native integration and 34 focused checks. This minimal host is not a
+full editor acceptance run. Both unchanged and candidate full-workbench runs
+currently fail startup with 0xC000001D; an owned-process dump records a Windows
+`urlmon.dll` fault, cause unknown. Restore startup before full-app/package/soak
+checks. Preview.6 is unchanged; **6/42 Verified (14.29%)**.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

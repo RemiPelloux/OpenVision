@@ -1,7 +1,8 @@
 # OpenVision ETA and priorities
 
 Updated 15 October 2026 against the acceptance ledger and the
-[control-plane HTTP follow-up](control-plane-http-resources.md).
+[control-plane HTTP follow-up](control-plane-http-resources.md) and
+[native discovery/startup evidence](model-discovery-resources.md).
 The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
@@ -23,8 +24,11 @@ Account work packages overlap this scope and must not be added twice.
 
 The missing provider-error fixture is restored and its 25 focused checks pass.
 Control-plane HTTP deadlines/disconnects now cancel actual work, with bounded
-response bodies and passing real HTTP/public-route checks. Next: close remaining
-P0 failure checks; bound control-plane subprocess output/cache memory,
+response bodies and passing real HTTP/public-route checks. Discovery now releases
+window-owned requests and unfinished error bodies, with native integration
+evidence. **First restore full Windows workbench startup:** the latest unchanged
+and candidate builds exit 0xC000001D with a recorded `urlmon.dll` fault. Then rerun
+full-app gates; close remaining P0 failure checks; bound control-plane subprocess output/cache memory,
 measure whole-app long sessions, and refresh the Windows package after its
 declared checks pass. GPT-6 account eligibility, the last observed API balance
 failure and access to further native platform environments remain blockers for

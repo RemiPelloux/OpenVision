@@ -89,6 +89,15 @@ It removes reproduced listener accumulation, without a whole-app RAM claim.
 The preview.6 archive and repository payload have not been refreshed by these
 source commits.
 
+The subsequent [discovery ownership fix](model-discovery-resources.md) passes
+34 focused socket/provider/identity checks and 12 real Electron integration
+checks in a minimal native host, including reproduced before/after cancellation
+failures. **Latest full-workbench startup fails** before these checks execute:
+both unchanged and candidate adapters exit 0xC000001D, with a captured fault in
+Windows `urlmon.dll`. The cause remains unresolved. Earlier native successes
+above are historical; no current usable-editor or refreshed-release claim is
+made from this minimal host. Preview.6 and story statuses remain unchanged.
+
 ## Feature and fixture matrix
 
 | Accepted stories | Current observed scope | Required evidence still missing |

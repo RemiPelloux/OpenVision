@@ -118,13 +118,21 @@ These narrow improvements do not promote a full acceptance story.
 The [critical-first queue](#critical-first-backlog-and-eta) supersedes the old
 five-item shortlist. The next concrete actions are:
 
+**Immediate usability gate:** the latest full-workbench runs exit 0xC000001D
+before discovery checks execute, with either unchanged or candidate discovery
+adapters. A local dump records a `urlmon.dll` fault. Restore startup and rerun
+the full-app gates before publishing a refreshed preview. The
+[discovery report](model-discovery-resources.md#full-app-startup-gate) distinguishes
+this unresolved failure from passing minimal native integration. This belongs
+to existing OV-901/1004 usability/recovery scope; no extra points or story credit.
+
 | Order | Existing story / points | Next action and required evidence |
 | --- | --- | --- |
 | 1 | OV-204 / 5; OV-1004 / 13 | The authentic recovered Agent fixture is restored and all 25 focused provider-error checks pass. Continue certificate expiry/hostname, inference timeout, capability-input and remaining native/live-provider gates; [restoration evidence](provider-failure-handling.md#recovered-fixture-restoration-follow-up) |
 | 2 | OV-103/302/303/301, then OV-204/102/403 / points above | Close the P0 edit/data/profile ownership, retry/timeout and shutdown cases, retaining failed-close and earlier exit-134 evidence; never substitute passing happy paths for these gates |
 | 3 | OV-501 / 13; OV-1005 / 8 | Establish actual project-data destinations and extend process-family traffic checks, including authenticated integration behavior |
 | 4 | OV-1003 / 8; OV-1001 / 8 | HTTP deadlines/disconnects now cancel transport and response bodies are bounded; [socket checks and benchmarks](control-plane-http-resources.md) pass in their declared scope. Next bound optional REA subprocess output/cache bytes and reconcile STDIO/manager lifetimes, without claiming native Agent RAM savings |
-| 5 | OV-1003 / 8; OV-1002 / 8 | Measure idle, large-project, long-session and close/reopen process-family memory/CPU; define budgets, investigate reasoning-session retention and discovery-body cleanup, and check incremental filesystem/UI work |
+| 5 | OV-1003 / 8; OV-1002 / 8 | Discovery lifecycle/body cleanup now passes [native integration](model-discovery-resources.md). After restoring full-app startup, measure idle, large-project, long-session and close/reopen process-family memory/CPU; define budgets, investigate reasoning-session retention and check incremental filesystem/UI work |
 | 6 | OV-102/104/203/602 / points above | Repeat live retry/tool/reasoning/completion gates when the selected provider is available; GPT-6 account eligibility and the last observed API balance failure remain external blockers |
 | 7 | OV-901 / 8; OV-1004 / 13 | Refresh the Windows preview only after its declared safety/regression gates pass; verify relocated payload and repository extraction, record exact source identity and disclose remaining gaps |
 
@@ -149,6 +157,12 @@ allows all 25 focused error/probe checks to pass. The
 deadline/disconnect cancellation and decoded-body bounds, with passing socket
 tests and scoped measurements. Whole-app RAM was not remeasured and preview.6
 is unchanged. No full acceptance story is promoted.
+
+The [discovery follow-up](model-discovery-resources.md) passes 34 focused checks
+and 12 actual Electron/window/network checks. The original adapter reproduces
+unfinished-body and renderer-lifecycle connection retention. This fixes ownership,
+not measured whole-app RAM. Full-workbench startup is currently blocked by the
+native fault above; settings retention and long-session gates remain open.
 
 ### Next reliability checks
 
@@ -314,7 +328,7 @@ not proof of why a past live catalog shrank.
 | --- | --- | --- | --- |
 | OV-1001 / Partial | Live input-token/context/duplicate-request/history measurements; branch/tool reasoning and session disposal; broader protocol lifecycle checks. Optional control-plane HTTP timeout/disconnect now cancels transport work | **8 points** | OV-101/103/503; medium; local titles/coalescing implemented, N+1 protections rechecked; [latest scope](autocomplete-stream-performance.md), [HTTP ownership](control-plane-http-resources.md) |
 | OV-1002 / Partial | Frame/input latency, transcript/model row bounds, heap and filesystem work; incremental edits on fixed workloads. Early autocomplete preparation avoids discarded document/hook work in measured fixtures | **8 points** | OV-202/402/603; [before/after and parsing cost](autocomplete-stream-performance.md); medium; no whole-app RAM claim |
-| OV-1003 / Partial | Bound control-plane subprocess output/cache bytes/expiry; idle/reactivation and long-session memory; reasoning-session retention, discovery cleanup and complete watcher/timer/process ownership | **8 points** | OV-504/703/901–903; [remaining source findings](autocomplete-stream-performance.md); medium; event limit and listener cleanup are scoped fixes |
+| OV-1003 / Partial | Bound control-plane subprocess output/cache bytes/expiry; idle/reactivation and long-session memory; reasoning-session retention and complete watcher/timer/process ownership; rerun full-app discovery after startup recovery | **8 points** | OV-504/703/901–903; [remaining findings](autocomplete-stream-performance.md), [discovery owner](model-discovery-resources.md); medium; scoped fixes do not establish whole-app bounds |
 | OV-1004 / Planned | Release matrix, secret/log/authority failures, corrupt state, failed cleanup/crash recovery and recovery instructions | **13 points** | All accepted release dependencies; medium after implementation stabilizes |
 | OV-1005 / Partial | Extended process-tree network evidence, conversation metadata-sync producer audit and native macOS/Linux telemetry checks | **8 points** | [Multi-window run logs contain unauthenticated metadata-sync failures](rea-mcp-ownership.md); destination/transport behavior remains unverified. Native access and realistic workloads; independently installed extensions assessed separately |
 

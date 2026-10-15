@@ -142,6 +142,13 @@ The [control-plane HTTP follow-up](control-plane-http-resources.md) fixes findin
 2 at its request/response owners. Deadlines now abort actual HTTP work, JSON/SSE
 and error bodies have decoded-byte bounds, matched SSE replies finish before EOF,
 and browser disconnects cancel upstream work. Actual socket/subprocess tests and
-scoped benchmarks establish those results. Finding 1, session retention and
-discovery cleanup remain open; whole-app RAM and native platform coverage are
-not established by these local HTTP checks. No full story is promoted.
+scoped benchmarks establish those results. Finding 1 and session retention remain
+open; whole-app RAM and native platform coverage are not established by these
+local HTTP checks. No full story is promoted.
+
+The subsequent [discovery ownership fix](model-discovery-resources.md) addresses
+finding 4. The unchanged adapter reproduces retained connections in an actual
+Electron host; the candidate passes 12 native integration checks and the focused
+34-check socket/provider/identity suite. Full-workbench verification is blocked
+by a separately recorded native startup crash. No whole-app RAM reduction or
+full-story completion follows from the minimal native host.
