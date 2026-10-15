@@ -97,3 +97,27 @@ OV-402 remains **Partial**. This narrows its previously missing evidence substan
 - macOS/Linux native runs and unsupported/incompatible extension behavior.
 
 The fixed acceptance denominator is unchanged. These checks establish existing native behavior; they do not establish complete original-product parity or recovery of compiled binaries into source.
+
+## Native rename race guard
+
+15 October 2026, Windows x64. A delayed disposable rename provider reproduced a
+data-safety failure in the recovered extension-host adapter: a second edit changed
+one target document while a multi-file rename was still being computed, and the
+old range was applied into the new text. OpenVision now snapshots each loaded
+document's identity and version and rejects the complete rename if any target was
+closed, reopened or changed. Cancellation is checked before delivery. The producer
+is patched in both extension-host variants; malformed adapter shapes fail the build.
+
+Focused adapter tests pass **5/5**. Native evidence
+`logs/rename-race-xbnZ0V/result.json` passed delayed source/dependency races,
+unrelated edits, healthy multi-file rename, undo/redo, exact saves, zero page
+errors and host exit 0 in the final rebuilt run `logs/rename-race-final.txt`
+(result directory recorded in its JSON output). The earlier guarded run remains
+in `logs/rename-race-xbnZ0V/result.json`; the unguarded run
+`logs/rename-race-qEWTTC/result.json`
+retains the reproduced defect. The controlled provider does not claim TypeScript
+provider quality.
+
+This closes one stale-edit safety subcase while OV-402 remains Partial. Same-file
+conflicts, in-flight language requests, large-project performance budgets, broader
+extension compatibility and macOS/Linux language checks remain open.

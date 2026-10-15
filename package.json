@@ -15,6 +15,8 @@
     "test:installer": "node --test desktop/portable-installer.test.mjs",
     "build:desktop": "node desktop/build-source.mjs",
     "test:build-integrity": "node --test desktop/generated-artifact-integrity.test.mjs desktop/notification-isolation.test.mjs desktop/telemetry-extensions.test.mjs",
+    "test:rename-version": "node --test desktop/rename-version.test.mjs",
+    "verify:language-ui": "node desktop/verify-language-ui.mjs",
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",
     "import:settings": "node desktop/import-cli.mjs",

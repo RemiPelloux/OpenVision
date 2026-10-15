@@ -65,6 +65,15 @@ cross-file definitions/references/rename (TS/C++), formatting and undo/redo.
 both global commands and the extension API. Native conflicts remain protected.
 OV-402 stays Partial for its remaining matrix, concurrency and resource gates.
 
+15 October rename-safety follow-up: the native extension-host rename adapter now
+rejects a complete multi-file rename when a target document changes, closes or
+reopens while the provider is running. The rebuilt Windows fixture passed delayed
+source/dependency races, unrelated edits, healthy rename, exact save and undo/redo;
+the unguarded run reproduced partial-text corruption. Adapter tests cover both
+extension-host variants. This closes one stale-edit subcase; OV-402 remains Partial
+for same-document conflicts, in-flight language requests, large-project budgets,
+compatibility and platform gates.
+
 14 October local-rules follow-up: [native concurrency and live context](local-rules-concurrency.md)
 fixes hidden rules caused by concurrent storage metadata updates and waits for
 SQLite acknowledgement before reporting a saved rule. Two real windows, profile
