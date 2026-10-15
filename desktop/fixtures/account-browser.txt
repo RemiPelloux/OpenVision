@@ -1,0 +1,17 @@
+class NativeHost {
+  async openExternal(e, t, n) {
+    this.environmentMainService.unsetSnapExportedVariables();
+    try {
+      const r = n ?? this.configurationService.getValue("workbench.externalBrowser");
+      return B4(t, G.http, G.https) && r
+        ? await this.openExternalBrowser(e, t, r)
+        : (this.doOpenShellExternal(e, t), !0);
+    } finally {
+      this.environmentMainService.restoreSnapExportedVariables();
+    }
+  }
+  async doOpenShellExternal(e, t) {
+    try { return (await shell.openExternal(t), !0); }
+    catch (error) { this.reportShellExternalFailure(e, t, error); return !1; }
+  }
+}

@@ -1,6 +1,7 @@
 import { ModelProviders } from './openvision-model-providers.js';
 import { completionControl } from './openvision-completion-provider.js';
 import { reasoningSource } from './model-reasoning.js';
+import { createAccountSettings } from './model-accounts.js';
 
 const icons = { plus: 'plus', refresh: 'refresh-cw', edit: 'pencil', remove: 'trash-2' };
 const modelsPerPage = 40;
@@ -74,6 +75,7 @@ export function mountModels(container, bridge) {
   try { providers = new ModelProviders(bridge); }
   catch { container.append(element('p', 'Saved provider configuration could not be loaded.')); return; }
   let busy = false;
+  const accounts = createAccountSettings();
   const search = element('input');
   search.type = 'search'; search.placeholder = 'Search models';
   search.setAttribute('aria-label', 'Search models');
@@ -89,6 +91,12 @@ export function mountModels(container, bridge) {
   function renderProviders() {
     filterQuery = search.value.trim().toLowerCase();
     list.replaceChildren(...providers.state.providers.map(providerRow));
+    if (!providers.state.providers.length) {
+      const empty = element('div', '', 'openvision-provider-empty');
+      empty.append(element('strong', 'Connect your first API provider'),
+        element('p', 'Add a server URL and API key to discover models for Agent, Edit and autocomplete.'));
+      list.append(empty);
+    }
     if (busy) for (const control of list.querySelectorAll('button,input')) control.disabled = true;
   }
   function scheduleFilter() {
@@ -225,13 +233,20 @@ export function mountModels(container, bridge) {
     container.replaceChildren();
     search.disabled = busy;
     filter.disabled = busy;
-    const heading = element('div', '', 'openvision-provider-header');
+    const intro = element('div', '', 'openvision-settings-intro');
+    const introText = element('div');
+    introText.append(element('h2', 'Models & integrations'),
+      element('p', 'Choose how you connect to AI in OpenVision.', 'openvision-settings-description'));
+    const onboarding = button('Run setup again', () => window.openvisionOnboarding?.show());
+    onboarding.title = 'Open the OpenVision welcome and setup guide';
+    intro.append(introText, onboarding);
+    const heading = element('div', '', 'openvision-settings-section-heading');
     const add = button('Add Provider', () => providerDialog());
     add.className = 'openvision-primary';
     const actions = element('div', '', 'openvision-provider-actions');
     actions.append(button('Add Codex Easy', () => providerDialog(undefined, { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })),
       button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })), add);
-    heading.append(element('h3', 'Custom Providers'), actions);
+    heading.append(element('h3', 'API connections'));
     const label = element('label', 'Default connection · Agent uses each model’s provider', 'openvision-active-provider');
     const select = element('select');
     select.setAttribute('aria-label', 'Active Provider');
@@ -243,12 +258,18 @@ export function mountModels(container, bridge) {
     select.onchange = () => run(() => providers.activate(select.value || null));
     const toolbar = element('div', '', 'openvision-model-toolbar');
     toolbar.append(search, filter);
-    label.append(select); container.append(heading, label, completionControl(document, bridge, providers), status, toolbar, list);
+    label.append(select);
+    const api = element('section', '', 'openvision-api-settings');
+    api.setAttribute('aria-label', 'API connections');
+    api.append(heading, element('p', 'Use a custom server and key. Models appear in the OpenVision selector after discovery.', 'openvision-settings-description'),
+      actions, label, completionControl(document, bridge, providers), status, toolbar, list);
+    container.append(intro, accounts.root, api);
     container.dataset.busy = String(busy);
     renderProviders();
-    if (busy) for (const control of container.querySelectorAll('button,input,select')) control.disabled = true;
+    if (busy) for (const control of api.querySelectorAll('button,input,select')) control.disabled = true;
   }
   render();
+  void accounts.refresh();
   void providers.ready.then(async () => {
     if (!container.isConnected) return;
     status.textContent = 'Refreshing model capabilities…';

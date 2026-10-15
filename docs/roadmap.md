@@ -1,6 +1,6 @@
 # OpenVision feature roadmap
 
-Updated 14 October 2026 for **0.2.0-preview.6**. The verified-coverage target is **80%**.
+Updated 15 October 2026; latest portable release **0.2.0-preview.6**. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 21 Partial, 13 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
@@ -8,9 +8,35 @@ This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 
 Use `npm run status:features` for the authoritative current count. The acceptance
-clauses remain in [completion-sprints.md](completion-sprints.md). Accounts,
+clauses remain in [completion-sprints.md](completion-sprints.md). Original accounts,
 billing and hosted cloud agents remain excluded. Native macOS/Linux and
 independent-build requirements remain in the denominator.
+
+### Optional account integrations — source build
+
+Requested third-party ChatGPT/Codex and Claude/Claude Code integrations are a
+separate addition, not a reinstatement of the original hosted account system.
+The source build includes themed account/provider settings, replayable onboarding,
+isolated account profiles and official browser-sign-in adapters. See
+[setup and evidence limits](account-integrations.md).
+Account deletion now disconnects the profile, cleans its credentials/cache and
+archives conversation files. Essential settings text uses readable theme colors.
+
+| Remaining account gate | Complexity points | Required evidence |
+| --- | --- | --- |
+| Codex browser consent through signed-in identity | 3 | Complete real Codex callback and display its returned identity; Claude signed-in status and identity verified on Windows |
+| Account switching with active work | 5 | Preserve conversation state, respect running-operation shutdown and verify actual account routing |
+| Subscription model execution | 3 | Real entitled requests through both official integrations |
+| Portable delivery and platform coverage | 5 | Package new source behavior; repeat Windows checks, then native macOS/Linux checks |
+
+These points are separate delivery work, not extra acceptance stories or a
+claimed percentage increase. The existing verified ledger remains unchanged.
+The account-preparation worker startup fix and responsive settings layout passed
+focused checks and four native switches with both official extensions installed.
+Both real sign-in clients opened the system browser without an extra trust dialog.
+Native deletion checks passed for both providers, including the guard against
+deleting an account still used by another window. Source changes remain outside
+the preview.6 portable payload.
 
 ## What is usable today
 

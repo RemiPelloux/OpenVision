@@ -1,4 +1,5 @@
 import { repositoryLocation } from './project-clone-dialog.js';
+import { createAccountSwitch } from './account-switch.js';
 const pinPrefix = 'openvision.project-pin.v1.';
 
 export function projectIdentity(uri, remoteAuthority) {
@@ -28,6 +29,8 @@ export function projectRows(history, windows, { pinned, identity = projectIdenti
 }
 
 export function createProjectHomeService(owner, getWorkspaces) {
+  const accounts = createAccountSwitch((...args) => owner.commandService.executeCommand(...args),
+    request => globalThis.vscode.ipcRenderer.invoke('vscode:openvision-account-profiles', request));
   const pinned = id => owner.storageService.get(`${pinPrefix}${id}`, 0) === 'true';
   const rows = (history, windows) => {
     const first = history.workspaces[0], Uri = (first?.folderUri ?? first?.workspace?.configPath)?.constructor;
@@ -65,6 +68,26 @@ export function createProjectHomeService(owner, getWorkspaces) {
     workspace: () => owner.nativeHostService.pickWorkspaceAndOpen({ forceReuseWindow: true }),
     theme: () => owner.commandService.executeCommand('workbench.action.selectTheme'),
     appearance: () => owner.commandService.executeCommand('workbench.action.openSettings', 'workbench.color'),
+    models: () => owner.commandService.executeCommand('aiSettings.action.open', 'models'),
+    accountStatus: options => owner.commandService.executeCommand('openvision.accounts.status', options),
+    async openAccountBrowser(provider, url) {
+      const validated = await globalThis.vscode.ipcRenderer.invoke('vscode:openvision-account-profiles', { action: 'login-url', provider, url });
+      return owner.nativeHostService.openExternal(validated);
+    },
+    async connectAccount(id) {
+      await accounts.ensure(id);
+      return owner.commandService.executeCommand('openvision.accounts.connect', id);
+    },
+    openAccount: id => owner.commandService.executeCommand('openvision.accounts.open', id),
+    accountProfiles: () => globalThis.vscode.ipcRenderer.invoke('vscode:openvision-account-profiles', { action: 'list' }),
+    createAccount: (provider, label) => globalThis.vscode.ipcRenderer.invoke('vscode:openvision-account-profiles', { action: 'create', provider, label }),
+    selectAccount: accounts.select,
+    removeAccount: accounts.remove,
+    onboardingState: () => ({
+      seen: owner.storageService.get('openvision.onboarding.v1', 0) !== undefined,
+      enabled: owner.configurationService?.getValue('openvision.onboarding.showOnStartup') !== false,
+    }),
+    finishOnboarding: () => owner.storageService.store('openvision.onboarding.v1', 'seen', 0, 1),
     async clone(location) {
       const path = await owner.commandService.executeCommand('git.clone', repositoryLocation(location), undefined,
         { openAfterClone: false });

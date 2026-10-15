@@ -6,6 +6,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | --- | --- |
 | Download and launch OpenVision | [Portable installation, editable code and updates](native-runtime.md) |
 | Configure models, import settings or customize the UI | [User guide](user-guide.md) |
+| Connect ChatGPT or Claude and replay first-launch setup | [Official account integrations](account-integrations.md) |
 | Check import isolation and exact restore | [Profile import verification](import-profile-verification.md) |
 | Resume, pin and search projects | [Project home](project-home.md) |
 | Change themes, colors, fonts and icons | [Appearance](appearance.md) |

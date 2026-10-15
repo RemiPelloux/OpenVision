@@ -17,6 +17,17 @@ double-click **Run-OpenVision.cmd** to verify, extract and launch the included a
 No Node.js, npm or separate editor installation is needed.
 See [installation and updates](native-runtime.md).
 
+The editable source build also offers an optional first-launch guide. Replay it
+from **Settings → Models & integrations → Run setup again**. That page groups
+custom API providers and official ChatGPT/Codex and Claude/Claude Code accounts.
+See [account setup and switching](account-integrations.md) for browser sign-in,
+separate profiles and current verification limits. This addition postdates the
+preview.6 portable package.
+Choose **Delete account** beside an account profile to remove its isolated
+credentials and cache while keeping its local conversation files. The confirmation
+names the profile; **Cancel** leaves it unchanged. See the account guide for the
+history archive location and other-window safeguards.
+
 Project Home opens recent projects, folders, saved workspaces and cloned
 repositories in the current window. An already-open project focuses its existing
 window. If a switch asks about unsaved edits, **Cancel** keeps the current project

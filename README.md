@@ -98,8 +98,17 @@ Not every displayed model or reasoning tier has passed a live test.
 
 ## Local profile, explicit connections
 
-- No OpenVision login or signup. Account, billing and hosted cloud-agent flows
-  are outside this project's scope.
+The editable source build adds **Models & integrations**, optional first-launch
+setup, and separate ChatGPT/Codex and Claude/Claude Code account profiles.
+Use **Run setup again** in Settings to replay onboarding.
+Account controls include **Delete account**: isolated credentials and cache are
+removed, while local conversation files are kept in an account history archive.
+[Account sign-in, switching and current verification limits →](docs/account-integrations.md)
+These additions are not included in the older preview.6 portable payload.
+
+- No OpenVision login or signup. Optional third-party coding-agent sign-in is
+  separate from the local profile; original billing and hosted cloud-agent flows
+  remain outside this project's scope.
 - Built-in analytics and crash-upload implementations are disabled by the build.
   [Telemetry audit →](docs/rea-telemetry-audit.md)
 - Configured AI providers receive the context needed for requests. MCP servers

@@ -1,5 +1,6 @@
 import { importCursor } from './openvision-import-ui.js';
 import { showWelcomeScreen } from './openvision-welcome-screen.js';
+import { showOnboarding, maybeShowOnboarding } from './openvision-onboarding.js';
 
 const storageKey = 'openvision.local-profile.v1';
 let profile;
@@ -36,7 +37,10 @@ function editProfile() {
   const appearance = document.createElement('button');
   appearance.textContent = 'Appearance settings';
   appearance.onclick = () => { dialog.close(); void window.openvisionProjectHome?.appearance().catch(console.error); };
-  dialog.append(heading, label, welcome, appearance, cancel, save);
+  const setup = document.createElement('button');
+  setup.textContent = 'Run setup again';
+  setup.onclick = () => { dialog.close(); showOnboarding(); };
+  dialog.append(heading, label, welcome, appearance, setup, cancel, save);
   dialog.addEventListener('close', () => dialog.remove(), { once: true });
   document.body.append(dialog);
   dialog.showModal();
@@ -71,7 +75,10 @@ async function mount() {
       projects.textContent = 'Projects'; projects.title = 'Project home'; projects.onclick = showWelcomeScreen;
       titlebar.prepend(projects);
       const openEmptyHome = () => {
-        void window.openvisionProjectHome?.showOnStartup().then(show => { if (show) showWelcomeScreen(); }).catch(console.error);
+        void window.openvisionProjectHome?.showOnStartup().then(show => {
+          if (show) showWelcomeScreen();
+          maybeShowOnboarding();
+        }).catch(console.error);
       };
       if (window.openvisionProjectHome) openEmptyHome();
       else window.addEventListener('openvision-project-home-ready', openEmptyHome, { once: true });
