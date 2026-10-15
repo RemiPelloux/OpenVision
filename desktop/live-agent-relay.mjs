@@ -55,7 +55,23 @@ async function requestBody(request) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest, allowDownstreamCancellation = false }) {
+async function providerFailureBody(upstream, record, redact) {
+  const reader = upstream.body.getReader(), chunks = []; let bytes = 0;
+  try {
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      bytes += value.length;
+      if (bytes > 65536) { record.errorTruncated = true; break; }
+      chunks.push(Buffer.from(value));
+    }
+    const body = redact(Buffer.concat(chunks).toString('utf8'));
+    record.error = body.slice(0, 2000);
+    return body;
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+}
+
+export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest,
+  allowDownstreamCancellation = false, expectInitialUnauthorized = false }) {
   const requests = [], controllers = new Set(), pending = new Set();
   const failed = Promise.withResolvers();
   let key;
@@ -79,6 +95,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       thinking: payload.thinking, stream: payload.stream, maxTokens: payload.max_tokens ?? payload.max_output_tokens,
       roles: payload.messages?.map(message => message.role),
       messageShapes: payload.messages?.map(message => ({ role: message.role, content: message.content === null ? 'null' : typeof message.content,
+        textLength: typeof message.content === 'string' ? message.content.length : undefined,
         keys: Object.keys(message), toolCalls: message.tool_calls?.map(call => ({ keys: Object.keys(call), functionKeys: Object.keys(call.function ?? {}) })) })),
       assistantHistoryContainsMarker: payload.messages?.some(message => message.role === 'assistant' &&
         typeof message.content === 'string' && message.content.includes(marker)) ?? false,
@@ -108,15 +125,18 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       record.httpStatus = upstream.status; record.headersMs = Math.round(performance.now() - started);
       record.requestId = redact(upstream.headers.get('x-request-id') ?? '');
       if (!upstream.ok) {
-        const reader = upstream.body.getReader(), chunks = []; let bytes = 0;
-        try {
-          for (;;) {
-            const { value, done } = await reader.read(); if (done) break;
-            bytes += value.length; if (bytes > 65536) break; chunks.push(Buffer.from(value));
-          }
-          record.error = redact(Buffer.concat(chunks).toString('utf8')).slice(0, 2000);
-        } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+        const failureBody = await providerFailureBody(upstream, record, redact);
+        if (expectInitialUnauthorized && record === requests[0] && upstream.status === 401 && !record.errorTruncated) {
+          record.expectedAuthenticationFailure = true;
+          response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'text/plain',
+            'x-request-id': record.requestId });
+          response.end(failureBody); return;
+        }
         throw new Error(`Live provider returned HTTP ${upstream.status}`);
+      }
+      if (expectInitialUnauthorized && record === requests[0]) {
+        await upstream.body?.cancel();
+        throw new Error('Live provider did not reject the deliberately invalid credential');
       }
       response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/octet-stream' });
       const observe = streamEvidence(record, marker, redact);

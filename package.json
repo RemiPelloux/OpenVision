@@ -18,6 +18,7 @@
     "test:rename-version": "node --test desktop/rename-version.test.mjs",
     "test:retrieval": "node --test desktop/retrieval-lifecycle.test.mjs",
     "test:agent-review": "node --test desktop/agent-review.test.mjs desktop/agent-closed-file-undo.test.mjs desktop/agent-review-recovery.test.mjs",
+    "test:agent-retry": "node --test desktop/agent-retry-history.test.mjs desktop/live-agent-relay.test.mjs",
     "verify:language-ui": "node desktop/verify-language-ui.mjs",
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",

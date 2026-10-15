@@ -16,10 +16,11 @@ import { prepareLivePaste, inspectPasteRequest, verifySavedLivePaste } from './v
 import { createLiveUserRule, inspectRulesRequest } from './verify-live-rules.mjs';
 import { approveLiveMemory, inspectLiveMemoryContext } from './verify-live-memory.mjs';
 import { verifyLiveStop } from './verify-live-stop.mjs';
+import { liveReadPrompt, invalidProbeKey, inspectRetryPrompt, retryAuthenticationFailure, verifyRetryContinuation } from './verify-live-retry.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--stop] [--paste|--rules|--memory] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Stop checks real streaming cancellation and same-chat resubmission. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Capture saves the first request locally with the transport key redacted.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--stop|--retry-auth] [--paste|--rules|--memory] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -32,6 +33,8 @@ const paste = process.argv.includes('--paste');
 const rules = process.argv.includes('--rules');
 const memory = process.argv.includes('--memory');
 const stop = process.argv.includes('--stop');
+const retryAuth = process.argv.includes('--retry-auth');
+assert.ok(!retryAuth || (!stop && !memory && !rules && !paste && !history && !subagent), '--retry-auth is a separate real authentication failure/manual recovery probe');
 assert.ok(!stop || (!memory && !rules && !paste && !history && !subagent), '--stop is a separate live stream cancellation/resubmission probe');
 assert.ok(!memory || (!rules && !paste && !history && !subagent), '--memory is a separate suggested-memory approval probe');
 assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to-Read probe');
@@ -68,14 +71,16 @@ if (process.platform === 'win32') {
   await writeFile(join(profile, 'Local State'), JSON.stringify({ os_crypt: { encrypted_key: state.os_crypt.encrypted_key } }));
 }
 const { layout } = await loadRuntime(root);
-const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, historyRequested: history, stopRequested: stop, provider: { name: provider.name, url: provider.url },
+const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, provider: { name: provider.name, url: provider.url },
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
   scope: `Windows native Agent selection, live stream and real ${subagent ? 'Task child Read and parent' : 'Read'} continuation in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`,
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['agent', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
+    ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
     ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['relay', join(root, 'desktop/live-agent-relay.mjs')],
     ...(stop ? [['stopVerifier', join(root, 'desktop/verify-live-stop.mjs')]] : []),
+    ...(retryAuth ? [['retryVerifier', join(root, 'desktop/verify-live-retry.mjs')]] : []),
     ...(history ? [['historyVerifier', join(root, 'desktop/verify-live-history.mjs')]] : []),
     ...(rules ? [['rulesHelper', join(root, 'source/app/out/vs/code/electron-sandbox/workbench/openvision-local-rules.js')],
       ['rulesVerifier', join(root, 'desktop/verify-live-rules.mjs')]] : []),
@@ -94,7 +99,10 @@ const captureRequest = async body => {
   if (rules) inspectRulesRequest(body, { userRule, projectRule, marker }, result.rules);
   if (process.argv.includes('--capture-payload')) await writeFile(join(directory, 'native-request.json'), body);
 };
-const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, allowDownstreamCancellation: stop, inspectRequest: body => {
+if (retryAuth) result.liveRetry = { promptOccurrences: [], scope: 'Real upstream HTTP 401 with a deliberately invalid key, then native Try again using the saved credential. No upstream failure is simulated.' };
+const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, allowDownstreamCancellation: stop,
+  expectInitialUnauthorized: retryAuth, inspectRequest: body => {
+  if (retryAuth) inspectRetryPrompt(body, result.liveRetry);
   if (inspectMemoryRetrieval) {
     inspectLiveMemoryContext(body, { filename: ruleFilename, marker }, result.memory);
     inspectMemoryRetrieval = false;
@@ -133,7 +141,7 @@ async function dismissMenu() {
 try {
   await launch();
   const key = await app.evaluate(({ safeStorage }, saved) => safeStorage.decryptString(Buffer.from(JSON.parse(String(saved)).data)), encrypted);
-  relay.setKey(key);
+  relay.setKey(retryAuth ? invalidProbeKey : key);
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
   await page.locator('.openvision-model-settings').getByRole('button', { name: 'Add Provider', exact: true }).click();
@@ -183,9 +191,10 @@ try {
     ? 'Read the verification file specified in my saved rule. Reply with exactly its first line.'
     : subagent
     ? 'Use exactly one Task subagent with the inherited model. Ask it to use Read on probe.txt and return exactly the single line in that file. After the Task finishes, reply with exactly the returned line. Do not read the file yourself, edit files, run commands or use other tools.'
-    : 'Use the Read tool to read probe.txt. Reply with exactly its single line. Do not edit files, run commands or use any other tools.');
+    : liveReadPrompt);
     await input.press('Enter');
   }
+  if (retryAuth) await retryAuthenticationFailure({ page, relay, restoreCredential: () => relay.setKey(key), result: result.liveRetry });
   await Promise.race([
     page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: subagent ? 180000 : 90000 }),
     relay.failure.then(message => { throw new Error(message); }),
@@ -193,6 +202,7 @@ try {
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
   assert.ok(relay.requests.some(request => request.actualFileInToolResult), 'Actual file must appear in the tool continuation');
   assert.ok(relay.requests.some(request => request.assistantReturnedMarker), 'Provider must return the actual file marker as assistant text');
+  if (retryAuth) await verifyRetryContinuation({ page, relay, result: result.liveRetry });
   if (subagent) {
     const calls = relay.requests.flatMap(request => request.responseToolCalls ?? []);
     const task = calls.find(call => call.name === 'Task'), read = calls.find(call => call.name === 'Read');

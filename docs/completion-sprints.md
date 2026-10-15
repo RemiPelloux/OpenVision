@@ -8,6 +8,12 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+15 October live retry follow-up: [failed-stream history ownership](rea-agent-retry-history.md)
+fixes an empty assistant added before any response content in both Agent bundles.
+Two real DeepSeek manual retries failed with HTTP 400 before the fix; the rebuilt
+app passes HTTP 401 → Try again → real Read/answer with the saved credential.
+Timeout and other lifecycle gates remain open; **6/42 Verified** is unchanged.
+
 15 October abrupt-exit follow-up: [native review recovery](rea-agent-review-recovery.md#abrupt-exit-verification)
 passes three injected main-process exits: pending review can be rejected or
 accepted after relaunch, and accepted edits survive another abrupt exit. The

@@ -243,6 +243,12 @@ normal restarts, or `-- --review-abrupt` to verify rejection/acceptance recovery
 after abrupt app exits; see [review recovery](docs/rea-agent-review-recovery.md)
 for the exact Windows evidence and remaining failure cases.
 
+The [Agent retry fix](docs/rea-agent-retry-history.md) prevents failed requests
+from adding an empty assistant reply to subsequent history. The opt-in
+`npm run verify:agent:live -- --live --model deepseek-v4-flash --retry-auth`
+checks real authentication failure and manual recovery through the configured
+provider; it consumes API quota and uses a disposable project.
+
 The portable package contains editable code under
 `electron-host/resources/app/` and helpers under `electron-host/desktop/`;
 changes there load after restarting. Full native-source rebuilds remain planned.

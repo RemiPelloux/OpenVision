@@ -7,6 +7,12 @@ Windows Agent checks below exercise selection, rendering and Read continuation.
 Each run establishes only its named workflow; none establishes complete model
 support or reliability across all requests. Scoped subagent evidence is linked below.
 
+15 October follow-up: [real authentication retry](rea-agent-retry-history.md)
+reproduces and fixes an empty failed-response message in both Agent producers.
+The failed and successful native runs are retained in that report. Its real
+HTTP 401/manual retry coverage is distinct from simulated failures and from
+the still-open native inference timeout gate.
+
 ## Native Stop and same-chat resubmission
 
 The native `--stop` check first completes a real Read roundtrip, then asks for
@@ -31,8 +37,9 @@ The Windows launcher exited 0 in each run; older reports call this field
 
 This proves client transport closure, not that upstream computation or billing
 stopped. These are individual observations, not comparative latency benchmarks.
-CPU, peak process-family memory and token costs were not measured. Live error
-Retry, controlled timeout recovery and other reasoning choices remain open.
+CPU, peak process-family memory and token costs were not measured. Live
+authentication retry is now covered by the follow-up above; additional error
+types, controlled timeout recovery and other reasoning choices remain open.
 Earlier GPT High run `B1qsQj` received no headers/content on its third request
 within the relay's 60-second bound. It failed before Stop could be exercised;
 that retained failure is not timeout-recovery acceptance evidence.
@@ -86,9 +93,10 @@ npm run verify:agent:live -- --live --model deepseek-v4-flash --reasoning high -
 npm run verify:agent:live -- --live --model grok-4.7 --history
 ```
 
-OV-102 remains Partial: live retry, controlled timeout and remaining lifecycle
-cases are not established by recall. Provider-default Stop is covered separately
-above. No additional story receives Verified credit.
+OV-102 remains Partial: controlled timeout and remaining lifecycle cases are not
+established by recall. Authentication retry is covered by the follow-up above;
+Provider-default Stop is covered separately. No additional story receives
+Verified credit.
 
 ## Latest recheck after provider selection changes
 

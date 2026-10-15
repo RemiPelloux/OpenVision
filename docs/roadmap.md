@@ -28,6 +28,12 @@ See also the [scoped Windows evidence](model-discovery-resources.md#full-app-sta
 
 ## Critical-first backlog and ETA
 
+The latest [live retry investigation](rea-agent-retry-history.md) fixes empty
+failed-response history at both Agent producers. DeepSeek authentication retry
+now passes on the rebuilt app after two pre-fix HTTP 400 failures. This advances
+OV-102, a dependency of OV-103; native timeout recovery and the remaining editing
+failure cases retain their priority and provisional points.
+
 Agent reliability remains first: the [review-recovery follow-up](rea-agent-review-recovery.md)
 retains recovery data on failed restoration and adds repeated-edit/pending-review
 restart coverage. Native Windows checks now also recover pending and accepted
@@ -97,14 +103,17 @@ were returned by its official client; Claude supplied no usable quota windows,
 so its UI reports unavailable. Codex account models are restricted to GPT-6 IDs
 actually advertised by the official client. The checked account offered none
 and rejected a real `gpt-6.1-sol` request. The separate saved Codex Easy GPT-6 API
-request reached the provider and failed with HTTP 403 `INSUFFICIENT_BALANCE`.
-These are availability and verification blockers, not successful GPT-6 runs.
+request at that checkpoint reached the provider and failed with HTTP 403
+`INSUFFICIENT_BALANCE`. Later [live API retry checks](rea-agent-retry-history.md)
+successfully execute GPT-6.1 Sol Read and response with the saved API key.
+The official-account eligibility and separate API edit gates remain open;
+the earlier API balance failure is historical evidence, not a current universal blocker.
 
 | Remaining account gate | Complexity points | Required evidence |
 | --- | --- | --- |
 | Codex browser consent through signed-in identity | 3 | Verify a fresh real callback and returned identity end to end; existing signed-in profile/catalog/quota checks do not close this gate |
 | Account switching with active work | 5 | Preserve conversation state, respect running-operation shutdown and verify actual account routing |
-| GPT-6 account execution and API recovery | 3 | An official account advertising an eligible GPT-6 model, then native Agent execution; restore API balance and repeat the separate GPT-6 API edit check |
+| GPT-6 account execution and API recovery | 3 | An official account advertising an eligible GPT-6 model, then native Agent execution; complete the separate GPT-6 API edit check. API Read/authentication retry now passes |
 | Account Agent lifecycle | 5 | Real retry, interruption/resume and additional tool/approval cases; text/tools only today, image support remains unimplemented |
 | Account usage and privacy | 5 | Broader quota/reset/error cases and authenticated traffic classification; never infer quota when the official client supplies none |
 | Portable delivery and platform coverage | 5 | Package new source behavior; repeat Windows checks, then native macOS/Linux checks |
@@ -170,7 +179,7 @@ to existing OV-901/1004 usability/recovery scope; no extra points or story credi
 | 3 | OV-501 / 13; OV-1005 / 8 | Establish actual project-data destinations and extend process-family traffic checks, including authenticated integration behavior |
 | 4 | OV-1003 / 8; OV-1001 / 8 | HTTP deadlines/disconnects now cancel transport and response bodies are bounded; [socket checks and benchmarks](control-plane-http-resources.md) pass in their declared scope. Next bound optional REA subprocess output/cache bytes and reconcile STDIO/manager lifetimes, without claiming native Agent RAM savings |
 | 5 | OV-1003 / 8; OV-1002 / 8 | Discovery lifecycle/body cleanup now passes [native integration](model-discovery-resources.md). After restoring full-app startup, measure idle, large-project, long-session and close/reopen process-family memory/CPU; define budgets, investigate reasoning-session retention and check incremental filesystem/UI work |
-| 6 | OV-102/104/203/602 / points above | Repeat live retry/tool/reasoning/completion gates when the selected provider is available; GPT-6 account eligibility and the last observed API balance failure remain external blockers |
+| 6 | OV-102/104/203/602 / points above | Authentication retry now passes for GPT, DeepSeek and Grok; finish timeout/additional retry/tool/reasoning/completion gates. Official GPT-6 account eligibility remains unresolved; API availability must be evaluated per workload |
 | 7 | OV-901 / 8; OV-1004 / 13 | Refresh the Windows preview only after its declared safety/regression gates pass; verify relocated payload and repository extraction, record exact source identity and disclose remaining gaps |
 
 These actions are slices of the existing story estimates, not additional points
@@ -279,7 +288,7 @@ missing-work column together.
 
 | Story / current state | Missing functions or acceptance evidence | Complexity points | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-102 / Partial | Live GPT/DeepSeek/Grok error retry, timeout and no duplicate submit after retry; remaining interruption/history and reasoning cases. Provider-default Stop/same-chat resubmission pass for all three. GPT High, DeepSeek High and Grok default restart/fork recall and persisted isolation pass | **8 points** | [Live provider evidence](live-provider-compatibility.md); provider availability/quota and intermittent failures; medium |
+| OV-102 / Partial | Native inference timeout recovery, additional failure/retry types and remaining interruption/history/reasoning cases. [Real authentication retry](rea-agent-retry-history.md) fixes empty failed-response history; Provider-default Stop/same-chat resubmission pass for all three. GPT High, DeepSeek High and Grok default restart/fork recall and persisted isolation pass | **8 points** | [Live provider evidence](live-provider-compatibility.md); provider availability/quota and intermittent failures; medium |
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | **8 points** | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | **8 points** | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
 | OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | **5 points** | OV-104 and provider capability contracts; low because DeepSeek High has both failures and successful native rechecks |

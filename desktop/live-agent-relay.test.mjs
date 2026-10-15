@@ -6,11 +6,11 @@ import { createLiveAgentRelay } from './live-agent-relay.mjs';
 const model = 'fixture-model', marker = 'OPENVISION_READ_fixture', key = 'fixture-transport-secret';
 const headers = { Authorization: 'Bearer native-probe-key', 'Content-Type': 'application/json' };
 
-async function fixture(t, handler, captureRequest, inspectRequest, allowDownstreamCancellation = false) {
+async function fixture(t, handler, options = {}) {
   const server = createServer(handler);
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); });
-  const relay = await createLiveAgentRelay({ model, marker, captureRequest, inspectRequest, allowDownstreamCancellation, provider: {
+  const relay = await createLiveAgentRelay({ model, marker, ...options, provider: {
     url: `http://127.0.0.1:${server.address().port}/v1`,
     models: [{ id: model, capabilities: { reasoningEffortValues: [{ id: 'high', value: 'high' }] } }],
   } });
@@ -25,7 +25,7 @@ test('expected native cancellation records partial stream evidence and permits a
     response.once('close', closed.resolve);
     response.writeHead(200, { 'Content-Type': 'text/event-stream' });
     response.write('data: {"choices":[{"delta":{"content":"start"}}]}\n\n');
-  }, undefined, undefined, true);
+  }, { allowDownstreamCancellation: true });
   const controller = new AbortController();
   const body = JSON.stringify({ model, stream: true });
   const response = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body, signal: controller.signal });
@@ -91,7 +91,8 @@ test('capture sees the first request, inspection sees every redacted request, an
   const relay = await fixture(t, async (request, response) => {
     let body = ''; for await (const chunk of request) body += chunk;
     received.push(body); sse(response, [{ choices: [{ delta: { content: 'ok' }, finish_reason: 'stop' }] }]);
-  }, async body => { captured.push(body); entered.resolve(); await release.promise; }, body => { inspected.push(body); });
+  }, { captureRequest: async body => { captured.push(body); entered.resolve(); await release.promise; },
+    inspectRequest: body => { inspected.push(body); } });
   const firstBody = JSON.stringify({ model, messages: [{ role: 'user', content: `echo ${key}` }] });
   const first = fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: firstBody });
   await entered.promise;
@@ -138,6 +139,53 @@ test('provider failures are redacted, retained and never automatically retried',
   assert.equal(calls, 1);
   assert.equal(relay.requests[0].error, 'Rejected [redacted]');
   assert.equal(relay.requests[0].requestId, '[redacted]');
+});
+
+test('opt-in initial 401 preserves the real status/body and manual credential replacement permits inference', async t => {
+  const received = [];
+  const relay = await fixture(t, async (request, response) => {
+    let body = ''; for await (const chunk of request) body += chunk;
+    received.push({ body, authorization: request.headers.authorization });
+    if (request.headers.authorization === 'Bearer invalid-probe') {
+      response.writeHead(401, { 'content-type': 'application/json', 'x-request-id': 'auth-request' });
+      response.end(JSON.stringify({ error: { message: 'Invalid invalid-probe' } })); return;
+    }
+    sse(response, [{ choices: [{ delta: { content: marker }, finish_reason: 'stop' }] }]);
+  }, { expectInitialUnauthorized: true });
+  relay.setKey('invalid-probe');
+  const body = JSON.stringify({ model, stream: true, messages: [{ role: 'user', content: 'Read probe.txt' }] });
+  const submit = () => fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body });
+  const failed = await submit();
+  assert.equal(failed.status, 401); assert.equal(failed.headers.get('x-request-id'), 'auth-request');
+  assert.deepEqual(await failed.json(), { error: { message: 'Invalid [redacted]' } });
+  assert.equal(relay.requests[0].expectedAuthenticationFailure, true);
+  assert.equal(received.length, 1);
+  relay.setKey(key);
+  const recovered = await submit(); assert.equal(recovered.status, 200); await recovered.text();
+  assert.deepEqual(received, [{ body, authorization: 'Bearer invalid-probe' }, { body, authorization: `Bearer ${key}` }]);
+  assert.equal(relay.requests[1].assistantReturnedMarker, true);
+});
+
+test('allowing initial authentication failure does not hide a repeated upstream 401', async t => {
+  const relay = await fixture(t, (_request, response) => {
+    response.writeHead(401); response.end('Unauthorized');
+  }, { expectInitialUnauthorized: true });
+  const submit = () => fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) });
+  const first = await submit(); assert.equal(first.status, 401); await first.text();
+  const second = await submit(); assert.equal(second.status, 502); await second.text();
+  assert.equal(await relay.failure, 'Live provider returned HTTP 401');
+  assert.equal(relay.requests.length, 2);
+  assert.equal(relay.requests[1].expectedAuthenticationFailure, undefined);
+});
+
+test('unexpected acceptance of the invalid credential stops the probe before forwarding model output', async t => {
+  const relay = await fixture(t, (_request, response) => {
+    sse(response, [{ choices: [{ delta: { content: marker }, finish_reason: 'stop' }] }]);
+  }, { expectInitialUnauthorized: true });
+  const response = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) });
+  assert.equal(response.status, 502); assert.ok(!(await response.text()).includes(marker));
+  assert.equal(await relay.failure, 'Live provider did not reject the deliberately invalid credential');
+  assert.equal(relay.requests[0].assistantReturnedMarker, undefined);
 });
 
 for (const action of ['downstream cancellation', 'relay cleanup']) {
