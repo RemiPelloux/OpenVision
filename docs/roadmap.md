@@ -61,14 +61,87 @@ requirements. Priority reflects impact and dependencies, not a claim that every
 listed risk is a reproduced defect. Start available investigations immediately;
 an external blocker does not prevent unrelated local work.
 
-| Priority, highest first | Ordered remaining stories | Points | Exit condition |
-| --- | --- | ---: | --- |
-| **P0 · Data, authority and privacy** | OV-103 → OV-302 → OV-303 → OV-301 → OV-204 → OV-102 → OV-403 → OV-501 → OV-1005 → OV-1004 | **81** | Changes/history survive failures; profiles and credentials remain isolated; Stop releases owned work; data destinations are established; required failure and traffic checks pass |
-| **P1 · RAM, requests and daily development** | OV-1003 → OV-1001 → OV-1002 → OV-401 → OV-402 → OV-603 → OV-602 → OV-104 → OV-203 → OV-701 → OV-702 → OV-304 | **87** | Bound retained output/work, measure long sessions and per-edit work, prevent duplicate inference, then close language/completion/import/extension/auth lifecycle gates |
-| **P2 · Independent build ownership** | OV-801 → OV-802 → OV-803 → OV-804 | **47** | Required native/server contracts have owned inputs or replacements; a clean machine builds and launches the app |
-| **P3 · Retrieval and prediction** | OV-502 → OV-503 → OV-504 → OV-604 | **42** | Relevant retrieval, incremental invalidation, recoverable indexes and useful next-edit prediction pass measured workloads |
-| **P4 · Distribution and platform completion** | OV-901 → OV-904 → OV-903 → OV-902 | **39** | Windows install/update/rollback and the declared native platform matrices pass; Linux gaps close and macOS gains real evidence |
-| **P5 · Broader development modes** | OV-703 → OV-704 | **26** | Remote development and specialized modes have explicit contracts, permissions, cleanup and native acceptance |
+### Ranked REA, implementation and verification work
+
+Read top to bottom for importance. **REA** identifies an unresolved recovered
+contract or owner; **implementation / verification** identifies the product
+work and proof still needed. An unverified case is not automatically a missing
+implementation. Reuse existing evidence and change code when a missing behavior
+or defect is established. The per-story tables below retain status, dependencies
+and detailed evidence links.
+
+**P0 — Protect work and make Agent dependable · 81 points**
+
+| Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
+| ---: | --- | --- | --- | ---: |
+| 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Storage-failure retry, interruption during active writes/tools, remaining edit/undo combinations and live-provider editing | 8 |
+| 2 | OV-102 · Chat, Stop and retry | Timeout-to-error-to-history ownership across both Agent paths | Native inference timeout, transport release, explicit retry without duplicate inference and remaining interruption/history cases | 8 |
+| 3 | OV-204 · Provider failures | Capability rejection and stream-error propagation beyond established cases | Certificate expiry/hostname, unsupported actual inputs, remaining malformed streams and secret-safe recovery | 5 |
+| 4 | OV-302 · Local configuration isolation | Remaining global path producers, classifiers, watchers and consumers | Complete additive migration with backups; two profiles and another installation; preserve explicit project compatibility | 8 |
+| 5 | OV-303 · MCP tool ownership | Named-profile/configuration ownership and failed-close consumers | Same-name overrides, simultaneous config changes and cross-window failed-cleanup recovery without replay | 5 |
+| 6 | OV-301 · Rules and approved memories | Revisit persistence only if physical-failure evidence exposes an owner gap | Physical full-disk/I/O failure and recovery; preserve acknowledged rules and original memory records | 5 |
+| 7 | OV-403 · Terminals, tasks and shutdown | Explain earlier host exit 134 and utility-worker shutdown diagnostics | Repeat close/restart with active children; preserve state and release only owned processes | 8 |
+| 8 | OV-501 · Project-data destinations | Trace loaded file-service JS/native/server operations and actual outbound data | Establish local/configurable replacements where required; verify destinations with owned projects | 13 |
+| 9 | OV-1005 · Telemetry removal | Remaining collectors and process-family traffic, including optional integrations | Extended authenticated and ordinary workloads; platform checks; keep third-party-extension scope explicit | 8 |
+| 10 | OV-1004 · Failure and release safety | Unexplained authority, corrupt-state and cleanup paths exposed by the matrix | Run secret/permission/crash/failure checks throughout; close only after all required release dependencies pass | 13 |
+
+**P1 — Daily development, RAM and request efficiency · 87 points**
+
+| Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
+| ---: | --- | --- | --- | ---: |
+| 11 | OV-1003 · Idle and long-session RAM | Remaining process/watcher/timer/cache owners and reasoning-session retention | Bound remaining control-plane output/cache; measure long sessions, lazy startup, disposal and reactivation | 8 |
+| 12 | OV-1001 · Agent context and duplicate requests | Remaining context/history retention and retry/branch ownership | Compare tokens, request counts and Stop on fixed live workloads; prevent duplicate inference while preserving tool reasoning | 8 |
+| 13 | OV-1002 · Responsive editing and chat | Remaining stream scheduling, transcript rendering and edit invalidation owners | Measure frame/input latency, mounted rows, heap and filesystem work; batch/virtualize only where evidence requires it | 8 |
+| 14 | OV-401 · Large-project Explorer | Remaining file-link and filesystem event behavior | Symlink/permission cases and OS-level per-edit work measurements; retain unsaved edits and session state | 5 |
+| 15 | OV-402 · Language tools | Remaining concurrent language-request/edit boundaries | Complete declared TS/JS/C/C++ matrix, same-document conflicts, large files/projects and CPU/RAM budgets | 8 |
+| 16 | OV-603 · Safe autocomplete acceptance | Remaining stale-range and concurrent-edit behavior | Broader partial/full acceptance, undo, cancellation and latency workloads; supported-platform checks | 8 |
+| 17 | OV-602 · Useful autocomplete | Request contract already mapped; investigate concrete provider mismatches | Representative native live-provider, multi-language/project quality; one sum expression is insufficient | 8 |
+| 18 | OV-104 · Subagents | Alternate Task, override and child retry/resume paths | Live explicit overrides, provider cases and accurate child status; retain parent/child isolation | 8 |
+| 19 | OV-203 · Model-specific reasoning | Remaining child status and capability propagation cases | Live advertised efforts or explicit unverified labels; retry/resume and provider-specific behavior | 5 |
+| 20 | OV-701 · Import and restore | Named-profile ownership and CLI/native backup interoperability | Real-profile/platform matrix, interrupted import and I/O-failure rollback without overwriting user data | 5 |
+| 21 | OV-702 · Extension lifecycle | Native ABI, activation and compatibility boundaries | Install/update/uninstall, language packs, native addons and useful incompatible-package errors | 8 |
+| 22 | OV-304 · Authenticated MCP and customization | OAuth/discovery precedence and lifecycle contracts | Consent cancellation, refresh/expiry, secret storage, invalid config and watcher disposal | 8 |
+
+**P2 — An independently buildable OpenVision · 47 points**
+
+| Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
+| ---: | --- | --- | --- | ---: |
+| 23 | OV-801 · Native/WASM inventory | Loaded roles for 52 PE paths and 15 WASM payloads; one complete WASM record remains | Source/license/version/ABI and rebuild-or-replace disposition for every dependency | 13 |
+| 24 | OV-802 · Buildable host and addons | Resolve inventory gaps affecting required upstream bindings | Pin sources/toolchains/lockfiles, rebuild storage/watchers/terminal/OS bindings and verify ABI | 13 |
+| 25 | OV-803 · Owned helper replacements | Required file-service/parser/Agent/sandbox interfaces and hosted contracts | Implement required replacements with malformed-input, authority and cleanup checks | 13 |
+| 26 | OV-804 · Clean independent build | No new broad decompilation; resolve specific missing build inputs | Build twice from a clean machine/checkout, launch and pass core checks without ignored recovery inputs | 8 |
+
+**P3 — Retrieval, incremental indexing and prediction · 42 points**
+
+| Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
+| ---: | --- | --- | --- | ---: |
+| 27 | OV-502 · Relevant project retrieval | Parsing/chunking/embedding/ranking and endpoint contracts after OV-501 | Implement or validate owned retrieval; pinned relevance measurements and unavailable-backend behavior | 13 |
+| 28 | OV-503 · Incremental index updates | Invalidation ownership for edits/renames/deletes/ignores/links/branches | Update only affected records; record read/parse/index counters and configuration invalidation | 8 |
+| 29 | OV-504 · Index recovery and resource use | Worker/cache persistence, schema and cancellation contracts | Pause/cancel, interrupted writes, migration/rebuild, bounded idle resources and reactivation | 8 |
+| 30 | OV-604 · Next-edit prediction | Supported prediction/range/navigation contract and backend requirements | Implement supported predictions, reject stale ranges and measure latency/quality | 13 |
+
+**P4 — Complete distribution and platform acceptance · 39 points**
+
+| Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
+| ---: | --- | --- | --- | ---: |
+| 31 | OV-901 · Windows release | Remaining identity/native-platform differences only where unresolved | Clean install and full critical suite on claimed architectures; independent-build dependency remains | 8 |
+| 32 | OV-904 · Updates and rollback | Profile migration/update ownership where existing behavior is reused | Local packaging, interrupted upgrades, rollback, uninstall retention and release provenance; no Actions | 13 |
+| 33 | OV-903 · Linux completion | Remaining platform-specific rule/path/native differences | Close recorded Linux gaps and declared distribution/display/architecture matrix | 5 |
+| 34 | OV-902 · macOS | Native keychain/permissions/sandbox/addon differences | Real target-machine checks and claimed architectures; signing/notarization if advertised; Mac currently unavailable | 13 |
+
+**P5 — Broader development modes · 26 points**
+
+| Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
+| ---: | --- | --- | --- | ---: |
+| 35 | OV-703 · SSH, WSL and containers | Local/remote host ownership, filesystem, secrets and provider routing | Declare host matrix; connect/reconnect, terminals/extensions, cancellation and cleanup | 13 |
+| 36 | OV-704 · Image/browser/computer modes | Inventory intended modes and required helper/provider contracts | Implement accepted modes with permissions, result handling and cancellation; explain unavailable capabilities | 13 |
+
+The next executable slice is **OV-102 native timeout recovery**, because it
+supports the highest-priority OV-103 Agent workflow. Then finish the outstanding
+Agent edit/storage failure gates. The production deadlines are 300 seconds for
+headers and 600 seconds of read inactivity; the live relay's 60-second abort
+must not be presented as proof of either. Controlled transport stalls and real
+resumed inference must be labeled separately.
 
 Dependencies override a simple queue: retrieval requires OV-501; independent
 builds require the relevant owned contracts; cross-platform release acceptance
@@ -161,30 +234,19 @@ with native unsaved-edit cancellation. It also publishes the existing real
 Provider-default Stop/resubmission evidence and more precise shutdown diagnostics.
 These narrow improvements do not promote a full acceptance story.
 
-The [critical-first queue](#critical-first-backlog-and-eta) supersedes the old
-five-item shortlist. The next concrete actions are:
+The [ranked backlog](#ranked-rea-implementation-and-verification-work) is the
+single execution-priority list. Before a refreshed preview, repeat its declared
+safety/regression suite, verify relocated payload and repository extraction,
+and record exact source identity. Optional accounts remain experimental until
+their real sign-in, switching and lifecycle gates pass.
 
-**Immediate usability gate:** the latest full-workbench runs exit 0xC000001D
-before discovery checks execute, with either unchanged or candidate discovery
-adapters. A local dump records a `urlmon.dll` fault. Restore startup and rerun
-the full-app gates before publishing a refreshed preview. The
-[discovery report](model-discovery-resources.md#full-app-startup-gate) distinguishes
-this unresolved failure from passing minimal native integration. This belongs
-to existing OV-901/1004 usability/recovery scope; no extra points or story credit.
-
-| Order | Existing story / points | Next action and required evidence |
-| --- | --- | --- |
-| 1 | OV-204 / 5; OV-1004 / 13 | The authentic recovered Agent fixture is restored and all 25 focused provider-error checks pass. Continue certificate expiry/hostname, inference timeout, capability-input and remaining native/live-provider gates; [restoration evidence](provider-failure-handling.md#recovered-fixture-restoration-follow-up) |
-| 2 | OV-103/302/303/301, then OV-204/102/403 / points above | Close the P0 edit/data/profile ownership, retry/timeout and shutdown cases, retaining failed-close and earlier exit-134 evidence; never substitute passing happy paths for these gates |
-| 3 | OV-501 / 13; OV-1005 / 8 | Establish actual project-data destinations and extend process-family traffic checks, including authenticated integration behavior |
-| 4 | OV-1003 / 8; OV-1001 / 8 | HTTP deadlines/disconnects now cancel transport and response bodies are bounded; [socket checks and benchmarks](control-plane-http-resources.md) pass in their declared scope. Next bound optional REA subprocess output/cache bytes and reconcile STDIO/manager lifetimes, without claiming native Agent RAM savings |
-| 5 | OV-1003 / 8; OV-1002 / 8 | Discovery lifecycle/body cleanup now passes [native integration](model-discovery-resources.md). After restoring full-app startup, measure idle, large-project, long-session and close/reopen process-family memory/CPU; define budgets, investigate reasoning-session retention and check incremental filesystem/UI work |
-| 6 | OV-102/104/203/602 / points above | Authentication retry now passes for GPT, DeepSeek and Grok; finish timeout/additional retry/tool/reasoning/completion gates. Official GPT-6 account eligibility remains unresolved; API availability must be evaluated per workload |
-| 7 | OV-901 / 8; OV-1004 / 13 | Refresh the Windows preview only after its declared safety/regression gates pass; verify relocated payload and repository extraction, record exact source identity and disclose remaining gaps |
-
-These actions are slices of the existing story estimates, not additional points
-or new acceptance stories. Optional accounts remain experimental until their own
-real sign-in, switching and lifecycle gates pass.
+Earlier full-workbench runs exited 0xC000001D with a recorded `urlmon.dll` fault.
+Later [startup/discovery evidence](model-discovery-resources.md#full-app-startup-gate)
+and [rebuilt native Agent retry runs](rea-agent-retry-history.md) demonstrate usable
+windows in their recorded scope. The old startup failure is historical evidence,
+not a current universal launch blocker. Its underlying OS cause remains unknown;
+helper containment does not prove an OS repair. Fresh packaging, settings/catalog
+retention and long-session checks remain required under OV-901/1003/1004.
 
 ### Latest performance work — implemented in source
 
@@ -211,7 +273,7 @@ not measured whole-app RAM. Shell fault containment and reproducible generation
 have separate [verification gates](runtime-build-integrity.md); settings retention
 and long-session gates remain open.
 
-### Next reliability checks
+### Supporting reliability evidence
 
 The latest [MCP ownership run](rea-mcp-ownership.md) passed its six assertions
 but retained application diagnostics. Address these before treating that run as
@@ -250,13 +312,14 @@ acceptance credit only when their full required gates pass.
 
 ## Delivery sequence
 
-| Stage | Required result | Exit gate |
+| Priority track | Required result | Exit gate |
 | --- | --- | --- |
-| 1 · Reliable Windows development loop | Agent, memories, editing, terminal and autocomplete failure cases | No silent data loss, wrong-provider routing, duplicate inference or orphaned owned tools in the required matrix |
-| 2 · Local intelligence and ownership | Retrieval, incremental indexing, isolation, extension and remote contracts | Known data destinations, recoverable state and supported capability matrix |
-| 3 · Independent OpenVision build | Replace required closed contracts and own the native build inputs | Clean checkout builds and launches without the recovered installation |
-| 4 · Release and performance | Packaging, rollback, supported platforms and resource budgets | Repeatable native acceptance and measured RAM/CPU/input-latency results |
-| 5 · Rust rewrite | Rust-owned core and desktop shell replacing the recovered runtime | Feature parity, data migration, rollback and measured improvement; see [Rust roadmap](rust-roadmap.md) |
+| P0–P1 · Reliable daily development | Agent, memories, editing, terminal, autocomplete and measured resource behavior | No silent data loss, wrong-provider routing, duplicate inference or orphaned owned tools in the required matrix; declared resource budgets pass |
+| P2 · Independent OpenVision build | Replace required closed contracts and own the native build inputs | Clean checkout builds and launches without the recovered installation |
+| P3 · Local intelligence | Retrieval, incremental indexing and prediction | Known data destinations, measured relevance and recoverable indexes |
+| P4 · Distribution | Packaging, rollback and supported platforms | Repeatable native acceptance on claimed targets |
+| P5 · Broader modes | Remote development and specialized workflows | Declared host/capability matrix, permissions and cleanup |
+| Separate Rust track | Rust-owned core and desktop shell replacing the recovered runtime | Feature parity, data migration, rollback and measured improvement; see [Rust roadmap](rust-roadmap.md) |
 
 The current acceptance target remains **34 of 42 fully verified stories**.
 The Rust rewrite is a separate architecture track and does not silently alter this
@@ -271,7 +334,7 @@ declared native scope. Further Linux matrices and macOS require target access.
 | Area | Still needed before its full acceptance gate closes |
 | --- | --- |
 | AI conversations and agents | Live retry/timeout and additional Stop cases, interrupted sessions, remaining edit/undo paths and subagent override/reasoning cases |
-| Local customization | Complete profile-path isolation, stale memory review handling, disk-failure recovery and MCP authentication/lifecycle cases |
+| Local customization | Complete profile-path isolation, physical disk-failure recovery and MCP authentication/lifecycle cases; native stale-memory review rejection has scoped evidence |
 | Projects and languages | Large-project watcher measurements, remaining language navigation/edit matrix and reliable shutdown diagnosis |
 | Retrieval and indexing | Establish data destinations and helper ownership, implement/verify search relevance, incremental updates and index recovery |
 | Autocomplete | Broader live quality, native live-provider acceptance, editing/latency workloads and next-edit prediction |
@@ -375,7 +438,7 @@ not proof of why a past live catalog shrank.
 | --- | --- | --- | --- |
 | OV-1001 / Partial | Live input-token/context/duplicate-request/history measurements; branch/tool reasoning and session disposal; broader protocol lifecycle checks. Optional control-plane HTTP timeout/disconnect now cancels transport work | **8 points** | OV-101/103/503; medium; local titles/coalescing implemented, N+1 protections rechecked; [latest scope](autocomplete-stream-performance.md), [HTTP ownership](control-plane-http-resources.md) |
 | OV-1002 / Partial | Frame/input latency, transcript/model row bounds, heap and filesystem work; incremental edits on fixed workloads. Early autocomplete preparation avoids discarded document/hook work in measured fixtures | **8 points** | OV-202/402/603; [before/after and parsing cost](autocomplete-stream-performance.md); medium; no whole-app RAM claim |
-| OV-1003 / Partial | Bound control-plane subprocess output/cache bytes/expiry; idle/reactivation and long-session memory; reasoning-session retention and complete watcher/timer/process ownership; rerun full-app discovery after startup recovery | **8 points** | OV-504/703/901–903; [remaining findings](autocomplete-stream-performance.md), [discovery owner](model-discovery-resources.md); medium; scoped fixes do not establish whole-app bounds |
+| OV-1003 / Partial | Bound control-plane subprocess output/cache bytes/expiry; idle/reactivation and long-session memory; reasoning-session retention and complete watcher/timer/process ownership; repeat full-app discovery on the release candidate | **8 points** | OV-504/703/901–903; [remaining findings](autocomplete-stream-performance.md), [discovery owner](model-discovery-resources.md); medium; scoped fixes do not establish whole-app bounds |
 | OV-1004 / Planned | Release matrix, secret/log/authority failures, corrupt state, failed cleanup/crash recovery and recovery instructions | **13 points** | All accepted release dependencies; medium after implementation stabilizes |
 | OV-1005 / Partial | Extended process-tree network evidence, conversation metadata-sync producer audit and native macOS/Linux telemetry checks | **8 points** | [Multi-window run logs contain unauthenticated metadata-sync failures](rea-mcp-ownership.md); destination/transport behavior remains unverified. Native access and realistic workloads; independently installed extensions assessed separately |
 

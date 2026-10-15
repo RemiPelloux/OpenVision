@@ -13,6 +13,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Resume, pin and search projects | [Project home](project-home.md) |
 | Change themes, colors, fonts and icons | [Appearance](appearance.md) |
 | See every missing feature and its complexity | [Feature roadmap](roadmap.md) |
+| Decide what to investigate and implement first | [All 36 unfinished stories ranked by importance](roadmap.md#ranked-rea-implementation-and-verification-work) |
 | Plan the Rust rewrite and its priorities | [36 packages, points and migration gates](rust-roadmap.md) |
 | See what moves to Rust and what stays | [Component rewrite/retain audit](rust-component-audit.md) |
 | Track every existing feature through the Rust rewrite | [42-story replacement acceptance map](rust-acceptance-map.md) |

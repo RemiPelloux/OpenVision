@@ -15,7 +15,7 @@ options without an OpenVision account.
 **Development preview · Windows x64 and Linux x64 tested · macOS unverified**
 
 [Get started](#get-started) · [Configure AI](#bring-your-own-ai) ·
-[Feature roadmap](docs/roadmap.md) ·
+[Prioritized feature roadmap](docs/roadmap.md#ranked-rea-implementation-and-verification-work) ·
 [Releases](https://github.com/RemiPelloux/OpenVision/releases) ·
 [Documentation](docs/README.md)
 
