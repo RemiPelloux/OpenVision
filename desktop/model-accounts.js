@@ -18,7 +18,7 @@ function action(text, handler) {
   return value;
 }
 
-export function createAccountSettings(getService = () => window.openvisionProjectHome) {
+export function createAccountSettings(getService = () => window.openvisionProjectHome, onChange = async () => {}) {
   const root = node('section', '', 'openvision-account-settings');
   root.setAttribute('aria-label', 'Account integrations');
   const heading = node('div', '', 'openvision-settings-section-heading');
@@ -37,6 +37,7 @@ export function createAccountSettings(getService = () => window.openvisionProjec
     if (!result?.supported || !Array.isArray(result.providers)) throw Error('Account integrations are unavailable in this window.');
     records = result.providers; loaded = true;
     if (service.accountProfiles) profiles = await service.accountProfiles();
+    await onChange();
   }
 
   async function run(operation, message = '', success = '') {
@@ -63,7 +64,7 @@ export function createAccountSettings(getService = () => window.openvisionProjec
       const service = getService();
       if (!service?.connectAccount) throw Error('Account integrations are unavailable. Refresh status and try again.');
       await service.connectAccount(id); await load();
-    }, 'Opening secure browser sign-in. First-time setup may download the official agent…', 'Sign-in completed. Open the agent to start working.');
+    }, 'Opening secure browser sign-in. First-time setup may download the official agent…', 'Connected. Choose an account model in Agent chat.');
   }
 
   function card(integration) {
@@ -122,8 +123,8 @@ export function createAccountSettings(getService = () => window.openvisionProjec
       catalog.append(node('summary', `Models · ${models.length}`));
       const list = node('ul');
       for (const model of models) list.append(node('li', model.name || model.id));
-      catalog.append(list); card.append(catalog);
-    } else if (record?.signedIn === true) card.append(node('small', `Choose models inside ${integration.agent}.`));
+      catalog.append(list); card.append(catalog, node('small', 'Available in the Agent model picker. Text and OpenVision tools supported.'));
+    } else if (record?.signedIn === true) card.append(node('small', record.modelNotice || `Choose models inside ${integration.agent}.`));
     if (record?.busy) for (const control of actions.querySelectorAll('button')) control.dataset.pending = 'true';
     return card;
   }

@@ -1,4 +1,4 @@
-import { ModelProviders } from './openvision-model-providers.js';
+import { ModelProviders, refreshAccountModels } from './openvision-model-providers.js';
 import { completionControl } from './openvision-completion-provider.js';
 import { reasoningSource } from './model-reasoning.js';
 import { createAccountSettings } from './model-accounts.js';
@@ -75,7 +75,9 @@ export function mountModels(container, bridge) {
   try { providers = new ModelProviders(bridge); }
   catch { container.append(element('p', 'Saved provider configuration could not be loaded.')); return; }
   let busy = false;
-  const accounts = createAccountSettings();
+  const accounts = createAccountSettings(undefined, async () => {
+    await refreshAccountModels(bridge.storage, true); providers.publishModels();
+  });
   const search = element('input');
   search.type = 'search'; search.placeholder = 'Search models';
   search.setAttribute('aria-label', 'Search models');

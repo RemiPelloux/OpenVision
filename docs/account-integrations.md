@@ -15,7 +15,8 @@ reopens the optional first-launch guide; skipping setup keeps the local editor u
 3. Complete the provider's browser sign-in. Codex keeps its official callback
    listener alive until completion or cancellation. If Claude asks for a one-time
    code, paste the code from its official page into OpenVision's code prompt.
-4. Open **Codex** or **Claude Code** to use the connected account.
+4. Choose the account's model in the **Agent** model picker, or open its official
+   **Codex** / **Claude Code** panel. Account groups show the returned email.
 
 Sign-in opens the system browser directly for validated official HTTPS sign-in
 destinations. It does not require an additional Trusted Domains confirmation.
@@ -25,12 +26,36 @@ build, close and reopen OpenVision to load the matching renderer and main proces
 
 The account card displays the email returned by the official client. A local
 profile name is only a label, not evidence of a signed-in identity. Codex's model
-list comes from its official app-server. Claude model choices remain inside the
-official Claude Code panel. Entitlements and available models depend on the account.
+list comes from its official app-server. OpenVision offers only GPT-6 Codex account
+models actually advertised by that server; older models and opaque aliases are
+excluded. If none are available, settings explains the limitation. Claude's model
+catalog and reasoning choices come from its official client. Entitlements and
+available models depend on the account.
 
-Account subscriptions are used through their official coding integrations.
-OpenVision's existing Agent and Tab autocomplete continue to use configured API
-providers. Subscription credentials are not copied into the custom API-key store.
+Account subscriptions use their official clients through an authenticated,
+temporary loopback bridge. Agent chat supports streaming text and the existing
+OpenVision tools: file reads, edits and approvals stay in OpenVision. The official
+clients' built-in shell and editing tools are disabled for these requests.
+Subscription credentials are not copied into the custom API-key store. The local
+bridge URL and its random bearer token remain in memory. Tab autocomplete continues
+to use configured API providers.
+
+Account Agent support is experimental. Images are not supported. Prior messages
+are supplied as quoted conversation history rather than replayed as native
+official-client turns. Pending tool results resume their owned official-client
+process. Switching accounts invalidates that connection; finish or cancel active
+work first. Requests are bounded to four active sessions, 16 MiB input, 4 MiB
+output and a two-minute idle timeout. Cancellation releases the client.
+
+## Account usage
+
+The bottom bar shows usage for the selected Codex and Claude accounts in this
+window. Percentages mean **used**, not remaining. Click for window labels, reset
+times, last-check time, refresh and account controls. Checks share in-flight work,
+cache for five minutes and pause periodic refresh while the window is unfocused.
+Manual checks are limited to once every 30 seconds. Usage checks do not submit
+an inference request. When an official client supplies no quota data, the label
+says **Usage unavailable**; OpenVision does not estimate account limits.
 
 ## Change accounts
 
@@ -141,10 +166,28 @@ argument helper. This wiring does not establish native Linux account verificatio
 Controlled tests cover opener failure, cancellation, handoff timeout,
 display-data filtering and UI behavior; these tests do not establish OAuth success.
 
-Completed Codex browser consent and signed-in identity, subscription inference,
-switching during active agent work, and native macOS/Linux behavior still need
+Real Windows checks on October 15, 2026 used the existing signed-in profiles.
+Claude Sonnet read and edited a disposable JavaScript file through the native
+OpenVision Agent, preserved a random verification comment and returned that
+comment in its reply. The edit was checked on disk. Codex's official rate-limit
+API returned quota windows. Claude's usage operation returned no usable quota
+windows, which the UI reported as unavailable.
+
+The installed Codex extension 26.5730.61309 / CLI 0.147.0 was checked against the
+current registry version. Its refreshed account catalog offered no GPT-6 models.
+A real `gpt-6.1-sol` request was rejected with “The 'gpt-6.1-sol' model is not
+supported when using Codex with a ChatGPT account.” OpenVision does not relabel
+older models or silently fall back. GPT-6 API providers are separate connections.
+A native Agent request using the saved Codex Easy `gpt-6.1-sol` connection
+reached its configured endpoint but returned HTTP 403 `INSUFFICIENT_BALANCE`.
+GPT-6 file-edit verification through that connection remains blocked by the
+provider balance; it is not reported as a successful inference test.
+
+Switching during active agent work and native macOS/Linux behavior still need
 verification. Native system-keychain cleanup is not verified on macOS. This
-feature does not change the 42-story acceptance denominator.
+feature does not change the 42-story acceptance denominator. Controlled transport
+tests cover cancellation, capacity, tool continuation and account/model isolation;
+they do not establish real-provider behavior.
 
 Official references: [Codex authentication](https://developers.openai.com/codex/auth/),
 [Codex app-server](https://developers.openai.com/codex/app-server/),

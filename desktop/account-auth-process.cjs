@@ -56,7 +56,10 @@ async function runJson(options, args, onText) {
 }
 
 async function codexServer(options) {
-  const process = ownedProcess(options, ['-c', 'analytics.enabled=false', '-c', 'feedback.enabled=false', 'app-server', '--stdio'], 10 * 60 * 1000);
+  const args = ['-c', 'analytics.enabled=false', '-c', 'feedback.enabled=false'];
+  if (options.inference) args.push('-c', 'features.shell_tool=false', '-c', 'features.apply_patch_freeform=false',
+    '-c', 'features.js_repl=false', '-c', 'features.collab=false', '-c', 'web_search="disabled"');
+  const process = ownedProcess(options, [...args, 'app-server', '--stdio'], 10 * 60 * 1000);
   const requests = new Map(), listeners = new Set();
   let serial = 0, buffer = '', closed = false;
   process.child.stdout.setEncoding('utf8');
@@ -64,7 +67,7 @@ async function codexServer(options) {
     let value;
     try { value = JSON.parse(line); } catch { process.stop(new Error('Official Codex client returned malformed protocol data.')); return; }
     const pending = requests.get(value.id);
-    if (pending) {
+    if (pending && !value.method) {
       requests.delete(value.id); clearTimeout(pending.timeout);
       if (value.error) pending.reject(new Error(`Official Codex request failed (${value.error.code ?? 'unknown'}).`));
       else pending.resolve(value.result);
@@ -90,9 +93,10 @@ async function codexServer(options) {
     for (const listener of listeners) listener({ method: 'openvision/processClosed', error: failure });
   });
   try {
-    await request('initialize', { clientInfo: { name: 'openvision', version: '0.2.0' } });
+    await request('initialize', { clientInfo: { name: 'openvision', version: '0.2.0' },
+      ...(options.inference ? { capabilities: { experimentalApi: true } } : {}) });
     process.child.stdin.write(JSON.stringify({ method: 'initialized', params: {} }) + '\n');
-    return { request, listeners, close: process.close };
+    return { request, listeners, respond: (id, result) => process.child.stdin.write(JSON.stringify({ id, result }) + '\n'), close: process.close };
   } catch (error) { await process.close(); throw error; }
 }
 

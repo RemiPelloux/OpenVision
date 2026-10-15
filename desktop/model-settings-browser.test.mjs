@@ -8,7 +8,7 @@ async function fixture(t) {
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 850, height: 900 } });
   const files = new Set(['model-settings.js', 'model-accounts.js', 'account-picker.js', 'model-settings.css', 'model-providers.js',
-    'completion-provider.js', 'model-catalog.js', 'model-reasoning.js', 'model-identity.js']);
+    'completion-provider.js', 'model-catalog.js', 'model-reasoning.js', 'model-identity.js', 'account-models.js']);
   await page.route('http://127.0.0.1/**', async route => {
     const name = new URL(route.request().url()).pathname.slice(1).replace(/^openvision-/, '');
     if (!name) return route.fulfill({ contentType: 'text/html', body: '<link rel="stylesheet" href="/model-settings.css"><main class="openvision-model-settings"></main>' });
@@ -110,6 +110,15 @@ test('account cards show verified identity and provider models and refresh expli
   assert.equal(await page.getByRole('combobox', { name: 'Codex account', exact: true }).getAttribute('data-value'), 'personal');
   await page.getByText('Models · 1', { exact: true }).click();
   await page.getByText('Provider-reported model', { exact: true }).waitFor();
+  await page.evaluate(() => {
+    window.openvisionProjectHome.accountStatus = async () => ({ supported: true, providers: [
+      { id: 'codex', installed: true, signedIn: true, models: [],
+        modelNotice: 'This account does not currently offer GPT-6 models. Use your GPT-6 API provider in Agent chat.' },
+    ] });
+  });
+  await page.getByRole('button', { name: 'Refresh status' }).click();
+  await page.getByText('This account does not currently offer GPT-6 models. Use your GPT-6 API provider in Agent chat.', { exact: true }).waitFor();
+  assert.equal(await page.getByText('Models · 1', { exact: true }).count(), 0);
 });
 
 test('stacked account rows fit wide and narrow panels and failed preparation restores controls', async t => {

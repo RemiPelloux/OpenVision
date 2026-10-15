@@ -2,17 +2,20 @@
 
 const { officialLoginUrl } = require('./account-login-url.cjs');
 const { codexServer, runJson } = require('./account-auth-process.cjs');
+const { claudeClient } = require('./account-claude-client.cjs');
 const cleanText = value => typeof value === 'string' ? value.slice(0, 512) : null;
 
 function accountStatus(provider, account, models = []) {
   if (provider === 'claude') return { provider, signedIn: account.loggedIn === true,
     method: cleanText(account.authMethod), email: cleanText(account.email), plan: cleanText(account.subscriptionType),
     models: [], modelsSource: 'available-in-official-panel' };
+  const currentModels = models.filter(model => /^gpt-6(?:[.-]|$)/.test(model.id));
   return { provider, signedIn: account !== null && account !== undefined, method: cleanText(account?.type),
     email: cleanText(account?.email), plan: cleanText(account?.planType),
-    models: models.map(model => ({ id: cleanText(model.id), name: cleanText(model.displayName ?? model.model),
+    models: currentModels.map(model => ({ id: cleanText(model.id), name: cleanText(model.displayName ?? model.model),
       reasoningLevels: (model.supportedReasoningEfforts ?? []).map(level => cleanText(level.reasoningEffort)).filter(Boolean) })).filter(model => model.id),
-    modelsSource: 'official-codex-app-server' };
+    modelsSource: 'official-codex-app-server',
+    modelNotice: currentModels.length ? null : 'This account does not currently offer GPT-6 models. Use your GPT-6 API provider in Agent chat.' };
 }
 
 async function readCodex(server) {
@@ -32,7 +35,22 @@ async function readCodex(server) {
 }
 
 async function readAccount(options) {
-  if (options.provider === 'claude') return accountStatus('claude', await runJson(options, ['auth', 'status', '--json']));
+  if (options.provider === 'claude') {
+    const status = accountStatus('claude', await runJson(options, ['auth', 'status', '--json']));
+    if (!status.signedIn) return status;
+    const client = claudeClient({ ...options, timeoutMs: 30000 });
+    try {
+      const initialized = await client.request({ subtype: 'initialize', hooks: {}, sdkMcpServers: [] });
+      const seen = new Set();
+      const models = (Array.isArray(initialized.models) ? initialized.models : []).flatMap(model => {
+        const id = cleanText(model.resolvedModel ?? model.value);
+        if (!id || seen.has(id)) return []; seen.add(id);
+        return [{ id, name: id, reasoningLevels: (Array.isArray(model.supportedEffortLevels) ? model.supportedEffortLevels : []).map(cleanText).filter(Boolean) }];
+      });
+      return { ...status, models, modelsSource: 'official-claude-code-control' };
+    } catch { return status; }
+    finally { await client.close(); }
+  }
   const server = await codexServer(options);
   try { return await readCodex(server); } finally { await server.close(); }
 }

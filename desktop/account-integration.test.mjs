@@ -110,7 +110,9 @@ test('bundled extension build produces activatable manifest and runtime files', 
   await mkdir(workerDirectory, { recursive: true });
   await writeFile(join(workerDirectory, 'webWorkerExtensionHostIframe.html'), `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-old=' 'self'; worker-src 'self' blob:;"><script>window.worker = true;</script>`);
   for (const name of ['extension', 'catalog', 'download', 'auth']) await cp(new URL(`./account-integration-${name}.cjs`, import.meta.url), join(root, 'desktop', `account-integration-${name}.cjs`));
-  for (const name of ['account-auth.cjs', 'account-auth-process.cjs', 'account-login-url.cjs']) await cp(new URL(`./${name}`, import.meta.url), join(root, 'desktop', name));
+  for (const name of ['account-auth.cjs', 'account-auth-process.cjs', 'account-login-url.cjs',
+    'account-usage.cjs', 'account-usage-protocol.cjs', 'account-usage-statusbar.cjs', 'account-claude-client.cjs',
+    'account-chat-bridge.cjs', 'account-chat-clients.cjs', 'account-chat-request.cjs', 'account-chat-session.cjs']) await cp(new URL(`./${name}`, import.meta.url), join(root, 'desktop', name));
   await installAccountIntegrations(root); await installAccountIntegrations(root);
   const manifest = JSON.parse(await readFile(join(root, 'source/app/extensions/openvision-accounts/package.json'), 'utf8'));
   assert.ok(manifest.activationEvents.includes('onCommand:openvision.accounts.status'));

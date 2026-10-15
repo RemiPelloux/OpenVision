@@ -70,6 +70,7 @@ export function createProjectHomeService(owner, getWorkspaces) {
     appearance: () => owner.commandService.executeCommand('workbench.action.openSettings', 'workbench.color'),
     models: () => owner.commandService.executeCommand('aiSettings.action.open', 'models'),
     accountStatus: options => owner.commandService.executeCommand('openvision.accounts.status', options),
+    accountCatalog: () => owner.commandService.executeCommand('openvision.accounts.catalog'),
     async openAccountBrowser(provider, url) {
       const validated = await globalThis.vscode.ipcRenderer.invoke('vscode:openvision-account-profiles', { action: 'login-url', provider, url });
       return owner.nativeHostService.openExternal(validated);

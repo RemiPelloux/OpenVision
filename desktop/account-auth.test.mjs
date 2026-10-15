@@ -17,11 +17,20 @@ async function fixture(t, provider = 'claude') {
 
 test('account status exposes allowlisted display data without credential fields', () => {
   const result = accountStatus('codex', { type: 'chatgpt', email: 'test@example.invalid', planType: 'plus', accessToken: 'must-not-leak' },
-    [{ id: 'model-id', displayName: 'Model', supportedReasoningEfforts: [{ reasoningEffort: 'high' }], secret: 'must-not-leak' }]);
+    [{ id: 'gpt-6.1-sol', displayName: 'Model', supportedReasoningEfforts: [{ reasoningEffort: 'high' }], secret: 'must-not-leak' }]);
   assert.equal(result.signedIn, true); assert.equal(result.plan, 'plus');
-  assert.deepEqual(result.models[0], { id: 'model-id', name: 'Model', reasoningLevels: ['high'] });
+  assert.deepEqual(result.models[0], { id: 'gpt-6.1-sol', name: 'Model', reasoningLevels: ['high'] });
   assert.ok(!JSON.stringify(result).includes('must-not-leak'));
   assert.equal(accountStatus('claude', { loggedIn: false, authMethod: 'none' }).signedIn, false);
+});
+
+test('Codex offers only provider-advertised GPT-6 models without inventing availability', () => {
+  const status = models => accountStatus('codex', { type: 'chatgpt' }, models.map(id => ({ id })));
+  assert.deepEqual(status(['gpt-5.6-sol', 'gpt-daybreak-blue-latest']).models, []);
+  assert.match(status(['gpt-5.6-sol']).modelNotice, /does not currently offer GPT-6/);
+  const current = status(['gpt-5.6-sol', 'gpt-6-astra', 'gpt-6.1-sol', 'gpt-60-fake']);
+  assert.deepEqual(current.models.map(model => model.id), ['gpt-6-astra', 'gpt-6.1-sol']);
+  assert.equal(current.modelNotice, null);
 });
 
 test('only official HTTPS OAuth destinations can be opened', () => {

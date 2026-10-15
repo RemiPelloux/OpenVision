@@ -259,13 +259,13 @@ for (const variant of ['desktop', 'glass']) {
     const start = text.indexOf('computeAvailableDefaultModels() {');
     const method = text.slice(start, text.indexOf('getAvailableDefaultModels() {', start)).trim();
     const mapper = method.match(/openvisionCatalog\(this.storageService\)\.map\(([\w$]+)\)/)[1];
-    const compute = new Function(variant === 'desktop' ? 'zc' : 'Rl', 'openvisionCatalog', mapper,
-      `return function ${method};`)({ localMode: true }, allCatalog, model => model);
+    const compute = new Function(variant === 'desktop' ? 'zc' : 'Rl', 'openvisionCatalog', mapper, 'openvisionWatchAccounts',
+      `return function ${method};`)({ localMode: true }, allCatalog, model => model, () => ({ dispose() {} }));
     const services = bridge();
     services.storage.store('openvision.model-providers.v1', JSON.stringify({ version: 1, activeId: 'ce', providers: [
       { id: 'ce', name: 'CE', url: 'https://codex-easy.ai/v1', models: [{ id: 'deepseek-v4-pro', name: 'DeepSeek', enabled: true }] },
     ] }));
-    const startupModels = compute.call({ storageService: services.storage, reactiveStorageService: {
+    const startupModels = compute.call({ _register: value => value, storageService: services.storage, reactiveStorageService: {
       availableModelsCatalogRevision() {}, applicationUserPersistentStorage: { availableDefaultModels2: [{ name: 'stale' }] },
     } });
     assert.equal(startupModels[0].name, modelSelectionId('ce', 'deepseek-v4-pro'));

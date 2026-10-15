@@ -73,9 +73,10 @@ test('disabled or removed selections fail without crossing providers, including 
 
 for (const request of [requestProvider, requestAgentProvider]) {
   test(`${request.name} rejects changed configuration during secret lookup and never caches secrets`, async () => {
-    const f = fixture(), gate = Promise.withResolvers();
-    f.secrets.get = () => gate.promise;
+    const f = fixture(), gate = Promise.withResolvers(), started = Promise.withResolvers();
+    f.secrets.get = () => { started.resolve(); return gate.promise; };
     const pending = request(f.storage, f.secrets, modelSelectionId('one', 'one'));
+    await started.promise;
     f.providers[0].url = 'https://changed.test/v1'; gate.resolve('old-fixture');
     await assert.rejects(pending, /settings changed/);
     f.secrets.get = async () => 'new-fixture';

@@ -10,8 +10,8 @@ import { preserveReasoningSelection } from './reasoning-selection-customization.
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
-const catalogImport = 'import {allCatalog as openvisionCatalog, modelPreference as openvisionModelPreference, modelPreferences as openvisionModelPreferences} from "../code/electron-sandbox/workbench/openvision-model-providers.js";';
-const catalogPoller = `async getModels($1) { const catalog = openvisionCatalog(this.storageService); const models = catalog.map(model => model.name); this.reactiveStorageService.setApplicationUserPersistentStorage("availableDefaultModels2", catalog); this.reactiveStorageService.setApplicationUserPersistentStorage("availableAPIKeyModels", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderModelIds", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderAgentModelIds", models); this._didChangeAvailableModels?.(); return {models}; }`;
+const catalogImport = 'import {allCatalog as openvisionCatalog, refreshAccountModels as openvisionRefreshAccounts, watchAccountModels as openvisionWatchAccounts, modelPreference as openvisionModelPreference, modelPreferences as openvisionModelPreferences} from "../code/electron-sandbox/workbench/openvision-model-providers.js";';
+const catalogPoller = `async getModels($1) { await openvisionRefreshAccounts(this.storageService); const catalog = openvisionCatalog(this.storageService); const models = catalog.map(model => model.name); this.reactiveStorageService.setApplicationUserPersistentStorage("availableDefaultModels2", catalog); this.reactiveStorageService.setApplicationUserPersistentStorage("availableAPIKeyModels", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderModelIds", models); this.reactiveStorageService.setApplicationUserPersistentStorage("localProviderAgentModelIds", models); this._didChangeAvailableModels?.(); return {models}; }`;
 function owner(text, anchor) {
   const index = text.indexOf(anchor);
   if (index < 0 || text.indexOf(anchor, index + anchor.length) >= 0) throw new Error(`Model customization anchor missing or ambiguous: ${anchor}`);
@@ -52,6 +52,8 @@ function localTaskSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  text = text.replace('import {allCatalog as openvisionCatalog, modelPreference as openvisionModelPreference, modelPreferences as openvisionModelPreferences} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
+  text = text.replace(/async getModels\(([\w$]+)\) \{ const catalog = openvisionCatalog\(this.storageService\);/, 'async getModels($1) { await openvisionRefreshAccounts(this.storageService); const catalog = openvisionCatalog(this.storageService);');
   text = readablePickerLabels(text, variant);
   text = preserveReasoningSelection(text, variant);
   text = paginateModelPicker(text, variant);
@@ -175,6 +177,11 @@ function savedReasoningPreferences(text, variant) {
 
 function startupCatalog(text, variant) {
   const marker = '/* OpenVision catalog from saved providers */';
+  const watch = `/* OpenVision account catalog lifecycle */
+            if (!this.openvisionAccountCatalog) this.openvisionAccountCatalog = this._register(openvisionWatchAccounts(this.storageService,
+              () => this.reactiveStorageService.bumpAvailableModelsCatalogRevision()));`;
+  if (text.includes(marker) && !text.includes('/* OpenVision account catalog lifecycle */'))
+    text = text.replace(marker, marker + '\n' + watch);
   if (text.includes(marker)) return text;
   const pattern = /computeAvailableDefaultModels\(\) \{\s*this\.reactiveStorageService\.availableModelsCatalogRevision\(\);/g;
   const matches = [...text.matchAll(pattern)];
@@ -183,7 +190,7 @@ function startupCatalog(text, variant) {
   const normalizer = text.slice(start, text.indexOf('getAvailableDefaultModels()', start)).match(/\.map\(([\w$]+)\)/)?.[1];
   if (!normalizer) throw new Error('Model catalog normalizer missing');
   const flag = variant === 'desktop' ? 'zc' : 'Rl';
-  const guard = `\n            ${marker}\n            if (${flag}.localMode) return openvisionCatalog(this.storageService).map(${normalizer});`;
+  const guard = `\n            ${marker}\n            ${watch}\n            if (${flag}.localMode) return openvisionCatalog(this.storageService).map(${normalizer});`;
   return text.slice(0, start) + guard + text.slice(start);
 }
 
@@ -195,6 +202,8 @@ export async function installModelSettings(root) {
   for (const name of ['model-settings.js', 'model-settings.css', 'model-providers.js', 'model-picker.css'])
     await copyFile(join(root, 'desktop', name), join(workbench, `openvision-${name}`));
   await copyFile(join(root, 'desktop/model-accounts.js'), join(workbench, 'model-accounts.js'));
+  await copyFile(join(root, 'desktop/account-models.js'), join(workbench, 'account-models.js'));
+  await copyFile(join(root, 'desktop/account-models.js'), join(app, 'out/account-models.js'));
   await copyFile(join(root, 'desktop/account-picker.js'), join(workbench, 'account-picker.js'));
   await copyFile(join(root, 'desktop/model-http.mjs'), join(app, 'out/openvision-model-http.js'));
   await copyFile(join(root, 'desktop/model-providers.js'), join(app, 'out/openvision-model-providers.js'));

@@ -20,7 +20,7 @@
     "test:import": "node --test desktop/cursor-import.test.mjs desktop/import-destinations.test.mjs desktop/import-preview.test.mjs desktop/import-replacement.test.mjs desktop/import-recovery-cli.test.mjs",
     "verify:import": "node desktop/verify-import.mjs",
     "check:desktop": "node desktop/check.mjs",
-    "test:accounts": "node --test desktop/account-auth.test.mjs desktop/account-integration.test.mjs desktop/account-integration-auth.test.mjs desktop/account-profile.test.mjs desktop/account-activation.test.mjs desktop/account-browser.test.mjs desktop/account-switch.test.mjs desktop/account-picker-browser.test.mjs desktop/model-settings-browser.test.mjs desktop/onboarding-browser.test.mjs",
+    "test:accounts": "node --test --test-concurrency=2 desktop/account-auth.test.mjs desktop/account-chat.test.mjs desktop/account-models.test.mjs desktop/account-usage.test.mjs desktop/account-integration.test.mjs desktop/account-integration-auth.test.mjs desktop/account-profile.test.mjs desktop/account-activation.test.mjs desktop/account-browser.test.mjs desktop/account-switch.test.mjs desktop/account-picker-browser.test.mjs desktop/model-settings-browser.test.mjs desktop/onboarding-browser.test.mjs",
     "verify:accounts": "node desktop/account-integration-verify.mjs",
     "verify:account-switch": "node desktop/verify-account-switch.mjs",
     "verify:account-picker": "node desktop/verify-account-picker.mjs",

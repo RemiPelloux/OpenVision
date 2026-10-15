@@ -1,6 +1,8 @@
 import { catalogModel } from './model-catalog.js';
 import { reasoningChoices, unavailableReasoning, providerDefaultReasoning } from './model-reasoning.js';
 import { modelSelectionId, parseModelSelection, modelSelectionError } from './model-identity.js';
+import { accountProviders, refreshAccountModels } from './account-models.js';
+export { refreshAccountModels, watchAccountModels } from './account-models.js';
 const storageKey = 'openvision.model-providers.v1';
 const secretKey = id => `openvision.provider.${id}`;
 const routeSnapshots = new WeakMap();
@@ -100,7 +102,7 @@ export class ModelProviders {
   }
 
   allModels() {
-    return stateCatalog(this.state);
+    return stateCatalog({ ...this.state, providers: [...this.state.providers, ...accountProviders(this.bridge.storage)] });
   }
 
   completionChoices(query, selected, limit) {
@@ -255,7 +257,12 @@ export function activeModelIds(storage) {
 }
 
 export function allCatalog(storage) {
-  return stateCatalog(readState(storage.get(storageKey, -1)));
+  return stateCatalog(combinedState(storage));
+}
+
+function combinedState(storage) {
+  const state = readState(storage.get(storageKey, -1));
+  return { ...state, providers: [...state.providers, ...accountProviders(storage)] };
 }
 
 export function modelPreference(storage, preferences, id) {
@@ -299,9 +306,10 @@ function* enabledEntries(state) {
 function routingSnapshot(storage) {
   const text = storage.get(storageKey, -1);
   const previous = routeSnapshots.get(storage);
-  if (previous && previous.text === text) return previous;
+  const accounts = accountProviders(storage);
+  if (previous && previous.text === text && previous.accounts === accounts) return previous;
   routeSnapshots.delete(storage);
-  const state = readState(text), routes = new Map(), aliases = new Map();
+  const state = combinedState(storage), routes = new Map(), aliases = new Map();
   for (const provider of state.providers) {
     for (const model of provider.models) {
       const selectionId = modelSelectionId(provider.id, model.id);
@@ -311,7 +319,7 @@ function routingSnapshot(storage) {
       aliases.set(model.id, aliases.has(model.id) ? null : selectionId);
     }
   }
-  const snapshot = { text, routes, aliases };
+  const snapshot = { text, accounts, routes, aliases };
   routeSnapshots.set(storage, snapshot);
   return snapshot;
 }
@@ -326,17 +334,19 @@ export function requestProviderRoute(storage, modelId) {
 }
 
 export async function requestProvider(storage, secrets, modelId) {
+  await refreshAccountModels(storage);
   const route = requestProviderRoute(storage, modelId);
   if (!route) {
     if (parseModelSelection(modelId) || routingSnapshot(storage).aliases.has(modelId)) throw modelSelectionError('The selected model or provider is unavailable. Select an enabled model in OpenVision settings.');
     return undefined;
   }
-  const snapshot = routingSnapshot(storage), apiKey = await secrets.get(secretKey(route.providerId)) ?? '';
+  const snapshot = routingSnapshot(storage), apiKey = await routeKey(storage, secrets, route.providerId);
   if (routingSnapshot(storage) !== snapshot) throw modelSelectionError('Provider settings changed before dispatch. Try again.');
   return { baseUrl: route.baseUrl, modelId: route.modelId, apiKey };
 }
 
 export async function requestAgentProvider(storage, secrets, selection) {
+  await refreshAccountModels(storage);
   const modelId = typeof selection === 'string' ? selection : selection?.modelId;
   const route = requestProviderRoute(storage, modelId);
   if (!route) {
@@ -353,8 +363,12 @@ export async function requestAgentProvider(storage, secrets, selection) {
     if (snapshot.aliases.get(item.modelId) === item.selectionId) grouped.get(item.providerId).legacyModelIds.push(item.modelId);
   }
   const openvisionProviders = await Promise.all([...grouped.values()].map(async provider =>
-    ({ ...provider, apiKey: await secrets.get(secretKey(provider.id)) ?? '' })));
+    ({ ...provider, apiKey: await routeKey(storage, secrets, provider.id) })));
   if (routingSnapshot(storage) !== snapshot) throw modelSelectionError('Provider settings changed before dispatch. Try again.');
   const selected = openvisionProviders.find(provider => provider.id === route.providerId);
   return { baseUrl: selected.baseUrl, apiKey: selected.apiKey, modelId: route.modelId, openvisionProviders };
+}
+
+async function routeKey(storage, secrets, id) {
+  return accountProviders(storage).find(provider => provider.id === id)?.apiKey ?? await secrets.get(secretKey(id)) ?? '';
 }
