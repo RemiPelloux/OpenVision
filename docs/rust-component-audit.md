@@ -1,10 +1,13 @@
 # Rust component audit
 
 **15 October 2026 · source audit, not a runtime trace or a completed rewrite.**
-Reference: `7ed66741f7c1713fb0be77afcba71d20c75dc0ee`. Decisions below are proposed
+Reference: `a9ebd69691b5eed10c702d3dd6b9014814bdca5a`. Decisions below are proposed
 architecture; linked code establishes the current boundary. Historical evidence
 keeps its original date and scope. See the [roadmap](rust-roadmap.md) for points
 and the [performance plan](rust-performance-plan.md) for how gains will be judged.
+The [acceptance map](rust-acceptance-map.md) covers all 42 existing stories;
+[migration contracts](rust-migration-contracts.md) define how each new owner
+replaces the current one without losing data or duplicating work.
 
 ## Current architecture and limits
 
@@ -26,6 +29,10 @@ There are two separate orchestration surfaces: the native editor's Agent/MCP
 integration and the optional Node [control plane](../src/server.mjs). Rewriting
 the latter alone would leave the editor, its Agent and its memory costs in place.
 REA itself is an external investigation tool, not part of the OpenVision rewrite.
+
+At this snapshot, the versioned OpenVision tree contains no `.rs` source,
+`Cargo.toml` workspace or Rust toolchain manifest. The rewrite is therefore at
+planning/contract definition, with zero Rust replacement packages accepted.
 
 ## Decision vocabulary
 
@@ -63,11 +70,11 @@ Gains in these tables are expectations, not measured Rust improvements.
 
 The control plane's REA adapter has an entry-count cache bound but no
 total-byte bound and accumulates subprocess stdout/stderr. At the pinned audit
-revision, its MCP timeout could finish the pending result without aborting HTTP.
-The subsequent [HTTP ownership fix](control-plane-http-resources.md) now cancels
+revision, the [HTTP ownership fix](control-plane-http-resources.md) cancels
 timed-out/disconnected work and bounds decoded response bytes; real loopback
-socket tests verify it. Other control-plane lifecycle gates remain open. The
-subsequent [discovery ownership fix](model-discovery-resources.md) adds
+socket tests verify it. Earlier timeout handling could finish the pending result
+without aborting HTTP. Other control-plane lifecycle gates remain open. The
+[discovery ownership fix](model-discovery-resources.md) adds
 renderer-lifetime cancellation, non-OK-body disposal and strict UTF-8 validation.
 The original fault is reproduced and the candidate verified in a minimal native
 Electron host; the full-workbench startup gate remains blocked. These fixes do

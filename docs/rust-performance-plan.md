@@ -22,6 +22,31 @@ publish now. Safety improvements can justify a change without a speedup, but mus
 be described as such. Optimizations such as bounded caches and fewer requests
 can also ship in the current app before the rewrite.
 
+### Estimating the gain that is actually reachable
+
+Prioritize by **measured share of the completed workload × removable cost**, then
+compatibility and migration risk. A component written in JavaScript can be a
+small share of the total; a retained language server or model client can dominate
+even after the desktop moves to Rust. No per-component memory attribution has
+yet established those shares for the proposed Rust build.
+
+For a comparable memory metric, if fraction `f` belongs exclusively to replaced
+work and that work retains fraction `r` of its old cost, the illustrative total
+reduction is `f × (1 − r)`, before added bridge/toolkit overhead. Shared memory
+and changed workloads invalidate this simple attribution. For serial task latency,
+the analogous upper-bound model is `1 / ((1 − f) + f / s)` for local speedup `s`;
+it does not model concurrent indexing or remote-provider variability.
+
+| Hypothetical changed share | Hypothetical reduction within that share | Total reduction before new overhead |
+| --- | --- | --- |
+| 20% | 50% | 10% |
+| 60% | 50% | 30% |
+
+These are arithmetic examples, **not OpenVision projections or targets**. They
+explain why a fast Rust helper cannot promise a fast whole app. Measure share,
+variation and external-process costs first; publish actual absolute/relative
+deltas only after equivalent candidate runs.
+
 ## When gains can arrive
 
 This maps benefits to the roadmap gates; it does not assign a speedup to a
@@ -55,8 +80,9 @@ gate that can substitute for these individual results.
 ## Evidence already available
 
 The [13 October Windows baseline](native-performance-baseline.md) recorded a
-5,027 ms fresh-profile titlebar and a 3,588 ms same-profile restart, plus roughly
-2.1–2.7 GiB private committed memory across recorded workload snapshots. These are
+5,027 ms fresh-profile titlebar and a 3,588 ms same-profile restart. Its original
+settled-idle sample was 2,740.65 MiB private committed memory; the subsequent
+lazy-MCP candidate sampled 2,585.36 MiB at the same stage. These are
 historical observations of the current architecture, not the latest post-fix
 build, clean cold-OS results or a Rust comparison. Private committed bytes are
 not unique resident physical RAM; summed working sets can count shared pages twice.
@@ -73,6 +99,12 @@ actual build digest. Comparing Rust only with an older, less optimized artifact
 would attribute unrelated fixes to the language. Native Linux evidence exists for
 the [declared current-runtime scope](linux-verification.md); the Windows sampler
 does not establish Linux/macOS process-memory results.
+
+The [current full-workbench startup gate](model-discovery-resources.md#full-app-startup-gate)
+also prevents a fresh whole-app comparison on this workstation. Do not reuse a
+historical successful launch as a current baseline or attribute the startup fault
+to a language. Isolated service benchmarks can continue with that limitation
+explicitly recorded; desktop promotion requires working native launch evidence.
 
 ## Required workload matrix
 

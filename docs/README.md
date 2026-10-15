@@ -15,6 +15,8 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | See every missing feature and its complexity | [Feature roadmap](roadmap.md) |
 | Plan the Rust rewrite and its priorities | [36 packages, points and migration gates](rust-roadmap.md) |
 | See what moves to Rust and what stays | [Component rewrite/retain audit](rust-component-audit.md) |
+| Track every existing feature through the Rust rewrite | [42-story replacement acceptance map](rust-acceptance-map.md) |
+| Understand Rust code ownership and safe data migration | [Implementation and migration contracts](rust-migration-contracts.md) |
 | Understand expected Rust gains and their proof | [Performance budgets and measurement plan](rust-performance-plan.md) |
 | Check HTTP MCP cancellation and response memory bounds | [Control-plane HTTP evidence and tradeoffs](control-plane-http-resources.md) |
 | Check discovery cancellation and the latest Windows startup gate | [Native discovery evidence and limits](model-discovery-resources.md) |

@@ -351,3 +351,7 @@ The [Rust rewrite track](rust-roadmap.md) now includes a component audit and
 baselines, proving the core boundary and testing native editor/extension
 feasibility. Current safety fixes continue independently; replacing a component
 must close its behavior and rollback gates before production cutover.
+The [42-story Rust acceptance map](rust-acceptance-map.md) prevents feature loss;
+[migration contracts](rust-migration-contracts.md) define the first workspace-search
+slice, data handoff and the decisions that can block cutover. Rust gains remain
+unmeasured, and neither track gains acceptance credit from a planning document.

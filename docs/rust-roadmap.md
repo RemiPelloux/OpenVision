@@ -1,7 +1,7 @@
 # OpenVision Rust rewrite roadmap
 
 **Planning audit: 15 October 2026 · no Rust implementation or Rust performance result shipped.**
-Source reference: `7ed66741f7c1713fb0be77afcba71d20c75dc0ee`.
+Source reference: `a9ebd69691b5eed10c702d3dd6b9014814bdca5a`.
 
 The recommended destination is an owned Rust core and desktop shell, with proven
 external tools retained behind explicit interfaces. Migrate services incrementally
@@ -12,6 +12,12 @@ Read the [component audit](rust-component-audit.md) for each rewrite/retain deci
 and the [measurement plan](rust-performance-plan.md) for expected gains and their
 proof. This is an implementation roadmap, not a claim of recovered original source
 or full feature equivalence.
+
+The [42-story acceptance map](rust-acceptance-map.md) assigns every current feature
+contract to its replacement packages. The [migration contracts](rust-migration-contracts.md)
+define ownership transfers, data compatibility, proposed code boundaries and stop
+conditions. Together these five documents form the rewrite plan; none records a
+completed Rust implementation.
 
 ## Decision summary
 
@@ -32,6 +38,20 @@ explicit external engines and an isolated compatibility host where required.
 The [performance plan](rust-performance-plan.md#when-gains-can-arrive) separates
 gains available in the first service preview from gains that require the new
 desktop. No measured saving or rewrite percentage is available yet.
+
+### Architecture choices to validate
+
+| Approach | What moves | Resource opportunity | Decision |
+| --- | --- | --- | --- |
+| Rust core with existing desktop | Services first; existing editor and extensions stay | Targeted CPU/queue/cache improvements; temporary bridge can add RAM | Recommended migration path, subject to per-service proof |
+| Rust core with system-webview UI | Core and shell lifecycle; web editor/UI remain | Can remove bundled Chromium distribution; OS webviews and JS still consume memory | Feasibility candidate; measure full app and compatibility |
+| Rust core with native Rust UI/editor | Core, shell and editor; explicit external/extension hosts remain | Broadest control of idle memory, rendering and copying | Preferred destination only if editor/accessibility/extension gates pass |
+| Replace every subsystem at once | Product, editor, integrations and migration change together | No gain can be attributed until a usable replacement exists | Reject as the execution plan; loses incremental parity and rollback |
+
+Framework names are not acceptance evidence. RUST-07 must compare concrete native
+and webview candidates against the same editor fixture before selecting one.
+Keep the existing simple appearance, theme customization and keyboard behavior;
+the rewrite does not require a visual redesign.
 
 ## Scope and completion
 

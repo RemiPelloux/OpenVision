@@ -194,6 +194,10 @@ The [gain and measurement plan](docs/rust-performance-plan.md) separates expecte
 benefits from evidence: replacing the desktop shell is the largest structural
 RAM opportunity, while remote inference and retained tools keep their own costs.
 The rewrite is planned; no Rust speedup or RAM reduction is measured yet.
+The [42-story replacement map](docs/rust-acceptance-map.md) tracks required feature
+coverage, and [migration contracts](docs/rust-migration-contracts.md) define code
+ownership, single-writer data transfer and safe rollback. The plan compares
+native and webview desktop options before choosing a toolkit.
 
 ## Develop and verify locally
 
