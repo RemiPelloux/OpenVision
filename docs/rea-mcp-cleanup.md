@@ -81,6 +81,13 @@ previous logger property-access error; rejection runs recorded the expected
 injected cleanup errors correctly. The existing host mutex warning remains,
 so this does not claim completely clean process logs.
 
+The pending-close run `NCNwOT` also recorded `[UtilityProcessWorker]: terminated
+unexpectedly with code 3221225477` in host stderr after replacement committed.
+The owned host still exited 0 and all six declared cleanup checks passed, but
+those checks do not establish a clean utility-worker shutdown. Its cause remains
+unverified under OV-403; this result must not be described as an error-free
+process-family exit.
+
 ## Earlier native failure evidence
 
 The verifier creates a disposable runtime overlay, profile and project. It

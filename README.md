@@ -42,6 +42,7 @@ options without an OpenVision account.
 | Language tools | Bundled JavaScript/TypeScript tooling and optional pinned clangd for C/C++ | [Language checks](docs/rea-language-workflows.md) · [C/C++ setup](docs/cpp-support.md) |
 | Git and worktrees | Create branches/worktrees, review diffs, resolve conflicts and recover across restart | [Verified Windows scope](docs/git-workflows.md) |
 | Local customization | Project rules, plans, skills, agents and MCP configuration under `.openvision/` | [Project configuration](docs/project-configuration.md); some global paths still need auditing |
+| MCP tools | Connect HTTP/STDIO servers, approve tool calls, cancel and reconnect | [Native cleanup and recovery evidence](docs/rea-mcp-cleanup.md); session-reinitialization and cross-window ownership still need native checks |
 | Approved memories | Review AI suggestions and legacy memories before saving project rules | [Memory guide](docs/project-memories.md) |
 
 ## Get started

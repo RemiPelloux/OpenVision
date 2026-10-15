@@ -1,6 +1,6 @@
 # Acceptance gate ownership
 
-14 October 2026. This clarification preserves all 42 accepted stories and the
+Updated 15 October 2026. This clarification preserves all 42 accepted stories and the
 80% target. It neither removes release requirements nor promotes any story.
 Some historical follow-ups grouped local behavior, performance, authentication,
 remote operation and platform validation under one paragraph. Each requirement
@@ -19,8 +19,9 @@ Verified model/configuration stories follow this same scoped rule.
 | Native inline-edit exclusion of hidden generated records | OV-301 | [Native seeded-request check passed](rea-inline-edit.md): approved rule included, hidden originals excluded and preserved |
 | Physical full-disk/I/O recovery for rule and memory persistence | OV-301 | Also part of OV-1004 release failure recovery; SQLite rejection is narrower evidence |
 | STDIO/HTTP discovery, Agent approval/denial, Stop, reconnect, timeout, no replay and exact transport cleanup | OV-303 | [Lifecycle](rea-mcp-lifecycle.md), [recovery](rea-mcp-recovery.md), [cleanup](rea-mcp-cleanup.md) |
-| HTTP failed close, native session-reinitialization failed close, multi-window/profile transport ownership | OV-303 | Remaining native lifecycle gates; remains Partial |
-| Permanently pending close retains ownership and exposes a usable recovery/error state | OV-303 | Also OV-1003 retention budget; remains unverified |
+| Native session-reinitialization failed close and multi-window/profile transport ownership | OV-303 | Remaining native lifecycle gates; HTTP disposal close rejection/recovery already passes on Windows; remains Partial |
+| Permanently pending close retains ownership and exposes a usable recovery/error state | OV-303 | Windows HTTP native fault injection verifies bounded acknowledgement, shared close and recovery after eventual release. Indefinite retention/resource behavior remains unverified under OV-1003; no forced release is implemented |
+| Utility-worker abnormal shutdown reported during pending-close verification | OV-403 | The owned host exited 0, but one utility worker reported code 3221225477; cause remains unverified; see [exact run scope](rea-mcp-cleanup.md) |
 | OAuth consent cancellation, expiry/refresh and secret storage | OV-304 | Has its own explicit acceptance clause; no OAuth pass is implied by unauthenticated MCP fixtures |
 | Remote-host resource ownership and native extension-host MCP behavior | OV-703 | Depends on OV-303 and the declared SSH/WSL/container host matrix |
 | Long-session memory, watcher/timer ownership, idle/reactivation and resource budgets | OV-1003 | Includes MCP, extensions, editors and remote sessions; short cleanup tests do not close it |

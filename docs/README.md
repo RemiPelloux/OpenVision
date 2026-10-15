@@ -18,6 +18,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Understand the acceptance percentage | [42-story sprint ledger](completion-sprints.md) |
 | Use C/C++ | [Pinned clangd setup](cpp-support.md) |
 | Configure local rules, plans, skills and MCP | [Project configuration](project-configuration.md) |
+| Understand MCP failed-close recovery and remaining checks | [Transport cleanup ownership](rea-mcp-cleanup.md) · [Acceptance gate owners](acceptance-gate-ownership.md) |
 | Save and review project memories | [Memory workflow](project-memories.md) |
 | Investigate model compatibility | [Live provider matrix](live-provider-compatibility.md) |
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
