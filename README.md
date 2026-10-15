@@ -33,6 +33,7 @@ options without an OpenVision account.
 | Capability | What you can do today | Evidence and limits |
 | --- | --- | --- |
 | Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/provider-selection-lifecycle.md) |
+| Account models — source build | Select signed-in Claude or eligible GPT-6 Codex accounts in Agent; inspect reported usage in the bottom bar | [Account setup and real test limits](docs/account-integrations.md); experimental, not included in preview.6 |
 | Project Home | Open projects in the current window, search recent work, pin favorites and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); included in the portable app |
 | Appearance | Choose dark, light or high-contrast themes and customize colors, fonts and icons | [Appearance guide](docs/appearance.md) |
 | AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/rea-agent-runtime.md); broader workflow coverage remains open |
@@ -94,7 +95,8 @@ portable folder with an `./OpenVision` launcher and an optional launcher entry.
 Explore [Codex Everywhere](https://codex-everywhere.com/home?aff=KTCCGGAS9R2Q)
 through the project author's affiliate link.
 
-Open **OpenVision Settings → Models → Custom Providers**:
+In the source build, open **OpenVision Settings → Models & integrations → API connections**.
+The preview.6 portable app uses **Models → Custom Providers**.
 
 1. Choose **Add Provider**, **Add Codex Easy**, or **Add OpenAI**.
 2. Enter the API base URL and your API key. Keep **Discover Models** selected.
@@ -121,10 +123,22 @@ Not every displayed model or reasoning tier has passed a live test.
 The editable source build adds **Models & integrations**, optional first-launch
 setup, and separate ChatGPT/Codex and Claude/Claude Code account profiles.
 Use **Run setup again** in Settings to replay onboarding.
+Choose **Add account**, complete browser sign-in, then select its model in the
+existing **Agent** picker. Account groups show the returned email. OpenVision
+continues to handle file tools and approvals; official panels are also available.
+The bottom bar shows provider-reported account usage, or **Usage unavailable**.
 Account controls include **Delete account**: isolated credentials and cache are
 removed, while local conversation files are kept in an account history archive.
 [Account sign-in, switching and current verification limits →](docs/account-integrations.md)
 These additions are not included in the older preview.6 portable payload.
+
+**Latest real Windows checks, 15 October 2026:** signed-in Claude read and edited
+a test file through OpenVision Agent. Codex account choices include only GPT-6
+models actually advertised by its official client; the tested account offered
+none and rejected `gpt-6.1-sol`. A separate request through the saved Codex Easy
+GPT-6 API connection returned HTTP 403 `INSUFFICIENT_BALANCE`. Neither blocked
+GPT-6 path is reported as successful. Account Agent support currently accepts
+text and tools; Tab autocomplete continues to use API connections.
 
 - No OpenVision login or signup. Optional third-party coding-agent sign-in is
   separate from the local profile; original billing and hosted cloud-agent flows
@@ -163,6 +177,7 @@ feature parity and measured performance gains. The rewrite is planned, not shipp
 
 ```sh
 npm run check:desktop
+npm run test:accounts
 npm run test:portable
 npm run test:completion
 npm run verify:completion -- --editing --portable ./OpenVision-portable

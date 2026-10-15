@@ -17,16 +17,28 @@ independent-build requirements remain in the denominator.
 Requested third-party ChatGPT/Codex and Claude/Claude Code integrations are a
 separate addition, not a reinstatement of the original hosted account system.
 The source build includes themed account/provider settings, replayable onboarding,
-isolated account profiles and official browser-sign-in adapters. See
+isolated account profiles, official browser-sign-in adapters, account models in
+the existing Agent picker and a provider-reported usage bar. See
 [setup and evidence limits](account-integrations.md).
 Account deletion now disconnects the profile, cleans its credentials/cache and
 archives conversation files. Essential settings text uses readable theme colors.
 
+Real Windows verification on 15 October exercised a signed-in Claude Sonnet
+read/edit through OpenVision Agent and checked the saved file. Codex quota windows
+were returned by its official client; Claude supplied no usable quota windows,
+so its UI reports unavailable. Codex account models are restricted to GPT-6 IDs
+actually advertised by the official client. The checked account offered none
+and rejected a real `gpt-6.1-sol` request. The separate saved Codex Easy GPT-6 API
+request reached the provider and failed with HTTP 403 `INSUFFICIENT_BALANCE`.
+These are availability and verification blockers, not successful GPT-6 runs.
+
 | Remaining account gate | Complexity points | Required evidence |
 | --- | --- | --- |
-| Codex browser consent through signed-in identity | 3 | Complete real Codex callback and display its returned identity; Claude signed-in status and identity verified on Windows |
+| Codex browser consent through signed-in identity | 3 | Verify a fresh real callback and returned identity end to end; existing signed-in profile/catalog/quota checks do not close this gate |
 | Account switching with active work | 5 | Preserve conversation state, respect running-operation shutdown and verify actual account routing |
-| Subscription model execution | 3 | Real entitled requests through both official integrations |
+| GPT-6 account execution and API recovery | 3 | An official account advertising an eligible GPT-6 model, then native Agent execution; restore API balance and repeat the separate GPT-6 API edit check |
+| Account Agent lifecycle | 5 | Real retry, interruption/resume and additional tool/approval cases; text/tools only today, image support remains unimplemented |
+| Account usage and privacy | 5 | Broader quota/reset/error cases and authenticated traffic classification; never infer quota when the official client supplies none |
 | Portable delivery and platform coverage | 5 | Package new source behavior; repeat Windows checks, then native macOS/Linux checks |
 
 These points are separate delivery work, not extra acceptance stories or a
@@ -36,7 +48,10 @@ focused checks and four native switches with both official extensions installed.
 Both real sign-in clients opened the system browser without an extra trust dialog.
 Native deletion checks passed for both providers, including the guard against
 deleting an account still used by another window. Source changes remain outside
-the preview.6 portable payload.
+the preview.6 portable payload. The latest focused account suite passed 62 tests;
+controlled transport checks establish isolation, bounds and cancellation, not
+upstream model availability. These account additions do not promote any complete
+acceptance story. Tab autocomplete still uses a configured API connection.
 
 ## What is usable today
 

@@ -1,6 +1,6 @@
 # OpenVision release claims and verification matrix
 
-Updated 14 October 2026 for 0.2.0-preview.6. This is a development build with incomplete release
+Updated 15 October 2026; latest portable release 0.2.0-preview.6. This is a development build with incomplete release
 acceptance. The fixed denominator remains the 42 stories
 in [feature-acceptance.json](feature-acceptance.json); at least 34 must be fully
 Verified. The [sprint ledger](completion-sprints.md) owns each story's status and
@@ -30,6 +30,28 @@ and repository extraction are recorded in [preview.3 verification](portable-prev
 The current clone fix and refreshed payload are covered in [preview.4 verification](portable-preview4.md).
 Current-window project opening and the latest payload are covered in [preview.6 verification](portable-preview6.md); native themes remain covered in [preview.5](portable-preview5.md).
 No independent rebuild of every native component is claimed.
+
+## Source additions after preview.6
+
+The editable source build adds account models to the native Agent picker and
+provider-reported usage to the bottom bar. These features are **not included in
+the preview.6 payload**. See [account setup and verification](account-integrations.md)
+for experimental text/tool support, isolation, resource limits and remaining
+platform and lifecycle checks. They do not change the 42-story ledger.
+
+Real Windows checks on 15 October verified a signed-in Claude Sonnet file read
+and edit through OpenVision Agent, with the result checked on disk. Codex's
+official client returned quota windows; Claude supplied no usable quota data.
+The refreshed Codex account catalog offered no GPT-6 models and a real
+`gpt-6.1-sol` request was rejected as unsupported for that account. Only actually
+advertised GPT-6 account models are offered; older choices are not substituted.
+A separate native request through the saved Codex Easy GPT-6 connection returned
+HTTP 403 `INSUFFICIENT_BALANCE`. Earlier successful API checks below remain
+historical evidence, not proof of current balance or availability.
+
+The latest Windows source checks passed 62 account tests, 30 portable tests
+(one skipped), desktop syntax checks and the desktop build. Controlled test
+results do not establish provider success or native macOS/Linux account support.
 
 ## Feature and fixture matrix
 

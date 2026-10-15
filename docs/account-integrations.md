@@ -183,6 +183,14 @@ reached its configured endpoint but returned HTTP 403 `INSUFFICIENT_BALANCE`.
 GPT-6 file-edit verification through that connection remains blocked by the
 provider balance; it is not reported as a successful inference test.
 
+The latest local checks passed `npm run test:accounts` (62 tests),
+`npm run test:portable` (30 passed, one skipped), `npm run check:desktop` and
+`npm run build:desktop` on Windows. These controlled suites and build checks are
+separate from the real-provider runs above. Native inspection of the rebuilt
+app confirmed the Claude account group, GPT-6 API choices, absence of older
+Codex choices and the no-GPT-6 account notice. This does not update or reverify
+the published preview.6 payload.
+
 Switching during active agent work and native macOS/Linux behavior still need
 verification. Native system-keychain cleanup is not verified on macOS. This
 feature does not change the 42-story acceptance denominator. Controlled transport

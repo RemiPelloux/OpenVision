@@ -7,7 +7,8 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Download and launch OpenVision | [Portable installation, editable code and updates](native-runtime.md) |
 | Build and run OpenVision on Linux | [Linux guide](linux.md) · [Linux verification](linux-verification.md) |
 | Configure models, import settings or customize the UI | [User guide](user-guide.md) |
-| Connect ChatGPT or Claude and replay first-launch setup | [Official account integrations](account-integrations.md) |
+| Sign in, select account models in Agent, check usage or replay setup | [Official account integrations](account-integrations.md) |
+| Understand account data, cleanup and third-party telemetry limits | [Account privacy scope](account-integration-privacy.md) |
 | Check import isolation and exact restore | [Profile import verification](import-profile-verification.md) |
 | Resume, pin and search projects | [Project home](project-home.md) |
 | Change themes, colors, fonts and icons | [Appearance](appearance.md) |
@@ -35,3 +36,10 @@ failure or historical measurement is not silently replaced by a newer success.
 Local `logs/` paths identify private run artifacts and are not public download links.
 
 Verification runs locally. GitHub Actions remains disabled.
+
+The latest source build includes experimental account models in Agent and a
+provider-reported usage bar. These additions postdate the preview.6 download.
+The [account guide](account-integrations.md#verification-limits) records the real
+Claude file-edit result, Codex GPT-6 availability limitation and API balance
+failure separately from controlled tests. Broader Linux desktop results do not
+establish native Linux account-integration support.

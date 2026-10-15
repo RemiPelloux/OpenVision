@@ -23,6 +23,15 @@ custom API providers and official ChatGPT/Codex and Claude/Claude Code accounts.
 See [account setup and switching](account-integrations.md) for browser sign-in,
 separate profiles and current verification limits. This addition postdates the
 preview.6 portable package.
+After signing in, choose a model from the account's email group in the existing
+**Agent** model picker. File reads, edits and approvals stay in OpenVision.
+Codex account groups offer only GPT-6 models actually returned by the official
+client; no eligible models means no fallback to older models. Subscription
+availability is separate from API-provider availability. Account Agent support
+is experimental and accepts text/tools; autocomplete still uses an API connection.
+The bottom bar shows provider-reported account usage. Click for quota windows,
+reset times and refresh. **Usage unavailable** means the official client supplied
+no usable quota data, not that the account has unlimited usage.
 Choose **Delete account** beside an account profile to remove its isolated
 credentials and cache while keeping its local conversation files. The confirmation
 names the profile; **Cancel** leaves it unchanged. See the account guide for the
@@ -134,7 +143,8 @@ local checks and other-platform limitations.
 
 ## AI Providers
 
-Open **OpenVision Settings > Models > Custom Providers**.
+In the source build, open **OpenVision Settings → Models & integrations → API connections**.
+In the preview.6 portable app, open **Models → Custom Providers**.
 
 1. Choose **Add Codex Easy**, **Add OpenAI**, or **Add Provider**.
 2. Enter the API base URL and key. Keep **Discover Models** selected.
@@ -168,7 +178,7 @@ choices are preserved. It is distinct from **Off**, which sends `none`.
 
 | Model family | Reasoning choices |
 | --- | --- |
-| GPT 6 / 5.6 models listed by Codex Easy | Low, Medium, High, Extra High, Max |
+| GPT-6 models listed by Codex Easy | Low, Medium, High, Extra High, Max |
 | DeepSeek Flash / V4 Pro | Off, Low, High, Max |
 | Grok 4.6 / 4.7 | Low, Medium, High, Extra High |
 
