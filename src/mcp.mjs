@@ -1,8 +1,8 @@
 import { spawn } from "node:child_process";
-import { createInterface } from "node:readline";
 import { isDeepStrictEqual } from "node:util";
 import { expand } from "./config.mjs";
 import { readMcpHttpResponse } from "./mcp-http-response.mjs";
+import { readMcpStdio } from "./mcp-stdio-response.mjs";
 
 const PROTOCOL_VERSION = "2024-11-05";
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -38,6 +38,7 @@ class JsonRpcClient {
   }
 
   request(method, params = {}, { signal, timeoutMs = this.timeoutMs } = {}) {
+    if (this.failure) return Promise.reject(this.failure);
     if (this.closed) return Promise.reject(new Error("MCP client is closed."));
     if (signal?.aborted) return Promise.reject(errorFrom(signal.reason, "MCP request canceled."));
     const id = this.nextId++;
@@ -91,17 +92,14 @@ export class McpStdioClient extends JsonRpcClient {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true,
     });
-    this.child.on("error", error => this.rejectPending(errorFrom(error)));
+    this.child.on("error", error => this.fail(errorFrom(error)));
     this.child.on("close", code => {
-      if (!this.closed) this.rejectPending(new Error(`MCP server exited with code ${code ?? "unknown"}.`));
+      this.fail(new Error(`MCP server exited with code ${code ?? "unknown"}.`));
     });
     this.child.stderr.setEncoding("utf8");
     this.child.stderr.on("data", chunk => { this.stderr = `${this.stderr}${chunk}`.slice(-4096); });
-    const lines = createInterface({ input: this.child.stdout });
-    lines.on("line", line => {
-      try { this.handle(JSON.parse(line)); }
-      catch { this.rejectPending(new Error("MCP server emitted malformed JSON.")); }
-    });
+    this.reading = readMcpStdio(this.child.stdout, message => this.handle(message)).then(
+      () => this.fail(new Error("MCP STDIO stream ended.")), error => this.fail(error));
     await new Promise((resolve, reject) => {
       this.child.once("spawn", resolve);
       this.child.once("error", reject);
@@ -117,9 +115,19 @@ export class McpStdioClient extends JsonRpcClient {
 
   send(message) {
     return new Promise((resolve, reject) => {
+      if (this.failure) return reject(this.failure);
       if (this.closed || !this.child?.stdin.writable) return reject(new Error("MCP server stdin is closed."));
       this.child.stdin.write(`${JSON.stringify(message)}\n`, error => error ? reject(error) : resolve());
     });
+  }
+
+  fail(error) {
+    if (this.closed || this.failure) return;
+    this.failure = error;
+    this.closeController.abort(error);
+    this.rejectPending(error);
+    this.child?.stdin.destroy();
+    this.child?.stdout.destroy();
   }
 
   async close() {
@@ -128,6 +136,7 @@ export class McpStdioClient extends JsonRpcClient {
     this.closeController.abort(new Error("MCP client closed."));
     this.rejectPending(new Error("MCP client closed."));
     this.child?.stdin.destroy();
+    this.child?.stdout.destroy();
     if (!this.child || this.child.exitCode !== null) return;
     await new Promise(resolve => {
       const force = setTimeout(() => { this.child.kill(); resolve(); }, 2000);
@@ -193,7 +202,7 @@ export class McpManager {
       }
       if (current.cleanupError) throw new Error("MCP cleanup failed; retry closing this server before reconnecting.", { cause: current.cleanupError });
       if (current.closing) { await current.closing; continue; }
-      if (definition.enabled === false || current.client.closed ||
+      if (definition.enabled === false || current.client.closed || current.client.failure ||
           !isDeepStrictEqual(current.client.definition, expandedServer(definition, this.environment))) {
         await this.#closeEntry(id, current);
         continue;

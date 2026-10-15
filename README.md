@@ -141,6 +141,10 @@ for the exact scope and unresolved diagnostics. Updating Git does not replace
 an already extracted portable app; [build the editable source](docs/native-runtime.md)
 to use changes made after preview.6.
 
+The optional Node control plane also bounds STDIO response accumulation and
+recovers after malformed output. See [validation and scoped RAM measurements](docs/control-plane-stdio-resources.md);
+these do not establish a whole-desktop RAM reduction.
+
 **Latest real Windows checks, 15 October 2026:** signed-in Claude read and edited
 a test file through OpenVision Agent. Codex account choices include only GPT-6
 models actually advertised by its official client; the tested account offered

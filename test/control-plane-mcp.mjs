@@ -3,7 +3,21 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { once } from "node:events";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { controlPlane, within } from "./helpers/control-plane.mjs";
+
+test("public MCP route reports STDIO overflow explicitly and recovers without replaying the failed tool", async t => {
+  const { url } = await controlPlane(t, { fixture: { kind: "mcp", command: process.execPath,
+    args: [fileURLToPath(new URL("./fixtures/mcp-stdio-failure.mjs", import.meta.url))] } });
+  const call = tool => fetch(url + "/api/servers/fixture/call", { method: "POST",
+    headers: { "content-type": "application/json" }, body: JSON.stringify({ tool }) });
+  const overflow = await call("oversize");
+  assert.equal(overflow.status, 500);
+  assert.match((await overflow.json()).error, /MCP STDIO message exceeds 8388608 encoded bytes/);
+  const recovered = await call("healthy");
+  assert.equal(recovered.status, 200);
+  assert.equal((await recovered.json()).result.content[0].text, "healthy");
+});
 
 test("public MCP call route cancels upstream on browser disconnect and remains usable", async t => {
   let toolStarted;

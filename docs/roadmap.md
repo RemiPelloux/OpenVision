@@ -14,7 +14,10 @@ independent-build requirements remain in the denominator.
 
 Latest scoped REA follow-up: [control-plane MCP lifecycle](control-plane-mcp-lifecycle.md)
 now coalesces initialization, replaces changed definitions, retains rejected cleanup
-and orders reconciliation with config saves. Its loopback/child tests do not close
+and orders reconciliation with config saves. The follow-up
+[STDIO response budget](control-plane-stdio-resources.md) rejects oversized output
+before decoding and recovers on the next call. The 42 focused checks and scoped
+stress measurements do not establish a whole-app RAM reduction or close
 native acceptance gates. Full-workbench startup remains blocked; see the
 [current Windows evidence](model-discovery-resources.md#full-app-startup-gate).
 

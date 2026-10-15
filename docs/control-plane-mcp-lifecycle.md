@@ -25,6 +25,13 @@ does not poison the queue. Deletion saves removal before cleanup and still
 attempts cleanup when the definition is already absent, permitting retry.
 Manager admission and cleanup helpers are private.
 
+STDIO response framing now checks an 8 MiB encoded-byte budget before copying
+or decoding an accumulated line. Oversize, malformed UTF-8/JSON and incomplete
+EOF fail the connection and reject pending requests. A later caller connects a
+fresh child after cleanup; failed tools are never replayed automatically. See
+[STDIO resource evidence](control-plane-stdio-resources.md) for the recovered
+parser comparison, boundary tests and scoped measurements.
+
 ## REA scope
 
 REA re-examined the two retained original attempt-owner slices: **2,101 bytes,
@@ -44,12 +51,15 @@ code; it does not claim newly recovered features or complete decompilation.
 
 ## Executed checks
 
-The focused run passed **32/32**, including the acceptance-denominator regression.
+The latest focused run passed **42/42**, including the acceptance-denominator regression.
 It exercises real loopback HTTP initialization, endpoint/header replacement,
 browser-disconnect cancellation, disable/re-enable and deletion through public
 control-plane routes. Real Node STDIO children verify argument/environment/cwd
 replacement and observed old-child exit. Queue coverage uses a real disposable
 config file with deliberately failed reconciliation and validation.
+Real child-process failures cover oversized initialization, output overflow,
+malformed JSON and incomplete EOF. The public route returns an explicit overflow
+error and succeeds on the following healthy call.
 
 Failed-close manager tests deliberately replace `client.close` with a throwing
 function. They verify registry retention and retry semantics; they do not
@@ -82,8 +92,8 @@ The source-hashed local report is `logs/mcp-http-performance-T4rFVa/result.json`
 
 ## Remaining gates
 
-STDIO still uses readline without a maximum line budget. Its close path kills
-the direct child and can resolve after a timer without confirmed exit; it does
+The STDIO close path kills the direct child and can resolve after a timer
+without confirmed exit; it does
 not provide verified descendant ownership/cleanup. Those need the shared
 process-supervision primitives before claiming reliable process-tree cleanup.
 Concurrent tool admission against a previously read config snapshot is not

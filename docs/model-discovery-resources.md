@@ -125,3 +125,12 @@ code and recorded RIP. Its CDB stack includes `SHCreateItemFromParsingName` and
 under ignored `logs/windows-package-control/`. The matching fault site narrows
 investigation beyond app-specific JavaScript; it does not establish a shared root
 cause or permission to repair the OS. Preserve both investigations separately.
+
+A passive method-entry probe in a disposable full-app copy reached
+`browser-window-created` and returned from the synchronous `webContents.loadURL`
+call before the same exit code. This does not mean its navigation Promise
+resolved. No calls to the instrumented JumpList, recent-document, file-icon,
+shell or clipboard-read methods were recorded before the fault. The observation
+is bounded to those wrappers; it does not exclude native calls elsewhere.
+Artifacts: ignored `logs/startup-shell-observation-46g4Gr/events.jsonl` and
+`result.json`. The probe preserved method behavior; no startup repair is claimed.
