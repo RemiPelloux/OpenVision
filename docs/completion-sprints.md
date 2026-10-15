@@ -8,6 +8,17 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+15 October startup and discovery follow-up: native Windows startup passes in
+`logs/local-startup-verification-nkp4Tu/result.json`. Explorer loaded, an open
+file survived reload, and switching projects reused the same native window.
+`logs/model-discovery-8rTqru/result.json` then passed the production workbench
+model-discovery matrix over real local HTTP sockets, including malformed,
+oversized, cancellation and sibling-window cases. Windows notification and shell
+history calls run in an owned helper process with bounded startup, idle and
+operation lifetimes; a helper crash leaves the editor usable and reports the
+capability as unavailable. This promotes no acceptance story by itself and does
+not verify macOS/Linux or live provider quality.
+
 14 October preview.3 delivery: the portable payload now includes Project Home,
 Quick Edit, cross-window memory notification fixes and provider failure guidance.
 [Portable checks](portable-preview3.md) cover relocated project history/pins,

@@ -1,0 +1,161 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
+import { runInNewContext } from 'node:vm';
+import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import * as policy from './provider-error-policy.js';
+import { fetchProviderWithDeadlines, inferenceLimits } from './provider-request-deadlines.cjs';
+import { redactProviderErrors } from './provider-error-customization.mjs';
+import { readableApp } from './recovered-source.mjs';
+
+const limits = { headersMs: 250, inactivityMs: 150 };
+const original = await readFile(new URL('extensions/cursor-agent-exec/dist/main.js', readableApp), 'utf8');
+const patched = redactProviderErrors(original);
+const expression = (anchor, offset = 0) => {
+  const node = parseExpressionAt(patched, patched.indexOf(anchor) + offset, { ecmaVersion: 'latest' });
+  return patched.slice(node.start, node.end);
+};
+class ApiError extends Error {
+  constructor(facts) { super(facts.message, { cause: facts.cause }); Object.assign(this, facts); }
+  static isInstance(value) { return value instanceof ApiError; }
+}
+const context = { Error, TypeError, Headers, Te: ApiError,
+  Lt: error => error.name === 'AbortError', Ut: headers => headers,
+  qt: response => Object.fromEntries(response.headers), Zt: () => fetch,
+  openvisionProviderErrors: { ...policy,
+    fetchProviderWithDeadlines: (implementation, url, options) => fetchProviderWithDeadlines(implementation, url, options, limits) },
+};
+const transport = runInNewContext(`(${expression('er = async ({', 5)})`, context);
+const retry = runInNewContext(`(${expression('async function $r(')})`, context);
+const agentRetry = runInNewContext(`(${expression('function TEe(')})`, context);
+
+async function fixture(run) {
+  const requests = [], sockets = new Set();
+  const server = createServer((request, response) => {
+    const entry = { path: request.url, response, closed: once(response, 'close') }; requests.push(entry);
+    response.setHeader('x-request-id', 'deadline-fixture');
+    if (request.url === '/headers') return;
+    response.writeHead(200, { 'content-type': 'text/event-stream' });
+    response.write('data: first\n\n');
+    if (request.url === '/body') return;
+    if (request.url === '/active') {
+      let count = 0;
+      const timer = setInterval(() => {
+        response.write(`data: ${++count}\n\n`);
+        if (count === 12) { clearInterval(timer); response.end(); }
+      }, 40);
+      response.on('close', () => clearInterval(timer));
+    } else response.end('data: done\n\n');
+  });
+  server.on('connection', socket => { sockets.add(socket); socket.once('close', () => sockets.delete(socket)); });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  try { return await run(`http://127.0.0.1:${server.address().port}`, requests); }
+  finally {
+    for (const socket of sockets) socket.destroy();
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
+const submit = (url, options = {}) => transport({ url, headers: { Authorization: 'Bearer secret-fixture-key' },
+  body: { content: '{}', values: { model: 'deadline-fixture' } }, ...options,
+  successfulResponseHandler: async ({ response }) => ({ value: response.body }),
+});
+
+test('production policy bounds header wait and read inactivity, not total inference duration', () => {
+  assert.deepEqual(inferenceLimits, { headersMs: 300000, inactivityMs: 600000 });
+  assert.equal(redactProviderErrors(patched), patched);
+  assert.ok(patched.includes('openvisionProviderErrors.fetchProviderWithDeadlines(i, e,'));
+});
+
+for (const phase of ['headers', 'body']) {
+  test(`recovered transport terminates stalled ${phase}, closes the socket and allows only explicit recovery`, { timeout: 5000 }, async () => {
+    await fixture(async (base, requests) => {
+      const started = performance.now(), cpu = process.cpuUsage();
+      const operation = () => submit(`${base}/${phase}`);
+      const request = () => retry(operation, { maxRetries: 3, delayInMs: 1, backoffFactor: 1 });
+      let source;
+      await assert.rejects((async () => {
+        const result = await request(); source = result.value;
+        const reader = source.getReader();
+        try { while (!(await reader.read()).done) {} }
+        finally { reader.releaseLock(); }
+      })(), error => {
+        assert.equal(error.code, phase === 'headers' ? 'OPENVISION_PROVIDER_HEADERS_TIMEOUT' : 'OPENVISION_PROVIDER_BODY_TIMEOUT');
+        assert.equal(error.phase, phase);
+        assert.equal(policy.isProviderFailure(error), true);
+        assert.equal(agentRetry(error), false);
+        assert.match(policy.providerFailureDetail(error, error.message), /timed out/);
+        return true;
+      });
+      await requests[0].closed;
+      assert.equal(requests.length, 1);
+      const durationMs = performance.now() - started;
+      assert.ok(durationMs >= limits[phase === 'headers' ? 'headersMs' : 'inactivityMs'] * 0.8);
+      assert.ok(durationMs < 2000, `Expected bounded failure; observed ${durationMs.toFixed(1)} ms`);
+      if (source) assert.equal(source.locked, false);
+      const recovery = await submit(`${base}/success`);
+      assert.match(await new Response(recovery.value).text(), /data: done/);
+      assert.equal(requests.length, 2);
+      const used = process.cpuUsage(cpu);
+      console.log(JSON.stringify({ phase, limitMs: limits[phase === 'headers' ? 'headersMs' : 'inactivityMs'],
+        durationMs: Math.round(durationMs), cpuMs: (used.user + used.system) / 1000,
+        processPeakRssMiB: process.resourceUsage().maxRSS / 1024, requests: requests.length }));
+    });
+  });
+}
+
+test('progressing inference lasts longer than both deadlines without an overall timeout', { timeout: 5000 }, async () => {
+  await fixture(async (base, requests) => {
+    const started = performance.now();
+    const result = await submit(`${base}/active`);
+    const text = await new Response(result.value).text();
+    assert.match(text, /data: 12\n\n$/);
+    assert.ok(performance.now() - started > limits.headersMs);
+    assert.equal(requests.length, 1);
+  });
+});
+
+for (const phase of ['headers', 'body']) {
+  test(`caller cancellation during ${phase} preserves its exact reason and closes the socket`, { timeout: 5000 }, async () => {
+    await fixture(async (base, requests) => {
+      const controller = new AbortController(), reason = new DOMException('User stopped', 'AbortError');
+      const result = submit(`${base}/${phase}`, { abortSignal: controller.signal });
+      const operation = phase === 'body' ? result.then(value => new Response(value.value).text()) : result;
+      const timer = setTimeout(() => controller.abort(reason), 50);
+      try { await assert.rejects(operation, error => error === reason); }
+      finally { clearTimeout(timer); }
+      await requests[0].closed;
+      assert.equal(requests.length, 1);
+    });
+  });
+}
+
+test('body ownership respects downstream backpressure, cancel and original response metadata', { timeout: 5000 }, async () => {
+  await fixture(async (base, requests) => {
+    const response = await fetchProviderWithDeadlines(fetch, `${base}/body`, {}, limits);
+    assert.equal(response.url, `${base}/body`);
+    assert.equal(response.type, 'basic'); assert.equal(response.redirected, false);
+    assert.equal(response.headers.get('x-request-id'), 'deadline-fixture');
+    const reader = response.body.getReader();
+    assert.match(new TextDecoder().decode((await reader.read()).value), /data: first/);
+    await new Promise(resolve => setTimeout(resolve, limits.inactivityMs + 30));
+    requests[0].response.end('data: after downstream pause\n\n');
+    assert.match(new TextDecoder().decode((await reader.read()).value), /after downstream pause/);
+    assert.equal((await reader.read()).done, true);
+  });
+});
+
+test('canceling a pending body read clears its watchdog and releases upstream ownership', { timeout: 5000 }, async () => {
+  await fixture(async (base, requests) => {
+    const response = await fetchProviderWithDeadlines(fetch, `${base}/body`, {}, limits);
+    const reader = response.body.getReader();
+    await reader.read();
+    const pending = reader.read(), reason = new Error('Downstream stopped');
+    await reader.cancel(reason);
+    assert.equal((await pending).done, true);
+    await requests[0].closed;
+    assert.equal(requests.length, 1);
+  });
+});

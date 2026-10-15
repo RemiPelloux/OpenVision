@@ -1,3 +1,6 @@
+import { fetchProviderWithDeadlines } from './provider-request-deadlines.cjs';
+export { fetchProviderWithDeadlines };
+
 const authorizationPattern = /^Bearer\s+/iu;
 const providerFailures = new WeakSet();
 const contextFailures = new WeakSet();
@@ -29,7 +32,8 @@ const connectionGuidance = new Map([
 const certificateCodes = new Set(['DEPTH_ZERO_SELF_SIGNED_CERT', 'SELF_SIGNED_CERT_IN_CHAIN',
   'UNABLE_TO_VERIFY_LEAF_SIGNATURE', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'CERT_HAS_EXPIRED',
   'CERT_NOT_YET_VALID', 'ERR_TLS_CERT_ALTNAME_INVALID']);
-const timeoutCodes = new Set(['ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT']);
+const timeoutCodes = new Set(['ETIMEDOUT', 'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT',
+  'OPENVISION_PROVIDER_HEADERS_TIMEOUT', 'OPENVISION_PROVIDER_BODY_TIMEOUT']);
 
 function connectionFailureGuidance(error) {
   const pending = [error], seen = new WeakSet();

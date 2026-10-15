@@ -94,10 +94,15 @@ source changes identified below. No result is inferred from commit identity alon
 
 ## Full-app startup gate
 
-The full-workbench candidate run `logs/model-discovery-4b49n0/result.json`
-exits **3221225501 / 0xC000001D** before a usable window or discovery request.
-The unchanged adapter also fails startup (`logs/model-discovery-WikBMz/result.json`).
-These are failed runs, not evidence that the discovery UI works.
+Earlier full-workbench candidate runs (`logs/model-discovery-4b49n0/result.json`
+and `logs/model-discovery-WikBMz/result.json`) exited **3221225501 /
+0xC000001D** before a usable window. Those runs remain historical evidence.
+The current Windows source build passes the startup gate and native model
+discovery matrix in `logs/model-discovery-8rTqru/result.json`: valid, malformed,
+oversized and UTF-8 catalogs were handled, pending requests were cancelled on
+reload, sibling-window ownership was preserved, and all fixture requests were
+authorized. The fixture uses local HTTP sockets and no AI inference, so it does
+not establish upstream model availability or quality.
 
 A locally captured Windows minidump of an owned disposable app process records
 the exception in **`urlmon.dll + 0x112b86`**, RIP `0x7fff2eb72b86`.
@@ -120,11 +125,12 @@ They do not establish corruption, a particular interfering component or a fix.
 No system DLL or runtime memory is patched. Dump, decoded metadata and CDB output remain ignored under
 `logs/startup-dump-mM0mlj/` and are not uploaded.
 
-The same executable runs the minimal native host successfully. This narrows the
-next investigation to full-app startup and its dependencies; it does not prove
-an app-wide fix, an OS-wide failure or a particular cause of the fault. Historical
-working-editor evidence remains historical. Current startup, settings/catalog
-retention, package and long-session gates must be rerun once startup is repaired.
+The same executable runs the minimal native host successfully. The current
+helper-process boundary prevents the observed Windows shell/notification fault
+from taking down the editor, while reporting those native capabilities as
+unavailable when the helper fails. This is application containment evidence; it
+does not prove an OS-wide fix or identify the underlying Windows fault. Package,
+settings/catalog retention and long-session gates still require their own runs.
 
 The final post-build full-workbench repeat also exits 0xC000001D with zero
 discovery requests (`logs/model-discovery-JZWnxQ/result.json`). A separate

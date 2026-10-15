@@ -20,8 +20,10 @@ connection identities are expanded once per admission. The follow-up
 [STDIO response budget](control-plane-stdio-resources.md) rejects oversized output
 before decoding and recovers on the next call. The 51 focused checks and scoped
 stress measurements do not establish a whole-app RAM reduction or close
-native acceptance gates. Full-workbench startup remains blocked; see the
-[current Windows evidence](model-discovery-resources.md#full-app-startup-gate).
+native acceptance gates. The Windows full-workbench startup gate now passes
+after native notification and shell-history calls were moved behind an owned
+helper process; helper failure is reported as unavailable while the editor stays
+open. See the [current Windows evidence](model-discovery-resources.md#full-app-startup-gate).
 
 ## Critical-first backlog and ETA
 
@@ -106,7 +108,9 @@ Separate live-provider runs exercised limited GPT, DeepSeek and Grok chat/tool
 paths. See [release claims](release-claims.md) for exact scope. Several required
 failure, provider and lifecycle cases remain unverified. A clean checkout includes
 the complete Windows payload and an offline extraction launcher. Full native
-source rebuilding and the complete release-acceptance matrix remain open.
+source rebuilding and the complete release-acceptance matrix remain open. The
+latest Windows startup and model-discovery checks use local HTTP fixtures and do
+not establish live provider quality.
 
 The numeric target alone will not establish usability. Before declaring a
 usable release, the supported Windows build must complete project open/edit/
@@ -172,7 +176,7 @@ is unchanged. No full acceptance story is promoted.
 The [discovery follow-up](model-discovery-resources.md) passes 34 focused checks
 and 12 actual Electron/window/network checks. The original adapter reproduces
 unfinished-body and renderer-lifecycle connection retention. This fixes ownership,
-not measured whole-app RAM. Full-workbench startup is currently blocked by the
+not measured whole-app RAM. Full-workbench startup is currently contained by the
 native fault above; settings retention and long-session gates remain open.
 
 ### Next reliability checks

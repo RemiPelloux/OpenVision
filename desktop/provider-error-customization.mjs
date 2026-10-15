@@ -4,7 +4,7 @@ import { cachedFile } from './build-cache.mjs';
 import { digest, fileHash } from './import-files.mjs';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
-const marker = '/* OpenVision provider error boundary v5 */';
+const marker = '/* OpenVision provider error boundary v6 */';
 const target = 'extensions/cursor-agent-exec/dist/main.js';
 
 function uniqueIndex(text, anchor) {
@@ -27,13 +27,19 @@ function wrapTransport(text) {
 
 export function redactProviderErrors(text) {
   if (text.includes(marker)) return text;
+  if (text.includes('/* OpenVision provider error boundary v5 */')) {
+    const request = 'await i(e, { method: "POST", headers: Ut(t), body: r.content, signal: o })';
+    uniqueIndex(text, request);
+    return text.replace('/* OpenVision provider error boundary v5 */', marker)
+      .replace(request, 'await openvisionProviderErrors.fetchProviderWithDeadlines(i, e, { method: "POST", headers: Ut(t), body: r.content, signal: o })');
+  }
   if (text.includes('/* OpenVision provider error boundary v4 */')) {
     const convert = 'const t = new jo(e.message);';
     const detail = 'i = s ? (r ? `${s} (${r})` : s) : o,';
     uniqueIndex(text, convert); uniqueIndex(text, detail);
-    return text.replace('/* OpenVision provider error boundary v4 */', marker)
+    return redactProviderErrors(text.replace('/* OpenVision provider error boundary v4 */', '/* OpenVision provider error boundary v5 */')
       .replace(convert, 'if (openvisionProviderErrors.isProviderFailure(e)) return openvisionProviderErrors.requireContextRecovery(e);\n          ' + convert)
-      .replace(detail, 'i = openvisionProviderErrors.providerFailureDetail(n ?? e, s ? (r ? `${s} (${r})` : s) : o),');
+      .replace(detail, 'i = openvisionProviderErrors.providerFailureDetail(n ?? e, s ? (r ? `${s} (${r})` : s) : o),'));
   }
   if (text.includes('/* OpenVision provider error boundary v3 */')) {
     const read = 'const i = await n.text(),\n                a = qt(n);';
@@ -72,11 +78,15 @@ export async function installProviderErrorPolicy(root) {
   const path = join(root, 'source/app', target);
   const helper = join(root, 'desktop/provider-error-policy.js');
   const helperTarget = join(dirname(path), 'openvision-provider-errors.cjs');
-  const helperSource = (await readFile(helper, 'utf8')).replaceAll('export function ', 'function ').replaceAll('export async function ', 'async function ').replaceAll('export const ', 'const ');
-  await writeFile(helperTarget, `${helperSource}\nmodule.exports = {providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult, readProviderErrorBody, requireContextRecovery, providerFailureDetail};\n`);
+  const helperSource = (await readFile(helper, 'utf8'))
+    .replace("import { fetchProviderWithDeadlines } from './provider-request-deadlines.cjs';", 'const { fetchProviderWithDeadlines } = require("./openvision-provider-deadlines.cjs");')
+    .replace('export { fetchProviderWithDeadlines };', '')
+    .replaceAll('export function ', 'function ').replaceAll('export async function ', 'async function ').replaceAll('export const ', 'const ');
+  await copyFile(join(root, 'desktop/provider-request-deadlines.cjs'), join(dirname(path), 'openvision-provider-deadlines.cjs'));
+  await writeFile(helperTarget, `${helperSource}\nmodule.exports = {fetchProviderWithDeadlines, providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult, readProviderErrorBody, requireContextRecovery, providerFailureDetail};\n`);
   const recipe = digest(JSON.stringify(await Promise.all([
     fileHash(join(root, 'desktop/provider-error-customization.mjs')),
-    fileHash(helper), fileHash(join(root, 'tooling/package-lock.json')),
+    fileHash(helper), fileHash(join(root, 'desktop/provider-request-deadlines.cjs')), fileHash(join(root, 'tooling/package-lock.json')),
   ])));
   await cachedFile({ path, recipe, marker: join(root, 'build/cache/provider-errors.json') }, async () => {
     const before = await readFile(path, 'utf8'), after = redactProviderErrors(before);
