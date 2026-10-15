@@ -262,6 +262,15 @@ not removed gates. The compatibility report distinguishes each tested payload.
 Native retry/stop/history/branching and the full reasoning matrix remain open. OV-102
 and OV-203 retain Partial status.
 
+15 October live-history follow-up: the native Windows verifier used the saved
+Codex Easy `gpt-6.1-sol` endpoint and passed real file recall after application
+restart, native Fork Chat with a distinct composer, fork-only follow-up, and
+persisted source/fork transcript isolation. Both hosts exited 0; see
+[Agent history evidence](rea-agent-runtime.md#real-provider-history-and-branching).
+This closes one real GPT history/branch subcase. Retry, timeout/Stop, DeepSeek/Grok
+history, branch failure handling, broader reasoning and platform gates remain open;
+OV-102 stays Partial.
+
 ## Sprint 2 — Complete provider settings and model interaction
 
 14 October live history follow-up: the [compatibility report](live-provider-compatibility.md)

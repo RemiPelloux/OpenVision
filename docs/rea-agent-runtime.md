@@ -101,6 +101,28 @@ Provider token counts, retained conversation memory and long-session budgets
 remain unmeasured. Saved results contain fixture model names and authentication
 booleans; no transport key is recorded.
 
+## Real provider history and branching
+
+15 October 2026, Windows x64, commit `8121c4c`. The native history verifier used
+the saved **Codex Easy** provider at `https://codex-easy.ai/v1` with model
+`gpt-6.1-sol`; request bodies were forwarded to the real endpoint and the
+credential was read from the existing local profile without being written to the
+result. The disposable project contained a unique file marker.
+
+`logs/live-history-gpt61.txt` records a successful run. The Agent read the file
+once, recalled the exact marker after a complete application restart with one
+new request and no tool reread, then used the native **Fork Chat** command. The
+fork received a distinct composer identity, recalled the same marker, and its
+SQLite transcript contained the original messages plus exactly one new exchange.
+The source transcript did not contain the fork reply. Both owned application
+processes exited 0, the provider returned HTTP 200, and the recorded model was
+`gpt-6.1-sol`.
+
+This closes the real GPT history/restart/fork subcase for OV-102. It does not
+close retry/timeout/Stop, DeepSeek/Grok history, branch error handling, or the
+remaining provider and platform gates. The test consumed real provider quota;
+future runs must remain explicit and use disposable profiles.
+
 Earlier harness failures are retained: the native picker uses the short model
 name, and Stop is a styled div without a button accessibility role. The verifier
 selects the observed control; its missing role remains an accessibility gap.
