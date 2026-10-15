@@ -22,6 +22,36 @@ publish now. Safety improvements can justify a change without a speedup, but mus
 be described as such. Optimizations such as bounded caches and fewer requests
 can also ship in the current app before the rewrite.
 
+## When gains can arrive
+
+This maps benefits to the roadmap gates; it does not assign a speedup to a
+language. Each candidate must beat the optimized current implementation on the
+same completed workflow, with required integrations enabled.
+
+| Stage | Benefit eligible for measurement | Costs still present |
+| --- | --- | --- |
+| B · first service preview | Fewer scans/reads, bounded work queues, lower service CPU or peak allocation | Existing shell/editor plus temporary bridge/IPC overhead |
+| C · core preview | Paged state, shared context, fewer duplicate requests, prompt cancellation and lazy services | Existing renderer, extension hosts, language servers and provider execution |
+| D · desktop preview | Startup, input/render latency, idle and active whole-app RAM after replacing the shell | Chosen toolkit, required JS compatibility/webviews and external tools |
+| E · production cutover | Install/package size, independent startup, sustained resource bounds and release reliability | Supported platform dependencies and any declared compatibility runtime |
+
+Memory gains cannot be added across rows: components can share pages, buffers and
+work. A faster service can also increase total memory during migration if its old
+owner remains active. Report the whole-app total alongside service measurements.
+
+For AI cost, measure requests and provider-reported tokens separately from local
+CPU/RAM. Deduplication and smaller equivalent context can reduce paid work; merely
+porting an identical prompt to Rust cannot. Caching must include account, endpoint,
+model, reasoning configuration, document/workspace generation and other
+result-affecting inputs. Never reuse credentials or paid responses across accounts
+or omit tool/reasoning state required for a correct continuation.
+
+Use a stage report with baseline/candidate identities, completed task assertions,
+elapsed/CPU cost, peak process-family memory, request/token counts, absolute and
+relative deltas, variation, and unmeasured metrics. A regression or unknown remains
+visible even when another metric improves. There is no aggregate “blazing fast”
+gate that can substitute for these individual results.
+
 ## Evidence already available
 
 The [13 October Windows baseline](native-performance-baseline.md) recorded a

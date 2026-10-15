@@ -13,6 +13,26 @@ and the [measurement plan](rust-performance-plan.md) for expected gains and thei
 proof. This is an implementation roadmap, not a claim of recovered original source
 or full feature equivalence.
 
+## Decision summary
+
+**Proceed incrementally; prove the editor and extension boundary before committing
+to the production shell.** Rewriting all dependencies would add risk without
+establishing a faster OpenVision. The recommendation is a Rust-owned product with
+explicit external engines and an isolated compatibility host where required.
+
+| Product area | Final disposition | Gain opportunity | Main cost or risk |
+| --- | --- | --- | --- |
+| Workspace, search orchestration and retrieval | Rust services | Less duplicate scanning, fewer copies, bounded index memory | Freshness and retrieval quality must match |
+| Profiles, history, rules and secrets | Rust storage owner with SQLite/OS adapters | Paged history, bounded caches, reliable concurrent writes | Migration and recovery must preserve exact data |
+| Agent, providers, completion and Quick Edit | Rust execution/state owner | Less local overhead, duplicate context and abandoned work | Tool approvals, streaming, retry and undo compatibility |
+| Project home, settings, model picker and editor | Rebuilt desktop UI after feasibility gate | Visible-row rendering; removing the old shell can reduce base RAM | Text input, accessibility and extension compatibility dominate scope |
+| Git, ripgrep, SQLite, LSP/DAP, shells and official account clients | Retain; Rust adapters and supervision | Fewer redundant launches and better idle release | Their memory and remote inference costs remain |
+| Existing assembly/transformation pipeline | Retire after independent-build cutover | Owned, reproducible release with fewer runtime prerequisites | Clean builds, installers, update rollback and native platform checks |
+
+The [performance plan](rust-performance-plan.md#when-gains-can-arrive) separates
+gains available in the first service preview from gains that require the new
+desktop. No measured saving or rewrite percentage is available yet.
+
 ## Scope and completion
 
 The rewrite includes project management, editing, search, local intelligence,
