@@ -12,6 +12,37 @@ clauses remain in [completion-sprints.md](completion-sprints.md). Original accou
 billing and hosted cloud agents remain excluded. Native macOS, the remaining Linux gates and
 independent-build requirements remain in the denominator.
 
+## Critical-first backlog and ETA
+
+**36 unfinished stories · 322 provisional complexity points.** The order below
+owns execution priority; the later area tables hold the detailed acceptance
+requirements. Priority reflects impact and dependencies, not a claim that every
+listed risk is a reproduced defect. Start available investigations immediately;
+an external blocker does not prevent unrelated local work.
+
+| Priority, highest first | Ordered remaining stories | Points | Exit condition |
+| --- | --- | ---: | --- |
+| **P0 · Data, authority and privacy** | OV-103 → OV-302 → OV-303 → OV-301 → OV-204 → OV-102 → OV-403 → OV-501 → OV-1005 → OV-1004 | **81** | Changes/history survive failures; profiles and credentials remain isolated; Stop releases owned work; data destinations are established; required failure and traffic checks pass |
+| **P1 · RAM, requests and daily development** | OV-1003 → OV-1001 → OV-1002 → OV-401 → OV-402 → OV-603 → OV-602 → OV-104 → OV-203 → OV-701 → OV-702 → OV-304 | **87** | Bound retained output/work, measure long sessions and per-edit work, prevent duplicate inference, then close language/completion/import/extension/auth lifecycle gates |
+| **P2 · Independent build ownership** | OV-801 → OV-802 → OV-803 → OV-804 | **47** | Required native/server contracts have owned inputs or replacements; a clean machine builds and launches the app |
+| **P3 · Retrieval and prediction** | OV-502 → OV-503 → OV-504 → OV-604 | **42** | Relevant retrieval, incremental invalidation, recoverable indexes and useful next-edit prediction pass measured workloads |
+| **P4 · Distribution and platform completion** | OV-901 → OV-904 → OV-903 → OV-902 | **39** | Windows install/update/rollback and the declared native platform matrices pass; Linux gaps close and macOS gains real evidence |
+| **P5 · Broader development modes** | OV-703 → OV-704 | **26** | Remote development and specialized modes have explicit contracts, permissions, cleanup and native acceptance |
+
+Dependencies override a simple queue: retrieval requires OV-501; independent
+builds require the relevant owned contracts; cross-platform release acceptance
+requires real target systems. Release-hardening checks begin under P0 and run
+again after downstream changes. P4 is full distribution acceptance; a scoped
+Windows preview refresh can ship earlier once its declared gates pass.
+
+The ETA is **gate-based, using the points above**. The 80% target still needs
+**28 additional fully verified stories**. There is no defensible fixed point
+estimate for that subset until its stories and required dependencies are chosen;
+322 points sizes the entire current unfinished acceptance backlog. Scores are
+provisional and must be revised when investigations reveal changed scope.
+The separate account work packages below overlap these stories; do not add their
+points again. The Rust rewrite follows product/build gates and has its own scope.
+
 ### Optional account integrations — source build
 
 Requested third-party ChatGPT/Codex and Claude/Claude Code integrations are a
@@ -82,19 +113,36 @@ with native unsaved-edit cancellation. It also publishes the existing real
 Provider-default Stop/resubmission evidence and more precise shutdown diagnostics.
 These narrow improvements do not promote a full acceptance story.
 
-The requested ETA is expressed as remaining complexity and acceptance gates:
+The [critical-first queue](#critical-first-backlog-and-eta) supersedes the old
+five-item shortlist. The next concrete actions are:
 
-| Next work | Remaining points | What must pass |
+| Order | Existing story / points | Next action and required evidence |
 | --- | --- | --- |
-| Conversation recovery (OV-102) | 8 | Live error retry, controlled timeout, interrupted sessions and remaining reasoning cases without duplicate requests |
-| Native shutdown reliability (OV-403) | 8 | Explain the earlier launcher exit 134 and verify the remaining shutdown matrix |
-| Provider failures (OV-204) | 5 | Certificate edge cases, inference timeouts and remaining malformed/oversized streams |
-| Project lifecycle and scale (OV-401) | 5 | Remaining filesystem/link behavior and measured filesystem work |
-| Autocomplete quality (OV-602) | 8 | Representative project/language quality and native live-provider acceptance |
+| 1 | OV-204 / 5; OV-1004 / 13 | Restore the missing original recovered Agent execution fixture through the supported recovery path, then rerun the provider-error policy/body suites. Their initialization failures are an open verification blocker, not passing tests |
+| 2 | OV-103/302/303/301, then OV-204/102/403 / points above | Close the P0 edit/data/profile ownership, retry/timeout and shutdown cases, retaining failed-close and earlier exit-134 evidence; never substitute passing happy paths for these gates |
+| 3 | OV-501 / 13; OV-1005 / 8 | Establish actual project-data destinations and extend process-family traffic checks, including authenticated integration behavior |
+| 4 | OV-1003 / 8; OV-1001 / 8 | Bound optional control-plane subprocess output and cached bytes/expiry; make timed-out MCP HTTP work abort its transport. Reproduce at those owners and verify cleanup/cancellation, without claiming these are native Agent RAM leaks |
+| 5 | OV-1003 / 8; OV-1002 / 8 | Measure idle, large-project, long-session and close/reopen process-family memory/CPU; define budgets, investigate reasoning-session retention and discovery-body cleanup, and check incremental filesystem/UI work |
+| 6 | OV-102/104/203/602 / points above | Repeat live retry/tool/reasoning/completion gates when the selected provider is available; GPT-6 account eligibility and the last observed API balance failure remain external blockers |
+| 7 | OV-901 / 8; OV-1004 / 13 | Refresh the Windows preview only after its declared safety/regression gates pass; verify relocated payload and repository extraction, record exact source identity and disclose remaining gaps |
 
-These entries are priorities from the complete tables below, not extra stories
-or additive estimates. The Rust core/shell replacement follows the independent
-build and compatibility gates; native macOS/Linux checks require those systems.
+These actions are slices of the existing story estimates, not additional points
+or new acceptance stories. Optional accounts remain experimental until their own
+real sign-in, switching and lifecycle gates pass.
+
+### Latest performance work — implemented in source
+
+[Commit `47ad155`](https://github.com/RemiPelloux/OpenVision/commit/47ad155ec5a503a4c9791ad94fd8c2ec2787baac)
+moves autocomplete debounce ahead of document/hook preparation and bounds
+unfinished Agent SSE events to 4 MiB with upstream cancellation. The controlled
+typing fixture performs 101 → 1 document reads/hooks, with sampled heap growth
+about 55 → 2 MiB. Forty-three focused tests, syntax/source build and native
+Windows Agent/autocomplete checks passed. Valid-stream parsing added about 6 ms
+in the warm benchmark sample. See [measurements and remaining findings](autocomplete-stream-performance.md).
+
+This is scoped evidence for OV-1001/1002/1003/204/603. Whole-app RAM was not
+remeasured, two additional provider-error suites lack their original fixture,
+and the preview.6 download is unchanged. No full acceptance story is promoted.
 
 ### Next reliability checks
 
@@ -105,7 +153,7 @@ evidence of clean startup, zero cloud traffic or bounded long-session resources:
 | Existing story | Next check | Acceptance evidence needed |
 | --- | --- | --- |
 | OV-1005 · 8 points | Extend traffic verification after removing the local hosted metadata contribution | [Windows title/history restart checks](local-conversation-metadata.md) pass with zero contribution/client invocations; process-family traffic, broader workloads and native platform gates remain open |
-| OV-1003 · 8 points | Measure long-session memory and repeated application-service restarts | [Account route/retry/stream fixes](account-performance.md) have scoped measurements; [native utility ownership](utility-process-ownership.md) removes reproduced listener accumulation across 16 restarts per owner. Whole-app peak memory and long-session/platform gates remain open |
+| OV-1003 · 8 points | Bound control-plane output/cache resources and measure long-session memory and repeated service restarts | [Autocomplete/stream fixes](autocomplete-stream-performance.md) and [account route/retry/stream fixes](account-performance.md) have scoped measurements; [native utility ownership](utility-process-ownership.md) removes reproduced listener accumulation. Control-plane bounds/cancellation, whole-app peak memory and long-session/platform gates remain open |
 | OV-403 · 8 points | Investigate remaining duplicate command and mutex diagnostics alongside shutdown | [Local startup ordering](local-startup.md) now passes a native candidate and reproducing control; verify the broader startup/closure matrix and retain the earlier unexplained exit 134 until diagnosed |
 | OV-303 · 5 points | Extend profile/configuration ownership coverage | Named profiles inside one host, same-name project overrides, simultaneous configuration changes and cross-window failed-close recovery |
 
@@ -145,8 +193,9 @@ acceptance credit only when their full required gates pass.
 
 The current acceptance target remains **34 of 42 fully verified stories**.
 The Rust rewrite is a later architecture track and does not silently alter this
-fixed denominator or count as delivered functionality. Windows is the only
-available native test platform; other systems require access before verification.
+fixed denominator or count as delivered functionality. Windows is currently
+available for checks; [recorded Linux evidence](linux-verification.md) covers a
+declared native scope. Further Linux matrices and macOS require target access.
 
 ## What is missing, in plain language
 
@@ -174,7 +223,7 @@ missing-work column together.
 | OV-103 / Partial | Agent search, remaining apply/undo combinations and interrupted/resumed work; live-provider acceptance | **8 points** | OV-102 and native project fixtures; medium |
 | OV-104 / Partial | Real-provider explicit overrides, retry/resume and additional provider/model cases; child status label accuracy; alternate Task paths | **8 points** | OV-102; native inherited/explicit/saved/disabled/error gates and real GPT High child Read now checked; medium locally, low for provider coverage |
 | OV-203 / Partial | Remaining child retry/resume/provider cases and inherited child status label; changed capabilities, invalid choices and recovery checked in parent/child native paths | **5 points** | OV-104 and provider capability contracts; low because DeepSeek High has both failures and successful native rechecks |
-| OV-204 / Partial | Certificate trust/expiry, inference timeout and remaining malformed/oversized successful-stream cases; actual capability inputs and live/platform gates. Native DNS/HTTPS protocol failures, manual recovery, context/capability error responses, bounded diagnostics and Stop now checked | **5 points** | [Provider failure evidence](provider-failure-handling.md), OV-102/201; medium; live/platform gates remain |
+| OV-204 / Partial | Certificate trust/expiry, inference timeout, actual capability inputs and malformed/oversized stream cases beyond the reasoning observer; live/platform gates. That observer now rejects unfinished events over 4 MiB and passes real HTTP disconnect tests; original recovered fixtures for two provider-error suites are missing | **5 points** | [Provider failure evidence](provider-failure-handling.md), [stream limits and fixture gap](autocomplete-stream-performance.md); OV-102/201; medium; live/platform gates remain |
 
 The [provider identity change](provider-model-identity.md) removes raw-model-ID
 deduplication. A native Windows fixture verifies two providers with the same ID,
@@ -231,7 +280,7 @@ not proof of why a past live catalog shrank.
 | Story / current state | Missing functions or acceptance evidence | Complexity points | Dependencies / confidence |
 | --- | --- | --- | --- |
 | OV-602 / Partial | Native 13-case response matrix and one real GPT/DeepSeek/Grok sum-expression sample pass. Remaining: representative multi-language/project quality and native live-provider acceptance | **8 points** | [Autocomplete evidence](rea-custom-autocomplete.md); OV-201 and live model availability; medium |
-| OV-603 / Partial | Windows partial acceptance, exact undo and pending typing/Escape/file-switch cancellation pass a controlled local workload. Remaining: broader editing/latency workloads and supported-platform matrix | **8 points** | [Autocomplete evidence](rea-custom-autocomplete.md); OV-602/402; macOS/Linux verification blocked on native access; medium |
+| OV-603 / Partial | Windows partial acceptance, exact undo and typing/Escape/file-switch cancellation pass; early preparation debounce and native regressions now checked. Remaining: broader editing/latency workloads and supported-platform matrix | **8 points** | [Autocomplete evidence](rea-custom-autocomplete.md), [preparation measurements](autocomplete-stream-performance.md); OV-602/402; latest performance changes not natively rechecked on macOS/Linux; medium |
 | OV-604 / Planned | Next-edit prediction contract, implementation, navigation/range correctness, stale results and latency/quality | **13 points** | OV-603/503 and a suitable prediction backend; low; not silently excluded |
 | OV-701 / Partial | Native disposable-profile preview/import, JSONC/snippets, extension registry, idempotency and exact restore pass. Remaining: real-profile/platform matrix, named-profile ownership, CLI/native backup interoperability and interrupted/I/O-failure recovery | **5 points** | [Import evidence](import-profile-verification.md), OV-302; medium |
 | OV-702 / Partial | Extension install/update/uninstall, language packs, native ABI compatibility and clear failures | **8 points** | OV-402/403 and package sources; medium |
@@ -255,28 +304,24 @@ not proof of why a past live catalog shrank.
 
 | Story / current state | Missing functions or acceptance evidence | Complexity points | Dependencies / confidence |
 | --- | --- | --- | --- |
-| OV-1001 / Partial | Live input-token/context/duplicate-request/history measurements; branch/tool reasoning and session disposal | **8 points** | OV-101/103/503; medium; local titles and request coalescing already implemented |
-| OV-1002 / Partial | Frame/input latency, transcript/model row bounds, heap and filesystem work; incremental edits on fixed workloads | **8 points** | OV-202/402/603; medium |
-| OV-1003 / Partial | Idle/reactivation and long-session memory; complete watcher/timer/process ownership across supported workloads | **8 points** | OV-504/703/901–903; medium; MCP startup reduction is scoped evidence |
+| OV-1001 / Partial | Live input-token/context/duplicate-request/history measurements; branch/tool reasoning and session disposal; optional control-plane timeout must cancel transport work | **8 points** | OV-101/103/503; medium; local titles/coalescing implemented, N+1 protections rechecked; [latest scope](autocomplete-stream-performance.md) |
+| OV-1002 / Partial | Frame/input latency, transcript/model row bounds, heap and filesystem work; incremental edits on fixed workloads. Early autocomplete preparation avoids discarded document/hook work in measured fixtures | **8 points** | OV-202/402/603; [before/after and parsing cost](autocomplete-stream-performance.md); medium; no whole-app RAM claim |
+| OV-1003 / Partial | Bound control-plane subprocess output/cache bytes/expiry; idle/reactivation and long-session memory; reasoning-session retention, discovery cleanup and complete watcher/timer/process ownership | **8 points** | OV-504/703/901–903; [remaining source findings](autocomplete-stream-performance.md); medium; event limit and listener cleanup are scoped fixes |
 | OV-1004 / Planned | Release matrix, secret/log/authority failures, corrupt state, failed cleanup/crash recovery and recovery instructions | **13 points** | All accepted release dependencies; medium after implementation stabilizes |
 | OV-1005 / Partial | Extended process-tree network evidence, conversation metadata-sync producer audit and native macOS/Linux telemetry checks | **8 points** | [Multi-window run logs contain unauthenticated metadata-sync failures](rea-mcp-ownership.md); destination/transport behavior remains unverified. Native access and realistic workloads; independently installed extensions assessed separately |
 
 ## Execution order and scope review
 
-1. Close data-loss/routing risks in provider settings, then exercise the live AI
-   development loop and error matrix. Re-score after native routing evidence.
-2. Complete project, customization, autocomplete and Git workflows; finish native
-   lifecycle failure checks. Re-score from failed gates, not passing counts.
-3. Establish retrieval and native-helper ownership, then implement required
-   replacements and independently reproducible builds. This is the largest
-   uncertainty; resolve its contracts before expanding implementation.
-4. Run packaging, rollback and the complete supported native matrix; measure
-   performance/telemetry under realistic sessions and audit every acceptance row.
+Follow the [P0 → P5 queue](#critical-first-backlog-and-eta), honoring its dependencies.
+Safety/privacy checks and regression verification continue throughout the work.
+Re-score from demonstrated scope changes and failed gates. New source behavior
+does not become a downloadable feature until its package is rebuilt and verified.
 
 OV-101, OV-105, OV-201, OV-202, OV-404 and OV-601 are Verified and have no remaining points in
 this table. [OV-404 native evidence](git-workflows.md) covers its local Windows contract;
 other platforms and physical failure recovery remain in their own rows.
-All 36 other accepted stories appear exactly once. GitHub Actions
+All 36 other accepted stories appear exactly once in the detailed estimate tables
+and once in the priority queue. GitHub Actions
 remain disabled; checks, builds and releases are local.
 
 After the current product gates, continue with the [Rust rewrite track](rust-roadmap.md).

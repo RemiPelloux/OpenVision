@@ -547,6 +547,19 @@ terminal/task/debugger regressions pass on Windows. Whole-app peak memory,
 long-session growth, application-service reloads and native platform gates
 remain open. This source-only change keeps **6/42 Verified (14.29%)**.
 
+15 October 2026, OV-1001/1002/1003/204/603 performance follow-up (owner: OpenVision;
+commit `47ad155`): [preparation and stream review](autocomplete-stream-performance.md)
+moves autocomplete debounce before document/hook work and bounds unfinished
+Agent events to 4 MiB with cancellation. The controlled typing burst performs
+101 → 1 reads/hooks; 43 focused tests and Windows native Agent/autocomplete
+checks pass. Whole-app RAM is unmeasured; two additional provider-error suites
+lack their original recovered fixture. Control-plane output/cache bounds and
+timeout cancellation remain source-observed work. The portable payload is
+unchanged and all affected stories remain Partial: **6/42 Verified (14.29%)**.
+The [priority queue and ETA](roadmap.md#critical-first-backlog-and-eta) now order
+all 36 unfinished stories by impact and dependencies, totaling 322 provisional
+points without counting overlapping account packages twice.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

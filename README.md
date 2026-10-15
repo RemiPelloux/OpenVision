@@ -179,6 +179,12 @@ Linux x64 now builds, packages and passes its native suite locally.
 
 The [feature roadmap](docs/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
+The [critical-first queue and ETA](docs/roadmap.md#critical-first-backlog-and-eta)
+orders **36 unfinished stories / 322 provisional points**: safety and privacy,
+RAM/request efficiency and daily workflows, independent builds, retrieval,
+distribution/platform completion, then broader modes. Estimates describe scope;
+release readiness requires the named checks. The latest performance fixes are
+in source and have not updated the preview.6 download.
 
 The final architecture track is a [Rust rewrite](docs/rust-roadmap.md): migrate
 the core services, then replace the recovered desktop shell while preserving
