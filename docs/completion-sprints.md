@@ -8,6 +8,14 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+15 October Agent review follow-up: [edit-history ownership](rea-agent-edit-history.md)
+fixes early acceptance completion and missing closed-file text undo. The final
+Windows run passes search, multi-file review/undo/redo, command approval/Stop
+and restart/resume; 25 focused checks and the production build also pass.
+The controlled model fixture executes real application tools but does not prove
+external provider support. OV-103 remains Partial, subject to its original
+clauses and OV-102 dependency; no story or point total is removed.
+
 15 October retrieval ownership follow-up (parent commit `92e3ffe`): the
 [search lifecycle audit and fix](rea-retrieval-ownership.md) prevents an older
 workspace initialization replacing the current client or creating resources after

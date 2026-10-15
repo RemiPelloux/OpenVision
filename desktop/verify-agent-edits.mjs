@@ -23,7 +23,72 @@ export async function createAgentEditFixture({ directory, project }) {
     respond: (payload, event) => respondToEdit(payload, event, { files, state }),
     verifyReview: (page, action) => verifyReview(page, action, { directory, files, state, assertFiles }),
     assertKeptFiles: () => assertFiles(true),
+    verifyKeptUndo: page => verifyKeptUndo(page, { directory, files, assertFiles }),
   };
+}
+
+async function verifyKeptUndo(page, { directory, files, assertFiles }) {
+  const open = async file => {
+    await page.keyboard.press('ControlOrMeta+p');
+    const quick = page.locator('.quick-input-widget');
+    await quick.getByRole('textbox').fill(file.path); await quick.getByRole('textbox').press('Enter');
+    await quick.waitFor({ state: 'hidden' });
+    await page.locator('.editor-instance .monaco-editor .inputarea').filter({ visible: true }).first().focus();
+  };
+  const stages = [];
+  // Acceptance is a separate undo element from the text edit. Verify both.
+  for (const file of files) {
+    await open(file);
+    const keep = page.getByText('Keep File', { exact: true }).filter({ visible: true });
+    await keep.waitFor({ state: 'hidden' });
+    await page.keyboard.press('ControlOrMeta+z');
+    await keep.waitFor({ state: 'visible' });
+    await saveAndCheck(page, file, file.changed);
+    stages.push({ path: file.path, action: 'undo acceptance', pendingReview: true, text: 'changed' });
+    await page.keyboard.press('ControlOrMeta+z');
+    await saveAndCheck(page, file, file.original);
+    stages.push({ path: file.path, action: 'undo text', text: 'original' });
+  }
+  await assertFiles(false);
+  await page.screenshot({ path: join(directory, 'kept-edits-undone.png') });
+  for (const file of files) {
+    await open(file);
+    const redo = process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y';
+    await page.keyboard.press(redo); await saveAndCheck(page, file, file.changed);
+    const keep = page.getByText('Keep File', { exact: true }).filter({ visible: true });
+    // Returning to the original bytes may dispose the diff; text redo need not recreate it.
+    stages.push({ path: file.path, action: 'redo text', pendingReview: await keep.count() > 0, text: 'changed' });
+    await page.keyboard.press(redo);
+    await keep.waitFor({ state: 'hidden' });
+    await saveAndCheck(page, file, file.changed);
+    stages.push({ path: file.path, action: 'redo acceptance', pendingReview: false, text: 'changed' });
+    await page.keyboard.press('ControlOrMeta+End');
+    // One character avoids depending on the editor's word/newline undo grouping.
+    await page.keyboard.type('x');
+    await saveAndCheck(page, file, `${file.changed}x`);
+    await page.keyboard.press('ControlOrMeta+z');
+    await saveAndCheck(page, file, file.changed);
+    await keep.waitFor({ state: 'hidden' });
+    stages.push({ path: file.path, action: 'undo subsequent user edit', pendingReview: false, text: 'changed' });
+  }
+  await assertFiles(true);
+  await page.screenshot({ path: join(directory, 'kept-edits-redone.png') });
+  await writeFile(join(directory, 'kept-edit-undo.json'), JSON.stringify(stages, null, 2));
+  return stages;
+}
+
+async function saveAndCheck(page, file, expected) {
+  await page.keyboard.press('ControlOrMeta+s');
+  await waitForFile(page, file.path, expected);
+}
+
+async function waitForFile(page, path, expected) {
+  const deadline = Date.now() + fileUpdateTimeoutMs;
+  while (Date.now() < deadline) {
+    if (await readFile(path, 'utf8') === expected) return;
+    await page.waitForTimeout(fileUpdatePollMs);
+  }
+  assert.equal(await readFile(path, 'utf8'), expected);
 }
 
 function respondToEdit(payload, event, { files, state }) {

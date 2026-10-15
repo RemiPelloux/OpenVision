@@ -17,6 +17,7 @@
     "test:build-integrity": "node --test desktop/generated-artifact-integrity.test.mjs desktop/notification-isolation.test.mjs desktop/telemetry-extensions.test.mjs",
     "test:rename-version": "node --test desktop/rename-version.test.mjs",
     "test:retrieval": "node --test desktop/retrieval-lifecycle.test.mjs",
+    "test:agent-review": "node --test desktop/agent-review.test.mjs desktop/agent-closed-file-undo.test.mjs",
     "verify:language-ui": "node desktop/verify-language-ui.mjs",
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",

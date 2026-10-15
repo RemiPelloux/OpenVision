@@ -28,6 +28,12 @@ See also the [scoped Windows evidence](model-discovery-resources.md#full-app-sta
 
 ## Critical-first backlog and ETA
 
+15 October Agent review follow-up: the [edit-history audit](rea-agent-edit-history.md)
+records native filename/text search and fixes acceptance returning before
+pending work settles and missing text undo for previously unopened files.
+Windows search/edit/undo/Stop/restart checks pass. These are P0 OV-103 work; the original denominator,
+points and dependency gates remain unchanged.
+
 15 October retrieval follow-up: the [search lifecycle and data-boundary audit](rea-retrieval-ownership.md)
 reproduces an older workspace initialization replacing the current search client
 and adds attempt ownership through asynchronous setup and disposal. Source-owner

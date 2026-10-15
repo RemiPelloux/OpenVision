@@ -8,7 +8,7 @@ app, including the busy-Agent quit confirmation if needed.
 
 ## Observed behavior
 
-The current run is retained at `logs/agent-verification-8cOFXC/result.json` with
+The 13 October baseline is retained at `logs/agent-verification-8cOFXC/result.json` with
 `agent.png`, edit/command screenshots, tool schemas and tool results. It runs
 commit `29ae0c7` plus the owned-process implementation in this change.
 `identity.json` records Windows x64 build `10.0.26200`, Node `24.18.0` and SHA-256
@@ -100,6 +100,13 @@ are unchanged; these additional clauses do not close all OV-102/103 gates.
 Provider token counts, retained conversation memory and long-session budgets
 remain unmeasured. Saved results contain fixture model names and authentication
 booleans; no transport key is recorded.
+
+The search and editor-undo gaps above describe that historical baseline. The
+[15 October edit-history follow-up](rea-agent-edit-history.md) records later
+native coverage, two reproduced defects and the corresponding fixes. Its full
+20-request workload includes search and cannot be treated as the same workload
+as earlier request/memory baselines. The current ledger is **6/42 Verified**;
+these subcases do not promote OV-103 or replace its dependency gates.
 
 ## Real provider history and branching
 

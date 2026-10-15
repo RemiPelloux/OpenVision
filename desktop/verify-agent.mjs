@@ -11,6 +11,7 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { createAgentEditFixture } from './verify-agent-edits.mjs';
+import { createAgentSearchFixture } from './verify-agent-search.mjs';
 import { createAgentCommandFixture } from './verify-agent-commands.mjs';
 import { memorySample, requestMeasurement, baselineIdentity } from './native-baseline.mjs';
 import { createAgentMcpFixture } from './verify-agent-mcp.mjs';
@@ -30,6 +31,7 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
   'git.openRepositoryInParentFolders': 'never' }));
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });
+const search = await createAgentSearchFixture({ directory, project });
 const commands = await createAgentCommandFixture({ directory, project });
 const verifyMcp = process.argv.includes('--mcp') || process.argv.includes('--mcp-stdio');
 let mcp;
@@ -38,6 +40,7 @@ const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: roo
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['workbench', join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
+    ['searchFixture', join(root, 'desktop/verify-agent-search.mjs')],
     ['commandFixture', join(root, 'desktop/verify-agent-commands.mjs')],
     ['commandLifecycle', join(root, 'desktop/verify-command-lifecycle.mjs')],
     ...(verifyMcp ? [['mcpFixture', join(root, 'desktop/verify-agent-mcp.mjs')],
@@ -85,6 +88,10 @@ const server = createServer(async (request, response) => {
   }
   if (phase === 'edit') {
     edits.respond(payload, event);
+    response.end('data: [DONE]\n\n'); return;
+  }
+  if (phase === 'search') {
+    search.respond(payload, event);
     response.end('data: [DONE]\n\n'); return;
   }
   if (phase === 'read') {
@@ -143,6 +150,9 @@ async function launch() {
   page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => {
+    if (/\[inlineDiff\].*Error/i.test(message.text())) errors.push(message.text());
+  });
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   if (measureBaseline) result.baseline.launches.push({ kind: ownedHostExits.length ? 'same-profile restart' : 'fresh profile',
     readyMs: Math.round(performance.now() - started), readyDefinition: 'Native local-profile titlebar visible; excludes the subsequent eight-second settle interval' });
@@ -184,9 +194,12 @@ try {
   await input.fill('Read hello.js and report its contents. Do not modify files.'); await input.press('Enter');
   await page.getByText('OpenVision file read verified.', { exact: true }).first().waitFor({ timeout: 30000 });
   assert.equal(readToolObserved, true, 'Agent must return the actual fixture file through its tool continuation');
+  phase = 'search'; await search.verify(page);
+  assert.equal(requests.filter(request => request.phase === 'search').length, 4, 'Three search tools require exactly four provider turns');
   for (const action of ['Undo All', 'Keep All']) {
     phase = 'edit'; await edits.verifyReview(page, action);
   }
+  const keptEditUndo = await edits.verifyKeptUndo(page);
   for (const mode of ['deny', 'allow', 'slow']) {
     phase = `command-${mode}`; await commands.verify(page, mode);
   }
@@ -235,10 +248,11 @@ try {
     authenticatedNativeStream: true, singleAgentSubmitRequest: true, noAuxiliaryTitleRequest: true,
     nativeReadToolContinuation: readToolObserved,
     nativeMultiFileEdits: true, rejectAllRestoresFiles: true, keepAllPreservesEdits: true, unrelatedFilePreserved: true,
+    nativeSearch: search.results, keptEditUndoRedo: keptEditUndo,
     conversationRestartResume: true, keptEditsSurviveRestart: true,
     commandChecks: commands.results,
     upstreamCancellation: true, cancellationMs,
-    scope: 'Native PowerShell approval, denial and foreground command cancellation with a local HTTP fixture. External providers, branching, other shells and other platforms remain unverified.' });
+    scope: 'Native project search, multi-file review, editor undo/redo, PowerShell approval/denial/cancellation and restart/resume with a local HTTP model fixture. This run does not verify external providers, branching, other shells or other platforms.' });
 } catch (error) {
   result.failure = error.stack;
   const page = app?.windows()[0];

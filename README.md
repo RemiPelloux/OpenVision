@@ -217,6 +217,8 @@ npm run verify:completion -- --editing --portable ./OpenVision-portable
 npm run verify:welcome -- --portable ./OpenVision-portable
 npm run verify:mcp-session
 npm run verify:mcp-ownership
+npm run test:agent-review
+npm run verify:agent
 npm run status:features
 ```
 
@@ -232,6 +234,10 @@ for the latest recovery and shutdown corrections.
 The source build also rejects stale search initialization after project changes
 or disposal. See the [retrieval audit and verification limits](docs/rea-retrieval-ownership.md)
 for the reproduced race, native project regression and remaining indexing gates.
+
+The [Agent review audit](docs/rea-agent-edit-history.md) tracks native project
+search, multi-file acceptance and editor undo. `verify:agent` uses a local model
+fixture with real application tools; live-provider evidence is reported separately.
 
 The portable package contains editable code under
 `electron-host/resources/app/` and helpers under `electron-host/desktop/`;
