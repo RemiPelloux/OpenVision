@@ -5,6 +5,8 @@ import { localWorkbench } from './local-workbench.mjs';
 import { enableLocalMode } from './source-branding.mjs';
 import { disableCloudFeatures } from './cloud-features.mjs';
 import { readableApp } from './recovered-source.mjs';
+import vm from 'node:vm';
+import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
 for (const variant of ['desktop', 'glass']) {
   const input = new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp);
@@ -30,5 +32,36 @@ for (const variant of ['desktop', 'glass']) {
       'Customization must be idempotent');
     assert.throws(() => localWorkbench(recovered.replace('    maybeOnboard() {', '    renamedOnboard() {'), variant),
       /Missing or ambiguous local customization anchor/, 'Unrecognized recovery must fail before writing');
+  });
+
+  test(`${variant}: local startup never registers hosted conversation watchers or their dependencies`, async () => {
+    const recovered = await readFile(input, 'utf8');
+    const { text, patches } = localWorkbench(recovered, variant);
+    const patch = patches.find(item => item.reason === 'local conversation metadata ownership');
+    assert.ok(patch);
+    const index = text.indexOf('"composer.localMetadataSyncContribution"');
+    const prefix = /![\w$]+\.localMode && [\w$]+\($/.exec(text.slice(0, index))?.[0];
+    assert.ok(prefix);
+    const start = index - prefix.length;
+    const expression = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
+    const guard = expression.type === 'SequenceExpression' ? expression.expressions[0] : expression;
+    assert.equal(guard.type, 'LogicalExpression');
+    const call = guard.right, flag = guard.left.argument.object.name;
+    let registrations = 0, dependencies = 0;
+    const constructor = class { constructor() { dependencies++; } };
+    const context = { [flag]: { localMode: true }, [call.arguments[1].name]: constructor,
+      [call.arguments[2].object.name]: { AfterRestored: 'restored' },
+      [call.callee.name]: (id, owner, lifecycle) => {
+        assert.equal(id, 'composer.localMetadataSyncContribution');
+        assert.equal(lifecycle, 'restored'); registrations++; return new owner();
+      } };
+    const script = new vm.Script(text.slice(guard.start, guard.end));
+    script.runInNewContext(context);
+    assert.equal(registrations, 0); assert.equal(dependencies, 0);
+    context[flag].localMode = false; script.runInNewContext(context);
+    assert.equal(registrations, 1); assert.equal(dependencies, 1);
+    assert.throws(() => localWorkbench(recovered.replace('"composer.localMetadataSyncContribution"',
+      '"composer.renamedMetadataContribution"'), variant), /Missing or ambiguous/);
+    assert.throws(() => localWorkbench(recovered + '\n"composer.localMetadataSyncContribution";', variant), /ambiguous/);
   });
 }

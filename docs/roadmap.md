@@ -104,7 +104,7 @@ evidence of clean startup, zero cloud traffic or bounded long-session resources:
 
 | Existing story | Next check | Acceptance evidence needed |
 | --- | --- | --- |
-| OV-1005 · 8 points | Trace the conversation metadata-sync producer and its authentication/network boundary | Local title/history persistence across restart; remove any obsolete hosted dependency at its owner; observe traffic without suppressing error logs |
+| OV-1005 · 8 points | Extend traffic verification after removing the local hosted metadata contribution | [Windows title/history restart checks](local-conversation-metadata.md) pass with zero contribution/client invocations; process-family traffic, broader workloads and native platform gates remain open |
 | OV-1003 · 8 points | Trace `child-process-gone` listener ownership | Repeated window open/close and idle/reactivation with listener counts and process-family memory measured; determine whether listeners are retained |
 | OV-403 · 8 points | Investigate onboarding, duplicate command and mutex diagnostics alongside shutdown | Reproduce causes, verify clean startup/closure and retain the earlier unexplained exit 134 until diagnosed |
 | OV-303 · 5 points | Extend profile/configuration ownership coverage | Named profiles inside one host, same-name project overrides, simultaneous configuration changes and cross-window failed-close recovery |

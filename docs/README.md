@@ -22,6 +22,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Understand MCP failed-close recovery and remaining checks | [Transport cleanup ownership](rea-mcp-cleanup.md) · [Acceptance gate owners](acceptance-gate-ownership.md) |
 | Check MCP sharing between windows and isolated user-data profiles | [Native ownership verification](rea-mcp-ownership.md) |
 | Save and review project memories | [Memory workflow](project-memories.md) |
+| Check local chat titles, history and hosted metadata removal | [Conversation metadata ownership](local-conversation-metadata.md) |
 | Investigate model compatibility | [Live provider matrix](live-provider-compatibility.md) |
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
 | Edit a selection with AI | [Native Quick Edit](rea-inline-edit.md) |

@@ -65,8 +65,13 @@ after preview.6. Retained Windows results establish these specific boundaries:
 The ownership run retained unauthenticated conversation metadata-sync errors,
 a listener-count warning, onboarding failures, duplicate settings-command
 registration and mutex warnings. No fix or network-absence claim follows from
-these successful MCP checks. The metadata-sync producer audit, listener lifetime
-and shutdown investigation remain in the [roadmap](roadmap.md#next-reliability-checks).
+these successful MCP checks. A subsequent [metadata owner fix](local-conversation-metadata.md)
+skips the hosted contribution in local mode. A disposable native Windows run
+verified zero contribution/client invocations, persisted local titles/history
+and same-chat continuation after restart with exactly two inference requests.
+That fixture does not establish live AI compatibility or process-wide network
+absence. Listener lifetime, broader traffic and shutdown investigations remain
+in the [roadmap](roadmap.md#next-reliability-checks).
 No RAM or CPU improvement was measured in these correctness checks.
 OV-303 remains Partial and the ledger remains **6/42 Verified (14.29%)**.
 The preview.6 archive and repository payload have not been refreshed by these

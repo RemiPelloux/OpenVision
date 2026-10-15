@@ -157,7 +157,10 @@ text and tools; Tab autocomplete continues to use API connections.
   and independently installed extensions can also communicate externally.
 - Large chat pastes become local UTF-8 files under `.openvision/paste/`, keeping
   prompts compact. [Paste behavior →](docs/rea-large-paste.md)
-- Chat titles are generated locally, avoiding an extra AI request.
+- Chat titles are generated locally, avoiding an extra AI request. The source
+  build also skips hosted conversation-metadata watchers in local mode;
+  [native restart checks](docs/local-conversation-metadata.md) preserve titles
+  and history. This change is not included in the preview.6 download.
 
 ## Roadmap and honest progress
 

@@ -55,6 +55,11 @@ remain unverified; the workflow does not establish absence of cloud requests or
 safe long-session listener growth. The metadata-sync producer needs a network
 audit under OV-1005; listener lifetime remains part of OV-1003.
 
+Follow-up: the [local metadata contribution fix](local-conversation-metadata.md)
+now prevents that contribution from being registered in local mode and verifies
+title/history persistence across restart. This does not alter the historical
+run above or close its broader traffic, listener and shutdown gates.
+
 The retained failed run `411xUH` submitted discovery before the native watcher
 had registered the server. It returned a genuine server-not-found tool error.
 The verifier now waits for actual `tools/list` and one active STDIO child before

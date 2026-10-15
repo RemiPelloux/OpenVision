@@ -51,6 +51,25 @@ function componentGuard(text, anchor, guard) {
   return bodyGuard(text, functionOwner(text, anchor).body, guard, anchor);
 }
 
+function hostedMetadataRegistration(text, local) {
+  const owner = classOwner(text, '"[composer-local-metadata-sync] updateConversationMetadata failed"');
+  const name = /\bvar ([\w$]+) =\s*$/.exec(text.slice(0, owner.start))?.[1];
+  const anchor = '"composer.localMetadataSyncContribution"';
+  const index = uniqueIndex(text, anchor);
+  const prefix = /[\w$]+\($/.exec(text.slice(0, index))?.[0];
+  if (!name || !prefix) throw new Error('Hosted metadata contribution owner changed');
+  const start = index - prefix.length;
+  const expression = parseExpressionAt(text, start, parserOptions);
+  const call = expression.type === 'SequenceExpression' ? expression.expressions[0] : expression;
+  if (call.type !== 'CallExpression' || call.arguments.length !== 3 ||
+      call.arguments[1]?.name !== name || call.arguments[2]?.property?.name !== 'AfterRestored' ||
+      !owner.body.body.some(method => method.key?.name === 'setupComposer'))
+    throw new Error('Hosted metadata contribution registration changed');
+  const guard = `!${local} && `;
+  if (text.slice(start - guard.length, start) === guard) return [];
+  return [{ start, end: start, after: guard, reason: 'local conversation metadata ownership' }];
+}
+
 function settingsProfile(text, local) {
   const anchor = /description: "Sign in to get started with Cursor's AI features",\s+label: "Sign In",/.exec(text)?.[0];
   if (!anchor) throw new Error('Local account settings owner missing');
@@ -79,9 +98,9 @@ function settingsProfile(text, local) {
 export function localWorkbench(text, variant) {
   const flag = variant === 'desktop' ? 'zc' : 'Rl';
   const local = `${flag}.localMode`;
-  const patches = methodGuards(text, '    maybeOnboard() {', [
+  const patches = [...hostedMetadataRegistration(text, local), ...methodGuards(text, '    maybeOnboard() {', [
     ['renderPopupBar', `if (${local}) return;`],
-  ]);
+  ])];
   const onboarding = classOwner(text, '    maybeOnboard() {').body.body.find(node => node.key?.name === 'maybeOnboard').value.body;
   const explorer = `if (${local}) {
     this._workbenchLayoutService.setPartHidden(false, "workbench.parts.sidebar");

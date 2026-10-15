@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Skip hosted conversation-metadata contribution registration in local mode, avoiding its dependencies, watchers and client calls. Native Windows title/history restart verification passes with controlled inference; broader traffic and platform gates remain open. See [metadata ownership](docs/local-conversation-metadata.md).
 - Add experimental signed-in Claude/Codex models to Agent, account usage in the bottom bar and GPT-6-only Codex account choices. Real Claude file editing passed; the tested Codex account offered no GPT-6 models and the separate GPT-6 API check was blocked by provider balance. See [account evidence](docs/account-integrations.md#verification-limits).
 - Verify native MCP HTTP session-expiry and direct session-reinitialization recovery with retained failed-close ownership and no automatic replay of the failed tool.
 - Verify native Agent MCP approval, shared STDIO ownership across two project windows, isolated same-named servers in separate user-data directories and recorded child shutdown. Broader profile/configuration ownership and logged startup diagnostics remain open.
