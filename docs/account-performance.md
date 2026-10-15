@@ -98,12 +98,12 @@ coalesce; provider settings mount 40 rows; Project Home mounts 18 per page;
 the workbench batches streaming and virtualizes conversation rows. Context and
 filesystem measurements remain in the [earlier performance reports](performance.md).
 
-The native utility-process owner's `registerListeners` registers process
-listeners with its lifetime owner, while exit clears the process reference.
-Repeated starts on the same owner could retain listeners. This is a
-**source-derived concern, not a reproduced leak**. OV-1003 still requires
-listener counts, repeated window/worker restarts and process-family private
-memory measurements before a fix or savings claim. No listener limit was raised.
+The utility-process concern was subsequently reproduced and fixed:
+[native listener ownership verification](utility-process-ownership.md) observes
+16 retained completed-run listeners in the control and zero in the candidate,
+for both native utility owners. Real kill and window-close checks also pass.
+Process-family snapshots do not establish a whole-app RAM saving; OV-1003 still
+requires long-session/repeated application-service restart measurements.
 Long sessions, named profiles, large projects, extension-host memory, and native
 macOS/Linux account execution remain outside these measurements.
 

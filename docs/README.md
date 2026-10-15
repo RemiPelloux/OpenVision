@@ -27,7 +27,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Investigate model compatibility | [Live provider matrix](live-provider-compatibility.md) |
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |
 | Edit a selection with AI | [Native Quick Edit](rea-inline-edit.md) |
-| Understand resource usage | [Account routing and stream measurements](account-performance.md) · [Performance review](performance.md) · [Native baseline](native-performance-baseline.md) |
+| Understand resource usage | [Native utility listener ownership](utility-process-ownership.md) · [Account routing and stream measurements](account-performance.md) · [Performance review](performance.md) · [Native baseline](native-performance-baseline.md) |
 | Inspect large-project watcher behavior | [100-file and 10,000-file native verification](project-scale-verification.md) |
 | Understand provider errors and manual retries | [Provider failure handling](provider-failure-handling.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |

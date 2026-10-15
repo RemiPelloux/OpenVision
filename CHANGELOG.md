@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Release native utility-process listeners after exit instead of retaining each completed run. Keep process ownership until actual termination, including failed kills. Real Windows fork/restart/kill/window-close checks pass; [evidence and remaining RAM work](docs/utility-process-ownership.md). Source build only.
 - Preserve model-route caches across unchanged account refreshes and apply a 30-second automatic cooldown after account-host failures; explicit Refresh remains immediate. Remove duplicate streamed text/reasoning retention and clear output references on close. See [controlled before/after measurements](docs/account-performance.md) and remaining whole-app RAM checks.
 - Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/local-startup.md). These source changes do not refresh the preview.6 payload.
 

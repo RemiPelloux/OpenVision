@@ -52,6 +52,7 @@
     "status:features": "node desktop/feature-status.mjs",
     "verify:local-metadata": "node desktop/verify-local-metadata.mjs",
     "verify:local-startup": "node desktop/verify-local-startup.mjs",
+    "verify:utility-listeners": "node desktop/verify-utility-listeners.mjs",
     "test:feature-status": "node --test desktop/feature-status.test.mjs",
     "test:agent-process": "node --test desktop/agent-process.test.mjs",
     "test:context-work": "node --test desktop/context-customization.test.mjs desktop/context-work.test.mjs",
@@ -96,7 +97,7 @@
     "test:git-worktrees": "node --test desktop/git-worktree.test.mjs",
     "verify:git": "node desktop/verify-git.mjs",
     "verify:development": "node desktop/verify-development.mjs",
-    "test:shutdown": "node --test desktop/shutdown.test.mjs"
+    "test:shutdown": "node --test desktop/shutdown.test.mjs desktop/utility-process.test.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

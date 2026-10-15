@@ -539,6 +539,14 @@ commit `c429e1a`. No full story is promoted: **6/42 Verified (14.29%)** remains
 unchanged. [Remaining priorities](roadmap.md#preview6-delivery-and-next-priorities)
 use complexity points; platform, independent-build and full rollback gates remain.
 
+15 October 2026, OV-1003 utility ownership follow-up (owner: OpenVision;
+parent commit `e868282`): [native utility cleanup](utility-process-ownership.md)
+reproduces 16 retained completed-run listeners in both original owners and zero
+in the fixed owners. Actual forks, termination, window close and native
+terminal/task/debugger regressions pass on Windows. Whole-app peak memory,
+long-session growth, application-service reloads and native platform gates
+remain open. This source-only change keeps **6/42 Verified (14.29%)**.
+
 Keep story IDs stable. On execution, append owner, commit, evidence links,
 platform/provider scope and unresolved gates to that story's record. Promote a
 story to Verified only when every acceptance clause is evidenced. Split a story

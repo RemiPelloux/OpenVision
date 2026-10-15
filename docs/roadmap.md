@@ -105,7 +105,7 @@ evidence of clean startup, zero cloud traffic or bounded long-session resources:
 | Existing story | Next check | Acceptance evidence needed |
 | --- | --- | --- |
 | OV-1005 · 8 points | Extend traffic verification after removing the local hosted metadata contribution | [Windows title/history restart checks](local-conversation-metadata.md) pass with zero contribution/client invocations; process-family traffic, broader workloads and native platform gates remain open |
-| OV-1003 · 8 points | Trace `child-process-gone` listener ownership and long-session memory | [Account route/retry/stream fixes](account-performance.md) have scoped before/after measurements; repeated window/worker restart listener counts and application process-family memory remain required |
+| OV-1003 · 8 points | Measure long-session memory and repeated application-service restarts | [Account route/retry/stream fixes](account-performance.md) have scoped measurements; [native utility ownership](utility-process-ownership.md) removes reproduced listener accumulation across 16 restarts per owner. Whole-app peak memory and long-session/platform gates remain open |
 | OV-403 · 8 points | Investigate remaining duplicate command and mutex diagnostics alongside shutdown | [Local startup ordering](local-startup.md) now passes a native candidate and reproducing control; verify the broader startup/closure matrix and retain the earlier unexplained exit 134 until diagnosed |
 | OV-303 · 5 points | Extend profile/configuration ownership coverage | Named profiles inside one host, same-name project overrides, simultaneous configuration changes and cross-window failed-close recovery |
 

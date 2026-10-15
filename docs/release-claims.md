@@ -83,6 +83,9 @@ remain open. A separate [account performance review](account-performance.md)
 measures fewer route rebuilds and failed-host queries, and lower retained stream
 heap. Its module-worker CPU/RSS results do not establish whole-app RAM savings.
 Neither addition is included in preview.6 or promotes a full acceptance story.
+The subsequent [utility ownership fix](utility-process-ownership.md) passes
+real Windows fork/restart/kill/window-close checks and development regressions.
+It removes reproduced listener accumulation, without a whole-app RAM claim.
 The preview.6 archive and repository payload have not been refreshed by these
 source commits.
 

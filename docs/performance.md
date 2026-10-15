@@ -3,7 +3,9 @@
 The [15 October account performance review](account-performance.md) fixes
 unchanged-catalog route rebuilds, repeated failed-host queries and duplicate
 retention of streamed output. It includes equivalent before/after measurements,
-CPU and worker peak RSS, plus the remaining unconfirmed listener-lifetime concern.
+CPU and worker peak RSS. The subsequent [native utility listener fix](utility-process-ownership.md)
+removes reproduced completed-run listener accumulation; whole-app RAM savings
+remain unmeasured.
 
 The [13 October model-catalog follow-up](model-memory-optimization.md) removes
 repeated provider parsing, eager autocomplete reasoning data, per-provider whole
