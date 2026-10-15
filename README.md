@@ -186,10 +186,14 @@ distribution/platform completion, then broader modes. Estimates describe scope;
 release readiness requires the named checks. The latest performance fixes are
 in source and have not updated the preview.6 download.
 
-The final architecture track is a [Rust rewrite](docs/rust-roadmap.md): migrate
-the core services, then replace the recovered desktop shell while preserving
-editing, Agent, extension and project workflows. Each replacement must prove
-feature parity and measured performance gains. The rewrite is planned, not shipped.
+The [Rust rewrite roadmap](docs/rust-roadmap.md) breaks the architecture track into
+**36 planned packages / 195 provisional points**, with dependencies, migration,
+rollback and release gates. The [component audit](docs/rust-component-audit.md)
+identifies what moves to Rust, what stays external and the compatibility risks.
+The [gain and measurement plan](docs/rust-performance-plan.md) separates expected
+benefits from evidence: replacing the desktop shell is the largest structural
+RAM opportunity, while remote inference and retained tools keep their own costs.
+The rewrite is planned; no Rust speedup or RAM reduction is measured yet.
 
 ## Develop and verify locally
 

@@ -29,5 +29,9 @@ their respective checks. Work that does not depend on them can continue.
 
 The [latest performance fixes](autocomplete-stream-performance.md) are implemented
 and locally verified in source; they do not promote a whole story or update the
-preview.6 payload. The [Rust rewrite](rust-roadmap.md) follows the product/build
-gates as a separate architecture track.
+preview.6 payload. The [Rust rewrite](rust-roadmap.md) has a separate baseline of
+36 planned packages / 195 provisional points, replacing its earlier 99-point
+outline. Its [component audit](rust-component-audit.md) separates Rust ownership
+from retained engines and compatibility unknowns. Discovery can start early;
+production cutover requires parity, migration and independent-build gates. These
+points overlap existing contracts and do not add to the 322-point feature total.

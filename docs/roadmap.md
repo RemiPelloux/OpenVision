@@ -41,7 +41,9 @@ estimate for that subset until its stories and required dependencies are chosen;
 322 points sizes the entire current unfinished acceptance backlog. Scores are
 provisional and must be revised when investigations reveal changed scope.
 The separate account work packages below overlap these stories; do not add their
-points again. The Rust rewrite follows product/build gates and has its own scope.
+points again. The [Rust rewrite](rust-roadmap.md) has a separate 36-package /
+195-point planning baseline; overlap and unresolved compatibility prevent adding
+it to the feature backlog as a single total.
 
 ### Optional account integrations — source build
 
@@ -192,9 +194,11 @@ acceptance credit only when their full required gates pass.
 | 5 · Rust rewrite | Rust-owned core and desktop shell replacing the recovered runtime | Feature parity, data migration, rollback and measured improvement; see [Rust roadmap](rust-roadmap.md) |
 
 The current acceptance target remains **34 of 42 fully verified stories**.
-The Rust rewrite is a later architecture track and does not silently alter this
-fixed denominator or count as delivered functionality. Windows is currently
-available for checks; [recorded Linux evidence](linux-verification.md) covers a
+The Rust rewrite is a separate architecture track and does not silently alter this
+fixed denominator or count as delivered functionality. Contract audits and editor
+prototypes can start early; production cutover follows its parity, migration and
+build gates. Windows is currently available for checks;
+[recorded Linux evidence](linux-verification.md) covers a
 declared native scope. Further Linux matrices and macOS require target access.
 
 ## What is missing, in plain language
@@ -324,4 +328,8 @@ All 36 other accepted stories appear exactly once in the detailed estimate table
 and once in the priority queue. GitHub Actions
 remain disabled; checks, builds and releases are local.
 
-After the current product gates, continue with the [Rust rewrite track](rust-roadmap.md).
+The [Rust rewrite track](rust-roadmap.md) now includes a component audit and
+36 planned packages / 195 provisional points. Start by pinning contracts and
+baselines, proving the core boundary and testing native editor/extension
+feasibility. Current safety fixes continue independently; replacing a component
+must close its behavior and rollback gates before production cutover.

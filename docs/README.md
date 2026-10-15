@@ -13,7 +13,9 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Resume, pin and search projects | [Project home](project-home.md) |
 | Change themes, colors, fonts and icons | [Appearance](appearance.md) |
 | See every missing feature and its complexity | [Feature roadmap](roadmap.md) |
-| Follow the eventual Rust rewrite | [Rust core, native shell and migration gates](rust-roadmap.md) |
+| Plan the Rust rewrite and its priorities | [36 packages, points and migration gates](rust-roadmap.md) |
+| See what moves to Rust and what stays | [Component rewrite/retain audit](rust-component-audit.md) |
+| Understand expected Rust gains and their proof | [Performance budgets and measurement plan](rust-performance-plan.md) |
 | Review what has actually passed | [Release claims and verification matrix](release-claims.md) |
 | Compare current source changes with the portable download | [Source additions and remaining verification](release-claims.md#source-additions-after-preview6) |
 | Understand the acceptance percentage | [42-story sprint ledger](completion-sprints.md) |
