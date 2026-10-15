@@ -193,7 +193,7 @@ not proof of why a past live catalog shrank.
 | --- | --- | --- | --- |
 | OV-301 / Partial | Approved project memories pass native save/restart/isolation and live GPT recall; reviewed legacy import preserves originals. Cross-window IPC now refreshes changed records and rejects stale review. Two-root selection, junction rejection, ACL-denied write/retry and inline-edit exclusion pass. Remaining: physical full-disk/I/O recovery | **5 points** | [Rules](local-rules-concurrency.md), [approved memories and precise two-window scope](project-memories.md) and [Quick Edit](rea-inline-edit.md); medium |
 | OV-302 / Partial | Complete global path-owner audit and additive migration; two profiles and another installation; watcher consumers | **8 points** | Recovered producer/consumer paths and native fixtures; medium |
-| OV-303 / Partial | Native multi-window/profile transport ownership; remote hosts remain under OV-703 | **5 points** | [Windows STDIO/HTTP cleanup, HTTP 404 recovery and direct session reinitialization](rea-mcp-cleanup.md), approval, Stop, disconnect, timeout and restart pass; the new session driver checks production boundaries, not Agent retry UI; utility-worker shutdown diagnostic remains under OV-403; medium |
+| OV-303 / Partial | Broader profile/configuration ownership, including named profiles in one host and cross-window failed cleanup; remote hosts remain under OV-703 | **5 points** | [Windows cleanup/session recovery](rea-mcp-cleanup.md) and [native two-window/separate-user-data Agent calls](rea-mcp-ownership.md) pass; session driver evidence is narrower than Agent retry UI; utility-worker shutdown diagnostic remains under OV-403; medium |
 | OV-304 / Planned | OAuth canceled consent, expiry/refresh and secret storage; discovery precedence, invalid config and watcher disposal | **8 points** | Owned OAuth server and supported auth contracts; medium |
 
 ## Projects and local intelligence
@@ -241,7 +241,7 @@ not proof of why a past live catalog shrank.
 | OV-1002 / Partial | Frame/input latency, transcript/model row bounds, heap and filesystem work; incremental edits on fixed workloads | **8 points** | OV-202/402/603; medium |
 | OV-1003 / Partial | Idle/reactivation and long-session memory; complete watcher/timer/process ownership across supported workloads | **8 points** | OV-504/703/901–903; medium; MCP startup reduction is scoped evidence |
 | OV-1004 / Planned | Release matrix, secret/log/authority failures, corrupt state, failed cleanup/crash recovery and recovery instructions | **13 points** | All accepted release dependencies; medium after implementation stabilizes |
-| OV-1005 / Partial | Extended process-tree network evidence and native macOS/Linux telemetry checks | **8 points** | Native access and realistic workloads; independently installed extensions assessed separately |
+| OV-1005 / Partial | Extended process-tree network evidence, conversation metadata-sync producer audit and native macOS/Linux telemetry checks | **8 points** | [Multi-window run logs contain unauthenticated metadata-sync failures](rea-mcp-ownership.md); destination/transport behavior remains unverified. Native access and realistic workloads; independently installed extensions assessed separately |
 
 ## Execution order and scope review
 

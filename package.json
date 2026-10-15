@@ -78,6 +78,7 @@
     "verify:memory": "node desktop/verify-memory.mjs",
     "verify:mcp-cleanup": "node desktop/verify-mcp-cleanup.mjs",
     "verify:mcp-session": "node desktop/verify-mcp-session-recovery.mjs",
+    "verify:mcp-ownership": "node desktop/verify-mcp-ownership.mjs",
     "verify:legacy-memory": "node desktop/verify-legacy-memory.mjs",
     "verify:legacy-memory:stale": "node desktop/verify-legacy-memory.mjs --stale",
     "verify:legacy-memory:windows": "node desktop/verify-legacy-memory.mjs --windows",

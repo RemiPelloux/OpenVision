@@ -84,6 +84,14 @@ tool. These production-boundary checks do not establish an Agent retry UI flow.
 Multi-window/profile ownership remains open; OV-303 stays Partial and the fixed
 ledger remains **6/42 Verified (14.29%)**.
 
+15 October ownership follow-up: [native Agent calls](rea-mcp-ownership.md) pass
+from two project windows sharing one global STDIO server and another user-data
+profile with a different server under the same name. Approval precedes execution;
+closing a window/profile preserves the other owner, and all recorded STDIO
+children exit. Separate user-data directories do not prove named profiles inside
+one host or cross-window failed cleanup. OV-303 remains Partial; the denominator
+and **6/42 Verified (14.29%)** result are unchanged.
+
 14 October follow-up: [large clipboard pastes](rea-large-paste.md) now use local
 files and compact prompt references. Native paste/failure checks and a real
 Codex Easy Read continuation pass; this scoped addition does not close the

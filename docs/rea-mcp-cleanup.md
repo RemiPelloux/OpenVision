@@ -252,8 +252,10 @@ native evidence; they do not establish native extension/remote-host parity.
 
 Native fault injection covers Windows STDIO committed disposal/re-addition,
 HTTP close rejection/pending-close acknowledgement/recovery, HTTP 404 recovery
-and direct native session-reinitialization rejection. OAuth, multi-window/profile
-ownership, forced release of permanently hanging closes,
+and direct native session-reinitialization rejection. [Separate ownership checks](rea-mcp-ownership.md)
+cover two windows sharing a global STDIO connection and isolated user-data
+profiles. OAuth, broader named-profile/configuration ownership and cross-window
+failed cleanup, forced release of permanently hanging closes,
 long-session resource growth, remote hosts, macOS, Linux and glass remain
 unverified. The owner registry deliberately retains unresolved resources; there
 is no timeout that discards ownership. The five-second timer bounds caller
