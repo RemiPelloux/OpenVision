@@ -239,7 +239,9 @@ The [Agent review audit](docs/rea-agent-edit-history.md) tracks native project
 search, multi-file acceptance and editor undo. `verify:agent` uses a local model
 fixture with real application tools; live-provider evidence is reported separately.
 Add `-- --review-recovery` to check repeated edits and pending review across
-restarts; see [review recovery](docs/rea-agent-review-recovery.md) for its scope.
+normal restarts, or `-- --review-abrupt` to verify rejection/acceptance recovery
+after abrupt app exits; see [review recovery](docs/rea-agent-review-recovery.md)
+for the exact Windows evidence and remaining failure cases.
 
 The portable package contains editable code under
 `electron-host/resources/app/` and helpers under `electron-host/desktop/`;

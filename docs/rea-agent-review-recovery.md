@@ -57,6 +57,13 @@ actions, storage and application restarts are real; model reasoning and external
 provider support are not established by this scenario. Each run retains hashes,
 tool results, stage records, screenshots and owned host exit results locally.
 
+Use `npm run verify:agent -- --review-abrupt` to run the same scenarios with
+abrupt main-process termination at the three review restart boundaries. The flag
+includes the recovery fixture automatically. The verifier sends `process.exit(23)`
+through its own disposable app's existing Inspector connection, bypassing normal
+Electron quit handlers. It never selects another application by PID. The recorded
+identity distinguishes normal shutdown from abrupt termination.
+
 ## Verified results
 
 The final Windows x64 run is `logs/agent-verification-OcpHTX/result.json`, on
@@ -86,8 +93,39 @@ those checks after the fix. The final run additionally proves restored rejection
 
 ## Remaining acceptance
 
-OV-103 remains Partial. Native storage-failure injection, abrupt-crash recovery,
-additional edit types and the OV-102 live-provider dependency remain open.
+OV-103 remains Partial. Native storage-failure injection, termination during
+an outstanding write/tool operation, additional edit types and the OV-102
+live-provider dependency remain open. Abrupt exit after visible pending review
+and acceptance is now checked below; this does not prove arbitrary crash safety.
 The recovery fix retains necessary state on failure; no reduced RAM, CPU, token
 usage or faster execution is claimed. The portable release is not updated by
 these source changes.
+
+## Abrupt-exit verification
+
+15 October Windows x64 run `logs/agent-verification-DYzW6C/result.json` passes
+on parent commit `36dfbec` plus the verifier change. The workbench is unchanged:
+`ce6bec813ce235e308ded5e2ab64153ae40fe22a65e91672dd14103321bf8bcf`.
+Verifier SHA-256:
+`3462b5fe63c0267c2b70d3ea804e2bcc280cf8137b1646d2e345208de3c4c051`.
+
+| Interruption point | Observed after relaunch |
+| --- | --- |
+| Both closed-file edits pending, before rejection | Review and conversation return; Undo All/Confirm restores both exact pre-edit contents |
+| Both closed-file edits pending, before acceptance | Review returns with both changed files; Keep All succeeds |
+| After Keep All hides the pending-review control | Accepted contents remain on disk; conversation returns without pending Keep All |
+
+All original core checks and repeated-edit Undo/Redo also pass. The run makes
+**29 authenticated local fixture requests**, with no additional inference during
+restored acceptance/rejection and no renderer/inline-diff errors. All five owned
+launcher processes terminate: two normal closes return 0; the three injected
+exits return Windows status **3221226505 (0xC0000409)** rather than the requested
+23. These are deliberately induced abnormal exits, not clean shutdown results.
+A post-run process inventory finds no remaining `OpenVision.exe` processes.
+The restored-review screenshot was inspected alongside the file assertions.
+
+This uses the real desktop, filesystem tools and persisted profile, with a
+controlled model response fixture. It does not establish physical power-loss
+safety, torn-write recovery, failure during an in-flight edit, live-model behavior,
+macOS/Linux behavior or persisted text undo history after restart. No production
+runtime change or portable rebuild was needed for this verification addition.

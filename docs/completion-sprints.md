@@ -8,6 +8,12 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+15 October abrupt-exit follow-up: [native review recovery](rea-agent-review-recovery.md#abrupt-exit-verification)
+passes three injected main-process exits: pending review can be rejected or
+accepted after relaunch, and accepted edits survive another abrupt exit. The
+29-request local fixture does not verify live providers or interrupted writes.
+OV-103 stays Partial; the ledger remains **6/42 Verified (14.29%)**.
+
 15 October review-recovery follow-up: [recovery ownership](rea-agent-review-recovery.md)
 preserves saved review state when Undo restoration fails, joins snapshot writes
 and cleanup, and preserves the live review if Redo persistence fails. The native

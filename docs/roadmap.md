@@ -30,8 +30,10 @@ See also the [scoped Windows evidence](model-discovery-resources.md#full-app-sta
 
 Agent reliability remains first: the [review-recovery follow-up](rea-agent-review-recovery.md)
 retains recovery data on failed restoration and adds repeated-edit/pending-review
-restart coverage. Native storage faults and abrupt-crash recovery remain gates;
-source-owner failure tests do not close those broader cases.
+restart coverage. Native Windows checks now also recover pending and accepted
+review after three injected abrupt app exits. Native storage faults and
+interruption during outstanding writes/tools remain gates; exit after visible
+review does not establish arbitrary crash or power-loss recovery.
 
 15 October Agent review follow-up: the [edit-history audit](rea-agent-edit-history.md)
 records native filename/text search and fixes acceptance returning before

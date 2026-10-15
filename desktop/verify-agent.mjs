@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { once } from 'node:events';
 import { release } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -33,11 +34,14 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });
 const search = await createAgentSearchFixture({ directory, project });
-const reviewRecovery = process.argv.includes('--review-recovery') ? await createReviewRecoveryFixture({ directory, project }) : undefined;
+const abruptReview = process.argv.includes('--review-abrupt');
+const reviewRecovery = process.argv.includes('--review-recovery') || abruptReview
+  ? await createReviewRecoveryFixture({ directory, project }) : undefined;
 const commands = await createAgentCommandFixture({ directory, project });
 const verifyMcp = process.argv.includes('--mcp') || process.argv.includes('--mcp-stdio');
 let mcp;
 const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+  reviewRestartMode: reviewRecovery ? (abruptReview ? 'abrupt main-process exit' : 'normal application close') : undefined,
   platform: process.platform, arch: process.arch, osRelease: release(), node: process.version,
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['workbench', join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')],
@@ -146,6 +150,19 @@ async function closeOwnedApp() {
   ownedHostExits.push({ pid: child.pid, exitCode: child.exitCode, signalCode: child.signalCode });
   app = undefined;
 }
+async function restartReviewHost(stage) {
+  if (!abruptReview) return closeOwnedApp();
+  const child = app.process();
+  assert.equal(child.exitCode, null, 'Only the live verifier-owned host can be interrupted');
+  const exited = once(child, 'exit', { signal: AbortSignal.timeout(15000) });
+  // Use the existing Inspector connection, not a PID-selected kill. Node exit
+  // bypasses Electron quit handlers; this is not a power-loss or torn-write test.
+  await app.evaluate(() => process.exit(23)).catch(() => {});
+  const [code, signal] = await exited;
+  ownedHostExits.push({ pid: child.pid, exitCode: code, signalCode: signal, abrupt: true, stage });
+  app = undefined;
+  assert.ok(Number.isInteger(code) && code !== 0, 'Interrupted host must exit abnormally');
+}
 async function launch() {
   const started = performance.now();
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
@@ -249,15 +266,15 @@ try {
     assert.equal(requests.filter(request => request.phase === 'review-repeat').length, 3);
     assert.equal(requests.filter(request => request.phase === 'review-pending').length, 3);
     const beforeRejection = requests.length;
-    await closeOwnedApp(); await launch(); await openChat(page);
+    await restartReviewHost('pending review before rejection'); await launch(); await openChat(page);
     await reviewRecovery.rejectRestored(page);
     assert.equal(requests.length, beforeRejection, 'Rejecting restored review must not issue inference');
     phase = 'review-pending-keep'; await reviewRecovery.preparePending(page, 'pendingKeep');
     assert.equal(requests.filter(request => request.phase === 'review-pending-keep').length, 3);
     const beforeRestarts = requests.length;
-    await closeOwnedApp(); await launch(); await openChat(page);
+    await restartReviewHost('pending review before acceptance'); await launch(); await openChat(page);
     await reviewRecovery.acceptRestored(page);
-    await closeOwnedApp(); await launch(); await openChat(page);
+    await restartReviewHost('accepted review'); await launch(); await openChat(page);
     await reviewRecovery.verifyAcceptedRestart(page);
     assert.equal(requests.length, beforeRestarts, 'Review/restart must not issue additional inference');
     result.reviewRecovery = reviewRecovery.results;
