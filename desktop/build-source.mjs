@@ -44,6 +44,7 @@ import { installApprovalDefault } from './autorun-customization.mjs';
 import { installWindowTitles } from './source-branding.mjs';
 import { validateGeneratedArtifacts } from './generated-artifact-integrity.mjs';
 import { installRenameVersionGuard } from './rename-version-customization.mjs';
+import { installRetrievalOwnership } from './retrieval-lifecycle-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -84,6 +85,7 @@ await installUtilityProcessOwnership(root);
 await installIsolatedNotifications(root);
 await installLinuxKeyringSelection(root);
 await installExtensionTelemetryPolicy(root);
+await installRetrievalOwnership(root);
 await installRenameVersionGuard(root);
 await installCompletion(root);
 await installInlineEdit(root);

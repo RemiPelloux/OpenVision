@@ -228,6 +228,11 @@ Development tooling uses **Node.js 24.18.0** and `npm ci --prefix tooling`.
 The desktop build validates generated scripts, manifests and local main-process
 imports. See [build integrity and verification limits](docs/runtime-build-integrity.md)
 for the latest recovery and shutdown corrections.
+
+The source build also rejects stale search initialization after project changes
+or disposal. See the [retrieval audit and verification limits](docs/rea-retrieval-ownership.md)
+for the reproduced race, native project regression and remaining indexing gates.
+
 The portable package contains editable code under
 `electron-host/resources/app/` and helpers under `electron-host/desktop/`;
 changes there load after restarting. Full native-source rebuilds remain planned.

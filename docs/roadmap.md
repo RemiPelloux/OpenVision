@@ -28,6 +28,14 @@ See also the [scoped Windows evidence](model-discovery-resources.md#full-app-sta
 
 ## Critical-first backlog and ETA
 
+15 October retrieval follow-up: the [search lifecycle and data-boundary audit](rea-retrieval-ownership.md)
+reproduces an older workspace initialization replacing the current search client
+and adds attempt ownership through asynchronous setup and disposal. Source-owner
+tests and Windows project-watcher regressions pass within their stated scope.
+Server-facing file-sync contracts are mapped, but actual data destinations and
+native index behavior remain unverified. The acceptance count and backlog points
+are unchanged.
+
 **36 unfinished stories · 322 provisional complexity points.** The order below
 owns execution priority; the later area tables hold the detailed acceptance
 requirements. Priority reflects impact and dependencies, not a claim that every

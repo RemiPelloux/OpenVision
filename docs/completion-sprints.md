@@ -8,6 +8,16 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+15 October retrieval ownership follow-up (parent commit `92e3ffe`): the
+[search lifecycle audit and fix](rea-retrieval-ownership.md) prevents an older
+workspace initialization replacing the current client or creating resources after
+disposal. Recovered-owner tests reproduce the original bug and verify the guard;
+Windows native project-watcher regressions cover 100 and 10,000 files separately.
+The audit maps native/search/server boundaries with partial REA evidence, but
+does not establish actual indexing destinations or full index lifecycle behavior.
+OV-501 stays Unknown, OV-503/504 Planned and OV-1003 Partial. The portable payload
+and **6/42 Verified (14.29%)** count remain unchanged.
+
 15 October startup and discovery follow-up: native Windows startup passes in
 `logs/local-startup-verification-nkp4Tu/result.json`. Explorer loaded, an open
 file survived reload, and switching projects reused the same native window.
