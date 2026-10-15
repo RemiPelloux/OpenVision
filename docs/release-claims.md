@@ -53,6 +53,25 @@ The latest Windows source checks passed 62 account tests, 30 portable tests
 (one skipped), desktop syntax checks and the desktop build. Controlled test
 results do not establish provider success or native macOS/Linux account support.
 
+The source also contains native MCP recovery and ownership verification added
+after preview.6. Retained Windows results establish these specific boundaries:
+
+| Workflow | Observed result | Evidence and limits |
+| --- | --- | --- |
+| HTTP session expiry and direct session reinitialization | Both runs passed five checks: failed-close ownership, repeated-failure replacement blocking, explicit cleanup recovery and unchanged normal utility | [Session recovery](rea-mcp-cleanup.md#native-session-recovery-verification); real transports with controlled close failures, no Agent retry UI or AI inference claim |
+| Shared global STDIO server | Two project windows used the same surviving child; closing one window preserved its sibling's working calls | [Window ownership](rea-mcp-ownership.md); native Agent approval with controlled inference responses |
+| Separate user-data directories | Same-named servers remained isolated; closing one host preserved the other; all four recorded child PIDs were absent after final shutdown | [User-data ownership](rea-mcp-ownership.md); two hosts, not named profiles within one host |
+
+The ownership run retained unauthenticated conversation metadata-sync errors,
+a listener-count warning, onboarding failures, duplicate settings-command
+registration and mutex warnings. No fix or network-absence claim follows from
+these successful MCP checks. The metadata-sync producer audit, listener lifetime
+and shutdown investigation remain in the [roadmap](roadmap.md#next-reliability-checks).
+No RAM or CPU improvement was measured in these correctness checks.
+OV-303 remains Partial and the ledger remains **6/42 Verified (14.29%)**.
+The preview.6 archive and repository payload have not been refreshed by these
+source commits.
+
 ## Feature and fixture matrix
 
 | Accepted stories | Current observed scope | Required evidence still missing |

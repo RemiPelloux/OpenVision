@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add experimental signed-in Claude/Codex models to Agent, account usage in the bottom bar and GPT-6-only Codex account choices. Real Claude file editing passed; the tested Codex account offered no GPT-6 models and the separate GPT-6 API check was blocked by provider balance. See [account evidence](docs/account-integrations.md#verification-limits).
+- Verify native MCP HTTP session-expiry and direct session-reinitialization recovery with retained failed-close ownership and no automatic replay of the failed tool.
+- Verify native Agent MCP approval, shared STDIO ownership across two project windows, isolated same-named servers in separate user-data directories and recorded child shutdown. Broader profile/configuration ownership and logged startup diagnostics remain open.
+- Align the README, verification matrix and complexity-point roadmap with these source additions. They do not refresh the preview.6 portable payload or increase the fixed 6/42 verified-story count.
 - Replace the account selector's unreadable system menu with an editor-themed, keyboard-accessible list and a separate Disconnected option.
 - Improve account-control spacing, narrow-panel wrapping and focus recovery after switching; close open menus when refreshing or leaving onboarding.
 - Run OpenVision natively on Linux x64: `npm run prepare:desktop` downloads the pinned Cursor 3.21.13 AppImage, verifies its SHA-256 and recovers readable sources; `npm start` builds and launches. See the [Linux guide](docs/linux.md).

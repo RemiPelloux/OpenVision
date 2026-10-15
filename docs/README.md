@@ -15,10 +15,12 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | See every missing feature and its complexity | [Feature roadmap](roadmap.md) |
 | Follow the eventual Rust rewrite | [Rust core, native shell and migration gates](rust-roadmap.md) |
 | Review what has actually passed | [Release claims and verification matrix](release-claims.md) |
+| Compare current source changes with the portable download | [Source additions and remaining verification](release-claims.md#source-additions-after-preview6) |
 | Understand the acceptance percentage | [42-story sprint ledger](completion-sprints.md) |
 | Use C/C++ | [Pinned clangd setup](cpp-support.md) |
 | Configure local rules, plans, skills and MCP | [Project configuration](project-configuration.md) |
 | Understand MCP failed-close recovery and remaining checks | [Transport cleanup ownership](rea-mcp-cleanup.md) · [Acceptance gate owners](acceptance-gate-ownership.md) |
+| Check MCP sharing between windows and isolated user-data profiles | [Native ownership verification](rea-mcp-ownership.md) |
 | Save and review project memories | [Memory workflow](project-memories.md) |
 | Investigate model compatibility | [Live provider matrix](live-provider-compatibility.md) |
 | Use Tab autocomplete | [Completion behavior and tests](rea-custom-autocomplete.md) |

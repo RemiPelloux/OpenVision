@@ -96,6 +96,24 @@ These entries are priorities from the complete tables below, not extra stories
 or additive estimates. The Rust core/shell replacement follows the independent
 build and compatibility gates; native macOS/Linux checks require those systems.
 
+### Next reliability checks
+
+The latest [MCP ownership run](rea-mcp-ownership.md) passed its six assertions
+but retained application diagnostics. Address these before treating that run as
+evidence of clean startup, zero cloud traffic or bounded long-session resources:
+
+| Existing story | Next check | Acceptance evidence needed |
+| --- | --- | --- |
+| OV-1005 · 8 points | Trace the conversation metadata-sync producer and its authentication/network boundary | Local title/history persistence across restart; remove any obsolete hosted dependency at its owner; observe traffic without suppressing error logs |
+| OV-1003 · 8 points | Trace `child-process-gone` listener ownership | Repeated window open/close and idle/reactivation with listener counts and process-family memory measured; determine whether listeners are retained |
+| OV-403 · 8 points | Investigate onboarding, duplicate command and mutex diagnostics alongside shutdown | Reproduce causes, verify clean startup/closure and retain the earlier unexplained exit 134 until diagnosed |
+| OV-303 · 5 points | Extend profile/configuration ownership coverage | Named profiles inside one host, same-name project overrides, simultaneous configuration changes and cross-window failed-close recovery |
+
+Points above reference the existing story estimates below; they are not added
+again. No implementation or verification credit is assigned to an investigation
+that has not passed its acceptance gate. Packaging the source additions and
+repeating the portable checks also remain required before a new app release.
+
 Work is sized with **relative complexity points**: implementation breadth,
 unknowns, integration risk and verification difficulty. Points are not hours,
 days, token budgets or a completion percentage. AI-assisted implementation still

@@ -133,6 +133,13 @@ removed, while local conversation files are kept in an account history archive.
 [Account sign-in, switching and current verification limits →](docs/account-integrations.md)
 These additions are not included in the older preview.6 portable payload.
 
+Recent source verification also covers MCP session-expiry recovery, shared
+connections across two project windows and isolation between separate user-data
+profiles. See the [source verification summary](docs/release-claims.md#source-additions-after-preview6)
+for the exact scope and unresolved diagnostics. Updating Git does not replace
+an already extracted portable app; [build the editable source](docs/native-runtime.md)
+to use changes made after preview.6.
+
 **Latest real Windows checks, 15 October 2026:** signed-in Claude read and edited
 a test file through OpenVision Agent. Codex account choices include only GPT-6
 models actually advertised by its official client; the tested account offered
@@ -183,6 +190,8 @@ npm run test:portable
 npm run test:completion
 npm run verify:completion -- --editing --portable ./OpenVision-portable
 npm run verify:welcome -- --portable ./OpenVision-portable
+npm run verify:mcp-session
+npm run verify:mcp-ownership
 npm run status:features
 ```
 
