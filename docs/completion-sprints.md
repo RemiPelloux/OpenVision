@@ -8,6 +8,12 @@ The [feature gap audit](feature-gap-audit.md) is the recovery baseline; the
 
 ## Current baseline
 
+15 October review-recovery follow-up: [recovery ownership](rea-agent-review-recovery.md)
+preserves saved review state when Undo restoration fails, joins snapshot writes
+and cleanup, and preserves the live review if Redo persistence fails. The native
+scenario additionally checks repeated edits and pending review across restarts.
+This is continued P0 OV-103 work; the acceptance count remains **6/42 Verified**.
+
 15 October Agent review follow-up: [edit-history ownership](rea-agent-edit-history.md)
 fixes early acceptance completion and missing closed-file text undo. The final
 Windows run passes search, multi-file review/undo/redo, command approval/Stop

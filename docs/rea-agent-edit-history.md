@@ -120,7 +120,8 @@ has focused producer coverage, not a native BOM/mixed-EOL run.
 OV-103 remains Partial and the fixed ledger remains **6/42 Verified (14.29%)**.
 External provider lifecycle gates, parked-file recovery failures, crash recovery,
 notebook edits, intervening changes and native platform coverage need their own
-evidence. Repeated edits to the same closed file need native undo-consolidation
-coverage. The separate source finding that failed review restoration can clear
-its saved recovery data remains open. This pass makes no whole-app RAM, CPU,
+evidence. The later [review-recovery follow-up](rea-agent-review-recovery.md)
+adds repeated-edit and pending-review restart coverage and fixes deletion of
+saved review data after failed restoration. That report distinguishes recovered
+owner failure tests from native success-path coverage. This pass makes no whole-app RAM, CPU,
 token-cost or latency improvement claim.

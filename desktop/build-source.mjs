@@ -47,6 +47,7 @@ import { installRenameVersionGuard } from './rename-version-customization.mjs';
 import { installRetrievalOwnership } from './retrieval-lifecycle-customization.mjs';
 import { installAgentReviewAcceptance } from './agent-review-customization.mjs';
 import { installUnopenedAgentUndo } from './agent-closed-file-undo-customization.mjs';
+import { installAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -90,6 +91,7 @@ await installExtensionTelemetryPolicy(root);
 await installRetrievalOwnership(root);
 await installAgentReviewAcceptance(root);
 await installUnopenedAgentUndo(root);
+await installAgentReviewRecovery(root);
 await installRenameVersionGuard(root);
 await installCompletion(root);
 await installInlineEdit(root);

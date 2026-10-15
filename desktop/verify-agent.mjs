@@ -12,6 +12,7 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { createAgentEditFixture } from './verify-agent-edits.mjs';
 import { createAgentSearchFixture } from './verify-agent-search.mjs';
+import { createReviewRecoveryFixture } from './verify-agent-review-recovery.mjs';
 import { createAgentCommandFixture } from './verify-agent-commands.mjs';
 import { memorySample, requestMeasurement, baselineIdentity } from './native-baseline.mjs';
 import { createAgentMcpFixture } from './verify-agent-mcp.mjs';
@@ -32,6 +33,7 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
 const file = join(project, 'hello.js');
 const edits = await createAgentEditFixture({ directory, project });
 const search = await createAgentSearchFixture({ directory, project });
+const reviewRecovery = process.argv.includes('--review-recovery') ? await createReviewRecoveryFixture({ directory, project }) : undefined;
 const commands = await createAgentCommandFixture({ directory, project });
 const verifyMcp = process.argv.includes('--mcp') || process.argv.includes('--mcp-stdio');
 let mcp;
@@ -41,6 +43,7 @@ const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: roo
     ['host', layout.executable], ['workbench', join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['editFixture', join(root, 'desktop/verify-agent-edits.mjs')],
     ['searchFixture', join(root, 'desktop/verify-agent-search.mjs')],
+    ...(reviewRecovery ? [['reviewRecoveryFixture', join(root, 'desktop/verify-agent-review-recovery.mjs')]] : []),
     ['commandFixture', join(root, 'desktop/verify-agent-commands.mjs')],
     ['commandLifecycle', join(root, 'desktop/verify-command-lifecycle.mjs')],
     ...(verifyMcp ? [['mcpFixture', join(root, 'desktop/verify-agent-mcp.mjs')],
@@ -92,6 +95,10 @@ const server = createServer(async (request, response) => {
   }
   if (phase === 'search') {
     search.respond(payload, event);
+    response.end('data: [DONE]\n\n'); return;
+  }
+  if (phase.startsWith('review-')) {
+    reviewRecovery.respond(payload, event);
     response.end('data: [DONE]\n\n'); return;
   }
   if (phase === 'read') {
@@ -236,6 +243,25 @@ try {
   assert.equal(requests.filter(request => request.phase === 'resume').length, 1);
   assert.equal(requests.at(-1).resumedHistory, true, 'Continued request must retain prior user context after process restart');
   await sample('after-resumed-agent-reply');
+  if (reviewRecovery) {
+    phase = 'review-repeat'; await reviewRecovery.verifyRepeated(page);
+    phase = 'review-pending'; await reviewRecovery.preparePending(page);
+    assert.equal(requests.filter(request => request.phase === 'review-repeat').length, 3);
+    assert.equal(requests.filter(request => request.phase === 'review-pending').length, 3);
+    const beforeRejection = requests.length;
+    await closeOwnedApp(); await launch(); await openChat(page);
+    await reviewRecovery.rejectRestored(page);
+    assert.equal(requests.length, beforeRejection, 'Rejecting restored review must not issue inference');
+    phase = 'review-pending-keep'; await reviewRecovery.preparePending(page, 'pendingKeep');
+    assert.equal(requests.filter(request => request.phase === 'review-pending-keep').length, 3);
+    const beforeRestarts = requests.length;
+    await closeOwnedApp(); await launch(); await openChat(page);
+    await reviewRecovery.acceptRestored(page);
+    await closeOwnedApp(); await launch(); await openChat(page);
+    await reviewRecovery.verifyAcceptedRestart(page);
+    assert.equal(requests.length, beforeRestarts, 'Review/restart must not issue additional inference');
+    result.reviewRecovery = reviewRecovery.results;
+  }
   if (mcp) {
     await mcp.verify(page, app, value => { phase = value; });
     await closeOwnedApp(); await launch();
