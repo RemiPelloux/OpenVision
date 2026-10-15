@@ -183,9 +183,10 @@ reached its configured endpoint but returned HTTP 403 `INSUFFICIENT_BALANCE`.
 GPT-6 file-edit verification through that connection remains blocked by the
 provider balance; it is not reported as a successful inference test.
 
-The latest local checks passed `npm run test:accounts` (62 tests),
-`npm run test:portable` (30 passed, one skipped), `npm run check:desktop` and
-`npm run build:desktop` on Windows. These controlled suites and build checks are
+The latest Windows account suite passed all 66 tests from `test:accounts`;
+desktop syntax checks and the source build also passed after the
+[routing and stream performance fixes](account-performance.md). The earlier
+portable suite passed 30 tests with one skipped. These controlled suites and build checks are
 separate from the real-provider runs above. Native inspection of the rebuilt
 app confirmed the Claude account group, GPT-6 API choices, absence of older
 Codex choices and the no-GPT-6 account notice. This does not update or reverify

@@ -34,6 +34,7 @@ options without an OpenVision account.
 | --- | --- | --- |
 | Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/provider-selection-lifecycle.md) |
 | Account models — source build | Select signed-in Claude or eligible GPT-6 Codex accounts in Agent; inspect reported usage in the bottom bar | [Account setup and real test limits](docs/account-integrations.md); experimental, not included in preview.6 |
+| Resource use — source build | Reuse unchanged account model routes, bound failed-host retries and avoid duplicate streamed text retention | [Measured scope and remaining RAM checks](docs/account-performance.md); whole-app savings remain unmeasured |
 | Project Home | Open projects in the current window, search recent work, pin favorites and resume saved workspaces | [Dashboard and measured scope](docs/project-home.md); included in the portable app |
 | Appearance | Choose dark, light or high-contrast themes and customize colors, fonts and icons | [Appearance guide](docs/appearance.md) |
 | AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/rea-agent-runtime.md); broader workflow coverage remains open |

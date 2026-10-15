@@ -49,8 +49,9 @@ A separate native request through the saved Codex Easy GPT-6 connection returned
 HTTP 403 `INSUFFICIENT_BALANCE`. Earlier successful API checks below remain
 historical evidence, not proof of current balance or availability.
 
-The latest Windows source checks passed 62 account tests, 30 portable tests
-(one skipped), desktop syntax checks and the desktop build. Controlled test
+The latest Windows source checks passed 66 account tests; the earlier portable
+suite passed 30 tests (one skipped). Desktop syntax checks and the source build
+passed after the account performance fixes. Controlled test
 results do not establish provider success or native macOS/Linux account support.
 
 The source also contains native MCP recovery and ownership verification added
@@ -74,6 +75,14 @@ absence. Listener lifetime, broader traffic and shutdown investigations remain
 in the [roadmap](roadmap.md#next-reliability-checks).
 No RAM or CPU improvement was measured in these correctness checks.
 OV-303 remains Partial and the ledger remains **6/42 Verified (14.29%)**.
+
+Subsequent [local startup verification](local-startup.md) passes Explorer,
+native editor reload, same-window project switching and clean closure; restoring
+the old lifecycle reproduces the original onboarding error. Broader diagnostics
+remain open. A separate [account performance review](account-performance.md)
+measures fewer route rebuilds and failed-host queries, and lower retained stream
+heap. Its module-worker CPU/RSS results do not establish whole-app RAM savings.
+Neither addition is included in preview.6 or promotes a full acceptance story.
 The preview.6 archive and repository payload have not been refreshed by these
 source commits.
 

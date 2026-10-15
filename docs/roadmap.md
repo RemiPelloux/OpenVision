@@ -48,7 +48,7 @@ focused checks and four native switches with both official extensions installed.
 Both real sign-in clients opened the system browser without an extra trust dialog.
 Native deletion checks passed for both providers, including the guard against
 deleting an account still used by another window. Source changes remain outside
-the preview.6 portable payload. The latest focused account suite passed 62 tests;
+the preview.6 portable payload. The latest focused account suite passed 66 tests;
 controlled transport checks establish isolation, bounds and cancellation, not
 upstream model availability. These account additions do not promote any complete
 acceptance story. Tab autocomplete still uses a configured API connection.
@@ -105,8 +105,8 @@ evidence of clean startup, zero cloud traffic or bounded long-session resources:
 | Existing story | Next check | Acceptance evidence needed |
 | --- | --- | --- |
 | OV-1005 · 8 points | Extend traffic verification after removing the local hosted metadata contribution | [Windows title/history restart checks](local-conversation-metadata.md) pass with zero contribution/client invocations; process-family traffic, broader workloads and native platform gates remain open |
-| OV-1003 · 8 points | Trace `child-process-gone` listener ownership | Repeated window open/close and idle/reactivation with listener counts and process-family memory measured; determine whether listeners are retained |
-| OV-403 · 8 points | Investigate onboarding, duplicate command and mutex diagnostics alongside shutdown | Reproduce causes, verify clean startup/closure and retain the earlier unexplained exit 134 until diagnosed |
+| OV-1003 · 8 points | Trace `child-process-gone` listener ownership and long-session memory | [Account route/retry/stream fixes](account-performance.md) have scoped before/after measurements; repeated window/worker restart listener counts and application process-family memory remain required |
+| OV-403 · 8 points | Investigate remaining duplicate command and mutex diagnostics alongside shutdown | [Local startup ordering](local-startup.md) now passes a native candidate and reproducing control; verify the broader startup/closure matrix and retain the earlier unexplained exit 134 until diagnosed |
 | OV-303 · 5 points | Extend profile/configuration ownership coverage | Named profiles inside one host, same-name project overrides, simultaneous configuration changes and cross-window failed-close recovery |
 
 Points above reference the existing story estimates below; they are not added

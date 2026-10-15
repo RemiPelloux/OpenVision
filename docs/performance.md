@@ -1,5 +1,10 @@
 # Performance review — 2026-10-12
 
+The [15 October account performance review](account-performance.md) fixes
+unchanged-catalog route rebuilds, repeated failed-host queries and duplicate
+retention of streamed output. It includes equivalent before/after measurements,
+CPU and worker peak RSS, plus the remaining unconfirmed listener-lifetime concern.
+
 The [13 October model-catalog follow-up](model-memory-optimization.md) removes
 repeated provider parsing, eager autocomplete reasoning data, per-provider whole
 catalog publication and quadratic manual-model merging. It includes reproducible

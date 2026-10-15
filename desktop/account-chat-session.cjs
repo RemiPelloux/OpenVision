@@ -18,7 +18,7 @@ function createChatSession(options) {
     if (closed) return closing;
     closed = true; clearTimeout(timer); controller.abort();
     for (const call of calls.keys()) options.forget(call);
-    calls.clear(); queue.length = 0;
+    calls.clear(); queue.length = 0; text = ''; reasoning = ''; toolCalls = [];
     if (response && !response.writableEnded) response.destroy();
     closing = startup.then(async () => { if (client) await client.close(); }).finally(options.release);
     return closing;
@@ -55,8 +55,8 @@ function createChatSession(options) {
       while (response && queue.length && !closed) {
         const event = queue.shift();
         if (event.kind === 'text' || event.kind === 'reasoning') {
-          if (event.kind === 'text') text += event.value; else reasoning += event.value;
           if (stream) write(chunk({ [event.kind === 'text' ? 'content' : 'reasoning_content']: event.value }));
+          else if (event.kind === 'text') text += event.value; else reasoning += event.value;
         } else if (event.kind === 'tool') {
           toolCalls.push(event.value);
           if (stream) write(chunk({ tool_calls: [{ index: 0, ...event.value }] }));

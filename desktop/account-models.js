@@ -27,10 +27,16 @@ export function refreshAccountModels(storage, force = false) {
     const providers = result?.providers;
     if (!Array.isArray(providers)) throw Error('Account catalog is unavailable.');
     const changed = JSON.stringify(entry.providers) !== JSON.stringify(providers);
-    entry.providers = providers; entry.checkedAt = Date.now(); return changed;
+    // Routing uses catalog identity as a revision. Keep it stable when a fresh
+    // IPC response contains the same endpoints, tokens and model capabilities.
+    if (changed) entry.providers = providers;
+    entry.checkedAt = Date.now(); return changed;
   }).catch(() => {
     const changed = entry.providers.length > 0;
-    entry.providers = []; entry.checkedAt = 0; return changed;
+    if (changed) entry.providers = [];
+    // A failed extension host must not be queried once per Agent/tool request.
+    // Explicit Refresh still bypasses this cooldown; stale routes stay removed.
+    entry.checkedAt = Date.now(); return changed;
   }).finally(() => { entry.pending = undefined; });
   return entry.pending;
 }

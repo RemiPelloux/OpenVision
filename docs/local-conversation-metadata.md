@@ -74,6 +74,10 @@ an empty renderer page-error collection does not establish clean application
 logs. Listener lifetime and the earlier shutdown diagnostics remain separate
 investigations in the [roadmap](roadmap.md#next-reliability-checks).
 
+A subsequent [startup-ordering fix](local-startup.md) addresses the observed
+onboarding error and verifies Explorer, native reload and project switching.
+It does not alter the historical logs above or close the other investigations.
+
 No model token usage, elapsed-time improvement, CPU time or peak process-family
 memory comparison was measured. Removed constructor/client invocations do not
 quantify RAM savings. Native macOS/Linux and extended traffic workloads remain

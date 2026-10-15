@@ -70,6 +70,29 @@ function hostedMetadataRegistration(text, local) {
   return [{ start, end: start, after: guard, reason: 'local conversation metadata ownership' }];
 }
 
+function localStartupLifecycle(text, local) {
+  const index = uniqueIndex(text, '"workbench.contrib.onboarding.onStart.cursor"');
+  const name = /\(\(([\w$]+)\.ID = $/.exec(text.slice(0, index))?.[1];
+  if (!name) throw new Error('Local startup contribution identity changed');
+  const escaped = name.replaceAll('$', '\\$');
+  const registrations = [...text.matchAll(new RegExp(`[\\w$]+\\(${escaped}\\.ID, ${escaped}, `, 'g'))];
+  if (registrations.length !== 1) throw new Error('Local startup registration missing or ambiguous');
+  const expression = parseExpressionAt(text, registrations[0].index, parserOptions);
+  const call = expression.type === 'SequenceExpression' ? expression.expressions[0] : expression;
+  const lifecycle = call.arguments?.[2];
+  const original = lifecycle?.type === 'ConditionalExpression' ? lifecycle.alternate : lifecycle;
+  if (call.type !== 'CallExpression' || call.arguments.length !== 3 ||
+      original?.type !== 'MemberExpression' || original.computed ||
+      original.object.type !== 'Identifier' || original.property.name !== 'BlockRestore')
+    throw new Error('Local startup restoration contract changed');
+  const phase = original.object.name;
+  const after = `${local} ? ${phase}.AfterRestored : ${phase}.BlockRestore`;
+  const before = text.slice(lifecycle.start, lifecycle.end);
+  if (before === after) return [];
+  if (lifecycle !== original) throw new Error('Local startup has an unrecognized lifecycle override');
+  return [{ start: lifecycle.start, end: lifecycle.end, after, reason: 'local startup restoration order' }];
+}
+
 function settingsProfile(text, local) {
   const anchor = /description: "Sign in to get started with Cursor's AI features",\s+label: "Sign In",/.exec(text)?.[0];
   if (!anchor) throw new Error('Local account settings owner missing');
@@ -98,7 +121,8 @@ function settingsProfile(text, local) {
 export function localWorkbench(text, variant) {
   const flag = variant === 'desktop' ? 'zc' : 'Rl';
   const local = `${flag}.localMode`;
-  const patches = [...hostedMetadataRegistration(text, local), ...methodGuards(text, '    maybeOnboard() {', [
+  const patches = [...hostedMetadataRegistration(text, local), ...localStartupLifecycle(text, local),
+    ...methodGuards(text, '    maybeOnboard() {', [
     ['renderPopupBar', `if (${local}) return;`],
   ])];
   const onboarding = classOwner(text, '    maybeOnboard() {').body.body.find(node => node.key?.name === 'maybeOnboard').value.body;

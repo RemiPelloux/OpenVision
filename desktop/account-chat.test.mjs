@@ -105,3 +105,47 @@ test('capacity is bounded and closing cancels clients still starting', async t =
   await f.bridge.close(); await Promise.allSettled(pending);
   assert.equal(cancelled, 4); assert.equal(f.closed(), 4);
 });
+
+test('streamed and buffered text/reasoning survive a tool continuation with either response mode', async t => {
+  for (const stream of [false, true]) {
+    const f = await fixture(t, async (_options, events) => {
+      events.reasoning('Before tool'); events.text('Reading');
+      events.tool('read_project', {}, () => {
+        events.reasoning('After tool'); events.text('Finished'); events.done();
+      });
+    });
+    const first = await (await f.post({ ...request, stream })).text();
+    const message = stream ? streamedMessage(first) : JSON.parse(first).choices[0].message;
+    assert.equal(message.content, 'Reading'); assert.equal(message.reasoning_content, 'Before tool');
+    const call = message.tool_calls[0];
+    const second = await (await f.post({ ...request, stream: !stream, messages: [...request.messages,
+      { role: 'assistant', ...message }, { role: 'tool', tool_call_id: call.id, content: 'ok' }] })).text();
+    const result = stream ? JSON.parse(second).choices[0].message : streamedMessage(second);
+    assert.equal(result.content, 'Finished'); assert.equal(result.reasoning_content, 'After tool');
+    await f.bridge.close(); assert.equal(f.closed(), 1);
+  }
+});
+
+function streamedMessage(body) {
+  const message = { content: '', reasoning_content: '', tool_calls: [] };
+  for (const line of body.split('\n').filter(line => line.startsWith('data: {'))) {
+    const delta = JSON.parse(line.slice(6)).choices[0].delta;
+    message.content += delta.content ?? ''; message.reasoning_content += delta.reasoning_content ?? '';
+    message.tool_calls.push(...(delta.tool_calls ?? []));
+  }
+  return message;
+}
+
+test('output budget cancels the owned client in streaming and buffered modes', async t => {
+  for (const stream of [false, true]) {
+    let aborted = false;
+    const f = await fixture(t, async (options, events) => {
+      options.signal.addEventListener('abort', () => { aborted = true; }, { once: true });
+      events.text('x'.repeat(4 * 1024 * 1024 + 1));
+    });
+    const response = await f.post({ ...request, stream });
+    assert.equal(response.status, stream ? 200 : 502);
+    assert.match(await response.text(), /output limit/);
+    await f.bridge.close(); assert.equal(aborted, true); assert.equal(f.closed(), 1);
+  }
+});

@@ -64,4 +64,23 @@ for (const variant of ['desktop', 'glass']) {
       '"composer.renamedMetadataContribution"'), variant), /Missing or ambiguous/);
     assert.throws(() => localWorkbench(recovered + '\n"composer.localMetadataSyncContribution";', variant), /ambiguous/);
   });
+
+  test(`${variant}: local Explorer startup waits for restored parts and rejects lifecycle drift`, async () => {
+    const recovered = await readFile(input, 'utf8');
+    const { text, patches } = localWorkbench(recovered, variant);
+    const patch = patches.find(item => item.reason === 'local startup restoration order');
+    assert.ok(patch);
+    const original = recovered.slice(patch.start, patch.end);
+    const flag = variant === 'desktop' ? 'zc' : 'Rl';
+    const phase = original.split('.')[0];
+    const script = new vm.Script(patch.after);
+    for (const local of [true, false]) assert.equal(script.runInNewContext({
+      [flag]: { localMode: local }, [phase]: { AfterRestored: 'restored', BlockRestore: 'blocking' },
+    }), local ? 'restored' : 'blocking');
+    assert.equal(localWorkbench(text, variant).text, text);
+    const changed = recovered.slice(0, patch.start) + `${phase}.Eventually` + recovered.slice(patch.end);
+    assert.throws(() => localWorkbench(changed, variant), /restoration contract changed/);
+    assert.throws(() => localWorkbench(recovered.replace('"workbench.contrib.onboarding.onStart.cursor"',
+      '"workbench.contrib.onboarding.renamed"'), variant), /Missing or ambiguous/);
+  });
 }

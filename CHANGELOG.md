@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Preserve model-route caches across unchanged account refreshes and apply a 30-second automatic cooldown after account-host failures; explicit Refresh remains immediate. Remove duplicate streamed text/reasoning retention and clear output references on close. See [controlled before/after measurements](docs/account-performance.md) and remaining whole-app RAM checks.
+- Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/local-startup.md). These source changes do not refresh the preview.6 payload.
+
 - Skip hosted conversation-metadata contribution registration in local mode, avoiding its dependencies, watchers and client calls. Native Windows title/history restart verification passes with controlled inference; broader traffic and platform gates remain open. See [metadata ownership](docs/local-conversation-metadata.md).
 - Add experimental signed-in Claude/Codex models to Agent, account usage in the bottom bar and GPT-6-only Codex account choices. Real Claude file editing passed; the tested Codex account offered no GPT-6 models and the separate GPT-6 API check was blocked by provider balance. See [account evidence](docs/account-integrations.md#verification-limits).
 - Verify native MCP HTTP session-expiry and direct session-reinitialization recovery with retained failed-close ownership and no automatic replay of the failed tool.
