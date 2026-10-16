@@ -32,6 +32,8 @@ The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and
 resumes cleanup without repeating completed steps. It advances P0 OV-103 within
 the existing status and points; the preview.7 portable payload is unchanged.
+[Rule discovery isolation](recovery/rea-rules-isolation.md) closes one OV-302
+producer in source (Linux native pass); OV-302 stays Partial.
 
 The [ranked feature roadmap](planning/roadmap.md#ranked-rea-implementation-and-verification-work)
 owns story order, dependencies and point estimates. The following groups link to

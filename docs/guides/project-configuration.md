@@ -31,6 +31,13 @@ Previous conversations and plan registries may still reference old absolute path
 keep those files until those conversations no longer need them. The migration
 does not rewrite saved chat or plan-registry data.
 
+Rules are discovered only inside each opened folder: `.openvision/rules`, nested
+`.openvision/rules`, `AGENTS.md`, `.openvisionrules` and, with third-party
+extensibility enabled, `CLAUDE.md`. Parent folders, the enclosing Git root and the
+home directory are not searched, and rule deep links cannot write home-directory
+rule files. To keep rules that a project previously inherited from a parent
+folder, copy them into the project. See [rule isolation](../recovery/rea-rules-isolation.md).
+
 ## Implementation and limits
 
 The build changes JavaScript string, template and path-regex tokens, and parsed

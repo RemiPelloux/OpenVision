@@ -37,6 +37,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [REA: global MCP configuration isolation](rea-profile-isolation.md)
 - [Native local project workflow evidence](rea-project-workflows.md)
 - [Retrieval ownership and data boundaries](rea-retrieval-ownership.md)
+- [Rule discovery isolation](rea-rules-isolation.md)
 - [REA: local user subagent configuration](rea-subagent-isolation.md)
 - [Built-in telemetry removal](rea-telemetry-audit.md)
 - [WASM recovery follow-up](rea-wasm-follow-up.md)
