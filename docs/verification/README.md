@@ -7,6 +7,8 @@ Executed tests, platform coverage and explicit limits. Start with [release claim
 - [Windows portable verification - preview.7](portable-preview7.md)
 - [Import profile ownership and exact restore](import-profile-verification.md)
 - [Linux verification](linux-verification.md)
+- [Linux reliability session — 16 October 2026](linux-session-2026-10-16.md)
+- [Live provider runs on Linux — 16 October 2026](live-provider-linux.md)
 - [Live provider compatibility — 14 October 2026](live-provider-compatibility.md)
 - [Readable native model menu](model-menu-verification.md)
 - [Windows portable verification — preview.3](portable-preview3.md)

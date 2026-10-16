@@ -28,6 +28,13 @@ accounts, billing and cloud agents are excluded from this ledger.
 
 ## Critical-first delivery plan
 
+The [16 October Linux reliability session](verification/linux-session-2026-10-16.md)
+summarizes the fixes, evidence, behavior changes and open gates below. All are
+Linux x64 source-build evidence; the ledger stays at 6/42 and preview.7 is unchanged.
+
+The [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
+preserves retry/history ownership after cancellation or disposal failure and
+resumes cleanup without repeating completed steps.
 [Review record deletion and post-commit cleanup](recovery/rea-agent-review-deletion.md)
 follows it on Linux x64 only; OV-103 status and points are unchanged.
 The [Agent I/O-fault report](recovery/rea-agent-io-faults.md) fixes saved-file loss on a full
