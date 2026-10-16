@@ -1,6 +1,7 @@
 # OpenVision ETA and priorities
 
 Updated 16 October 2026 against the acceptance ledger,
+[latest documentation/source reconciliation](../recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation),
 [source-to-gap map](../recovery/feature-gap-audit.md#source-index-to-implementation-gaps),
 [build-integrity correction](../engineering/runtime-build-integrity.md) and
 [Agent recovery evidence](../recovery/rea-agent-review-recovery.md).

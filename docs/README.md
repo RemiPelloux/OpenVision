@@ -63,6 +63,7 @@ filename-label input and the verification limits.
 | Understand provider errors and manual retries | [Provider failure handling](engineering/provider-failure-handling.md) |
 | Understand models disappearing after discovery | [Pending/in-flight storage ownership and source parity](engineering/storage-write-ownership.md) |
 | Understand recovery limitations | [Recovery status](recovery/recovery-status.md) · [Native inventory](recovery/native-recovery-inventory.md) |
+| See which gaps the new source/docs close and which remain | [Latest reconciliation and documentation owners](recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation) |
 | Connect recovered source to current missing features | [Updated gap audit and source-to-implementation map](recovery/feature-gap-audit.md#source-index-to-implementation-gaps) |
 | Browse recovered application code, extracted modules and native pseudocode | [`curs_source` recovery archive](../curs_source/README.md) |
 | Read this release's scope | [0.2.0-preview.6 projects in one window](releases/0.2.0-preview.6.md) |

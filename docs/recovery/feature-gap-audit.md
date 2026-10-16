@@ -80,6 +80,32 @@ The ledger owns status, the roadmap owns priority/points, and the publication
 manifest owns source identities. This audit links those records without
 introducing another completion score.
 
+## Latest documentation and source reconciliation
+
+Reconciled against source commit `23683191` and the versioned publication
+manifest on **16 October 2026**. This refresh changes navigation and the gap
+description; it adds no implementation or native verification evidence.
+
+| Recent work | Gap now closed within its stated scope | What remains open |
+| --- | --- | --- |
+| [Selected-bundle recovery](javascript-bundles.md) and [source index](../../curs_source/modules/3.24.18/README.md) | Every selected input has a structural result: **237/237**, including the documented derived-input retry. | Original types/build inputs, executable module equivalence and independent builds; selected extraction coverage is not product completion. |
+| [Storage ownership](../engineering/storage-write-ownership.md) | The newer reference's pending/in-flight invariant is ported into the prepared runtime; scoped native discovery and Quick Edit regressions pass. | Cross-window configuration races, close during IPC, physical faults and complete Undo-stack failure behavior. |
+| [Created-review recovery](rea-agent-review-recovery.md#created-review-snapshot-ownership) and [final-build regression](rea-agent-review-recovery.md#final-source-build-regression) | Snapshot-service failure recovery and normal-restart review workflows pass their controlled native checks; failed reference release has producer coverage. | Keyboard/menu Undo failure, physical faults, active-write/tool interruption and broader live editing. Older abrupt-exit checks retain their original runtime scope. |
+| [Timeout transport correction](rea-agent-timeout-recovery.md) | Focused real-socket tests verify deadline ownership through the selected proxy/certificate dispatcher. | Post-fix full-duration native header/body timeout and saved-provider retry checks; OV-102/204 remain Partial. |
+| [Repository organization](../engineering/repository-layout.md) and [recovery tools](../../scripts/recovery/README.md) | Maintained code, reference code, guides and recovery tooling have documented locations. | Generated `source/` and reference `curs_source/` are not the durable customization entry points; clean independent assembly remains a product gate. |
+
+### Which document owns each answer
+
+| Question | Authoritative record |
+| --- | --- |
+| Which input was recovered, and where is its code? | [Bundle index](../../curs_source/modules/3.24.18/README.md) for browsing; [publication manifest](../../curs_source/manifest.json) for paths, hashes, representations and retries. |
+| Where should a product change be implemented? | [Repository layout](../engineering/repository-layout.md), [desktop entry points](../../desktop/README.md) and the maintained implementation links below. |
+| What counts as fully Verified? | [42-story baseline](../planning/feature-acceptance.json) and [acceptance ledger](../planning/completion-sprints.md). |
+| What should happen next, and how large is it? | [Ranked roadmap](../planning/roadmap.md#ranked-rea-implementation-and-verification-work) owns priorities/points; [ETA](../planning/remaining-work-estimates.md) links delivery gates. |
+| How do the percentages relate? | [Progress dashboard](../progress.md) separates feature acceptance, version-specific recovery and the Rust plan. |
+| Which behavior was actually tested or released? | Linked investigation reports and [release claims](../verification/release-claims.md#source-additions-after-preview6); source additions do not update the portable download. |
+| What will move to Rust? | [Component audit](../planning/rust/rust-component-audit.md) and [acceptance map](../planning/rust/rust-acceptance-map.md); the overlapping migration points are separate from this backlog. |
+
 ## Measured recovery coverage
 
 Percentages are rounded to two decimals. Each row has its own denominator;
@@ -147,16 +173,16 @@ now pass; physical faults and full Undo-stack failure handling remain open.
 That distinction applies even though the narrower provider
 configuration story OV-201 already has Verified evidence.
 
-| Gap / story | Published reference owner | Implementation and evidence | Remaining gate |
+| Gap / story | Published reference owner | Maintained OpenVision implementation | Evidence and remaining gate |
 | --- | --- | --- | --- |
-| Chat, Stop and retries · OV-102/204 | [AI service][source-ai] · [Agent host entry][source-agent-host] | [Live provider matrix](../verification/live-provider-compatibility.md), [retry history](rea-agent-retry-history.md), [transport timeout ownership](rea-agent-timeout-recovery.md) | Post-fix full-duration native timeout recovery and remaining failure classes. |
-| Model/configuration storage · OV-201/302 | [Storage cache][source-storage] · [IPC writer entry][source-storage-ipc] | [Native stale notification, recovered acknowledgment contract and scoped Windows regressions](../engineering/storage-write-ownership.md) | Cross-window concurrent configuration, close during IPC and physical-failure gates; a successful cache/IPC acknowledgment is not a durability claim. |
-| Agent editing and recovery · OV-103 | [Inline-diff service][source-inline-diff] · [Agent execution entry][source-agent-exec] | [Edit/undo ownership](rea-agent-edit-history.md), [native snapshot-service recovery and control](rea-agent-review-recovery.md) | Complete user-facing Undo-stack failure behavior, physical storage faults, active-write/tool interruption and broader live editing. Failed-reference release remains producer-test coverage. |
-| MCP lifecycle · OV-303/304 | [MCP service][source-mcp] | [Native window/profile ownership](rea-mcp-ownership.md), [failed-close recovery](rea-mcp-cleanup.md), [control-plane lifecycle](../performance/control-plane-mcp-lifecycle.md) | Named profiles, simultaneous changes, cross-window failed cleanup and authenticated MCP. |
-| Retrieval and indexing · OV-501–504 | [Retrieval entry][source-retrieval] · [retrieval worker][source-retrieval-worker] | [Search-owner race and partial data-flow map](rea-retrieval-ownership.md) | Actual processing destinations, native/server contracts, retrieval quality and incremental index counters. |
-| Context and RAM · OV-1001–1003 | [Request-context executor][source-context] | [Resource measurements](../performance/performance.md), [native baseline](../performance/native-performance-baseline.md) | Equivalent token/request workloads, long sessions, idle release and measured UI/filesystem budgets. |
-| Terminal/task cleanup · OV-403 | [Terminal service][source-terminal] | [Native development workflows](../engineering/development-workflows.md) | Explain intermittent host exit 134 and repeat shutdown with active children. |
-| Independent build · OV-801–804 | [Main-process entry][source-main] · [historical native archive](../../curs_source/native/README.md) · [current manifest](../../curs_source/manifest.json) | [Dependency checklist](native-recovery-inventory.md), [build integrity](../engineering/runtime-build-integrity.md), [Rust component audit](../planning/rust/rust-component-audit.md) | Source/version/ABI disposition, required helper replacements and repeated clean builds without ignored recovery inputs. |
+| Chat, Stop and retries · OV-102/204 | [AI service][source-ai] · [Agent host entry][source-agent-host] | [Retry history customization](../../desktop/agent-retry-history-customization.mjs), [request deadlines](../../desktop/provider-request-deadlines.cjs), [proxy boundary](../../desktop/provider-proxy-deadlines.mjs) | [Live provider matrix](../verification/live-provider-compatibility.md), [retry history](rea-agent-retry-history.md), [timeout report](rea-agent-timeout-recovery.md). Post-fix full-duration native timeout recovery and remaining failure classes stay open. |
+| Model/configuration storage · OV-201/302 | [Storage cache][source-storage] · [IPC writer entry][source-storage-ipc] | [Write ownership customization](../../desktop/storage-write-ownership.mjs), [build integration](../../desktop/custom-models.mjs) | [Scoped native regressions](../engineering/storage-write-ownership.md). Cross-window concurrent configuration, close during IPC and physical-failure gates remain; acknowledgment is not a durability claim. |
+| Agent editing and recovery · OV-103 | [Inline-diff service][source-inline-diff] · [Agent execution entry][source-agent-exec] | [Edit review](../../desktop/agent-review-customization.mjs), [review recovery](../../desktop/agent-review-recovery-customization.mjs) | [Edit/undo ownership](rea-agent-edit-history.md), [snapshot recovery/control](rea-agent-review-recovery.md). User-facing Undo-stack failures, physical faults, active-write/tool interruption and broader live editing remain. Failed-reference release has producer-test coverage. |
+| MCP lifecycle · OV-303/304 | [MCP service][source-mcp] | [Desktop cleanup](../../desktop/mcp-lifecycle-cleanup-customization.mjs), [control-plane owner](../../src/mcp.mjs) | [Native ownership](rea-mcp-ownership.md), [failed-close recovery](rea-mcp-cleanup.md), [control-plane lifecycle](../performance/control-plane-mcp-lifecycle.md). Named profiles, simultaneous changes, cross-window failed cleanup and authenticated MCP remain. |
+| Retrieval and indexing · OV-501–504 | [Retrieval entry][source-retrieval] · [retrieval worker][source-retrieval-worker] | [Search lifecycle guard](../../desktop/retrieval-lifecycle-customization.mjs) | [Partial data-flow map](rea-retrieval-ownership.md). Actual processing destinations, native/server contracts, retrieval quality and incremental index counters remain unverified. |
+| Context and RAM · OV-1001–1003 | [Request-context executor][source-context] | [Context customization](../../desktop/context-customization.mjs), [catalog/stream runtime](../../desktop/agent-runtime.cjs) | [Measurements](../performance/performance.md), [native baseline](../performance/native-performance-baseline.md). Equivalent token/request workloads, long sessions, idle release and UI/filesystem budgets remain. |
+| Terminal/task cleanup · OV-403 | [Terminal service][source-terminal] | [Shutdown customization](../../desktop/shutdown-customization.mjs) | [Native development workflows](../engineering/development-workflows.md). Explain intermittent host exit 134 and repeat shutdown with active children. |
+| Independent build · OV-801–804 | [Main-process entry][source-main] · [historical native archive](../../curs_source/native/README.md) · [current manifest](../../curs_source/manifest.json) | [Source assembly](../../desktop/source-assembly.mjs), [build entry](../../desktop/build-source.mjs) | [Dependency checklist](native-recovery-inventory.md), [build integrity](../engineering/runtime-build-integrity.md), [Rust audit](../planning/rust/rust-component-audit.md). Source/version/ABI disposition, helper replacements and clean builds without ignored recovery inputs remain. |
 
 [source-ai]: ../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/aiService.js
 [source-inline-diff]: ../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/inlineDiffService.js

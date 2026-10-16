@@ -105,6 +105,8 @@ recorded. No target code was executed to produce these recovery exports.
 
 For progress and remaining work, see the
 [percentages and gate-based ETA](../docs/progress.md),
+[gap audit and documentation owners](../docs/recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation),
+[source-to-implementation map](../docs/recovery/feature-gap-audit.md#source-index-to-implementation-gaps),
 [prioritized implementation backlog](../docs/planning/roadmap.md#ranked-rea-implementation-and-verification-work),
 [acceptance ledger](../docs/planning/completion-sprints.md) and
 [Rust rewrite plan](../docs/planning/rust/rust-roadmap.md).
