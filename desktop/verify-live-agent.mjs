@@ -22,7 +22,7 @@ import { retryNativeTimeout, timeoutLimit } from './verify-live-timeout.mjs';
 import { createLiveEditFixture } from './verify-live-edits.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history|--history-failure] [--stop|--retry-auth|--timeout headers|body] [--paste|--rules|--memory|--edit] [--capture-payload]\nRuns a native Agent workflow through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Edit requires real StrReplace calls for two files, review rejection/retry/acceptance, Undo/Redo and restart persistence. Capture saves the first request locally with the transport key redacted.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history|--history-failure] [--stop|--retry-auth [--failure-restart]|--timeout headers|body] [--paste|--rules|--memory|--edit] [--capture-payload]\nRuns a native Agent workflow through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key; --failure-restart restarts the app before that retry and requires the saved error and Try again to be restored without a request. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Edit requires real StrReplace calls for two files, review rejection/retry/acceptance, Undo/Redo and restart persistence. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -37,7 +37,8 @@ const rules = process.argv.includes('--rules');
 const memory = process.argv.includes('--memory');
 const edit = process.argv.includes('--edit');
 const stop = process.argv.includes('--stop');
-const retryAuth = process.argv.includes('--retry-auth');
+const failureRestart = process.argv.includes('--failure-restart');
+const retryAuth = process.argv.includes('--retry-auth') || failureRestart;
 assert.ok(!historyFailure || !subagent, '--history-failure verifies a direct Agent fork');
 const timeoutIndex = process.argv.indexOf('--timeout');
 const timeoutPhase = timeoutIndex < 0 ? undefined : process.argv[timeoutIndex + 1];
@@ -91,11 +92,12 @@ if (process.platform === 'win32') {
   await writeFile(join(profile, 'Local State'), JSON.stringify({ os_crypt: { encrypted_key: state.os_crypt.encrypted_key } }));
 }
 const { layout } = await loadRuntime(root);
-const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, provider: { name: provider.name, url: provider.url },
+const platformLabel = { win32: 'Windows', linux: 'Linux', darwin: 'macOS' }[process.platform] ?? process.platform;
+const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, failureRestartRequested: failureRestart, provider: { name: provider.name, url: provider.url },
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
   scope: edit
-    ? 'Windows native Agent selection and real provider multi-file StrReplace, review rejection/retry, acceptance, Undo/Redo and restart persistence in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.'
-    : `Windows native Agent selection, live stream and real ${subagent ? 'Task child Read and parent' : 'Read'} continuation in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`,
+    ? `${platformLabel} native Agent selection and real provider multi-file StrReplace, review rejection/retry, acceptance, Undo/Redo and restart persistence in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`
+    : `${platformLabel} native Agent selection, live stream and real ${subagent ? 'Task child Read and parent' : 'Read'} continuation in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`,
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['agent', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
@@ -136,7 +138,7 @@ if (timeoutPhase) {
   result.timeout.packagedUndiciVersion = JSON.parse(await readFile(join(root, 'source/app/node_modules/undici/package.json'), 'utf8')).version;
 }
 const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, allowDownstreamCancellation: stop,
-  requestLimit: edit ? 12 : undefined,
+  requestLimit: edit ? 12 : undefined, forwardProviderFailures: retryAuth,
   expectInitialUnauthorized: retryAuth, initialStall: timeoutPhase, inspectRequest: body => {
   if (retryAuth) inspectRetryPrompt(body, result.liveRetry);
   if (timeoutPhase) inspectRetryPrompt(body, result.timeout);
@@ -265,7 +267,8 @@ try {
       : liveReadPrompt);
       await input.press('Enter');
     }
-    if (retryAuth) await retryAuthenticationFailure({ page, relay, restoreCredential: () => relay.setKey(key), result: result.liveRetry });
+    if (retryAuth) await retryAuthenticationFailure({ page, relay, restoreCredential: () => relay.setKey(key), result: result.liveRetry,
+      restart: failureRestart ? async () => { await closeOwnedApp(); return launch(); } : undefined });
     if (timeoutPhase) await retryNativeTimeout({ page, relay, phase: timeoutPhase, result: result.timeout });
     await Promise.race([
       page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: subagent ? 180000 : 90000 }),
@@ -302,6 +305,22 @@ try {
   await page.screenshot({ path: join(directory, 'native-agent.png') });
 } catch (error) {
   result.error = error.message;
+  const forwarded = relay.requests.findLast(request => request.forwardedToNative);
+  if (forwarded && page && !page.isClosed()) {
+    // Record how the native app presents the real provider failure; the run stays failed.
+    const retry = page.getByText('Try again', { exact: true }).filter({ visible: true });
+    await retry.last().waitFor({ timeout: 15000 }).catch(() => {});
+    await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
+    const before = relay.requests.length;
+    await page.waitForTimeout(2500);
+    const text = await page.locator('body').innerText().catch(() => '');
+    let providerMessage;
+    try { providerMessage = JSON.parse(forwarded.error).message ?? JSON.parse(forwarded.error).error?.message; } catch {}
+    result.nativeProviderFailure = { httpStatus: forwarded.httpStatus, requestId: forwarded.requestId,
+      statusVisible: text.includes(String(forwarded.httpStatus)),
+      providerMessageVisible: typeof providerMessage === 'string' && text.includes(providerMessage),
+      tryAgainVisible: await retry.count() > 0, automaticRequestsAfterFailure: relay.requests.length - before };
+  }
   if (page) {
     await page.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
     await writeFile(join(directory, 'failure.txt'), await page.locator('body').innerText()).catch(() => {});

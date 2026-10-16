@@ -72,6 +72,8 @@ fixtures; no paid inference. `logs/` paths are private run artifacts.
   keyCode`), Project Home startup handling, POSIX write denial, bash/sh shell
   matrix, Linux path rules and a Chromium-family fixture browser.
 
+Live Codex Easy provider runs on Linux: [live-provider-linux.md](live-provider-linux.md). Every success path was blocked by an insufficient account balance; the failure paths are recorded there.
+
 ## Not covered
 
 After merging with the account integrations and themed account picker, Windows

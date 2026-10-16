@@ -123,6 +123,21 @@ test('recovery guidance uses parsed provider facts without inventing capability 
   assert.equal(policy.providerFailureDetail({ statusCode: 400, data: { error: { code: 'unknown' } } }, 'detail'), 'detail');
 });
 
+test('exhausted balance or quota gets account guidance instead of key-refresh or rate-limit advice', () => {
+  const forbidden = 'Forbidden (HTTP 403): your API key/token was rejected or lacks access — refresh it and try again.';
+  const balance = { statusCode: 403, responseBody: '{"code":"INSUFFICIENT_BALANCE","message":"Insufficient account balance"}' };
+  const detail = policy.providerFailureDetail(balance, `${forbidden} (INSUFFICIENT_BALANCE: Insufficient account balance)`);
+  assert.equal(detail, 'The provider reports that this account has no remaining balance or quota. Add credit or check your plan with the provider, then choose Try again.\n\nHTTP 403 (INSUFFICIENT_BALANCE: Insufficient account balance)');
+  const quota = { statusCode: 429, data: { error: { code: 'insufficient_quota', message: 'You exceeded your current quota' } } };
+  assert.match(policy.providerFailureDetail(quota, 'd'), /no remaining balance or quota[\s\S]*\n\nd$/);
+  assert.doesNotMatch(policy.providerFailureDetail(quota, 'd'), /rate limiting/);
+  assert.match(policy.providerFailureDetail({ statusCode: 402 }, 'd'), /no remaining balance/);
+  // Ordinary authorization and rate-limit failures keep their existing handling.
+  assert.equal(policy.providerFailureDetail({ statusCode: 403, responseBody: '{"message":"Model not allowed"}' }, forbidden), forbidden);
+  assert.match(policy.providerFailureDetail({ statusCode: 429, responseBody: 'Too many requests' }, 'd'), /rate limiting/);
+  assert.equal(policy.providerFailureDetail({ statusCode: 401, responseBody: 'insufficient balance' }, 'd'), 'd');
+});
+
 test('realistic capability rejections are attributed only to inputs that were actually sent', () => {
   const image = [{ role: 'user', content: [{ type: 'text', text: 'look' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,AA' } }] }];
   const text = [{ role: 'user', content: 'look' }];

@@ -83,11 +83,28 @@ function rejectedCapability(error) {
   if (Array.isArray(body.tools) && body.tools.length && /\btools?\b|tool_choice|function[ _-]?call/iu.test(text)) return 'tools';
 }
 
+// An exhausted balance/quota is an account state, not a bad key or a rate limit.
+// Recognise it only from the provider's own code/text on 402, 403 or 429.
+const accountLimitStatuses = new Set([402, 403, 429]);
+const accountLimitText = /insufficient[_ ]?(?:account[_ ]?)?(?:balance|credits?|funds|quota)|quota[_ ]?exceeded|exceeded your (?:current )?quota|out of credits|billing|payment[_ ]required/iu;
+const recoveredForbiddenGuidance = 'Forbidden (HTTP 403): your API key/token was rejected or lacks access — refresh it and try again.';
+function accountLimit(error) {
+  if (!accountLimitStatuses.has(error.statusCode)) return false;
+  const provider = error.data?.error ?? error.data;
+  const text = [provider?.message, provider?.code, provider?.type, error.responseBody]
+    .filter(value => typeof value === 'string').join('\n');
+  return error.statusCode === 402 || accountLimitText.test(text);
+}
+
 export function providerFailureDetail(error, detail) {
   if (!error || typeof error !== 'object') return detail;
   let guidance;
   const capability = rejectedCapability(error);
-  if (contextFailures.has(error)) guidance = "The model's context limit was exceeded. Reduce attached context or start a new chat, then try again.";
+  if (accountLimit(error)) {
+    // The recovered 403 text tells users to refresh a key that the provider accepted.
+    if (typeof detail === 'string') detail = detail.replace(recoveredForbiddenGuidance, `HTTP ${error.statusCode}`);
+    guidance = 'The provider reports that this account has no remaining balance or quota. Add credit or check your plan with the provider, then choose Try again.';
+  } else if (contextFailures.has(error)) guidance = "The model's context limit was exceeded. Reduce attached context or start a new chat, then try again.";
   else if (error.data?.error?.code === 'unsupported_tools' || capability === 'tools') guidance = 'This model does not support the requested tools. Choose a model with tool support for Agent tasks.';
   else if (error.data?.error?.code === 'unsupported_image' || capability === 'image') guidance = 'This model does not support the attached image. Remove it or choose a model with image support.';
   else if (error.statusCode === 429) guidance = 'The provider is rate limiting requests. Wait before choosing Try again.';

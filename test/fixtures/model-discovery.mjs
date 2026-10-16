@@ -12,6 +12,12 @@ export async function modelDiscoveryFixture() {
     requests.push(entry);
     response.once('close', () => { entry.closed = true; entry.closedAt = performance.now(); });
     if (mode === 'headers') return;
+    if (mode === 'balance' || mode === 'reflected' || mode === 'plain') {
+      response.writeHead(403, { 'content-type': mode === 'plain' ? 'text/plain' : 'application/json' });
+      return response.end(mode === 'balance' ? '{"code":"INSUFFICIENT_BALANCE","message":"Insufficient account balance"}'
+        : mode === 'reflected' ? JSON.stringify({ error: { message: `Key discovery-fixture\u0007 rejected ${'x'.repeat(400)}` } })
+        : 'Insufficient account balance');
+    }
     response.writeHead(mode === 'error' ? 503 : 200, { 'content-type': 'application/json',
       ...(mode === 'large' ? { 'content-encoding': 'gzip' } : {}) });
     if (mode === 'error' || mode === 'body') {

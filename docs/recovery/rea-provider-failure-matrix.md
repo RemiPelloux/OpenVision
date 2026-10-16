@@ -175,6 +175,8 @@ states this dependency. The glass-environment branch that stores
 `submitErrorDetails` without the flag is not persisted; it is not reached by the
 desktop workbench (inferred from `isGlass`, not exercised).
 
+Live Linux follow-up: [live Codex Easy failures on Linux](../verification/live-provider-linux.md) covers a real 401 → restart → restored error and Try again → one retry request, and a real 403 `INSUFFICIENT_BALANCE`. Live success paths were blocked by the account balance.
+
 ## Secret handling
 
 The fixture key is reflected in error bodies, stream events and malformed
