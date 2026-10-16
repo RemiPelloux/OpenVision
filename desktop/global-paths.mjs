@@ -21,7 +21,7 @@ export const extensionTargets = {
   hostMain: 'extensions/cursor-agent-host/dist/main.js',
 };
 const profileHomeGlobal = `(home => { if (typeof home !== "string") throw new Error("OpenVision profile home unavailable"); return home; })(globalThis[Symbol.for("${command}")])`;
-const validation = value => `(home => { if (typeof home !== "string" || !/^(?:\\/|[A-Za-z]:[\\\\/])/.test(home))
+export const validation = value => `(home => { if (typeof home !== "string" || !/^(?:\\/|[A-Za-z]:[\\\\/])/.test(home))
     throw new Error("OpenVision profile home unavailable"); return home; })(${value})`;
 
 function unique(text, pattern, label) {

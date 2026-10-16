@@ -243,3 +243,138 @@ All rows marked **Remaining** above, plus these:
 - The opt-in migration of existing HOME data.
 
 Only `build:desktop` and `verify:global-paths` were run in this pass.
+
+## 16 October 2026 implementation: profile home for remaining writers (Linux x64 only)
+
+Source build of the 3.21.13 runtime input. OV-302 stays **Partial**. See the open gates below.
+
+### Change
+
+`desktop/profile-home-paths.mjs` (`installProfileHomePaths`) runs after
+`installGlobalPathIsolation` and before the namespace pass. Like that pass, it
+keeps first originals under `backups/profile-home-paths/`, is cached and
+idempotent (marker), and fails the build when any anchor or site count drifts.
+
+- **Main bootstrap.** `out/main.js` sets `VSCODE_OPENVISION_PROFILE_HOME=<user-data-dir>/User`
+  right after it parses its arguments, before it reads `argv.json`. The value is
+  always overwritten, never inherited.
+- **Fail closed.** Every patched non-renderer path reads the variable and throws when it is
+  missing or relative. The workbench uses the path service's `openvisionProfileHome`
+  (from `appSettingsHome`).
+- **Mapping.** Relative layouts are unchanged:
+
+| Producer | Before | Now |
+| --- | --- | --- |
+| Per-project agent data (exec, host, local runtime, daemon; workbench transcripts, hook spill files, disk metrics) | `~/.openvision/projects/<slug>/…` | `<profile home>/.openvision/projects/<slug>/…` |
+| Agent data directory `.gitignore` (MCP lease helper; only the home root changed) | `~/.openvision/.gitignore` | `<profile home>/.openvision/.gitignore` |
+| Recently viewed files (workbench) | `~/.openvision/ide_state.json` | `<profile home>/.openvision/ide_state.json` |
+| `argv.json` (bootstrap; environment services in main, shared, MCP, pty host and both workbenches) | `~/.openvision-local/argv.json` | `<profile home>/.openvision-local/argv.json` |
+| Plans (the plans helper, `PlanStorageService`, `~/…/plans` chat links) | `~/.openvision/plans` | `<profile home>/.openvision/plans` |
+| Agent worktrees (exec root, `WorktreeManager`, watcher exclusion, display root, comparison paths) | `~/.openvision/worktrees` | `<profile home>/.openvision/worktrees` |
+| Auto-run permissions and sandbox (workbench, exec, sandbox-policies in exec, host, MCP extension, MCP process and extension host) | `~/<dataFolderName>/permissions.json`, `sandbox.json`; `~/.openvision/sandbox.json`, `sandbox-policies` | Same names under the profile home |
+| Plugins: cache managers, `github-plugins.json`, marketplaces, local plugins, plugin service; Claude plugin import and `enabledPlugins` (exec, host chunks `292.js`/`817.js`) | `~/.openvision/plugins/…`, `~/.claude/plugins/…`, `~/.claude/settings.json` | Under the profile home |
+| Team hooks; debug-mode logs (workbench and ndjson ingest); feature-gate, notepad and command exports; repository blocklist | `~/.openvision/managed`, `debug-logs`, …; `~/<dataFolderName>/blocklist` | Under the profile home |
+| AI code-tracking database, update flag, exit watchdog marker, shadow workspaces (main) | `~/.openvision/ai-tracking`, `~/<dataFolderName>/…` | Under the profile home |
+| Browser automation logs | `~/.openvision/browser-logs` | Under the profile home |
+| Skill chip links, skill publish check, markdown editor eligibility (consumers) | Operating-system home | Profile home |
+| `CURSOR_DATA_DIR`, `CURSOR_CONFIG_DIR`, `$XDG_CONFIG_HOME/cursor` (exec, host, local runtime; daemon env overrides) | Honored | Ignored, so another product's setting cannot redirect OpenVision data |
+
+Two third-party readers changed behavior:
+
+- **External CLI analytics** (`~/.claude/history.jsonl`, `~/.codex/history.jsonl`,
+  `~/.claude/projects/…/sessions-index.json`). `_poll` now returns immediately, so
+  these files are never read.
+- **Terminal Claude/Codex status.** It still reads the real home's `~/.claude/projects`
+  and `~/.codex/sessions`, but only behind the new `openvision.terminal.externalAgentStatus`
+  setting. The setting is off by default and contributed in the Terminal settings.
+  `_isEnabled()` reads only this setting, replacing the experiment gate, and
+  `_beginExternalAgentRun` checks it again before any read.
+  - Decision: keep it as an explicit opt-in. Reading those tools' own session files is
+    the feature's purpose, and the setting documents the home read
+    ([guide](../guides/project-configuration.md#claude-code-and-codex-status-in-the-terminal)).
+
+Migration: `npm run migrate:profile-home [-- --home <dir> --profile <user-data-dir>]`
+(`desktop/migrate-profile-home.mjs`). It is an explicit additive copy: no overwrite,
+links skipped, sources untouched as the backup. A repeat run changes nothing.
+Each run that copies files is recorded in `User/.openvision/migrations/home-import.json`.
+It does not copy worktrees (Git uses absolute links) or `.gitignore` (regenerated).
+It reuses `additiveImport`, extracted unchanged from the project namespace migration.
+
+### Observed (native, Linux x64)
+
+Command: `npm run verify:global-paths`, extended in this pass.
+
+- **Setup.** HOME is disposable and holds:
+  - product and third-party customization markers
+  - pre-existing `plans`, `ide_state.json`, `argv.json`
+  - Claude and Codex session files
+
+  The XDG base directories point outside HOME. Three Electron hosts run
+  concurrently with launcher-style arguments:
+  - installation A, `data/local` (alpha)
+  - installation A, second named profile `data/beta` (beta)
+  - installation B, `data/local` (gamma)
+- **Each run does:**
+  - Customize discovery and Customize → New for a skill and a command
+  - add a local HTTP fixture provider
+  - an Agent chat reply
+  - an approved Agent `Shell` command
+  - a plan in Plan mode through the plan tool
+  - an integrated terminal command
+- **It asserts:**
+  - **Nothing under HOME is added, removed or changed.** Checked by size, mtime and
+    bytes of every file and directory.
+  - Each profile home contains `projects/<slug>`, a `.plan.md`, `.gitignore`,
+    `ide_state.json` and `argv.json`.
+  - No item from HOME, another profile or another installation is listed.
+  - Integrated terminals do not see `VSCODE_OPENVISION_PROFILE_HOME`.
+- **Results, final code.** Two consecutive passes (`logs/global-paths-OQCnus`,
+  `logs/global-paths-NaTDZf`). Each made 12 authorized fixture requests and none to
+  an AI provider. All hosts exited 0, and HOME added, changed and removed lists were empty.
+- **Before the final code.** Two earlier runs failed in the existing Customize → New
+  step under three-window focus contention: a screenshot timeout and a quick-input fill
+  timeout. HOME was unchanged in both. The verifier now retries that interaction once
+  and treats screenshots as best effort. Only the profile file decides success.
+- **Writes outside HOME.** These went to the separate XDG directories:
+  - platform runtime files: Mesa and NVIDIA shader caches, the PulseAudio cookie,
+    the Chromium NSS database
+  - `cache/Microsoft/DeveloperTools/deviceid`, written by the device-ID module. That
+    module is in the telemetry area (OV-1005) and was not changed here.
+
+### Inferred (code and unit tests, no native evidence)
+
+- `npm run test:namespace` has 5 new tests. They execute the patched expression, the
+  plans helper and the terminal setting gate, and check drift rejection, idempotence
+  and the migration. The plan-storage tests now expect the profile home.
+- The terminal status read with the setting enabled was not exercised natively.
+  Neither were plugins with real marketplace content, team hooks, debug-mode logs,
+  the AI tracking database, worktree creation or the agent-host daemon (off by default).
+
+### Verification (Linux x64 only)
+
+| Command | Result |
+| --- | --- |
+| `npm run build:desktop` | Pass. Repeat build from the existing source also passes |
+| `npm run verify:global-paths` | Pass, twice consecutively, as above |
+| `npm run test:namespace` | 37/37 |
+| `npm run test:completion` | 38/38 |
+| `npm run test:desktop` | 161/161 |
+| `npm run test:build-integrity` | 26/26 |
+| `npm run check:desktop` | Pass |
+| `npm run verify:rules-isolation`, `verify:local-rules`, `verify:paste` | Pass |
+| `npm run docs:check` | Pass |
+
+### Open gates
+
+- **Not changed in this pass:**
+  - Editor MCP discovery (`~/.openvision/mcp.json`, Claude desktop and Windsurf
+    configuration; MCP owner)
+  - The daemon's own `mcp.json` and its XDG config branch
+  - Retrieval snapshot and watcher roots (gated)
+  - The developer-only `policy.json`
+- **Two installations:** the second installation shares the compiled host. A second
+  independently built or packaged tree was not run.
+- **Platforms and packaging:** Windows and macOS; remote extension hosts; the packaged
+  portable payload, which predates this change.
+- **Unconfirmed precondition:** that `VSCODE_*` sanitization holds for every terminal
+  backend other than the default local pty host.

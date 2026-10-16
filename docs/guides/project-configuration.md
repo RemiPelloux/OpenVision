@@ -11,8 +11,8 @@ New project configuration uses `.openvision/`:
 | Skills and commands | `.openvision/skills/`, `.openvision/commands/` |
 | Project MCP servers | `.openvision/mcp.json` |
 
-Plans initially use `~/.openvision/plans/`, with the existing workspace fallback
-and Move to Workspace flow. Profile rules, global MCP configuration, user
+Plans initially use the profile's `User/.openvision/plans/`, with the existing
+workspace fallback and Move to Workspace flow. Profile rules, global MCP configuration, user
 agents, skills, commands and hooks use isolated OpenVision profile storage. Legacy single-file
 project rules use `.openvisionrules`; new rules belong in `.openvision/rules/`.
 
@@ -51,18 +51,65 @@ OpenVision no longer reads `~/.openvision`, `~/.cursor`, `~/.claude`, `~/.codex`
 home directory. Each profile and installation sees only its own items. With
 third-party extensibility enabled, the same third-party folder names are read
 inside the profile home, for example `User/.claude/skills/`. Nothing is moved or
-deleted. To keep items you stored in your home directory, copy them into the
-profile once, without overwriting:
+deleted.
+
+### Agent data and runtime arguments
+
+The following also live in the profile home, with their previous layout:
+- per-project agent data: transcripts, terminal output, tool output, canvases and
+  MCP tool descriptors
+- plans and agent worktrees
+- recently viewed files
+- auto-run permissions and sandbox files
+- plugins, including the Claude plugin import
+- team hooks and debug-mode logs
+- the AI code-tracking database
+- `argv.json`
+
+For example: `User/.openvision/projects/<project>/`, `User/.openvision/plans/`,
+`User/.openvision/worktrees/` and `User/.openvision-local/argv.json`. Each
+installation (each `data/local`) and each named profile has its own copy.
+Two installations side by side do not see each other's data.
+
+OpenVision passes the profile home to its own processes in the internal
+`VSCODE_OPENVISION_PROFILE_HOME` variable. Integrated terminals do not receive
+it, but commands run by the Agent may see it. OpenVision ignores `CURSOR_DATA_DIR`,
+`CURSOR_CONFIG_DIR` and `$XDG_CONFIG_HOME/cursor`. Another product's settings
+therefore cannot redirect OpenVision's data.
+
+### Importing data from your home directory
+
+Earlier builds kept this data in `~/.openvision` and `~/.openvision-local`.
+OpenVision no longer reads it there. To bring it into a profile once, run:
 
 ```sh
-mkdir -p data/local/User/.openvision
-cp -Rn ~/.openvision/skills ~/.openvision/commands data/local/User/.openvision/
-cp -n ~/.openvision/hooks.json data/local/User/.openvision/
+npm run migrate:profile-home                       # into data/local
+npm run migrate:profile-home -- --profile /path/to/user-data-dir
 ```
 
+The import copies skills, commands, `hooks.json`, plans, per-project agent
+data, plugins, recently viewed files, sandbox and permission files, team hooks,
+the AI tracking database, debug logs, `argv.json` and the repository blocklist.
+- It never moves, changes or deletes the originals, which remain your backup.
+- It never overwrites a profile file. A file that differs is reported as a conflict.
+- It skips links. Repeating it changes nothing.
+- Each import that copies files is recorded in
+  `User/.openvision/migrations/home-import.json`.
+
+Agent worktrees are not copied, because Git links them by absolute path. Finish
+or remove them in their original location.
+
+### Claude Code and Codex status in the terminal
+
+The `openvision.terminal.externalAgentStatus` setting is off by default. When you
+turn it on, a terminal running `claude` or `codex` shows that tool's turn status
+on its tab. To do this, OpenVision reads those tools' own session files in your
+home directory (`~/.claude/projects`, `~/.codex/sessions`). This is the only
+home-directory read OpenVision makes for another tool, and it happens only when the
+setting is on. OpenVision never reads other tools' command history for analytics.
+
 Project folders (`.openvision/skills`, `.openvision/commands`, and `.claude/…`
-with third-party extensibility) are unchanged. Some agent data, such as per-project
-transcripts, plans and worktrees, still uses the home directory. See
+with third-party extensibility) are unchanged. See
 [global path isolation](../recovery/rea-global-path-isolation.md).
 
 ## Implementation and limits
