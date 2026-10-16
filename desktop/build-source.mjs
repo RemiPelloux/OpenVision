@@ -37,6 +37,7 @@ import { installAccountProfiles } from './account-profile-customization.mjs';
 import { installWelcomeStartup } from './welcome-customization.mjs';
 import { installProjectNamespace, restoreNamespaceInputs } from './namespace-build.mjs';
 import { installRuleDurability } from './rules-durability-customization.mjs';
+import { installProfileStorageDurability } from './profile-storage-durability-customization.mjs';
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
 import { installShutdownOwnership } from './shutdown-customization.mjs';
 import { installUtilityProcessOwnership } from './utility-process-customization.mjs';
@@ -112,6 +113,7 @@ for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspac
   await copyFile(join(root, 'desktop', file), join(root, 'source/app/out/vs/code/electron-sandbox/workbench', `openvision-${file}`));
 await installCursorImport(root);
 await installRuleDurability(root);
+await installProfileStorageDurability(root);
 await installWindowTitles(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);

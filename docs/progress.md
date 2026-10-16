@@ -32,6 +32,7 @@ accounts, billing and cloud agents are excluded from this ledger.
 follows it on Linux x64 only; OV-103 status and points are unchanged.
 The [Agent I/O-fault report](recovery/rea-agent-io-faults.md) fixes saved-file loss on a full
 volume (Linux x64 evidence); OV-103 status and points are unchanged.
+The [profile I/O-fault report](recovery/rea-profile-io-faults.md) fixes lost provider keys and torn memories on a full volume (Linux x64); OV-103/301 stay Partial.
 The Linux [provider failure matrix](recovery/rea-provider-failure-matrix.md) verifies certificate expiry/hostname, mid-stream, capability and restart cells, and fixes unfinished-stream automatic repeats. OV-102/204 stay Partial.
 
 The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)

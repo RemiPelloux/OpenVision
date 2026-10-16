@@ -330,3 +330,62 @@ for (const variant of ['desktop', 'glass']) {
     assert.throws(() => customModels(recovered.replace('children: "Configure gateway"', 'children: "Changed"'), variant), /anchor missing/);
   });
 }
+
+// Models the native split: renderer cache, the main-process queue that keeps
+// failed writes, and the SQLite rows that survive restart. `full` rejects commits
+// like SQLITE_FULL on a full profile volume.
+function durableBridge() {
+  const services = bridge(), cache = new Map(), pending = new Map(), queued = new Map(), disk = new Map();
+  const state = { full: false };
+  const commit = async entries => {
+    entries.forEach((value, key) => queued.set(key, value));
+    if (state.full) throw new Error('SQLITE_FULL: database or disk is full');
+    queued.forEach((value, key) => value === undefined ? disk.delete(key) : disk.set(key, value)); queued.clear();
+  };
+  const application = { flush: async () => { const batch = new Map(pending); pending.clear(); await commit(batch); },
+    database: { updateItems: request => commit(request.insert) } };
+  services.storage = { get: key => cache.get(key), store: (key, value) => { cache.set(key, value); pending.set(key, value); },
+    flush: async () => { throw new Error('Generic flush cannot report SQLite failures'); }, getStorage: scope => scope === -1 ? application : undefined };
+  services.secrets = { get: async key => cache.get(`secret://${key}`), delete: async key => services.storage.store(`secret://${key}`, undefined),
+    set: async (key, value) => services.storage.store(`secret://${key}`, value) };
+  const restart = () => { cache.clear(); pending.clear(); queued.clear(); disk.forEach((value, key) => cache.set(key, value)); };
+  return { services, state, disk, restart };
+}
+const savedNames = disk => JSON.parse(disk.get('openvision.model-providers.v1') ?? '{"providers":[]}').providers.map(item => item.name);
+
+test('a provider save on a full profile volume is reported, not acknowledged, and succeeds when retried', async () => {
+  const { services, state, disk, restart } = durableBridge();
+  const providers = new ModelProviders(services);
+  await providers.ready;
+  state.full = true;
+  await assert.rejects(providers.save({ name: 'Full', url: 'https://example.test/v1', key: 'test-secret' }), /SQLITE_FULL/);
+  assert.deepEqual(providers.state.providers, []);
+  assert.deepEqual(savedNames(disk), []);
+  state.full = false;
+  const saved = await providers.save({ name: 'Full', url: 'https://example.test/v1', key: 'test-secret' });
+  restart();
+  const reopened = new ModelProviders(services);
+  await reopened.ready;
+  assert.deepEqual(reopened.state.providers.map(item => item.name), ['Full']);
+  assert.equal(await services.secrets.get(`openvision.provider.${saved.id}`), 'test-secret', 'The API key is durable with its provider');
+});
+
+test('a failed edit and rollback is committed before the next change instead of requiring restart', async () => {
+  const { services, state, disk, restart } = durableBridge();
+  const providers = new ModelProviders(services);
+  await providers.ready;
+  const saved = await providers.save({ name: 'Original', url: 'https://example.test/v1', key: 'test-secret' });
+  state.full = true;
+  await assert.rejects(providers.save({ id: saved.id, name: 'Renamed', url: 'https://example.test/v1' }),
+    /Provider save failed \(SQLITE_FULL.*restored in this window/);
+  assert.deepEqual(providers.state.providers.map(item => item.name), ['Original']);
+  await assert.rejects(providers.save({ id: saved.id, name: 'Renamed', url: 'https://example.test/v1' }), /not saved yet: SQLITE_FULL/);
+  assert.deepEqual(savedNames(disk), ['Original']);
+  state.full = false;
+  await providers.save({ id: saved.id, name: 'Renamed', url: 'https://example.test/v1' });
+  restart();
+  const reopened = new ModelProviders(services);
+  await reopened.ready;
+  assert.deepEqual(reopened.state.providers.map(item => item.name), ['Renamed']);
+  assert.equal(await services.secrets.get(`openvision.provider.${saved.id}`), 'test-secret');
+});

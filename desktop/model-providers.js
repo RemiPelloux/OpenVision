@@ -96,6 +96,17 @@ function readState(text) {
   return state;
 }
 
+// Generic storage `flush()` only waits for the renderer queue and never reports
+// a failed SQLite commit. Flush this window's application storage (including a
+// secret stored just before), then require the main process to acknowledge the
+// configuration key itself, even when an identical value is already cached.
+export async function durableApplicationWrite(storage, key, text) {
+  const application = storage.getStorage?.(-1), database = application?.database;
+  if (typeof application?.flush !== 'function' || typeof database?.updateItems !== 'function') return storage.flush();
+  await application.flush(0);
+  await database.updateItems({ insert: new Map([[key, text]]) });
+}
+
 export class ModelProviders {
   constructor(bridge) {
     this.bridge = bridge;
@@ -131,12 +142,20 @@ export class ModelProviders {
   }
 
   async persist() {
-    this.bridge.storage.store(storageKey, JSON.stringify(this.state), -1, 1);
-    await this.bridge.storage.flush();
+    const text = JSON.stringify(this.state);
+    this.bridge.storage.store(storageKey, text, -1, 1);
+    await durableApplicationWrite(this.bridge.storage, storageKey, text);
   }
   mutate(action) {
-    const pending = this.mutations.then(() => {
-      if (this.credentialStateUncertain) throw new Error('Restart before changing providers after the failed configuration rollback.');
+    const pending = this.mutations.then(async () => {
+      if (this.credentialStateUncertain) {
+        // The rolled-back configuration is still only in memory. Commit it
+        // before any new change; a failure keeps the guard and is reported again.
+        try { await this.persist(); }
+        catch (error) { throw new Error(`Provider settings are not saved yet: ${error.message}`, { cause: error }); }
+        this.credentialStateUncertain = false;
+        await cleanupProviderCredentials(this);
+      }
       return action();
     });
     this.mutations = pending.catch(() => {});

@@ -49,6 +49,8 @@ that ownership invariant into both older workbench variants:
   finished chunks can receive later remote changes while other chunks continue.
 - Completion or failure releases the batch's bookkeeping. Failures retain their
   existing rejection semantics; no automatic replay or new durability claim is added.
+  The later [profile I/O-fault follow-up](../recovery/rea-profile-io-faults.md) adds
+  main-process requeue/retry and SQLite-backed IPC acknowledgement.
 
 The existing build owns backups, producer-drift rejection and repeatable
 transformation. The new recipe dependency invalidates cached transformations

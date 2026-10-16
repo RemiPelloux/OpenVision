@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, lstat, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, lstat, readdir, rm, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseMemoryProposal, memoryRuleText, captureMemoryWorkspace, saveApprovedMemory } from './workspace-memory.js';
@@ -22,6 +22,11 @@ async function fixture(t) {
     createFolder: resource => mkdir(resource.fsPath, { recursive: true }),
     createFile: (resource, value, options) => { assert.equal(options.overwrite, false); return writeFile(resource.fsPath, value, { flag: 'wx' }); },
     readFile: async resource => ({ value: await readFile(resource.fsPath) }),
+    move: async (source, target, overwrite) => {
+      if (!overwrite && await lstat(target.fsPath).then(() => true, () => false)) throw new Error('Target exists');
+      await rename(source.fsPath, target.fsPath);
+    },
+    del: resource => rm(resource.fsPath),
   };
   const context = { workspace, files, snapshot: captureMemoryWorkspace(workspace), isMissing: error => error.code === 'ENOENT',
     URI: { joinPath: (base, ...parts) => uri(join(base.fsPath, ...parts)) }, Buffer };
@@ -84,4 +89,34 @@ test('legacy approval preserves originals and refuses stale review before or dur
   knowledge.items = [];
   assert.throws(() => review.assertCurrent(), /original memory changed/);
   assert.throws(() => reviewLegacyMemory(knowledge, source.id), /no longer available/);
+});
+
+test('a failed memory write leaves no partial file and a torn earlier file of the same memory is repaired', async t => {
+  const f = await fixture(t);
+  const create = f.context.files.createFile;
+  // Simulate a full volume: the file is created, a prefix is written, then ENOSPC.
+  f.context.files.createFile = async (resource, value) => {
+    await writeFile(resource.fsPath, value.subarray(0, 7));
+    throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' });
+  };
+  await assert.rejects(saveApprovedMemory(text, f.folder, f.context), /ENOSPC/);
+  assert.deepEqual(await readdir(join(f.path, '.openvision/rules')), [], 'No torn memory or temporary file remains');
+  f.context.files.createFile = create;
+  const saved = await saveApprovedMemory(text, f.folder, f.context);
+  assert.equal(await readFile(saved.fsPath, 'utf8'), memoryRuleText(proposal));
+  assert.deepEqual(await readdir(join(f.path, '.openvision/rules')), [saved.fsPath.split('/').pop()]);
+
+  // Files left by the earlier in-place writer: empty and partial prefixes are repaired.
+  for (const torn of ['', memoryRuleText(proposal).slice(0, 20)]) {
+    await writeFile(saved.fsPath, torn);
+    assert.equal((await saveApprovedMemory(text, f.folder, f.context)).fsPath, saved.fsPath);
+    assert.equal(await readFile(saved.fsPath, 'utf8'), memoryRuleText(proposal));
+  }
+  // Anything else, including a longer edited file, is preserved.
+  for (const edited of [memoryRuleText(proposal) + 'User note\n', 'User edited this memory']) {
+    await writeFile(saved.fsPath, edited);
+    await assert.rejects(saveApprovedMemory(text, f.folder, f.context), /different content/);
+    assert.equal(await readFile(saved.fsPath, 'utf8'), edited);
+  }
+  assert.equal((await readdir(join(f.path, '.openvision/rules'))).length, 1);
 });

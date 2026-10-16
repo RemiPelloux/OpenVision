@@ -68,7 +68,7 @@ export async function saveProvider(store, options) {
       try { await store.persist(); }
       catch {
         store.credentialStateUncertain = true;
-        throw new Error('Provider save and rollback failed. Restart before changing providers; staged credentials are retained.', { cause: error });
+        throw new Error(`Provider save failed (${error.message}). The previous configuration is restored in this window and is saved before the next provider change; staged credentials are retained.`, { cause: error });
       }
     }
     await cleanupProviderCredentials(store);

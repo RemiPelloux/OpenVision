@@ -52,6 +52,7 @@ live-review record deletion, grouped post-commit cleanup and menu Undo/Redo on
 Linux x64 only; OV-103 keeps its status and points.
 The [Agent I/O-fault follow-up](../recovery/rea-agent-io-faults.md) reproduces real full-volume
 loss of saved bytes on Linux and makes Agent writes temp-file/rename durable. OV-103 stays Partial.
+The [profile I/O-fault follow-up](../recovery/rea-profile-io-faults.md) makes profile storage acknowledge only after SQLite and repairs torn memories (Linux x64); OV-103/301 stay Partial.
 
 The [review-removal follow-up](../recovery/rea-agent-review-removal.md) fixes
 cancellation failure advancing history and handler cleanup losing its owner.

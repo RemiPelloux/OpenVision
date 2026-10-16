@@ -58,15 +58,45 @@ export async function saveApprovedMemory(text, folder, context) {
   await ensureDirectory(context, namespace);
   await ensureDirectory(context, directory);
   assertWorkspace(context, folder);
-  const uri = URI.joinPath(directory, `memory-${hash}.mdc`);
-  try { await files.createFile(uri, Buffer.fromString(content), { overwrite: false }); }
-  catch (error) {
-    // Repeated approval of the same suggestion is idempotent. An edited or
-    // conflicting file is preserved and never silently replaced.
-    const stat = await files.stat(uri).catch(() => { throw error; });
-    if (!stat.isFile || stat.isSymbolicLink) throw error;
-    const previous = await files.readFile(uri);
-    if (previous.value.toString() !== content) throw new Error('This memory file already exists with different content. It was preserved.');
+  const name = `memory-${hash}.mdc`, uri = URI.joinPath(directory, name);
+  // Repeated approval of the same suggestion is idempotent. An edited or
+  // conflicting file is preserved and never silently replaced. Only a strict
+  // byte prefix of this exact content (the remains of an interrupted earlier
+  // write of the same hash-named file, for example on a full volume) is repaired.
+  const existing = await existingMemory(context, uri);
+  if (existing && equalBytes(existing, bytes)) return uri;
+  if (existing && !isPrefix(existing, bytes)) throw new Error('This memory file already exists with different content. It was preserved.');
+  // Write a sibling temporary file completely, then rename it into place, so a
+  // failed write never leaves a partial memory that blocks the next attempt.
+  const temporary = URI.joinPath(directory, `.${name}.openvision-${crypto.randomUUID()}.tmp`);
+  try {
+    await files.createFile(temporary, Buffer.fromString(content), { overwrite: false });
+    assertWorkspace(context, folder);
+    await files.move(temporary, uri, existing !== undefined);
+  } catch (error) {
+    await files.del(temporary).catch(() => {});
+    // A concurrent approval of the same suggestion in another window is success.
+    const current = await existingMemory(context, uri).catch(() => undefined);
+    if (current && equalBytes(current, bytes)) return uri;
+    throw error;
   }
   return uri;
+}
+
+async function existingMemory({ files, isMissing }, uri) {
+  let stat;
+  try { stat = await files.stat(uri); }
+  catch (error) { if (isMissing(error)) return undefined; throw error; }
+  if (!stat.isFile || stat.isSymbolicLink) throw new Error('This memory path already exists and is not an ordinary file. It was preserved.');
+  const { value } = await files.readFile(uri);
+  // VSBuffer exposes its bytes as `.buffer`; a Node Buffer is already a Uint8Array.
+  return value instanceof Uint8Array ? value : value.buffer;
+}
+
+function isPrefix(prefix, bytes) {
+  return prefix.length < bytes.length && prefix.every((byte, index) => byte === bytes[index]);
+}
+
+function equalBytes(left, right) {
+  return left.length === right.length && left.every((byte, index) => byte === right[index]);
 }
