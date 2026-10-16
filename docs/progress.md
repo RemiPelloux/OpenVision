@@ -40,6 +40,8 @@ resumes cleanup without repeating completed steps. It advances P0 OV-103 within
 the existing status and points; the preview.7 portable payload is unchanged.
 [Rule discovery isolation](recovery/rea-rules-isolation.md) closes one OV-302
 producer in source (Linux native pass); OV-302 stays Partial.
+[Global path isolation](recovery/rea-global-path-isolation.md) moves user skills, commands,
+hooks and third-party user folders into the profile (Linux native pass); OV-302 stays Partial.
 
 The [ranked feature roadmap](planning/roadmap.md#ranked-rea-implementation-and-verification-work)
 owns story order, dependencies and point estimates. The following groups link to

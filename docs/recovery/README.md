@@ -39,6 +39,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Native local project workflow evidence](rea-project-workflows.md)
 - [Retrieval ownership and data boundaries](rea-retrieval-ownership.md)
 - [Rule discovery isolation](rea-rules-isolation.md)
+- [User-global path isolation](rea-global-path-isolation.md)
 - [REA: local user subagent configuration](rea-subagent-isolation.md)
 - [Built-in telemetry removal](rea-telemetry-audit.md)
 - [WASM recovery follow-up](rea-wasm-follow-up.md)
