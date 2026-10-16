@@ -3,7 +3,7 @@
 [Progress, percentages and gate-based ETA](../progress.md) ·
 [Recovery archive](../../curs_source/README.md) · [Recovery limits](../recovery/recovery-status.md)
 
-Updated 16 October 2026; latest portable release **0.2.0-preview.6**, with Linux x64 source support. The verified-coverage target is **80%**.
+Updated 16 October 2026; latest portable release **0.2.0-preview.7**, with Linux x64 source support. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 22 Partial, 12 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
@@ -14,6 +14,14 @@ Use `npm run status:features` for the authoritative current count. The acceptanc
 clauses remain in [completion-sprints.md](completion-sprints.md). Original accounts,
 billing and hosted cloud agents remain excluded. Native macOS, the remaining Linux gates and
 independent-build requirements remain in the denominator.
+
+Preview.7 packages recent Agent review/storage recovery, account integrations,
+resource-lifetime corrections and custom authentication headers. Its
+[release scope](../releases/0.2.0-preview.7.md) and
+[packaged native evidence](../verification/portable-preview7.md) distinguish
+working paths from remaining gates. The generated Agent input blocker was
+restored to its exact known hash; its producing cause remains unknown.
+No story or complexity-point total changes for packaging alone.
 
 Latest scoped REA follow-up: [control-plane MCP lifecycle](../performance/control-plane-mcp-lifecycle.md)
 now coalesces initialization, replaces changed definitions, retains rejected cleanup
@@ -243,7 +251,7 @@ the earlier API balance failure is historical evidence, not a current universal 
 | GPT-6 account execution and API recovery | 3 | An official account advertising an eligible GPT-6 model, then native Agent execution; complete the separate GPT-6 API edit check. API Read/authentication retry now passes |
 | Account Agent lifecycle | 5 | Real retry, interruption/resume and additional tool/approval cases; text/tools only today, image support remains unimplemented |
 | Account usage and privacy | 5 | Broader quota/reset/error cases and authenticated traffic classification; never infer quota when the official client supplies none |
-| Portable delivery and platform coverage | 5 | Package new source behavior; repeat Windows checks, then native macOS/Linux checks |
+| Portable delivery and platform coverage | 5 | Preview.7 packages Windows behavior with scoped native checks; finish the remaining Windows matrix and native macOS/Linux account checks |
 
 These points are separate delivery work, not extra acceptance stories or a
 claimed percentage increase. The existing verified ledger remains unchanged.
@@ -251,8 +259,8 @@ The account-preparation worker startup fix and responsive settings layout passed
 focused checks and four native switches with both official extensions installed.
 Both real sign-in clients opened the system browser without an extra trust dialog.
 Native deletion checks passed for both providers, including the guard against
-deleting an account still used by another window. Source changes remain outside
-the preview.6 portable payload. The latest focused account suite passed 66 tests;
+deleting an account still used by another window. Preview.7 now includes these
+runtime changes. The latest focused account suite passed 67 tests;
 controlled transport checks establish isolation, bounds and cancellation, not
 upstream model availability. These account additions do not promote any complete
 acceptance story. Tab autocomplete still uses a configured API connection.
@@ -317,8 +325,8 @@ This is scoped evidence for OV-1001/1002/1003/204/603. The subsequent
 allows all 25 focused error/probe checks to pass. The
 [control-plane HTTP follow-up](../performance/control-plane-http-resources.md) adds actual
 deadline/disconnect cancellation and decoded-body bounds, with passing socket
-tests and scoped measurements. Whole-app RAM was not remeasured and preview.6
-is unchanged. No full acceptance story is promoted.
+tests and scoped measurements. Whole-app RAM was not remeasured; preview.7
+packages the runtime fixes without promoting a full acceptance story.
 
 The [discovery follow-up](../performance/model-discovery-resources.md) passes 34 focused checks
 and 12 actual Electron/window/network checks. The original adapter reproduces

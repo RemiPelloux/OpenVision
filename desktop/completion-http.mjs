@@ -1,4 +1,5 @@
 import { normalizeBaseUrl } from './model-providers.js';
+import { providerRequestHeaders } from './provider-headers.js';
 
 import { readCodeResponse, CodeResponseError } from './code-response.mjs';
 export { CodeResponseError as CompletionResponseError };
@@ -12,7 +13,7 @@ export async function fetchCompletion(input, { fetch, signal }) {
   const base = normalizeBaseUrl(input.baseUrl);
   const response = await fetch(`${base}/chat/completions`, {
     method: 'POST', redirect: 'error', signal,
-    headers: { 'Content-Type': 'application/json', ...(input.apiKey ? { Authorization: `Bearer ${input.apiKey}` } : {}) },
+    headers: providerRequestHeaders(input.apiKey, input.customHeaders, true),
     body: JSON.stringify({ model: input.model, stream: false, max_tokens: 512,
       messages: [{ role: 'system', content: 'Complete code at the cursor. Return only the text to INSERT between prefix and suffix. Do not repeat either. No explanation, Markdown fences, or tool calls. Return an empty string when no useful insertion is possible.' },
         { role: 'user', content: JSON.stringify({ language: input.language, prefix: input.prefix, suffix: input.suffix }) }] }),

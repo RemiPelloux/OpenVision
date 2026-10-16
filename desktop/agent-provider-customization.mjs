@@ -16,14 +16,28 @@ function insertFunction(text, name, body) {
 }
 
 export function scopedAgentProviders(text) {
-  if (text.includes(marker)) return retainSubagentSelection(text);
+  if (text.includes(marker)) return preserveCatalogAuthorization(retainSubagentSelection(text));
   text = insertFunction(text, 'Zxe', '\n e = openvisionModelIdentity.resolveAgentModel(e);\n');
   text = insertFunction(text, 'ybe', '\n e = openvisionModelIdentity.parseModelSelection(e)?.modelId ?? e;\n');
   const pattern = /localProvider: \{\s+kind: "http",\s+endpoints: \[\s+\{ baseUrl: t\.baseUrl, \.\.\.\(void 0 !== t\.apiKey \? \{ apiKey: t\.apiKey \} : \{\}\) \},/g;
   if ([...text.matchAll(pattern)].length !== 1) throw new Error('Agent runtime provider transfer changed');
   text = text.replace(pattern, value => value.replace('kind: "http",',
     'kind: "http", openvisionProviders: t.openvisionProviders,'));
-  return retainSubagentSelection(`${marker}\nconst openvisionModelIdentity = require("./openvision-model-identity.cjs");\n${text}`);
+  return preserveCatalogAuthorization(retainSubagentSelection(`${marker}\nconst openvisionModelIdentity = require("./openvision-model-identity.cjs");\n${text}`));
+}
+
+function preserveCatalogAuthorization(text) {
+  const marker = '/* OpenVision catalog custom Authorization precedence */';
+  if (text.includes(marker)) return text;
+  const start = text.indexOf('function E_e(e) {');
+  if (start < 0 || text.indexOf('function E_e(e) {', start + 1) !== -1)
+    throw new Error('Agent catalog owner changed');
+  const node = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
+  const body = text.slice(start, node.end);
+  const headers = /Object\.assign\(\s+Object\.assign\(\{\}, u_e\(e\)\),\s+void 0 !== e\.apiKey \? \{ authorization: `Bearer \$\{e\.apiKey\}` \} : \{\},\s+\)/g;
+  if ([...body.matchAll(headers)].length !== 1) throw new Error('Agent catalog header contract changed');
+  const after = body.replace(headers, marker + '\nObject.assign({}, void 0 !== e.apiKey ? { authorization: `Bearer ${e.apiKey}` } : {}, u_e(e))');
+  return text.slice(0, start) + after + text.slice(node.end);
 }
 
 function retainSubagentSelection(text) {

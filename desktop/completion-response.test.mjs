@@ -24,7 +24,8 @@ test('real HTTP autocomplete accepts empty/complete text and rejects incomplete 
   const requests = [];
   const server = createServer(async (req, res) => {
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
-    const payload = JSON.parse(Buffer.concat(chunks)); requests.push(payload.model);
+    const payload = JSON.parse(Buffer.concat(chunks));
+    requests.push({ model: payload.model, authorization: req.headers.authorization, tenant: req.headers['x-tenant'] });
     res.setHeader('content-type', 'application/json');
     if (payload.model === 'invalidJson') return res.end('{"secret":"fixture-key", broken');
     if (payload.model === 'invalidUtf8') return res.end(Buffer.from([0xff, 0xfe]));
@@ -45,5 +46,10 @@ test('real HTTP autocomplete accepts empty/complete text and rejects incomplete 
     }, name);
   }
   assert.equal(await run('valid'), 'return "日本語 😀";', 'A rejected response must not poison later completions');
-  assert.equal(requests.length, Object.keys(cases).length + 4, 'Exactly one request per explicit completion');
+  assert.equal(await fetchCompletion({ ...input, model: 'valid', customHeaders: { 'X-Tenant': 'tenant-fixture' } }, { fetch }), 'return "日本語 😀";');
+  assert.deepEqual(requests.at(-1), { model: 'valid', authorization: 'Bearer fixture-key', tenant: 'tenant-fixture' });
+  await fetchCompletion({ ...input, model: 'valid', customHeaders: { Authorization: 'Custom override' } }, { fetch });
+  assert.equal(requests.at(-1).authorization, 'Custom override');
+  await assert.rejects(fetchCompletion({ ...input, model: 'valid', customHeaders: { Host: 'foreign.invalid' } }, { fetch }), /unsupported/);
+  assert.equal(requests.length, Object.keys(cases).length + 6, 'Exactly one request per valid explicit completion; invalid headers never dispatch');
 });

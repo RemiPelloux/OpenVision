@@ -4,6 +4,7 @@ Executed tests, platform coverage and explicit limits. Start with [release claim
 
 ## Documents
 
+- [Windows portable verification - preview.7](portable-preview7.md)
 - [Import profile ownership and exact restore](import-profile-verification.md)
 - [Linux verification](linux-verification.md)
 - [Live provider compatibility — 14 October 2026](live-provider-compatibility.md)

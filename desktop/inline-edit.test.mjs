@@ -82,7 +82,7 @@ test('inline HTTP response requires a complete reply, bounds allocation and reda
   const requests = [];
   const server = createServer(async (req, res) => {
     const chunks = []; for await (const chunk of req) chunks.push(chunk);
-    const body = JSON.parse(Buffer.concat(chunks)); requests.push(body);
+    const body = JSON.parse(Buffer.concat(chunks)); requests.push({ body, headers: req.headers });
     if (body.model === 'http-error') { res.statusCode = 500; return res.end('fixture-key'); }
     if (body.model === 'oversize') return res.end('x'.repeat(1024 * 1024 + 1));
     res.end(JSON.stringify({ choices: [{ finish_reason: body.model === 'truncated' ? 'length' : 'stop',
@@ -93,11 +93,16 @@ test('inline HTTP response requires a complete reply, bounds allocation and reda
   const input = { modelId: 'fixture', apiKey: 'fixture-key', baseUrl: `http://127.0.0.1:${server.address().port}/v1`,
     context: inlineEditContext(request, session), chatMode: false, effort: 'high' };
   assert.equal(await fetchInlineEdit(input, { fetch }), 'const café = 2;');
+  assert.equal(await fetchInlineEdit({ ...input, customHeaders: { 'X-Tenant': 'tenant-fixture' } }, { fetch }), 'const café = 2;');
+  assert.equal(requests[1].headers['x-tenant'], 'tenant-fixture');
+  await fetchInlineEdit({ ...input, customHeaders: { Authorization: 'Custom override' } }, { fetch });
+  assert.equal(requests[2].headers.authorization, 'Custom override');
+  await assert.rejects(fetchInlineEdit({ ...input, customHeaders: { Host: 'foreign.invalid' } }, { fetch }), /unsupported/);
   for (const modelId of ['http-error', 'truncated', 'markdown', 'oversize'])
     await assert.rejects(fetchInlineEdit({ ...input, modelId }, { fetch }), error => !error.message.includes('fixture-key'));
-  assert.equal(requests.length, 5);
-  assert.equal(requests[0].store, false);
-  assert.equal(requests[0].reasoning_effort, 'high');
+  assert.equal(requests.length, 7);
+  assert.equal(requests[0].body.store, false);
+  assert.equal(requests[0].body.reasoning_effort, 'high');
 });
 
 for (const variant of ['desktop', 'glass']) test(`inline ${variant} transform preserves review calls and is idempotent`, () => {

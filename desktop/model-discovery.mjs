@@ -1,4 +1,5 @@
 import { normalizeBaseUrl, parseModels } from './model-providers.js';
+import { providerRequestHeaders } from './provider-headers.js';
 
 const RESPONSE_BYTES = 4 * 1024 * 1024;
 const REQUEST_TIMEOUT_MS = 20_000;
@@ -55,10 +56,11 @@ async function discover(configuration, fetch, controller) {
   if (!configuration || typeof configuration.url !== 'string' || typeof configuration.key !== 'string')
     throw new DiscoveryFailure('Invalid provider connection.');
   const base = normalizeBaseUrl(configuration.url);
+  const headers = providerRequestHeaders(configuration.key, configuration.headers);
   controller.signal.throwIfAborted();
   const response = await fetch(`${base}/models`, {
     method: 'GET', redirect: 'error', signal: controller.signal,
-    headers: configuration.key ? { Authorization: `Bearer ${configuration.key}` } : {},
+    headers,
   });
   if (!response.ok) {
     const failure = new DiscoveryFailure(`Model discovery failed (HTTP ${response.status}). Check the URL, key and provider access.`);

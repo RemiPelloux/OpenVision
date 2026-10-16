@@ -7,6 +7,7 @@ export async function modelDiscoveryFixture() {
   const server = createServer((request, response) => {
     const mode = request.url.split('/')[1];
     const entry = { mode, path: request.url, authorized: request.headers.authorization === 'Bearer discovery-fixture',
+      customAuthorized: request.headers['x-api-key'] === 'header-fixture',
       started: performance.now(), closed: false };
     requests.push(entry);
     response.once('close', () => { entry.closed = true; entry.closedAt = performance.now(); });

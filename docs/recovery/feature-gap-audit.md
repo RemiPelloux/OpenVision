@@ -94,23 +94,23 @@ introducing another completion score.
 | --- | --- | --- |
 | Published reference | **3.24.18**, [237-input source index](../../curs_source/modules/3.24.18/README.md) | Every selected input has a structural result. Original source/build inputs and semantic equivalence remain unproven. |
 | Prepared OpenVision runtime | **3.21.13** base, with maintained [desktop customizations](../../desktop/README.md) | Newer recovered owners must be ported and verified individually. The local `build/source-build.json` records this base; publishing the newer archive does not upgrade it. |
-| Downloadable application | **0.2.0-preview.6**, [packaged verification](../verification/portable-preview6.md) | Later source fixes and pending work are outside that payload; see [source additions](../verification/release-claims.md#source-additions-after-preview6). |
+| Downloadable application | **0.2.0-preview.7**, [packaged verification](../verification/portable-preview7.md) | Packages the recent local AI/recovery changes; original platform/provider evidence keeps its recorded scope. |
 
 ### Current build and pending work
 
-The earlier passing build and native reports below describe their recorded
-revisions, not the current working tree. On **16 October 2026**, the local
-provider-header build stopped at the generated Agent namespace boundary.
-A read-only tokenization check under pinned Node **24.18.0** reproduces
-`Unexpected character '\u0013' (198301:7)` at character offset `8051348`.
-The [build-integrity follow-up](../engineering/runtime-build-integrity.md#16-october-working-tree-blocker)
-records preservation, unknown cause and required recovery checks. The current
-generated tree has no passing final build or native verification for this work.
+The initial **16 October 2026** provider-header build stopped at the generated
+Agent namespace boundary. Read-only tokenization under Node **24.18.0**
+reproduced `Unexpected character '\u0013' (198301:7)` at offset `8051348`.
+The [exact-hash recovery and repeat build](../engineering/runtime-build-integrity.md#preview7-recovery-and-repeat-build)
+subsequently restored the known pre-damage input and passed final build checks.
+The corruption cause remains unknown. The
+[preview.7 package report](../verification/portable-preview7.md) records native
+checks against the relocated app, separately from earlier source reports.
 
-| Pending scope | Implementation/evidence boundary | Gate still required |
+| Scope | Implementation/evidence boundary | Gate still required |
 | --- | --- | --- |
-| Custom provider authentication headers | Uncommitted forwarding, secret-storage, settings and redaction changes; focused tests are not final runtime evidence. The recovered [Agent provider module][source-provider-transport] is a reference, not a verified port. | Recover the generated input without discarding unknown changes; complete/repeat the pinned-toolchain build, then native discovery, Agent/child, completion, Quick Edit, restart and reflected-error/redaction checks. |
-| Generated Agent input integrity | Exact namespace edits were preserved with local backups; an unexpected control character still stops tokenization. | Reconcile against retained known hashes, keep unknown differences, pass repeat build/integrity checks and explain any remaining uncertainty. No corruption cause has been established. |
+| Custom provider authentication headers | [Maintained header/credential owners](../engineering/provider-authentication-headers.md) and the recovered [Agent provider module][source-provider-transport]. Native packaged discovery, Agent/child, Tab completion, Quick Edit and restart pass with controlled authentication; producer tests cover handled Agent error redaction. | Process-wide diagnostic/log handling, broader real-provider/platform coverage, physical failures and cross-window configuration transactions. |
+| Generated Agent input integrity | Preserved damaged files; recovered input matches its known full-file hash. Corrected and repeat builds pass validation of 239 scripts, 124 manifests and 30 local main-process modules. | The producing corruption cause is unknown; independent assembly and the broader build/platform failure matrix remain open. |
 
 Neither item changes story status or complexity points. They belong to the
 existing provider failure/release gates, not a new missing-bundle count.
@@ -121,7 +121,7 @@ Reconciled against source parent `37f159e4`, source-index commit `b578b768`,
 live-provider edit evidence in `ac527049`, and the current transactional review
 fix in `d3df7cb4` on **16 October 2026**. Documentation corrections through
 `5b20b881` retain their original evidence scope; the pending working-tree build
-is tracked [separately above](#current-build-and-pending-work). This follow-up corrects the evidence
+and later recovery are tracked [separately above](#current-build-and-pending-work). This follow-up corrects the evidence
 register introduced in `dcb0f880`: OV-201 remains Verified, later startup/build
 results have their own scope, and authored control-plane code has a separate
 implementation owner from recovered desktop MCP code. The module index is generated from
@@ -160,7 +160,7 @@ verification evidence separately.
 | What counts as fully Verified? | [42-story baseline](../planning/feature-acceptance.json) and [acceptance ledger](../planning/completion-sprints.md). |
 | What should happen next, and how large is it? | [Ranked roadmap](../planning/roadmap.md#ranked-rea-implementation-and-verification-work) owns priorities/points; [ETA](../planning/remaining-work-estimates.md) links delivery gates. |
 | How do the percentages relate? | [Progress dashboard](../progress.md) separates feature acceptance, version-specific recovery and the Rust plan. |
-| Which behavior was actually tested or released? | Linked investigation reports and [release claims](../verification/release-claims.md#source-additions-after-preview6); source additions do not update the portable download. |
+| Which behavior was actually tested or released? | Linked investigation reports, [release claims](../verification/release-claims.md#source-additions-after-preview6) and the [preview.7 package report](../verification/portable-preview7.md). |
 | What will move to Rust? | [Component audit](../planning/rust/rust-component-audit.md) and [acceptance map](../planning/rust/rust-acceptance-map.md); the overlapping migration points are separate from this backlog. |
 
 ### Current evidence register
@@ -179,14 +179,16 @@ not from the number of checks in a report.
 | [Native Agent timeout and retry](rea-agent-timeout-recovery.md#full-duration-native-follow-up) | OV-102/204 Partial | [AI service][source-ai] · [Agent host][source-agent-host] | Real saved-provider retry and full-duration header/body checks pass on Windows; malformed streams and broader providers remain open. |
 | [Live-provider multi-file editing](rea-agent-live-edit.md) | OV-103 Partial | [Agent execution entry][source-agent-exec] · [Inline-diff service][source-inline-diff] | Codex Easy Windows success path is verified; other providers, platforms and physical faults remain open. |
 | [Model-discovery resource ownership](../performance/model-discovery-resources.md) and [provider lifecycle](../engineering/provider-selection-lifecycle.md) | OV-201 Verified; OV-204 Partial | Authored [discovery HTTP owner](../../desktop/model-discovery.mjs) and [provider configuration](../../desktop/model-providers.js); [AI service][source-ai] is a recovered reference | Cancellation and response bounds pass in the minimal native host; separate Windows lifecycle and [startup/build checks](../engineering/runtime-build-integrity.md#verification-scope) provide scoped workbench evidence. Remaining failure, live capability, resource and platform gates are distinct. |
-| [Provider failure handling](../engineering/provider-failure-handling.md) | OV-204 Partial | Recovered [Agent execution entry][source-agent-exec]; maintained [diagnostic policy](../../desktop/provider-error-policy.js) | The latest controlled Windows matrix passes 17 scenarios and explicit retries, including DNS, HTTPS protocol and untrusted-certificate rejection. Exact Authorization-credential redaction is covered; certificate expiry/hostname mismatch, custom headers, actual unsupported inputs and remaining successful-stream shapes stay open. |
+| [Provider failure handling](../engineering/provider-failure-handling.md) | OV-204 Partial | Recovered [Agent execution entry][source-agent-exec]; maintained [diagnostic policy](../../desktop/provider-error-policy.js) | The controlled Windows matrix passes 17 scenarios and explicit retries, including DNS, HTTPS protocol and untrusted-certificate rejection. [Custom-header handling](../engineering/provider-authentication-headers.md) adds producer redaction and scoped packaged Quick Edit error privacy. Certificate expiry/hostname mismatch, process-wide header/log handling, actual unsupported inputs and remaining successful-stream shapes stay open. |
 | [Retrieval ownership and data boundaries](rea-retrieval-ownership.md) | OV-501 Unknown; OV-503/504 Planned | [Retrieval entry][source-retrieval] · [Retrieval worker][source-retrieval-worker] | Initialization ownership is corrected; actual destinations, indexing semantics and recovery are still unknown. |
 | [Control-plane HTTP](../performance/control-plane-http-resources.md), [STDIO](../performance/control-plane-stdio-resources.md) and [MCP lifecycle](../performance/control-plane-mcp-lifecycle.md) | OV-303 Partial; OV-1001/1003 Partial | Authored [MCP manager](../../src/mcp.mjs), [HTTP reader](../../src/mcp-http-response.mjs) and [STDIO reader](../../src/mcp-stdio-response.mjs) | Loopback and child-process checks cover this optional Node control plane. Its results do not verify the desktop Agent's separate [recovered MCP service][source-mcp]; OAuth, reconnect, multi-window and platform gates remain open. |
 | [Runtime build integrity](../engineering/runtime-build-integrity.md) and [local startup](../engineering/local-startup.md) | OV-403/801/901 Partial; OV-802–804 Planned | Recovered [main entry][source-main]; maintained [source assembly](../../desktop/source-assembly.mjs) | Repeat builds with retained inputs, artifact validation and scoped Windows startup/Agent runs pass. Independent assembly, native dependency replacement, unexplained exit 134 and broader platform/shutdown coverage remain open. |
 
-Only completed, linked evidence contributes to this register. Custom
-authentication-header forwarding and redaction have no completed end-to-end
-verification report here; pending implementation does not close those gates.
+Only completed, linked evidence contributes to this register. The
+[header report](../engineering/provider-authentication-headers.md) and
+[preview.7 package checks](../verification/portable-preview7.md) add scoped
+forwarding and handled-error evidence; they do not close process-wide log or
+cross-window durability gates.
 The [points-based ETA](../planning/remaining-work-estimates.md) therefore remains
 **322 points across 36 unfinished stories**, with **6/42 Verified (14.29%)**.
 
@@ -291,7 +293,8 @@ The rows below summarize current linked reports; they do not create or promote
 acceptance stories. Verified refers only to the named ledger contract and its
 recorded environment. Partial includes working flows with remaining gates.
 The [release claims](../verification/release-claims.md#source-additions-after-preview6)
-separate source additions from the preview.6 portable download.
+and [preview.7 package checks](../verification/portable-preview7.md) separate
+historical source observations from the current downloadable application.
 
 | Feature | Current evidence/status | What is still needed |
 | --- | --- | --- |

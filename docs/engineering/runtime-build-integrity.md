@@ -99,6 +99,9 @@ successful repeats alone do not close OV-403. No full story is promoted.
 
 ## 16 October working-tree blocker
 
+This records the initial failure. The [preview.7 recovery below](#preview7-recovery-and-repeat-build)
+restores the exact known input and completes the build checks.
+
 The pending custom-provider-header build has not completed. Its first failure
 reported a changed generated Agent input outside the namespace journal. All 108
 recorded namespace edits matched their exact locations. The file and original
@@ -120,4 +123,26 @@ inside recovered string tables. Required follow-up is a successful full build,
 repeat build/integrity checks and native provider-header workflows against the
 final generated artifacts. Earlier passing runs above remain valid only for
 their recorded revisions. The [gap audit](../recovery/feature-gap-audit.md#current-build-and-pending-work)
-keeps this blocker and unverified provider work separate from the acceptance score.
+keeps the initial blocker and subsequent verified scope separate from the acceptance score.
+
+## Preview.7 recovery and repeat build
+
+A 512-character region around the first illegal character was matched using
+unique surrounding anchors against retained 3.21.13 recovered input. Replacing
+that region in the preserved, namespace-reversed bundle produced the exact
+pre-damage SHA-256:
+`74e8d56a9358230317ecbb09a9f5c4b41c802282dbff189cf2a7b07625d4920d`.
+This whole-file match establishes recovery of the known input, rather than
+acceptance of an arbitrary parseable repair. The damaged current file and
+namespace journal were preserved under ignored
+`backups/release-preview7-agent-recovery-20261016/` before atomic replacement.
+The producing cause is still unknown; no universal corruption-prevention claim
+follows from this repair.
+
+The current transformations then applied successfully. The final build and
+immediate repeat build validate **239 scripts, 124 manifests and 30 local
+main-process modules**. Desktop syntax checks pass. Native checks against the
+relocated package pass provider/header ownership, Agent/subagent routing,
+completion and Quick Edit; see [preview.7 package verification](../verification/portable-preview7.md).
+This closes the local generated-input blocker. Independent assembly and the
+remaining platform, failure and durability gates remain open.

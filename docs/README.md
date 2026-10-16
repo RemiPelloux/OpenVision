@@ -61,17 +61,18 @@ filename-label input and the verification limits.
 | Understand resource usage | [Native utility listener ownership](engineering/utility-process-ownership.md) · [Account routing and stream measurements](performance/account-performance.md) · [Performance review](performance/performance.md) · [Native baseline](performance/native-performance-baseline.md) |
 | Inspect large-project watcher behavior | [100-file and 10,000-file native verification](verification/project-scale-verification.md) |
 | Understand provider errors and manual retries | [Provider failure handling](engineering/provider-failure-handling.md) |
+| Configure extra API authentication or tenant headers | [Custom provider authentication headers](engineering/provider-authentication-headers.md) |
 | Understand models disappearing after discovery | [Pending/in-flight storage ownership and source parity](engineering/storage-write-ownership.md) |
 | Understand failed Undo/Redo recovery and retry guidance | [Review callback and native history ownership](recovery/rea-agent-undo-retry.md) |
 | Understand recovery limitations | [Recovery status](recovery/recovery-status.md) · [Native inventory](recovery/native-recovery-inventory.md) |
 | See which gaps the new source/docs close and which remain | [Latest reconciliation and documentation owners](recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation) |
 | Distinguish the reference archive, prepared runtime and download | [Version comparison](recovery/feature-gap-audit.md#reference-implementation-and-release-versions) |
-| Check unfinished work against the latest build state | [Pending provider headers and generated Agent blocker](recovery/feature-gap-audit.md#current-build-and-pending-work) |
+| Check remaining work against the latest build state | [Provider-header verification and build recovery](recovery/feature-gap-audit.md#current-build-and-pending-work) |
 | Check current evidence, story status and its exact implementation owner | [Evidence register: recovered desktop code versus authored services](recovery/feature-gap-audit.md#current-evidence-register) |
 | Connect recovered source to current missing features | [Updated gap audit and source-to-implementation map](recovery/feature-gap-audit.md#source-index-to-implementation-gaps) |
 | Browse recovered application code, extracted modules and native pseudocode | [`curs_source` recovery archive](../curs_source/README.md) |
-| Read this release's scope | [0.2.0-preview.6 projects in one window](releases/0.2.0-preview.6.md) |
-| Review the packaged-app tests | [Portable verification](verification/portable-preview6.md) |
+| Read this release's scope | [0.2.0-preview.7 local AI workflows](releases/0.2.0-preview.7.md) |
+| Review the packaged-app tests | [Portable verification](verification/portable-preview7.md) |
 | Check WebAssembly recovery | [14/15 complete REA records and remaining limits](recovery/rea-wasm-inventory.md) |
 
 The sprint ledger owns story status. The roadmap owns complexity points and delivery gates.
@@ -82,7 +83,7 @@ Local `logs/` paths identify private run artifacts and are not public download l
 Verification runs locally. GitHub Actions remains disabled.
 
 The latest source build includes experimental account models in Agent and a
-provider-reported usage bar. These additions postdate the preview.6 download.
+provider-reported usage bar. These additions are included in preview.7.
 The [account guide](guides/account-integrations.md#verification-limits) records the real
 Claude file-edit result, Codex GPT-6 availability limitation and API balance
 failure separately from controlled tests. Broader Linux desktop results do not

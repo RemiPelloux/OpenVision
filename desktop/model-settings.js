@@ -116,7 +116,7 @@ export function mountModels(container, bridge) {
     busy = true;
     status.textContent = 'Connecting...';
     render();
-    try { await action(); status.textContent = 'Saved'; }
+    try { await action(); status.textContent = providers.state.credentialCleanup?.length ? 'Retired credential cleanup is pending.' : 'Saved'; }
     catch (error) { status.textContent = error.message; }
     finally { busy = false; render(); }
   }
@@ -128,6 +128,10 @@ export function mountModels(container, bridge) {
     url.required = true;
     const key = field(ui.form, 'API Key', '', 'password', provider ? 'Keep existing key' : 'API key');
     const clearKey = provider ? field(ui.form, 'Clear Saved Key', '', 'checkbox') : null;
+    const headers = field(ui.form, 'Additional Headers (JSON)', '', 'password',
+      provider?.customHeaderNames?.length ? `Saved: ${provider.customHeaderNames.join(', ')}; enter JSON to replace` : '{"X-API-Key":"..."}');
+    headers.spellcheck = false;
+    const clearHeaders = provider ? field(ui.form, 'Clear Saved Headers', '', 'checkbox') : null;
     const discover = field(ui.form, 'Discover Models', '', 'checkbox');
     discover.checked = !provider;
     const save = button('Save', () => ui.form.requestSubmit());
@@ -137,13 +141,19 @@ export function mountModels(container, bridge) {
       event.preventDefault();
       save.disabled = true;
       try {
+        const headerText = headers.value.trim();
         const saved = await providers.save({ id: savedProvider?.id, name: name.value, url: url.value,
-          key: clearKey?.checked ? '' : savedProvider && !key.value ? undefined : key.value });
+          key: clearKey?.checked ? '' : savedProvider && !key.value ? undefined : key.value,
+          headers: headerText || undefined, clearHeaders: clearHeaders?.checked === true });
         savedProvider = saved;
         key.value = '';
+        headers.value = '';
+        if (clearHeaders) clearHeaders.checked = false;
         if (discover.checked) await providers.discover(saved.id);
         if (!providers.state.activeId) await providers.activate(saved.id);
-        ui.node.close(); render();
+        ui.node.close();
+        status.textContent = providers.state.credentialCleanup?.length ? 'Saved. Retired credential cleanup is pending; save again to retry.' : 'Saved';
+        render();
       } catch (error) { ui.status.textContent = error.message; render(); }
       finally { save.disabled = false; }
     };
@@ -206,6 +216,7 @@ export function mountModels(container, bridge) {
     const meta = element('div', '', 'openvision-provider-meta');
     if (providers.state.activeId === provider.id) meta.append(element('span', 'Active', 'openvision-active-badge'));
     meta.append(element('span', `${enabled} / ${provider.models.length} enabled`));
+    if (provider.customHeaderNames?.length) meta.append(element('span', `${provider.customHeaderNames.length} custom header${provider.customHeaderNames.length === 1 ? '' : 's'}`));
     title.append(meta);
     header.append(title, button('Discover Models', () => run(() => providers.discover(provider.id)), 'refresh'),
       button('Add Model', () => modelDialog(provider), 'plus'),
@@ -248,6 +259,8 @@ export function mountModels(container, bridge) {
     const actions = element('div', '', 'openvision-provider-actions');
     actions.append(button('Add Codex Easy', () => providerDialog(undefined, { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })),
       button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })), add);
+    if (providers.state.credentialCleanup?.length)
+      actions.append(button('Retry credential cleanup', () => run(() => providers.cleanupCredentials()), 'refresh'));
     heading.append(element('h3', 'API connections'));
     const label = element('label', 'Default connection · Agent uses each model’s provider', 'openvision-active-provider');
     const select = element('select');

@@ -55,7 +55,8 @@ export async function localCompletion(service, request, secretToken, ipc = globa
         service._storageService.get(completionStorageKey, -1) !== modelId) return false;
     try {
       const selected = requestProviderRoute(service._storageService, modelId);
-      return !!selected && selected.providerId === route.providerId && selected.baseUrl === route.baseUrl;
+      return !!selected && selected.providerId === route.providerId && selected.baseUrl === route.baseUrl &&
+        selected.customHeaderRevision === route.customHeaderRevision;
     } catch { return false; }
   };
   const cancel = () => { void ipc.invoke('vscode:openvision-completion-cancel', generationUUID).catch(() => {}); };

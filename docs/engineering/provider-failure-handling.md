@@ -235,3 +235,14 @@ the missing-fixture initialization blocker recorded in the
 It does not close remaining native/live-provider OV-204 gates or repeat earlier
 native runs. The [control-plane report](../performance/control-plane-http-resources.md) records
 the combined 46-test run and its separate transport scope.
+
+## Custom-header diagnostics in preview.7
+
+The [header owner report](provider-authentication-headers.md) adds explicit
+custom credential values to the handled Agent error policy, scoped to the
+actual SDK fetch function through a WeakMap. Recovered transport/fetch tests
+cover concurrent providers, parsed stream errors and connection failures.
+The [packaged Quick Edit check](../verification/portable-preview7.md) also
+confirms that reflected API-key/header fixture values are absent from its
+displayed error. These results do not establish process-wide log redaction or
+repeat the full native Agent failure matrix with custom headers. OV-204 remains Partial.

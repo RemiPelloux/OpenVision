@@ -7,6 +7,7 @@ import { fallbackReasoningValues, requestReasoningValues, providerDefaultReasoni
 import { customizeAgentReasoning } from './agent-reasoning-customization.mjs';
 import { requestProviderRouting } from './provider-routing.mjs';
 import { requestProvider } from './model-providers.js';
+import * as openvisionProviderErrors from './provider-error-policy.js';
 
 test('reasoning defaults are model-specific, endpoint-specific and subordinate to declarations', () => {
   const baseUrl = 'https://codex-easy.ai/v1';
@@ -27,17 +28,26 @@ test('provider credentials are resolved per request even before settings mount',
   const service = runInNewContext(output.replace(/^import .*;$/m, '') + '\nservice;', {
     K6e: 'secret-storage', openvisionAgentProvider: async (_storage, _secret, { modelId: id }) => {
       calls.push(id);
-      return { baseUrl: `https://${id}.example.test/v1`, apiKey: `${id}-key` };
+      return { baseUrl: `https://${id}.example.test/v1`, apiKey: `${id}-key`, customHeaders: { 'X-Tenant': id } };
     },
+    openvisionRequestProvider: async () => ({ baseUrl: 'https://inference.test/v1', apiKey: 'inference-key', customHeaders: { 'x-key': 'inference-header' } }),
   });
   service.instantiationService = { invokeFunction: callback => callback({ get: id => id }) };
+  service._instantiationService = service.instantiationService;
+  service._modelConfigService = { getModelConfig: () => ({ modelName: 'gpt' }) };
+  service.productService = { version: 'fixture' };
   const [first, second] = await Promise.all([
     service.getLocalAgentProviderConfig({ modelId: 'gpt' }, { requestedModel: { modelId: 'deepseek' } }),
     service.getLocalAgentProviderConfig({ modelId: 'grok' }, {}),
   ]);
   assert.equal(first.apiKey, 'deepseek-key');
+  assert.deepEqual(first.customHeaders, { 'X-Tenant': 'deepseek' });
   assert.equal(second.apiKey, 'grok-key');
   assert.deepEqual(calls, ['deepseek', 'grok']);
+  const inference = await service.getLocalInferenceProviderConfig('gpt');
+  assert.equal(inference.customHeaders['x-key'], 'inference-header');
+  const legacy = output.replaceAll('customHeaders: openvisionProvider.customHeaders ?? {}', 'customHeaders: {}');
+  assert.equal(requestProviderRouting(legacy, 'desktop'), output, 'Existing v2 runtimes upgrade without dropping headers');
 });
 
 test('simultaneous models retain their own saved provider keys without global activation', async () => {
@@ -80,7 +90,7 @@ test('recovered Agent request encoder preserves declared tiers in Responses and 
       return Promise.resolve(step());
     },
     tEe: value => value !== null && typeof value === 'object' && !Array.isArray(value),
-    process: { env: {} }, Response,
+    process: { env: {} }, Response, openvisionProviderErrors,
   });
   for (const [modelId, effort, endpoint] of [
     ['gpt-6.1-sol', 'max', 'responses'], ['deepseek-v4-pro', 'none', 'chat_completions'],

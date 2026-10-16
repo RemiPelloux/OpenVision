@@ -45,9 +45,10 @@ published-text and historical-native checks from the repository root.
 The prepared runtime still uses the **3.21.13** base; the **3.24.18** index is a
 reference archive, not a wholesale runtime upgrade. The
 [version comparison](feature-gap-audit.md#reference-implementation-and-release-versions)
-separates both from preview.6. The pending provider-header working tree currently
-has a [generated Agent build blocker](feature-gap-audit.md#current-build-and-pending-work);
-previous passing builds do not verify that unfinished work.
+separates both from preview.7. The generated Agent input blocker was recovered
+to its exact known hash; final/repeat builds and scoped packaged provider-header
+checks now pass. The [current gap register](feature-gap-audit.md#current-build-and-pending-work)
+retains the initial failure, unknown cause and remaining verification limits.
 
 Published code and native Evidence live under `curs_source/javascript`,
 `curs_source/modules`, and `curs_source/native`. Complete local captures,

@@ -5,7 +5,7 @@ import { digest, fileHash } from './import-files.mjs';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { installProxyDeadlines } from './provider-proxy-deadlines.mjs';
 
-const marker = '/* OpenVision provider error boundary v6 */';
+const marker = '/* OpenVision provider error boundary v7 */';
 const target = 'extensions/cursor-agent-exec/dist/main.js';
 
 function uniqueIndex(text, anchor) {
@@ -28,11 +28,12 @@ function wrapTransport(text) {
 
 export function redactProviderErrors(text) {
   if (text.includes(marker)) return text;
+  if (text.includes('/* OpenVision provider error boundary v6 */')) return customHeaderDiagnostics(text);
   if (text.includes('/* OpenVision provider error boundary v5 */')) {
     const request = 'await i(e, { method: "POST", headers: Ut(t), body: r.content, signal: o })';
     uniqueIndex(text, request);
-    return text.replace('/* OpenVision provider error boundary v5 */', marker)
-      .replace(request, 'await openvisionProviderErrors.fetchProviderWithDeadlines(i, e, { method: "POST", headers: Ut(t), body: r.content, signal: o })');
+    return redactProviderErrors(text.replace('/* OpenVision provider error boundary v5 */', '/* OpenVision provider error boundary v6 */')
+      .replace(request, 'await openvisionProviderErrors.fetchProviderWithDeadlines(i, e, { method: "POST", headers: Ut(t), body: r.content, signal: o })'));
   }
   if (text.includes('/* OpenVision provider error boundary v4 */')) {
     const convert = 'const t = new jo(e.message);';
@@ -75,6 +76,22 @@ export function redactProviderErrors(text) {
   return redactProviderErrors(`/* OpenVision provider error boundary v2 */\nconst openvisionProviderErrors = require("./openvision-provider-errors.cjs");\n${text}`);
 }
 
+function customHeaderDiagnostics(text) {
+  const start = uniqueIndex(text, 'function Xxe(e) {');
+  const node = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
+  const returned = node.body.body.find(statement => statement.type === 'ReturnStatement')?.argument;
+  if (returned?.type !== 'ArrowFunctionExpression') throw new Error('Provider fetch owner changed');
+  text = text.slice(0, returned.start) + 'openvisionProviderErrors.withProviderHeaders(' +
+    text.slice(returned.start, returned.end) + ', d)' + text.slice(returned.end);
+  const changes = [
+    ['redactProviderError(openvisionError, t)', 'redactProviderError(openvisionError, t, i)'],
+    ['protectProviderResult(await n({ response: a, url: e, requestBodyValues: r.values }), t)',
+      'protectProviderResult(await n({ response: a, url: e, requestBodyValues: r.values }), t, i)'],
+  ];
+  for (const [before, after] of changes) { uniqueIndex(text, before); text = text.replace(before, after); }
+  return text.replace('/* OpenVision provider error boundary v6 */', marker);
+}
+
 export async function installProviderErrorPolicy(root) {
   await installProxyDeadlines(root);
   const path = join(root, 'source/app', target);
@@ -86,7 +103,7 @@ export async function installProviderErrorPolicy(root) {
     .replaceAll('export function ', 'function ').replaceAll('export async function ', 'async function ').replaceAll('export const ', 'const ');
   await copyFile(join(root, 'desktop/provider-request-deadlines.cjs'), join(dirname(path), 'openvision-provider-deadlines.cjs'));
   await copyFile(join(root, 'desktop/openvision-provider-dispatch.cjs'), join(dirname(path), 'openvision-provider-dispatch.cjs'));
-  await writeFile(helperTarget, `${helperSource}\nmodule.exports = {fetchProviderWithDeadlines, providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult, readProviderErrorBody, requireContextRecovery, providerFailureDetail};\n`);
+  await writeFile(helperTarget, `${helperSource}\nmodule.exports = {fetchProviderWithDeadlines, providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult, withProviderHeaders, readProviderErrorBody, requireContextRecovery, providerFailureDetail};\n`);
   const recipe = digest(JSON.stringify(await Promise.all([
     fileHash(join(root, 'desktop/provider-error-customization.mjs')),
     fileHash(helper), fileHash(join(root, 'desktop/provider-request-deadlines.cjs')), fileHash(join(root, 'tooling/package-lock.json')),

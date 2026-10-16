@@ -8,7 +8,8 @@ async function fixture(t) {
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 850, height: 900 } });
   const files = new Set(['model-settings.js', 'model-accounts.js', 'account-picker.js', 'model-settings.css', 'model-providers.js',
-    'completion-provider.js', 'model-catalog.js', 'model-reasoning.js', 'model-identity.js', 'account-models.js']);
+    'completion-provider.js', 'model-catalog.js', 'model-reasoning.js', 'model-identity.js', 'account-models.js',
+    'provider-headers.js', 'provider-credentials.js']);
   await page.route('http://127.0.0.1/**', async route => {
     const name = new URL(route.request().url()).pathname.slice(1).replace(/^openvision-/, '');
     if (!name) return route.fulfill({ contentType: 'text/html', body: '<link rel="stylesheet" href="/model-settings.css"><main class="openvision-model-settings"></main>' });
@@ -37,7 +38,7 @@ async function fixture(t) {
       auth: { storeOpenAIKeyAndWait: async () => {} },
       reactive: { setApplicationUserPersistentStorage() {}, manualSave() {} },
       ai: { modelConfigService: { getModelConfig: () => ({}), setModelConfig() {} }, handleAvailableModelsChange() {} },
-      request: async (url, key) => { window.requests.push({ url, key }); return { data: [{ id: 'discovered-model' }] }; },
+      request: async (url, key, headers) => { window.requests.push({ url, key, ...(Object.keys(headers ?? {}).length ? { headers } : {}) }); return { data: [{ id: 'discovered-model' }] }; },
     };
     const { mountModels } = await import('/model-settings.js');
     mountModels(document.querySelector('main'), bridge);
@@ -68,6 +69,38 @@ test('provider settings preserves discovery, model paging and filter controls in
   assert.equal(await page.evaluate(() => window.setupRuns), 1);
   await page.setViewportSize({ width: 400, height: 900 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+});
+
+test('provider header editor masks values, preserves blank edits and clears stored headers on request', async t => {
+  const page = await fixture(t);
+  await page.getByRole('button', { name: 'Add Provider', exact: true }).click();
+  await page.getByLabel('Provider Name', { exact: true }).fill('Header server');
+  await page.getByLabel('API Base URL', { exact: true }).fill('https://headers.invalid/v1');
+  const headers = page.getByLabel('Additional Headers (JSON)', { exact: true });
+  assert.equal(await headers.getAttribute('type'), 'password');
+  await headers.fill('{"X-API-Key":"synthetic-header-value"}');
+  for (const width of [850, 400]) {
+    await page.setViewportSize({ width, height: 900 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+    assert.equal(await page.locator('dialog').evaluate(node => node.scrollWidth <= node.clientWidth), true);
+    await page.screenshot({ path: `logs/provider-headers-${width}.png` });
+  }
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  const server = page.getByRole('region', { name: 'Header server', exact: true });
+  await server.waitFor();
+  assert.deepEqual((await page.evaluate(() => window.requests)).at(-1).headers, { 'x-api-key': 'synthetic-header-value' });
+  assert.equal(await page.evaluate(() => window.saved.get('openvision.model-providers.v1').includes('synthetic-header-value')), false);
+  await server.getByRole('button', { name: 'Edit Provider', exact: true }).click();
+  assert.equal(await headers.inputValue(), '');
+  assert.match(await headers.getAttribute('placeholder'), /x-api-key/);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.locator('dialog').waitFor({ state: 'detached' });
+  assert.equal(await page.evaluate(() => [...window.secrets.values()].filter(value => value.includes('synthetic-header-value')).length), 1);
+  await server.getByRole('button', { name: 'Edit Provider', exact: true }).click();
+  await page.getByLabel('Clear Saved Headers', { exact: true }).check();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.locator('dialog').waitFor({ state: 'detached' });
+  assert.equal(await page.evaluate(() => [...window.secrets.values()].some(value => value.includes('synthetic-header-value'))), false);
 });
 
 test('account settings exposes errors, explicit retry and official agent actions without claiming authentication', async t => {

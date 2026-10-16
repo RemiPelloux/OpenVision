@@ -23,13 +23,15 @@ const originals = [];
 let phase = 'edit', canceled = false;
 const server = createServer(async (req, res) => {
   res.setHeader('content-type', 'application/json');
+  const customAuthorized = req.headers['x-openvision-token'] === 'fixture-header-secret';
+  if (!customAuthorized) { res.statusCode = 401; return res.end('{}'); }
   if (req.url === '/v1/models') return res.end(JSON.stringify({ data: [{ id: 'fixture-editor' }] }));
   if (req.url !== '/v1/chat/completions') { res.statusCode = 404; return res.end('{}'); }
   const chunks = []; for await (const chunk of req) chunks.push(chunk);
   const payload = JSON.parse(Buffer.concat(chunks));
-  requests.push({ phase, payload, authorized: req.headers.authorization === 'Bearer fixture-key' });
+  requests.push({ phase, payload, customAuthorized, authorized: req.headers.authorization === 'Bearer fixture-key' });
   if (phase === 'cancel') { res.on('close', () => { canceled = true; }); return; }
-  if (phase === 'error') { res.statusCode = 503; return res.end('fixture-key must not appear in UI'); }
+  if (phase === 'error') { res.statusCode = 503; return res.end('fixture-key fixture-header-secret must not appear in UI'); }
   const content = phase === 'multiline' ? 'const café = 2;\nconst emoji = "😀";' : 'const answer = 2;';
   res.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { role: 'assistant', content } }] }));
 });
@@ -67,6 +69,7 @@ async function configure() {
   await page.getByLabel('Provider Name', { exact: true }).fill('Inline fixture');
   await page.getByLabel('API Base URL', { exact: true }).fill(`http://127.0.0.1:${server.address().port}/v1`);
   await page.getByLabel('API Key', { exact: true }).fill('fixture-key');
+  await page.getByLabel('Additional Headers (JSON)', { exact: true }).fill('{"X-OpenVision-Token":"fixture-header-secret"}');
   await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await page.locator('dialog').waitFor({ state: 'detached' });
   await page.locator('.tabs-container .tab').filter({ hasText: 'edit.js' }).first().click();
@@ -142,6 +145,7 @@ try {
   await submit('Exercise error handling');
   await page.getByText(/Inline edit failed \(HTTP 503\)/).filter({ visible: true }).waitFor();
   assert.ok(!(await page.locator('body').innerText()).includes('fixture-key'));
+  assert.ok(!(await page.locator('body').innerText()).includes('fixture-header-secret'));
   assert.equal(await savedText(), originalText);
   result.checks.errorPreservesFile = true;
   phase = 'edit';
@@ -168,12 +172,14 @@ try {
   assert.deepEqual(requests.map(item => item.phase), ['edit', 'edit', 'error', 'edit', 'cancel', 'multiline']);
   for (const item of requests) {
     assert.ok(item.authorized);
+    assert.ok(item.customAuthorized);
     assert.equal(item.payload.model, 'fixture-editor');
     assert.equal(item.payload.store, false);
     assert.ok(!JSON.stringify(item.payload).includes('HIDDEN_LEGACY_MUST_NOT_SEND'));
   }
   assert.equal(JSON.parse(requests[3].payload.messages[1].content).instruction, 'Recover after failure');
   result.checks.oneRequestPerSubmit = true;
+  result.checks.customHeadersAndErrorPrivacy = true;
   await writeFile(join(directory, 'inline-ui.txt'), await page.locator('body').innerText());
   await writeFile(join(directory, 'editables.json'), JSON.stringify(await page.locator('[contenteditable="true"],textarea,input').evaluateAll(elements => elements.map(element => ({ tag: element.tagName, class: element.className, placeholder: element.getAttribute('placeholder'), aria: element.getAttribute('aria-label') }))), null, 2));
   await page.screenshot({ path: join(directory, 'inline-ui.png') });

@@ -10,6 +10,7 @@ Implementation contracts, developer workflows and lifecycle decisions. Start wit
 - [Local rules: concurrency, durable saves and live context](local-rules-concurrency.md)
 - [Local Explorer startup ordering](local-startup.md)
 - [Provider failure handling](provider-failure-handling.md)
+- [Custom provider authentication headers](provider-authentication-headers.md)
 - [Storage write ownership and model discovery](storage-write-ownership.md)
 - [Provider-specific model choices](provider-model-identity.md)
 - [Provider selection lifecycle — 13 October 2026](provider-selection-lifecycle.md)

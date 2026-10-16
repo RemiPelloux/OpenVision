@@ -18,7 +18,7 @@ function methodBody(text, name) {
 }
 
 export function requestProviderRouting(text, variant) {
-  if (text.includes(marker)) return selectionParameters(text);
+  if (text.includes(marker)) return selectionParameters(preserveProviderHeaders(text));
   if (text.includes(previousMarker)) {
     const upgrades = [
       ['const openvisionProvider = await openvisionRequestProvider(this.storageService,',
@@ -31,7 +31,7 @@ export function requestProviderRouting(text, variant) {
       if (text.split(before).length !== 2) throw new Error('Previous provider routing contract changed');
       text = text.replace(before, after);
     }
-    return selectionParameters(agentRoutingPayload(text.replace(previousMarker, marker)));
+    return selectionParameters(preserveProviderHeaders(agentRoutingPayload(text.replace(previousMarker, marker))));
   }
   const secrets = variant === 'desktop' ? 'K6e' : 'oHe';
   const agent = methodBody(text, 'getLocalAgentProviderConfig');
@@ -40,7 +40,7 @@ export function requestProviderRouting(text, variant) {
     const openvisionProvider = await openvisionAgentProvider(this.storageService,
       this.instantiationService.invokeFunction(accessor => accessor.get(${secrets})),
       ${options}?.requestedModel?.modelId ?? ${model}?.modelId);
-    if (openvisionProvider) return {...openvisionProvider, customHeaders: {}};
+    if (openvisionProvider) return {...openvisionProvider, customHeaders: openvisionProvider.customHeaders ?? {}};
 `;
   const inference = methodBody(text, 'getLocalInferenceProviderConfig');
   const inferenceGuard = `
@@ -49,12 +49,28 @@ export function requestProviderRouting(text, variant) {
     const openvisionProvider = await openvisionRequestProvider(this._storageService,
       this._instantiationService.invokeFunction(accessor => accessor.get(${secrets})), openvisionModel);
     if (openvisionProvider) return {...openvisionProvider,
-      userAgent: "OpenVision/" + this.productService.version, customHeaders: {}};
+      userAgent: "OpenVision/" + this.productService.version, customHeaders: openvisionProvider.customHeaders ?? {}};
 `;
   for (const edit of [{ offset: agent.offset, value: agentGuard }, { offset: inference.offset, value: inferenceGuard }]
     .sort((a, b) => b.offset - a.offset))
     text = text.slice(0, edit.offset) + edit.value + text.slice(edit.offset);
   return selectionParameters(agentRoutingPayload(`${marker}\nimport {requestProvider as openvisionRequestProvider, requestAgentProvider as openvisionAgentProvider} from "../code/electron-sandbox/workbench/openvision-model-providers.js";\n${text}`));
+}
+
+function preserveProviderHeaders(text) {
+  for (const name of ['getLocalAgentProviderConfig', 'getLocalInferenceProviderConfig']) {
+    const method = methodBody(text, name);
+    const body = text.slice(method.offset, method.end);
+    const old = 'customHeaders: {}';
+    if (!body.includes(old)) {
+      if (!body.includes('customHeaders: openvisionProvider.customHeaders ?? {}'))
+        throw new Error('Provider header routing contract changed: ' + name);
+      continue;
+    }
+    if (body.split(old).length !== 2) throw new Error('Provider header routing owner ambiguous: ' + name);
+    text = text.slice(0, method.offset) + body.replace(old, 'customHeaders: openvisionProvider.customHeaders ?? {}') + text.slice(method.end);
+  }
+  return text;
 }
 
 function selectionParameters(text) {

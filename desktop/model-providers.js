@@ -2,9 +2,11 @@ import { catalogModel } from './model-catalog.js';
 import { reasoningChoices, unavailableReasoning, providerDefaultReasoning } from './model-reasoning.js';
 import { modelSelectionId, parseModelSelection, modelSelectionError } from './model-identity.js';
 import { accountProviders, refreshAccountModels } from './account-models.js';
+import { validHeaderMetadata, readProviderHeaders } from './provider-headers.js';
+import { providerSecretKey as secretKey, validCredentialCleanup, cleanupProviderCredentials, saveProvider, removeProvider } from './provider-credentials.js';
+export { normalizeCustomHeaders } from './provider-headers.js';
 export { refreshAccountModels, watchAccountModels } from './account-models.js';
 const storageKey = 'openvision.model-providers.v1';
-const secretKey = id => `openvision.provider.${id}`;
 const routeSnapshots = new WeakMap();
 const concurrentDiscoveries = 3;
 
@@ -77,11 +79,13 @@ function normalizeReasoningValues(values) {
 function readState(text) {
   if (!text) return { version: 1, providers: [], activeId: null };
   const state = JSON.parse(text);
-  if (state.version !== 1 || !Array.isArray(state.providers)) throw new Error('Invalid provider configuration.');
+  if (state.version !== 1 || !Array.isArray(state.providers) || !validCredentialCleanup(state.credentialCleanup))
+    throw new Error('Invalid provider configuration.');
   const ids = new Set();
   for (const provider of state.providers) {
     if (typeof provider.id !== 'string' || ids.has(provider.id) || typeof provider.name !== 'string' ||
-        normalizeBaseUrl(provider.url) !== provider.url || !Array.isArray(provider.models))
+        normalizeBaseUrl(provider.url) !== provider.url || !Array.isArray(provider.models) ||
+        !validHeaderMetadata(provider))
       throw new Error('Invalid saved provider.');
     ids.add(provider.id);
     for (const model of provider.models)
@@ -98,7 +102,11 @@ export class ModelProviders {
     this.discovery = new Map();
     this.discoveryUpdates = new Map();
     this.state = readState(bridge.storage.get(storageKey, -1));
-    this.ready = this.state.activeId ? this.activate(this.state.activeId).catch(() => {}) : Promise.resolve();
+    this.mutations = Promise.resolve();
+    this.ready = this.mutate(async () => {
+      await cleanupProviderCredentials(this);
+      if (this.state.activeId) await this.activate(this.state.activeId).catch(() => {});
+    });
   }
 
   allModels() {
@@ -126,18 +134,18 @@ export class ModelProviders {
     this.bridge.storage.store(storageKey, JSON.stringify(this.state), -1, 1);
     await this.bridge.storage.flush();
   }
-  async save({ id, name, url, key }) {
+  mutate(action) {
+    const pending = this.mutations.then(() => {
+      if (this.credentialStateUncertain) throw new Error('Restart before changing providers after the failed configuration rollback.');
+      return action();
+    });
+    this.mutations = pending.catch(() => {});
+    return pending;
+  }
+  async save({ id, name, url, key, headers, clearHeaders = false }) {
     url = normalizeBaseUrl(url);
     name = name.trim() || new URL(url).hostname;
-    const previous = this.state.providers.find(provider => provider.id === id);
-    const provider = { id: previous?.id ?? crypto.randomUUID(), name, url, models: previous?.models ?? [],
-      capabilitiesDiscovered: previous?.url === url && previous.capabilitiesDiscovered === true };
-    if (key !== undefined) await this.bridge.secrets.set(secretKey(provider.id), key.trim());
-    if (previous) this.state.providers[this.state.providers.indexOf(previous)] = provider;
-    else this.state.providers.push(provider);
-    await this.persist();
-    if (this.state.activeId === provider.id) await this.activate(provider.id);
-    return provider;
+    return this.mutate(() => saveProvider(this, { id, name, url, key, headers, clearHeaders }));
   }
   discover(id) {
     let provider;
@@ -161,8 +169,9 @@ export class ModelProviders {
   async fetchModels(provider) {
     const id = provider.id;
     const key = await this.bridge.secrets.get(secretKey(id));
+    const customHeaders = await readProviderHeaders(this.bridge.secrets, provider);
     if (!this.state.providers.includes(provider)) throw new Error('Provider changed during discovery. Refresh its new configuration.');
-    const response = await this.bridge.request(`${provider.url}/models`, key);
+    const response = await this.bridge.request(`${provider.url}/models`, key, customHeaders);
     const discovered = parseModels(response);
     if (!this.state.providers.includes(provider)) throw new Error('Provider changed during discovery. Refresh its new configuration.');
     const old = new Map(provider.models.map(model => [model.id, model]));
@@ -242,13 +251,10 @@ export class ModelProviders {
     this.bridge.reactive.manualSave();
   }
   async remove(id) {
-    this.state.providers = this.state.providers.filter(item => item.id !== id);
-    if (this.state.activeId === id) this.state.activeId = null;
-    await this.persist();
-    if (!this.state.activeId) await this.activate(null);
-    else this.publishModels();
-    await this.persist();
-    await this.bridge.secrets.delete(secretKey(id));
+    return this.mutate(() => removeProvider(this, id));
+  }
+  async cleanupCredentials() {
+    return this.mutate(() => cleanupProviderCredentials(this));
   }
 }
 
@@ -311,11 +317,13 @@ function routingSnapshot(storage) {
   routeSnapshots.delete(storage);
   const state = combinedState(storage), routes = new Map(), aliases = new Map();
   for (const provider of state.providers) {
+    const customHeaderNames = Object.freeze(provider.customHeaderNames ?? []);
     for (const model of provider.models) {
       const selectionId = modelSelectionId(provider.id, model.id);
       if (model.enabled) routes.set(selectionId, Object.freeze({ providerId: provider.id,
         baseUrl: provider.url, modelId: model.id, selectionId,
-        reasoningValues: reasoningChoices(model, provider).map(item => item.value ?? item.id) }));
+        reasoningValues: reasoningChoices(model, provider).map(item => item.value ?? item.id),
+        customHeaderNames, customHeaderRevision: provider.customHeaderRevision }));
       aliases.set(model.id, aliases.has(model.id) ? null : selectionId);
     }
   }
@@ -341,8 +349,9 @@ export async function requestProvider(storage, secrets, modelId) {
     return undefined;
   }
   const snapshot = routingSnapshot(storage), apiKey = await routeKey(storage, secrets, route.providerId);
+  const customHeaders = await readProviderHeaders(secrets, route);
   if (routingSnapshot(storage) !== snapshot) throw modelSelectionError('Provider settings changed before dispatch. Try again.');
-  return { baseUrl: route.baseUrl, modelId: route.modelId, apiKey };
+  return { baseUrl: route.baseUrl, modelId: route.modelId, apiKey, ...(Object.keys(customHeaders).length ? { customHeaders } : {}) };
 }
 
 export async function requestAgentProvider(storage, secrets, selection) {
@@ -357,16 +366,21 @@ export async function requestAgentProvider(storage, secrets, selection) {
   if (unavailable) throw modelSelectionError(`Reasoning level "${unavailable}" is no longer available for this model. Choose a listed level or Provider default in the model picker.`);
   const snapshot = routingSnapshot(storage), grouped = new Map();
   for (const item of snapshot.routes.values()) {
-    if (!grouped.has(item.providerId)) grouped.set(item.providerId, { id: item.providerId, baseUrl: item.baseUrl, modelIds: [], legacyModelIds: [], reasoningValues: Object.create(null) });
+    if (!grouped.has(item.providerId)) grouped.set(item.providerId, { id: item.providerId, baseUrl: item.baseUrl, modelIds: [], legacyModelIds: [], reasoningValues: Object.create(null), customHeaderNames: item.customHeaderNames, customHeaderRevision: item.customHeaderRevision });
     grouped.get(item.providerId).modelIds.push(item.modelId);
     grouped.get(item.providerId).reasoningValues[item.modelId] = item.reasoningValues;
     if (snapshot.aliases.get(item.modelId) === item.selectionId) grouped.get(item.providerId).legacyModelIds.push(item.modelId);
   }
-  const openvisionProviders = await Promise.all([...grouped.values()].map(async provider =>
-    ({ ...provider, apiKey: await routeKey(storage, secrets, provider.id) })));
+  const openvisionProviders = await Promise.all([...grouped.values()].map(async provider => {
+    const [customHeaders, apiKey] = await Promise.all([readProviderHeaders(secrets, provider), routeKey(storage, secrets, provider.id)]);
+    const { customHeaderNames, customHeaderRevision, ...connection } = provider;
+    return { ...connection, apiKey,
+      ...(Object.keys(customHeaders).length ? { customHeaders } : {}) };
+  }));
   if (routingSnapshot(storage) !== snapshot) throw modelSelectionError('Provider settings changed before dispatch. Try again.');
   const selected = openvisionProviders.find(provider => provider.id === route.providerId);
-  return { baseUrl: selected.baseUrl, apiKey: selected.apiKey, modelId: route.modelId, openvisionProviders };
+  return { baseUrl: selected.baseUrl, apiKey: selected.apiKey, modelId: route.modelId, openvisionProviders,
+    ...(selected.customHeaders ? { customHeaders: selected.customHeaders } : {}) };
 }
 
 async function routeKey(storage, secrets, id) {

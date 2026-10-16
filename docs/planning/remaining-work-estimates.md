@@ -12,9 +12,9 @@ The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
 The [current working-tree build gate](../recovery/feature-gap-audit.md#current-build-and-pending-work)
-is separate from earlier passing runs: pending provider headers have no final
-build/native acceptance, and generated Agent tokenization currently fails.
-Recovery and repeat verification remain within the existing points below.
+records the initial failure and exact-hash recovery. Repeat builds and scoped
+native provider-header checks pass in preview.7; remaining physical-failure,
+cross-window, provider and platform gates retain the existing points below.
 
 The 16 October transactional review-storage follow-up now covers source-level
 cache rollback and initial snapshot-write retry. Its **58/58** Agent tests,
@@ -55,8 +55,9 @@ other chat interruption/history and provider-error cases, and the remaining
 [Full-duration native header/body timeout and explicit live retry](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
 now pass; those subcases no longer await verification.
 Then follow P0/P1 in the roadmap, including configuration durability, MCP
-ownership and measured long-session resources. The Windows payload needs a
-refresh after its declared packaging checks pass.
+ownership and measured long-session resources. The Windows payload is refreshed
+in [preview.7](../verification/portable-preview7.md); the remaining release/platform
+acceptance gates stay open.
 
 Official-account GPT-6 eligibility and missing platform environments remain
 specific open gates. The earlier API balance failure does not establish a
@@ -66,8 +67,8 @@ native macOS and the remaining Linux matrix are still open. Work independent
 of those gates continues.
 
 The [latest performance fixes](../performance/autocomplete-stream-performance.md) are implemented
-and locally verified in source; they do not promote a whole story or update the
-preview.6 payload. The [Rust rewrite](rust/rust-roadmap.md) has a separate baseline of
+and locally verified in source; preview.7 packages the current runtime without
+promoting a whole story. The [Rust rewrite](rust/rust-roadmap.md) has a separate baseline of
 36 planned packages / 195 provisional points, replacing its earlier 99-point
 outline. Its [component audit](rust/rust-component-audit.md) separates Rust ownership
 from retained engines and compatibility unknowns. Discovery can start early;

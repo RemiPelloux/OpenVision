@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
@@ -14,25 +14,28 @@ import { execFileSync } from 'node:child_process';
 import { arch, release } from 'node:os';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { layout } = await loadRuntime(root);
+const { layout, appRoot, portable } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/provider-identity-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never' }));
 const file = join(project, 'hello.js'); await writeFile(file, 'const answer = ');
-const result = { success: false, platform: process.platform, arch: arch(), osRelease: release(),
+const result = { success: false, portable: portable ?? null, platform: process.platform, arch: arch(), osRelease: release(),
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   checkedAt: new Date().toISOString(), requests: [], connections: [], errors: [], exits: [],
-  hashes: Object.fromEntries(await Promise.all(['source/app/out/vs/workbench/workbench.desktop.main.js',
-    'source/app/extensions/cursor-agent-exec/dist/main.js', 'desktop/model-providers.js', 'desktop/model-identity.js',
-    'desktop/verify-provider-identity.mjs', 'desktop/verify-provider-lifecycle.mjs'].map(async path => [path, await fileHash(join(root, path))]))) };
+  hashes: Object.fromEntries(await Promise.all(['out/vs/workbench/workbench.desktop.main.js',
+    'extensions/cursor-agent-exec/dist/main.js', 'desktop/model-providers.js', 'desktop/model-identity.js',
+    'desktop/provider-headers.js', 'desktop/provider-credentials.js', 'desktop/provider-error-policy.js',
+    'desktop/verify-provider-identity.mjs', 'desktop/verify-provider-lifecycle.mjs'].map(async path =>
+      [path, await fileHash(join(path.startsWith('desktop/') ? root : appRoot, path))]))) };
 let phase = 'first', childId, taskIssued = false;
 const completionArrived = Promise.withResolvers();
 const server = createServer(async (request, response) => {
   const provider = request.url?.split('/')[1];
-  const authorized = request.headers.authorization === `Bearer fixture-${provider}`;
-  result.connections.push({ phase, provider, path: request.url, authorized });
+  const customAuthorized = request.headers['x-provider-token'] === `header-${provider}`;
+  const authorized = request.headers.authorization === (provider === 'a' ? 'Custom fixture-a' : `Bearer fixture-${provider}`) && customAuthorized;
+  result.connections.push({ phase, provider, path: request.url, authorized, customAuthorized });
   if (!authorized) { response.writeHead(401); response.end('{}'); return; }
   if (request.url === `/${provider}/v1/models`) {
     response.writeHead(200, { 'Content-Type': 'application/json' });
@@ -131,6 +134,8 @@ try {
     await page.getByLabel('Provider Name', { exact: true }).fill(`Provider ${id.toUpperCase()}`);
     await page.getByLabel('API Base URL', { exact: true }).fill(`http://127.0.0.1:${server.address().port}/${id}/v1`);
     await page.getByLabel('API Key', { exact: true }).fill(`fixture-${id}`);
+    await page.getByLabel('Additional Headers (JSON)', { exact: true }).fill(JSON.stringify({ 'X-Provider-Token': `header-${id}`,
+      ...(id === 'a' ? { Authorization: 'Custom fixture-a' } : {}) }));
     await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
     await page.locator('dialog').waitFor({ state: 'detached' });
     await panel.locator('.openvision-provider').filter({ hasText: `Provider ${id.toUpperCase()}` })
@@ -164,6 +169,7 @@ try {
   await verifyProviderLifecycle({ page, settings, result, infer, chatInput, setPhase: label => { phase = label; },
     restart: async () => { await closeApp(); await launch(); return page; } });
   assert.ok(result.connections.every(connection => connection.authorized));
+  result.customHeaderDiscoveryAgentChildCompletionRestart = true;
   assert.deepEqual(result.errors, []); result.success = true;
 } catch (error) {
   result.failure = error.stack; process.exitCode = 1;

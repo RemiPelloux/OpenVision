@@ -4,6 +4,7 @@ Version-specific release scope and validation. See [release claims](../verificat
 
 ## Documents
 
+- [OpenVision 0.2.0-preview.7 - local AI workflows](0.2.0-preview.7.md)
 - [OpenVision 0.2.0-preview.1](0.2.0-preview.1.md)
 - [OpenVision 0.2.0-preview.2 — Portable desktop](0.2.0-preview.2.md)
 - [OpenVision 0.2.0-preview.3 — Your project workspace](0.2.0-preview.3.md)

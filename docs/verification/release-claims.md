@@ -1,6 +1,6 @@
 # OpenVision release claims and verification matrix
 
-Updated 16 October 2026; latest portable release 0.2.0-preview.6. This is a development build with incomplete release
+Updated 16 October 2026; latest portable release 0.2.0-preview.7. This is a development build with incomplete release
 acceptance. The fixed denominator remains the 42 stories
 in [feature-acceptance.json](../planning/feature-acceptance.json); at least 34 must be fully
 Verified. The [sprint ledger](../planning/completion-sprints.md) owns each story's status and
@@ -33,10 +33,19 @@ The public preview now includes the complete Windows x64 portable app, both as
 a release ZIP and tracked Git payload parts. Relocated native editing/autocomplete
 and repository extraction are recorded in [preview.3 verification](portable-preview3.md).
 The current clone fix and refreshed payload are covered in [preview.4 verification](portable-preview4.md).
-Current-window project opening and the latest payload are covered in [preview.6 verification](portable-preview6.md); native themes remain covered in [preview.5](portable-preview5.md).
+Current-window opening has historical [preview.6 evidence](portable-preview6.md);
+the current payload and repeated native checks are covered in
+[preview.7 verification](portable-preview7.md). Native themes also have
+[preview.5 evidence](portable-preview5.md).
 No independent rebuild of every native component is claimed.
 
 ## Source additions after preview.6
+
+Preview.7 now packages the runtime additions described below. The original
+reports retain their run dates, platforms and provider limits; inclusion in a
+new ZIP does not rerun every historical check. New relocated/installed-package
+results and archive identity are in [preview.7 verification](portable-preview7.md).
+Custom authentication headers have their own [ownership report](../engineering/provider-authentication-headers.md).
 
 The editable source build adds account models to the native Agent picker and
 provider-reported usage to the bottom bar. These features are **not included in
@@ -54,7 +63,7 @@ A separate native request through the saved Codex Easy GPT-6 connection returned
 HTTP 403 `INSUFFICIENT_BALANCE`. Earlier successful API checks below remain
 historical evidence, not proof of current balance or availability.
 
-The latest Windows source checks passed 66 account tests; the earlier portable
+The latest Windows source checks passed 67 account tests; the earlier portable
 suite passed 30 tests (one skipped). Desktop syntax checks and the source build
 passed after the account performance fixes. Controlled test
 results do not establish provider success or native macOS/Linux account support.
@@ -111,8 +120,8 @@ Windows provider identity/lifecycle and Quick Edit snapshot-service regressions
 pass with controlled HTTP models. The [review recovery follow-up](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
 also retains failed model releases with the service when Undo history is
 discarded. Its 48 focused checks are distinct from native physical-storage,
-full Undo-stack error handling and live-inference gates. Source only; no full
-story is promoted or preview.6 payload replaced.
+full Undo-stack error handling and live-inference gates. These corrections are
+included in preview.7; no full story is promoted.
 The [final Windows Agent regression](../recovery/rea-agent-review-recovery.md#final-source-build-regression)
 passes on the rebuilt source with 29 authenticated fixture requests and five
 clean application exits. It verifies the listed edit/restart/command workflows,
@@ -124,8 +133,8 @@ preserves retryable history and shows recovery guidance. Its 56-check suite
 includes consolidated-operation progress and the recovered resource-history
 boundary. Final Windows keyboard verification uses one authenticated controlled
 inference and exits 0; physical faults, active-write interruption, menu/group
-combinations and broader live editing remain open. Source only; preview.6 and
-the 6/42 acceptance count are unchanged.
+combinations and broader live editing remain open. Preview.7 includes the fix;
+the 6/42 acceptance count is unchanged.
 
 The [full-duration native timeout follow-up](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
 passes the unchanged header/body deadlines and explicit retry into real saved

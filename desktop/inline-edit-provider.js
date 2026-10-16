@@ -32,7 +32,8 @@ export async function* inlineEdit(context, signal, secretToken, ipc = globalThis
     signal.throwIfAborted();
     if (!result.ok) throw new InlineEditError(result.error);
     const current = requestProviderRoute(ai._storageService, selection.modelId);
-    if (!current || current.baseUrl !== route.baseUrl || current.providerId !== route.providerId)
+    if (!current || current.baseUrl !== route.baseUrl || current.providerId !== route.providerId ||
+        current.customHeaderRevision !== route.customHeaderRevision)
       throw new InlineEditError('Provider settings changed during the edit. Try again.');
     // The native consumer normalizes one newline per chunk to the document EOL.
     for (const text of result.text.replace(/\r\n|\r/g, '\n').split(/(?<=\n)/)) {

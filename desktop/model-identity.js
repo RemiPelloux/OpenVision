@@ -41,5 +41,6 @@ export function resolveAgentModel(options) {
   if (allowed && unavailableReasoning(options.modelParameters, allowed))
     throw modelSelectionError('The selected reasoning level is unavailable. Choose a listed level or Provider default in the model picker.');
   return { ...options, modelId, ...(allowed ? { configuredEffortValues: allowed } : {}),
+    customHeaders: provider.customHeaders ?? {},
     localProvider: { ...options.localProvider, endpoints: [{ baseUrl: provider.baseUrl, apiKey: provider.apiKey }] } };
 }

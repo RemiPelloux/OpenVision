@@ -33,6 +33,16 @@ test('real catalogs preserve parsing, credentials and release readers/listeners 
   assert.ok(responses.every(response => !response.body.locked));
 });
 
+test('custom authentication headers are forwarded without replacing the provider key policy', async t => {
+  const { fixture, source, discover } = await setup(t);
+  const configuration = fixture.configuration('healthy');
+  configuration.headers = { 'X-API-Key': 'header-fixture' };
+  const result = await discover({ sender: source }, configuration);
+  assert.equal(result.ok, true);
+  assert.equal(fixture.requests[0].authorized, true);
+  assert.equal(fixture.requests[0].customAuthorized, true);
+});
+
 test('non-OK unfinished body closes promptly without exposing its content', async t => {
   const { fixture, responses, source, request } = await setup(t);
   const result = await request('error'); assert.equal(result.ok, false);

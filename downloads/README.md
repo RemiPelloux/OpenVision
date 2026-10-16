@@ -1,6 +1,6 @@
 # Complete OpenVision desktop payload
 
-`windows-x64/` contains the complete **0.2.0-preview.5** portable application,
+`windows-x64/` contains the complete **0.2.0-preview.7** portable application,
 split into seven ordinary Git files below GitHub's per-file size limit.
 `manifest.json` records each part's size and SHA-256 plus the complete archive hash.
 There is no Git LFS dependency and no runtime download during installation.
@@ -10,5 +10,7 @@ From the repository root, double-click **Run-OpenVision.cmd** or run
 verifies and extracts them using bounded streaming copies.
 
 For a single ZIP download, use [OpenVision releases](https://github.com/RemiPelloux/OpenVision/releases).
+See [preview.7 features](../docs/releases/0.2.0-preview.7.md) and
+[package verification](../docs/verification/portable-preview7.md).
 Installation, editable code, profiles and manual updates are covered in the
 [installation guide](../docs/guides/native-runtime.md). Preserve bundled license notices.

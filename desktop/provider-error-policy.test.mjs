@@ -52,6 +52,54 @@ test('diagnostic graph redaction preserves identity, status, retryability and un
   assert.equal(policy.isProviderFailure(new Error('unrelated')), false);
 });
 
+test('recovered fetch owner scopes custom credentials to each session, including parsed stream errors', async t => {
+  const received = [];
+  const server = createServer((request, response) => {
+    request.resume(); received.push({ authorization: request.headers.authorization, tenant: request.headers['x-tenant'] });
+    response.writeHead(request.url === '/stream' ? 200 : 503, { 'content-type': 'application/json' });
+    response.end(JSON.stringify({ message: `echo ${request.headers.authorization} ${request.headers['x-tenant']} secret-fixture-key`, code: 'fixture-busy' }));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const factoryContext = { ...context, fetch, Request, Response, process: { env: {} }, c_e: value => value ?? 'fixture-agent',
+    Fke: value => value, Ybe: () => undefined,
+    Gxe: (_context, _args, _promise, generator) => {
+      const iterator = generator();
+      const step = value => { const next = iterator.next(value); return next.done ? next.value : Promise.resolve(next.value).then(step); };
+      return Promise.resolve(step());
+    }, tEe: value => value !== null && typeof value === 'object' && !Array.isArray(value) };
+  factoryContext.d_e = runInNewContext(`(${expression('function d_e(')})`, factoryContext);
+  const factory = runInNewContext(`(${expression('function Xxe(')})`, factoryContext);
+  const base = `http://127.0.0.1:${server.address().port}`;
+  for (const stream of [false, true]) await Promise.all(['one', 'two'].map(async id => {
+    const customHeaders = { Authorization: `Custom header-${id}`, 'X-Tenant': `tenant-${id}` };
+    const fetchImpl = factory({ modelId: 'fixture', apiType: 'openai_compatible', customHeaders });
+    const call = transport({ url: base + (stream ? '/stream' : '/error'), headers: { Authorization: 'Bearer secret-fixture-key' },
+      body: { content: '{}', values: {} }, fetch: fetchImpl,
+      failedResponseHandler: async ({ response }) => ({ value: new ApiError({ ...await response.json(), statusCode: response.status }) }),
+      successfulResponseHandler: async ({ response }) => {
+        const data = await response.json();
+        return { value: new ReadableStream({ pull(controller) { controller.enqueue({ success: false, error: new Error(data.message) }); } }, { highWaterMark: 0 }) };
+      },
+    });
+    const failure = stream ? call.then(result => result.value.getReader().read()) : call;
+    await assert.rejects(failure, error => {
+      for (const secret of ['secret-fixture-key', `header-${id}`, `tenant-${id}`])
+        assert.ok(!error.stack.includes(secret), 'Reflected custom credentials must be absent from diagnostics');
+      assert.equal(policy.isProviderFailure(error), true);
+      if (!stream) { assert.equal(error.statusCode, 503, error.stack); assert.equal(error.code, 'fixture-busy'); }
+      return true;
+    });
+  }));
+  assert.equal(received.length, 4);
+  assert.ok(received.every(item => item.authorization === `Custom header-${item.tenant.slice('tenant-'.length)}`));
+  const networkError = new Error('echo custom-transport-secret');
+  const wrapped = policy.withProviderHeaders(async () => { throw networkError; }, { 'X-Key': 'custom-transport-secret' });
+  await assert.rejects(transport({ url: base, headers: {}, fetch: wrapped, body: { content: '{}', values: {} } }),
+    error => !error.stack.includes('custom-transport-secret') && policy.isProviderFailure(error));
+  assert.equal(networkError.message, 'echo [redacted]');
+});
+
 test('native context-error classification preserves provider failures without starting paid summary retries', () => {
   class InputTokenLimitError extends Error {}
   const classify = runInNewContext(`${expression('function vi(e, t)', 0, 'function pEe(e)')}\n${expression('function wi(e)', 0, 'function pEe(e)')}\n${expression('function bi(e)', 0, 'function pEe(e)')}\n(${expression('function pEe(e)')})`, {

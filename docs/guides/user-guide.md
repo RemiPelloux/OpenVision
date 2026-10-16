@@ -17,12 +17,12 @@ double-click **Run-OpenVision.cmd** to verify, extract and launch the included a
 No Node.js, npm or separate editor installation is needed.
 See [installation and updates](native-runtime.md).
 
-The editable source build also offers an optional first-launch guide. Replay it
+Preview.7 also offers an optional first-launch guide. Replay it
 from **Settings → Models & integrations → Run setup again**. That page groups
 custom API providers and official ChatGPT/Codex and Claude/Claude Code accounts.
 See [account setup and switching](account-integrations.md) for browser sign-in,
-separate profiles and current verification limits. This addition postdates the
-preview.6 portable package.
+separate profiles and current verification limits. These controls are included
+in the preview.7 portable package.
 After signing in, choose a model from the account's email group in the existing
 **Agent** model picker. File reads, edits and approvals stay in OpenVision.
 Codex account groups offer only GPT-6 models actually returned by the official
@@ -143,13 +143,17 @@ local checks and other-platform limitations.
 
 ## AI Providers
 
-In the source build, open **OpenVision Settings → Models & integrations → API connections**.
-In the preview.6 portable app, open **Models → Custom Providers**.
+Open **OpenVision Settings → Models & integrations → API connections**.
 
 1. Choose **Add Codex Easy**, **Add OpenAI**, or **Add Provider**.
 2. Enter the API base URL and key. Keep **Discover Models** selected.
 3. Select the connection under **Active Provider**.
 4. Enable the models you want, then select one in the Agent picker.
+
+Use **Additional Headers (JSON)** for server-specific authentication or tenant
+headers. Blank edits preserve saved headers; **Clear Saved Headers** removes
+them. Values stay in secret storage. An explicit Authorization value overrides
+default Bearer authentication. [Details and bounds](../engineering/provider-authentication-headers.md).
 
 | Connection | API base URL |
 | --- | --- |

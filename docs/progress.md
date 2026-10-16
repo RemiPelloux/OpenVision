@@ -5,10 +5,10 @@ and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
 The [current build and pending-work register](recovery/feature-gap-audit.md#current-build-and-pending-work)
-records a generated Agent tokenization blocker in the unfinished provider-header
-build. Earlier passing source/native reports do not verify that working tree.
+records exact-hash recovery of the generated Agent tokenization blocker,
+repeat builds and scoped provider-header verification in the preview.7 package.
 The [version comparison](recovery/feature-gap-audit.md#reference-implementation-and-release-versions)
-separates the 3.24.18 reference archive, 3.21.13 runtime base and preview.6 download.
+separates the 3.24.18 reference archive, 3.21.13 runtime base and preview.7 download.
 
 ## Product feature coverage
 

@@ -4,6 +4,7 @@ export { fetchProviderWithDeadlines };
 const authorizationPattern = /^Bearer\s+/iu;
 const providerFailures = new WeakSet();
 const contextFailures = new WeakSet();
+const fetchCredentials = new WeakMap();
 // Error diagnostics have a separate budget from model output. Bound retained
 // decoded detail to 64 KiB of input and allow ten seconds to finish reading it.
 export const errorBodyLimits = Object.freeze({ bytes: 64 * 1024, timeoutMs: 10000 });
@@ -64,8 +65,21 @@ export function providerFailureDetail(error, detail) {
   return guidance ? `${guidance}\n\n${detail}` : detail;
 }
 
-export function redactProviderError(error, headers) {
-  const secret = providerSecretFromHeaders(headers);
+export function redactProviderError(error, headers, fetchImpl) {
+  const secrets = [providerSecretFromHeaders(headers), ...(fetchCredentials.get(fetchImpl) ?? [])].sort((a, b) => b.length - a.length);
+  return sanitizeProviderError(error, secrets);
+}
+
+export function withProviderHeaders(fetchImpl, customHeaders = {}) {
+  const secrets = [...new Set([...Object.values(customHeaders), providerSecretFromHeaders(customHeaders)])]
+    .filter(value => typeof value === 'string' && value.length > 0).sort((a, b) => b.length - a.length);
+  // The SDK retains this exact fetch function. Weak ownership follows its
+  // session lifetime and survives Response wrappers used for inactivity limits.
+  if (secrets.length) fetchCredentials.set(fetchImpl, secrets);
+  return fetchImpl;
+}
+
+function sanitizeProviderError(error, secrets) {
   if (!error || typeof error !== 'object') return error;
   providerFailures.add(error);
   // Error.message/stack/cause are non-enumerable. Preserve the original Error
@@ -79,8 +93,9 @@ export function redactProviderError(error, headers) {
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
       if (!descriptor || !('value' in descriptor)) continue;
       const item = descriptor.value;
-      if (typeof item === 'string' && secret && (descriptor.writable || descriptor.configurable)) {
-        Object.defineProperty(value, key, { ...descriptor, value: redactProviderSecret(item, secret) });
+      if (typeof item === 'string' && (descriptor.writable || descriptor.configurable)) {
+        const redacted = secrets.reduce((text, secret) => redactProviderSecret(text, secret), item);
+        if (redacted !== item) Object.defineProperty(value, key, { ...descriptor, value: redacted });
       } else if (item && typeof item === 'object') pending.push(item);
     }
   }
@@ -100,7 +115,7 @@ export function isProviderFailure(error) {
   return false;
 }
 
-export function protectProviderResult(result, headers) {
+export function protectProviderResult(result, headers, fetchImpl) {
   if (typeof result?.value?.getReader !== 'function') return result;
   const reader = result.value.getReader();
   result.value = new ReadableStream({
@@ -112,7 +127,7 @@ export function protectProviderResult(result, headers) {
         if (failure) throw failure instanceof Error ? failure : Object.assign(new Error(failure.message ?? 'Provider stream failed'), failure);
         controller.enqueue(value);
       } catch (error) {
-        controller.error(redactProviderError(error, headers));
+        controller.error(redactProviderError(error, headers, fetchImpl));
         try { await reader.cancel(); } finally { reader.releaseLock(); }
       }
     },

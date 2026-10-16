@@ -1,7 +1,8 @@
 # ChatGPT, Claude and first-launch setup
 
-This guide describes the editable source build. The published preview.6 portable
-payload predates these changes.
+This guide describes the editable source build and preview.7 Windows portable
+package. The [package report](../verification/portable-preview7.md) separates
+packaging checks from the real-account evidence below.
 
 Open **Settings → Models & integrations**. Account integrations and custom API
 providers have separate sections using your editor's theme. **Run setup again**
@@ -183,14 +184,15 @@ reached its configured endpoint but returned HTTP 403 `INSUFFICIENT_BALANCE`.
 GPT-6 file-edit verification through that connection remains blocked by the
 provider balance; it is not reported as a successful inference test.
 
-The latest Windows account suite passed all 66 tests from `test:accounts`;
+The latest Windows account suite passed all 67 tests from `test:accounts`;
 desktop syntax checks and the source build also passed after the
 [routing and stream performance fixes](../performance/account-performance.md). The earlier
 portable suite passed 30 tests with one skipped. These controlled suites and build checks are
 separate from the real-provider runs above. Native inspection of the rebuilt
 app confirmed the Claude account group, GPT-6 API choices, absence of older
-Codex choices and the no-GPT-6 account notice. This does not update or reverify
-the published preview.6 payload.
+Codex choices and the no-GPT-6 account notice. Preview.7 packages these runtime
+changes; [package checks](../verification/portable-preview7.md) do not repeat
+real account sign-in or establish new account entitlements.
 
 Switching during active agent work and native macOS/Linux behavior still need
 verification. Native system-keychain cleanup is not verified on macOS. This

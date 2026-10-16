@@ -1,12 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { ModelProviders, normalizeBaseUrl, parseModels, activeModelIds, allCatalog, modelPreference, modelPreferences } from './model-providers.js';
+import { ModelProviders, normalizeBaseUrl, normalizeCustomHeaders, parseModels, activeModelIds, allCatalog, modelPreference, modelPreferences, requestProvider, requestAgentProvider } from './model-providers.js';
 import { customModels } from './custom-models.mjs';
 import { providerDefaultReasoning } from './model-reasoning.js';
 import { modelSelectionId } from './model-identity.js';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableApp } from './recovered-source.mjs';
+import { headerSecretKey } from './provider-headers.js';
 
 const defaultChoice = { value: providerDefaultReasoning, displayName: 'Provider default' };
 const variantFor = (model, value) => model.variants.find(item => item.parameterValues[0].value === value);
@@ -55,6 +56,37 @@ test('provider discovery, manual names, activation, persistence and deletion sha
   await restored.remove(b.id);
   assert.equal(services.settings.useOpenAIKey, false);
   assert.equal(services.secretsMap.has(`openvision.provider.${b.id}`), false);
+});
+
+test('custom authentication headers stay secret and reach discovery, Agent and request providers', async () => {
+  const services = bridge();
+  let discovery;
+  services.request = async (url, key, headers) => {
+    discovery = { url, key, headers };
+    return { data: [{ id: 'header-model' }] };
+  };
+  const providers = new ModelProviders(services);
+  const provider = await providers.save({ name: 'Header server', url: 'https://example.test/v1', key: 'test-secret',
+    headers: { 'X-API-Key': 'header-secret', 'X-Tenant': 'tenant-a' } });
+  const saved = services.storage.get('openvision.model-providers.v1');
+  assert.ok(!saved.includes('header-secret') && !saved.includes('tenant-a'));
+  const expectedHeaders = { 'x-api-key': 'header-secret', 'x-tenant': 'tenant-a' };
+  assert.deepEqual(JSON.parse(saved).providers[0].customHeaderNames, ['x-api-key', 'x-tenant']);
+  await providers.discover(provider.id);
+  assert.deepEqual(discovery, { url: 'https://example.test/v1/models', key: 'test-secret',
+    headers: expectedHeaders });
+  assert.deepEqual((await requestProvider(services.storage, services.secrets, modelSelectionId(provider.id, 'header-model'))).customHeaders,
+    expectedHeaders);
+  const agent = await requestAgentProvider(services.storage, services.secrets, modelSelectionId(provider.id, 'header-model'));
+  assert.deepEqual(agent.customHeaders, expectedHeaders);
+  assert.deepEqual(agent.openvisionProviders[0].customHeaders, expectedHeaders);
+  const changed = await providers.save({ id: provider.id, name: provider.name, url: provider.url, headers: { Authorization: 'Custom token' } });
+  assert.deepEqual(JSON.parse(services.secretsMap.get(headerSecretKey(provider.id, changed.customHeaderRevision))), { authorization: 'Custom token' });
+  assert.equal(services.secretsMap.has(headerSecretKey(provider.id, provider.customHeaderRevision)), false);
+  await providers.save({ id: provider.id, name: provider.name, url: provider.url, clearHeaders: true });
+  assert.equal(services.secretsMap.has(headerSecretKey(provider.id, changed.customHeaderRevision)), false);
+  assert.throws(() => normalizeCustomHeaders({ 'Content-Type': 'nope' }), /unsupported header/);
+  assert.throws(() => normalizeCustomHeaders('{broken'), /valid JSON/);
 });
 test('malformed discovery leaves configured models available', async () => {
   const services = bridge();

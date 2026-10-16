@@ -35,7 +35,7 @@ acceptance gates. All 237 selected JavaScript inputs have extraction results;
 that count is separate from verified feature coverage.
 
 > **Ready to run on Windows x64.** Download the complete portable app from
-> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6),
+> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7),
 > extract it, and double-click **OpenVision.cmd**. The complete app payload is
 > also included in this Git repository. No separate editor, Node.js or npm setup.
 >
@@ -48,8 +48,8 @@ that count is separate from verified feature coverage.
 | Capability | What you can do today | Evidence and limits |
 | --- | --- | --- |
 | Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/engineering/provider-selection-lifecycle.md) |
-| Account models — source build | Select signed-in Claude or eligible GPT-6 Codex accounts in Agent; inspect reported usage in the bottom bar | [Account setup and real test limits](docs/guides/account-integrations.md); experimental, not included in preview.6 |
-| Resource use — source build | Release completed utility listeners, reuse unchanged account routes, bound failed-host retries and avoid duplicate stream retention | [Native cleanup](docs/engineering/utility-process-ownership.md) · [Request/heap measurements](docs/performance/account-performance.md); whole-app savings remain unmeasured |
+| Account models | Select signed-in Claude or eligible GPT-6 Codex accounts in Agent; inspect reported usage in the bottom bar | [Account setup and real test limits](docs/guides/account-integrations.md); experimental, included in preview.7 |
+| Resource use | Release completed utility listeners, reuse unchanged account routes, bound failed-host retries and avoid duplicate stream retention | [Native cleanup](docs/engineering/utility-process-ownership.md) · [Request/heap measurements](docs/performance/account-performance.md); whole-app savings remain unmeasured |
 | Project Home | Open projects in the current window, search recent work, pin favorites and resume saved workspaces | [Dashboard and measured scope](docs/guides/project-home.md); included in the portable app |
 | Appearance | Choose dark, light or high-contrast themes and customize colors, fonts and icons | [Appearance guide](docs/guides/appearance.md) |
 | AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/recovery/rea-agent-runtime.md); broader workflow coverage remains open |
@@ -63,8 +63,8 @@ that count is separate from verified feature coverage.
 
 ## Get started
 
-**Download:** get **OpenVision-0.2.0-preview.6-win32-x64.zip** from
-[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6).
+**Download:** get **OpenVision-0.2.0-preview.7-win32-x64.zip** from
+[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7).
 Extract the ZIP and double-click **OpenVision.cmd**. Project Home brings together
 recent projects, pinned favorites and open windows. Open a folder or saved
 workspace, then configure your AI provider in **Models** settings.
@@ -112,8 +112,7 @@ portable folder with an `./OpenVision` launcher and an optional launcher entry.
 Explore [Codex Everywhere](https://codex-everywhere.com/home?aff=KTCCGGAS9R2Q)
 through the project author's affiliate link.
 
-In the source build, open **OpenVision Settings → Models & integrations → API connections**.
-The preview.6 portable app uses **Models → Custom Providers**.
+Open **OpenVision Settings → Models & integrations → API connections**.
 
 1. Choose **Add Provider**, **Add Codex Easy**, or **Add OpenAI**.
 2. Enter the API base URL and your API key. Keep **Discover Models** selected.
@@ -129,6 +128,9 @@ The preview.6 portable app uses **Models → Custom Providers**.
 Discovery uses `GET /models`; generation uses Chat Completions. API keys belong
 in local secret storage, never in project files. Discovery alone does not prove
 tools, reasoning, image input or completion compatibility.
+For servers requiring extra authentication, use the masked **Additional Headers
+(JSON)** field. Saved values use secret storage; an explicit Authorization header
+overrides default Bearer authentication. [Header configuration and limits →](docs/engineering/provider-authentication-headers.md)
 
 Reasoning choices are per model. **Provider default** omits an explicit effort;
 other choices follow declared capabilities or labeled compatibility hints.
@@ -137,7 +139,7 @@ Not every displayed model or reasoning tier has passed a live test.
 
 ## Local profile, explicit connections
 
-The editable source build adds **Models & integrations**, optional first-launch
+Preview.7 includes **Models & integrations**, optional first-launch
 setup, and separate ChatGPT/Codex and Claude/Claude Code account profiles.
 Use **Run setup again** in Settings to replay onboarding.
 Choose **Add account**, complete browser sign-in, then select its model in the
@@ -147,14 +149,15 @@ The bottom bar shows provider-reported account usage, or **Usage unavailable**.
 Account controls include **Delete account**: isolated credentials and cache are
 removed, while local conversation files are kept in an account history archive.
 [Account sign-in, switching and current verification limits →](docs/guides/account-integrations.md)
-These additions are not included in the older preview.6 portable payload.
+These additions are included in preview.7; provider eligibility and verification
+limits remain as documented.
 
 Recent source verification also covers MCP session-expiry recovery, shared
 connections across two project windows and isolation between separate user-data
 profiles. See the [source verification summary](docs/verification/release-claims.md#source-additions-after-preview6)
 for the exact scope and unresolved diagnostics. Updating Git does not replace
-an already extracted portable app; [build the editable source](docs/guides/native-runtime.md)
-to use changes made after preview.6.
+an already extracted portable app; install preview.7 into a fresh destination
+using the [update guide](docs/guides/native-runtime.md#update-and-rollback).
 
 The optional Node control plane also bounds STDIO response accumulation and
 recovers after malformed output. Request admission is ordered with settings
@@ -163,13 +166,15 @@ saves to prevent stale connections after disable or replacement; see
 See [validation and scoped RAM measurements](docs/performance/control-plane-stdio-resources.md);
 these do not establish a whole-desktop RAM reduction.
 
-**Latest real Windows checks, 15 October 2026:** signed-in Claude read and edited
-a test file through OpenVision Agent. Codex account choices include only GPT-6
-models actually advertised by its official client; the tested account offered
-none and rejected `gpt-6.1-sol`. A separate request through the saved Codex Easy
-GPT-6 API connection returned HTTP 403 `INSUFFICIENT_BALANCE`. Neither blocked
-GPT-6 path is reported as successful. Account Agent support currently accepts
-text and tools; Tab autocomplete continues to use API connections.
+**Real Windows checks:** on 16 October, saved Codex Easy `gpt-6.1-sol` completed
+native multi-file editing, review, Undo/Redo and restart persistence
+([live evidence](docs/recovery/rea-agent-live-edit.md)). Signed-in Claude read
+and edited a test file on 15 October. Codex account choices include only GPT-6
+models advertised by its official client; the tested account offered none and
+rejected `gpt-6.1-sol`. Account eligibility is separate from API access, whose
+earlier balance failure did not establish universal unavailability. Packaging
+uses controlled local responses and does not repeat paid inference. Account
+Agent support accepts text/tools; Tab autocomplete uses API connections.
 
 - No OpenVision login or signup. Optional third-party coding-agent sign-in is
   separate from the local profile; original billing and hosted cloud-agent flows
@@ -180,10 +185,10 @@ text and tools; Tab autocomplete continues to use API connections.
   and independently installed extensions can also communicate externally.
 - Large chat pastes become local UTF-8 files under `.openvision/paste/`, keeping
   prompts compact. [Paste behavior →](docs/recovery/rea-large-paste.md)
-- Chat titles are generated locally, avoiding an extra AI request. The source
-  build also skips hosted conversation-metadata watchers in local mode;
+- Chat titles are generated locally, avoiding an extra AI request. Preview.7
+  also skips hosted conversation-metadata watchers in local mode;
   [native restart checks](docs/engineering/local-conversation-metadata.md) preserve titles
-  and history. This change is not included in the preview.6 download.
+  and history.
 
 ## Roadmap and honest progress
 
@@ -210,8 +215,10 @@ release readiness requires the named checks. Latest source work includes
 and [storage ownership for discovered models](docs/engineering/storage-write-ownership.md).
 [Native Undo/Redo failure recovery](docs/recovery/rea-agent-undo-retry.md) now
 retains retryable history entries and shows guidance after snapshot-service failures.
-These fixes and the latest performance changes have not updated the preview.6
-download; the reports distinguish executed checks from remaining gates.
+Preview.7 packages these fixes and recent performance changes. The
+[release notes](docs/releases/0.2.0-preview.7.md) and
+[package verification](docs/verification/portable-preview7.md) distinguish working
+flows, controlled checks and remaining gates. No whole-app speedup is claimed.
 
 The [Rust rewrite roadmap](docs/planning/rust/rust-roadmap.md) breaks the architecture track into
 **36 planned packages / 195 provisional points**, with dependencies, migration,

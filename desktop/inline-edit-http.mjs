@@ -1,4 +1,5 @@
 import { normalizeBaseUrl } from './model-providers.js';
+import { providerRequestHeaders } from './provider-headers.js';
 import { readCodeResponse } from './code-response.mjs';
 import { inlineContextCharacters } from './inline-edit-context.js';
 
@@ -11,7 +12,7 @@ export async function fetchInlineEdit(input, { fetch, signal }) {
         (typeof input.effort !== 'string' || input.effort.length > 100))) throw Error('Invalid inline edit request.');
   const response = await fetch(`${normalizeBaseUrl(input.baseUrl)}/chat/completions`, {
     method: 'POST', redirect: 'error', signal,
-    headers: { 'Content-Type': 'application/json', ...(input.apiKey ? { Authorization: `Bearer ${input.apiKey}` } : {}) },
+    headers: providerRequestHeaders(input.apiKey, input.customHeaders, true),
     body: JSON.stringify({ model: input.modelId, stream: false, store: false,
       ...(input.effort ? { reasoning_effort: input.effort } : {}),
       messages: [{ role: 'system', content: input.chatMode

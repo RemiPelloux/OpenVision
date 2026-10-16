@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-preview.7 - 2026-10-16
+
+- Consolidate the recent local AI, account, project and recovery changes into a
+  fresh Windows x64 portable ZIP and seven-part offline repository payload.
+  See [features and limits](docs/releases/0.2.0-preview.7.md) and
+  [package verification](docs/verification/portable-preview7.md).
+- Add masked custom provider headers in secret storage, selected-provider and
+  subagent forwarding, retryable credential cleanup and handled-error redaction.
+  Preserve custom Authorization during Agent capability discovery as well as inference.
+- Restore a damaged generated Agent input to its exact known hash, retain local
+  evidence/backups and pass corrected/repeat builds with artifact validation.
+- Preserve edit-review Undo/Redo history after snapshot failures; roll back
+  failed snapshot cache writes and retry initial snapshot creation.
 
 - Port recovered storage write ownership so stale notifications cannot hide a
   newly discovered model while its configuration is pending or in flight.
@@ -12,18 +24,18 @@
   for source provenance, native verification scope and remaining gates.
 - Preserve OpenVision's header and body inactivity deadlines through proxy and
   certificate selection, release stalled Agent sockets, and keep retry explicit.
-  Focused real-socket checks pass; full-duration native post-fix timeout runs
-  remain pending. See [Agent timeout recovery](docs/recovery/rea-agent-timeout-recovery.md)
+  Focused real-socket and full-duration native post-fix timeout checks pass,
+  followed by explicit real-provider retry. See [Agent timeout recovery](docs/recovery/rea-agent-timeout-recovery.md)
   and the updated [recovery gap audit](docs/recovery/feature-gap-audit.md).
-- Release native utility-process listeners after exit instead of retaining each completed run. Keep process ownership until actual termination, including failed kills. Real Windows fork/restart/kill/window-close checks pass; [evidence and remaining RAM work](docs/engineering/utility-process-ownership.md). Source build only.
+- Release native utility-process listeners after exit instead of retaining each completed run. Keep process ownership until actual termination, including failed kills. Real Windows fork/restart/kill/window-close checks pass; [evidence and remaining RAM work](docs/engineering/utility-process-ownership.md).
 - Preserve model-route caches across unchanged account refreshes and apply a 30-second automatic cooldown after account-host failures; explicit Refresh remains immediate. Remove duplicate streamed text/reasoning retention and clear output references on close. See [controlled before/after measurements](docs/performance/account-performance.md) and remaining whole-app RAM checks.
-- Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/engineering/local-startup.md). These source changes do not refresh the preview.6 payload.
+- Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/engineering/local-startup.md).
 
 - Skip hosted conversation-metadata contribution registration in local mode, avoiding its dependencies, watchers and client calls. Native Windows title/history restart verification passes with controlled inference; broader traffic and platform gates remain open. See [metadata ownership](docs/engineering/local-conversation-metadata.md).
 - Add experimental signed-in Claude/Codex models to Agent, account usage in the bottom bar and GPT-6-only Codex account choices. Real Claude file editing passed; the tested Codex account offered no GPT-6 models and the separate GPT-6 API check was blocked by provider balance. See [account evidence](docs/guides/account-integrations.md#verification-limits).
 - Verify native MCP HTTP session-expiry and direct session-reinitialization recovery with retained failed-close ownership and no automatic replay of the failed tool.
 - Verify native Agent MCP approval, shared STDIO ownership across two project windows, isolated same-named servers in separate user-data directories and recorded child shutdown. Broader profile/configuration ownership and logged startup diagnostics remain open.
-- Align the README, verification matrix and complexity-point roadmap with these source additions. They do not refresh the preview.6 portable payload or increase the fixed 6/42 verified-story count.
+- Align the README, verification matrix and complexity-point roadmap with preview.7. The fixed 6/42 verified-story count remains unchanged.
 - Replace the account selector's unreadable system menu with an editor-themed, keyboard-accessible list and a separate Disconnected option.
 - Improve account-control spacing, narrow-panel wrapping and focus recovery after switching; close open menus when refreshing or leaving onboarding.
 - Run OpenVision natively on Linux x64: `npm run prepare:desktop` downloads the pinned Cursor 3.21.13 AppImage, verifies its SHA-256 and recovers readable sources; `npm start` builds and launches. See the [Linux guide](docs/guides/linux.md).

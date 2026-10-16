@@ -53,6 +53,12 @@ function localTaskSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  if (text.includes(marker) && text.includes('bridge.request = async (url, key) => {')) {
+    const before = 'url: url.slice(0, -"/models".length), key: key ?? ""});';
+    if (text.split(before).length !== 2) throw new Error('Discovery header transfer contract changed');
+    text = text.replace('bridge.request = async (url, key) => {', 'bridge.request = async (url, key, customHeaders) => {')
+      .replace(before, 'url: url.slice(0, -"/models".length), key: key ?? "", headers: customHeaders ?? {}});');
+  }
   text = preserveUnacknowledgedWrites(text);
   text = text.replace('import {allCatalog as openvisionCatalog, modelPreference as openvisionModelPreference, modelPreferences as openvisionModelPreferences} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
   text = text.replace(/async getModels\(([\w$]+)\) \{ const catalog = openvisionCatalog\(this.storageService\);/, 'async getModels($1) { await openvisionRefreshAccounts(this.storageService); const catalog = openvisionCatalog(this.storageService);');
@@ -91,9 +97,9 @@ export function customModels(text, variant) {
   const body = `{\n  ${marker}
   const bridge = {auth: ${hook}(${auth}), reactive: ${hook}(${reactive}), ai: ${hook}(${ai}),
     secrets: ${hook}(${secret}), storage: ${hook}(${storage})};
-  bridge.request = async (url, key) => {
+  bridge.request = async (url, key, customHeaders) => {
     const response = await globalThis.vscode.ipcRenderer.invoke("vscode:openvision-discover-models", {
-      url: url.slice(0, -"/models".length), key: key ?? ""});
+      url: url.slice(0, -"/models".length), key: key ?? "", headers: customHeaders ?? {}});
     if (!response.ok) throw new Error(response.error);
     return {data: response.data};
   };
@@ -211,6 +217,10 @@ export async function installModelSettings(root) {
   await copyFile(join(root, 'desktop/model-providers.js'), join(app, 'out/openvision-model-providers.js'));
   await copyFile(join(root, 'desktop/model-identity.js'), join(workbench, 'model-identity.js'));
   await copyFile(join(root, 'desktop/model-identity.js'), join(app, 'out/model-identity.js'));
+  await copyFile(join(root, 'desktop/provider-headers.js'), join(workbench, 'provider-headers.js'));
+  await copyFile(join(root, 'desktop/provider-headers.js'), join(app, 'out/provider-headers.js'));
+  await copyFile(join(root, 'desktop/provider-credentials.js'), join(workbench, 'provider-credentials.js'));
+  await copyFile(join(root, 'desktop/provider-credentials.js'), join(app, 'out/provider-credentials.js'));
   await copyFile(join(root, 'desktop/model-reasoning.js'), join(app, 'out/model-reasoning.js'));
   await copyFile(join(root, 'desktop/model-reasoning.js'), join(workbench, 'model-reasoning.js'));
   await copyFile(join(root, 'desktop/model-catalog.js'), join(workbench, 'model-catalog.js'));

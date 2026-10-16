@@ -88,6 +88,7 @@ test('editor identity, selected model and provider route remain current across a
     disabled: f => { f.state.providers[0].models[0].enabled = false; },
     url: f => { f.state.providers[0].url = 'http://127.0.0.1:8001/v1'; },
     provider: f => { f.state.providers[0].id = 'replacement'; f.state.activeId = 'replacement'; },
+    headers: f => { f.state.providers[0].customHeaderNames = ['x-key']; f.state.providers[0].customHeaderRevision = crypto.randomUUID(); },
   };
   for (const [name, invalidate] of Object.entries(invalidations)) {
     for (const boundary of ['debounce', 'secret', 'response', 'events']) {
