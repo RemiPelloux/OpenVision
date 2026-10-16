@@ -162,3 +162,84 @@ backups, cache and reapplication.
 
 OV-302 stays **Partial**. The remaining producers marked (a) and the
 another-installation clause are open.
+
+## 16 October 2026 follow-up: remaining writers (Linux x64 only, investigation only)
+
+No source change in this pass. OV-302 stays **Partial**.
+
+### Observed
+
+Command: `OPENVISION_RECOVERY_DIR=<prepared 3.21.13> npm run build:desktop` (pass), then
+`npm run verify:global-paths` (pass, exit 0). The verifier runs both profiles against a disposable
+HOME, with XDG paths inside it. With no Agent request, plan, terminal or second installation, the
+session still created these files under HOME:
+
+- `~/.openvision/projects/<slug>/`: `canvases/` (the canvas SDK `node_modules` mirror and
+  `tsconfig.json`), `mcps/cursor-ide-browser/` (tool descriptors, `STATUS.md`,
+  `SERVER_METADATA.json`) and `.agent-data-cleanup-<date>`
+- `~/.openvision/ide_state.json`
+- `~/.openvision/.gitignore`, the managed block that allowlists `projects/`, `plugins/`, `skills/`,
+  `plans/` and other folders
+- `~/.openvision-local/argv.json`, the default template
+- Written through XDG paths, not OpenVision data: `.cache/Microsoft/DeveloperTools/deviceid`, which
+  the device-ID module writes (telemetry area, OV-1005). The rest are platform runtime files: `.config/pulse/cookie`,
+  `.local/share/pki/nssdb`, and the Mesa and NVIDIA shader caches.
+
+### Inferred from the formatted bundles (no native evidence)
+
+- **Extension and utility bundles.** Most remaining writers use the same pattern:
+  `join(homedir(), ".cursor" | ".claude", …)`.
+  - Agent exec has 13 sites: projects, worktrees, `sandbox.json`, sandbox-policies, the
+    `CURSOR_DATA_DIR`/`CURSOR_CONFIG_DIR` fallbacks, `.gitignore`, `getCursorDataDir`, plugin
+    marketplaces/cache, and the `.claude/plugins` import.
+  - Agent host main: 11 sites. `292.js`: 3. Local agent runtime: 7. The daemon has 6, including
+    its `mcp.json`, which belongs to the MCP owner.
+  - The MCP extension, MCP process and extension-host sandbox-policies, browser-automation
+    `browser-logs` and ndjson-ingest `debug-logs` use it too.
+  - Plugin cache managers and the plugin service also receive `homedir()` directly. In exec these
+    are `KYw`, `WCg` and `Npg`, the `.claude/settings.json` `enabledPlugins` reader and
+    `removeLocalPlugin`.
+- **Module-level constants.** Some of these paths are module-level constants, for example the
+  projects and worktrees roots in exec. They are evaluated before activation, so the existing
+  activation-time `openvision.internal.profileHome` command cannot reach them.
+  - Proposed design, not implemented: the main bootstrap sets
+    `VSCODE_OPENVISION_PROFILE_HOME=<user-data-dir>/User` right after it resolves `userDataPath`.
+    Every patched site reads it and fails closed if it is missing or relative.
+  - The extension host inherits the main/renderer environment, and so do utility processes
+    (`createEnv` copies `process.env`). Integrated terminals drop `VSCODE_*` variables. Agent-run
+    shells would still see it.
+- **Workbench.** About 25 sites:
+  - Plans: the `wie` helper and `getUserPlansDir`.
+  - The projects root (`".cursor/projects"`), used for transcripts, hook spill files and disk
+    metrics.
+  - Worktrees: the `WorktreeManager`, the watcher exclusion and the comparison paths.
+  - `ide_state.json`.
+  - Permissions and sandbox labels and paths.
+  - Team hooks.
+  - Feature-gate, notepad and command exports.
+  - The repository blocklist.
+  - Skill chip and publish checks.
+  - Debug logs (`b4f`).
+  - External CLI analytics.
+  - The `argvResource` getter.
+- **argv.json.** The bootstrap's argv path function uses `homedir()/<dataFolderName>`. The bootstrap
+  and the environment services (main, shared, MCP, pty host, workbench) both need to move to the
+  profile home.
+- **Terminal external-agent status.** Reads `~/.claude/projects/<cwd>` and `~/.codex/sessions`. It is
+  gated by the `terminal_agent_integration` experiment, whose offline fallback is `enabled: false`.
+  - Recommendation, not decided: keep the real-HOME read only behind an explicit
+    `openvision.terminal.externalAgentStatus` setting, off by default. Inject it into the terminal
+    configuration and check it in `_isEnabled()`.
+  - External CLI analytics (`enable_ex_hs`) should never read HOME.
+
+### Open gates (none closed here)
+
+All rows marked **Remaining** above, plus these:
+
+- The another-installation run.
+- A full-session verifier asserting zero HOME writes: Agent chat with a controlled fixture, a
+  plan, a skill and command, and a terminal.
+- An opt-in decision for the third-party status read.
+- The opt-in migration of existing HOME data.
+
+Only `build:desktop` and `verify:global-paths` were run in this pass.
