@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
@@ -27,12 +28,19 @@ const option = (name, fallback) => {
 };
 const idleSeconds = option('--idle-seconds', 600);
 const useStrace = !process.argv.includes('--no-strace');
+// The Chromium proxy observer is opt-in: with --proxy-server the BYOK Agent turn
+// stays at "Preparing" on Linux (reproduced, cause not isolated). The loopback-only
+// network namespace (verify-telemetry-extended.sh) is the isolation boundary.
+const useProxy = process.argv.includes('--proxy');
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/telemetry-extended-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
-  'git.openRepositoryInParentFolders': 'never' }));
+  'git.openRepositoryInParentFolders': 'never',
+  // A controlled shell: the user's rc files and prompt tools are not part of the product.
+  'terminal.integrated.profiles.linux': { 'OpenVision test shell': { path: '/bin/bash', args: ['--noprofile', '--norc'] } },
+  'terminal.integrated.defaultProfile.linux': 'OpenVision test shell' }));
 await writeFile(join(profile, 'argv.json'), '{"enable-crash-reporter":false}');
 await writeFile(join(project, 'hello.js'), 'console.log("OpenVision extended telemetry verification");\n');
 await writeFile(join(project, 'notes.txt'), 'UniqueTelemetrySearchToken lives here.\n');
@@ -81,7 +89,8 @@ async function sampleLoop() {
   while (sampling) {
     if (rootPid) {
       const members = await processFamily(rootPid);
-      for (const [pid, name] of members) if (!family.has(pid)) family.set(pid, { name, firstSeenPhase: currentPhase });
+      for (const [pid, name] of members) if (!family.has(pid)) family.set(pid, { name, firstSeenPhase: currentPhase,
+        command: (await readFile(`/proc/${pid}/cmdline`, 'utf8').catch(() => '')).split('\0').join(' ').replace(/--[\w-]*(token|key|secret)[\w-]*=\S+/gi, '$1=<redacted>').slice(0, 240) });
       for (const socket of await socketSnapshot(members)) {
         const key = `${socket.pid}|${socket.proto}|${socket.local.ip}:${socket.local.port}|${socket.remote.ip}:${socket.remote.port}`;
         if (!sockets.has(key)) sockets.set(key, { ...socket, phase: currentPhase });
@@ -96,12 +105,15 @@ const sampler = sampleLoop();
 const errors = [];
 const rendererUrls = [];
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+// A disposable XDG cache exposes machine-wide identifier writes (for example
+// @vscode/deviceid's Microsoft/DeveloperTools/deviceid) without touching ~/.cache.
+const xdgCache = join(directory, 'xdg-cache'); env.XDG_CACHE_HOME = xdgCache;
 mark('startup');
 const app = await _electron.launch({ executablePath, env, timeout: 120000,
   args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'),
     '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
     '--disable-telemetry', '--disable-crash-reporter', `--log-net-log=${netLog}`,
-    `--proxy-server=http://127.0.0.1:${proxy.port}`, '--proxy-bypass-list=<-loopback>',
+    ...(useProxy ? [`--proxy-server=http://127.0.0.1:${proxy.port}`, ...(process.argv.includes('--proxy-loopback') ? ['--proxy-bypass-list=<-loopback>'] : [])] : []),
     ...await linuxSandboxArguments(layout.host), project, join(project, 'hello.js')] });
 rootPid = app.process().pid;
 const observe = page => {
@@ -111,7 +123,7 @@ const observe = page => {
 app.on('window', observe);
 for (const window of app.windows()) observe(window);
 const result = { platform: process.platform, arch: process.arch, checkedAt: new Date().toISOString(), identity,
-  idleSeconds, strace: useStrace, success: false };
+  idleSeconds, strace: useStrace, proxy: useProxy, networkNamespace: process.argv.includes('--netns') ? 'loopback-only' : 'host', success: false };
 let page;
 async function command(name) {
   await page.keyboard.press('Escape');
@@ -140,7 +152,7 @@ try {
   assert.match(await readFile(join(project, 'hello.js'), 'utf8'), /Extended telemetry edit/);
 
   mark('settings');
-  await page.keyboard.press('ControlOrMeta+,');
+  await command('Preferences: Open User Settings');
   await page.locator('.settings-editor').waitFor({ state: 'visible' });
   await page.waitForTimeout(3000);
   await page.keyboard.press('Escape');
@@ -179,22 +191,25 @@ try {
   await command('Terminal: Create New Terminal');
   const terminal = page.locator('.terminal-wrapper .xterm-helper-textarea').filter({ visible: true }).first();
   await terminal.waitFor();
-  await terminal.focus();
-  await page.keyboard.insertText('echo OPENVISION_TERMINAL_$((40+2))');
-  await page.keyboard.press('Enter');
-  await page.getByText('OPENVISION_TERMINAL_42').first().waitFor({ timeout: 30000 }).catch(async () => {
-    const text = await page.locator('.terminal-wrapper').filter({ visible: true }).innerText();
-    assert.ok(text.includes('OPENVISION_TERMINAL_42'), 'Terminal must execute the owned shell command');
-  });
+  const marker = join(directory, 'terminal-marker.txt');
+  const terminalDeadline = Date.now() + 45000;
+  let terminalOutput;
+  while (!terminalOutput && Date.now() < terminalDeadline) {
+    await terminal.focus();
+    await page.keyboard.type(`echo OPENVISION_TERMINAL_$((40+2)) > '${marker}'`);
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(3000);
+    terminalOutput = await readFile(marker, 'utf8').catch(() => undefined);
+  }
+  assert.equal(terminalOutput?.trim(), 'OPENVISION_TERMINAL_42', 'Terminal must execute the owned shell command');
   await page.waitForTimeout(3000);
 
   mark('search');
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('ControlOrMeta+Shift+f');
+  await command('Search: Find in Files');
   const search = page.locator('.search-view .search-widget textarea').first();
   await search.fill('UniqueTelemetrySearchToken');
   await search.press('Enter');
-  await page.locator('.search-view').getByText('UniqueTelemetrySearchToken').first().waitFor();
+  await page.locator('.search-view .monaco-list-row').filter({ hasText: 'notes.txt' }).first().waitFor();
   await page.waitForTimeout(3000);
 
   mark('idle');
@@ -254,16 +269,33 @@ for (const socket of procRemote) add(socket.remote.ip, 'proc-socket', { phase: s
   text: `${socket.process}(${socket.pid}) ${socket.proto} ${socket.remote.ip}:${socket.remote.port} state ${socket.state}` });
 for (const lookup of traced.lookups) add(lookup.name, 'dns-lookup', { phase: phaseAt(lookup.at ?? 0), text: `pid ${lookup.pid} resolved ${lookup.name}` });
 
-const table = [...destinations.values()].map(entry => ({ host: entry.host, ...classifyDestination(entry.host),
+// Opening the Extensions view is an explicit request to browse the Marketplace.
+// Its gallery query counts as user-initiated only within that phase, together
+// with the addresses connected by the process that resolved the gallery host.
+const initiated = { 'marketplace.cursorapi.com': 'extensions' };
+// strace reports thread ids, so addresses are attributed by phase: only when
+// every name resolved during the Extensions phase is an initiated host.
+const extensionLookups = traced.lookups.filter(lookup => phaseAt(lookup.at ?? 0) === 'extensions');
+const onlyInitiated = extensionLookups.length > 0 && extensionLookups.every(lookup => initiated[lookup.name] === 'extensions');
+const initiatedIps = new Set(onlyInitiated ? directInet.filter(entry => phaseAt(entry.at ?? 0) === 'extensions').map(entry => entry.ip) : []);
+const classify = entry => {
+  const phase = initiated[entry.host];
+  if ((phase && [...entry.phases].every(name => name === phase)) || (initiatedIps.has(entry.host) && [...entry.phases].every(name => name === 'extensions')))
+    return { class: 'user-initiated (Extensions Marketplace view opened)', allowed: true };
+  return classifyDestination(entry.host);
+};
+const table = [...destinations.values()].map(entry => ({ host: entry.host, ...classify(entry),
   sources: [...entry.sources], phases: [...entry.phases], details: [...entry.details].slice(0, 12) }))
   .sort((a, b) => a.host.localeCompare(b.host));
 const remote = table.filter(entry => !entry.allowed);
 const telemetry = table.filter(entry => entry.class === 'telemetry' || entry.details.some(detail => telemetryPattern.test(detail)));
 const forwardedRemote = proxy.events.filter(event => event.allowed && !isLoopbackHost(event.host));
-const directRemote = [...directInet.filter(entry => !isLoopbackIp(entry.ip)), ...procRemote.filter(socket => !isLoopbackIp(socket.remote.ip))];
+const directRemote = [...directInet.filter(entry => !isLoopbackIp(entry.ip) && !initiatedIps.has(entry.ip)),
+  ...procRemote.filter(socket => !isLoopbackIp(socket.remote.ip) && !initiatedIps.has(socket.remote.ip))];
 Object.assign(result, {
   phases, modelRequests, errors, samples,
-  processFamily: { members: family.size, names: [...new Set([...family.values()].map(entry => entry.name))].sort() },
+  processFamily: { members: family.size, names: [...new Set([...family.values()].map(entry => entry.name))].sort(),
+    byPid: Object.fromEntries(family) },
   observers: {
     proxy: { events: proxy.events.length, refused: proxy.events.filter(event => !event.allowed).length },
     chromiumNetlogUrls: chromiumUrls.size, rendererRequests: rendererUrls.length,
@@ -275,11 +307,12 @@ Object.assign(result, {
   directRemoteSockets: directRemote, forwardedRemote,
   scope: 'Linux x64 only. Built-in collectors and bundled extensions in a fresh disposable profile. Third-party extensions the user installs and user-configured MCP servers are out of scope. Non-loopback proxy traffic is refused, so responses that would trigger follow-up requests are not observed.',
 });
-result.success = Boolean(result.workloadCompleted) && remote.length === 0 && telemetry.length === 0 &&
+result.deviceIdFileWritten = existsSync(join(xdgCache, 'Microsoft/DeveloperTools/deviceid'));
+result.success = Boolean(result.workloadCompleted) && !result.deviceIdFileWritten && remote.length === 0 && telemetry.length === 0 &&
   directRemote.length === 0 && forwardedRemote.length === 0 && result.familyDrainedAfterQuit;
 await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2) + '\n');
 console.log(JSON.stringify({ directory, success: result.success, failure: result.failure,
-  observers: result.observers, processFamily: result.processFamily, nonLoopbackDestinations: remote,
+  observers: result.observers, processFamily: { members: family.size, names: result.processFamily.names }, nonLoopbackDestinations: remote,
   directRemoteSockets: directRemote.length, familyDrainedAfterQuit: result.familyDrainedAfterQuit,
   modelRequests: modelRequests.length, errors: errors.length }, null, 2));
 assert.ok(result.workloadCompleted, result.failure ?? 'Workload did not complete');
@@ -287,3 +320,4 @@ assert.deepEqual(telemetry, [], 'Telemetry destination observed');
 assert.deepEqual(remote, [], 'Automatic non-loopback destination observed');
 assert.deepEqual(directRemote, [], 'Direct non-loopback socket observed');
 assert.ok(result.familyDrainedAfterQuit, 'Process family must exit after quit');
+assert.equal(result.deviceIdFileWritten, false, 'Machine-wide device id file written');

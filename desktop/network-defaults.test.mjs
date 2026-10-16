@@ -1,0 +1,132 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { disableSpellcheckDownloads, removeControlUrl, controlManifestGuard, setContributedDefaults, extensionDefaults,
+  disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile } from './network-defaults.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const app = join(root, 'source/app');
+
+test('spellcheck dictionary downloads are disabled for every session, idempotently', () => {
+  const main = 'function f(e, t) {\n  e.commandLine.appendSwitch("enable-features", t);\n}\nconst w = { spellcheck: !1, };\n';
+  const once = disableSpellcheckDownloads(main);
+  assert.equal(disableSpellcheckDownloads(once), once);
+  const calls = [];
+  const fakeApp = { commandLine: { appendSwitch() {} }, on(event, listener) {
+    assert.equal(event, 'session-created');
+    listener({ setSpellCheckerEnabled: value => calls.push(['enabled', value]), setSpellCheckerLanguages: value => calls.push(['languages', value]) });
+  } };
+  new Function('fakeApp', `${once}\nf(fakeApp, "x");`)(fakeApp);
+  assert.deepEqual(calls, [['enabled', false], ['languages', []]]);
+  assert.throws(() => disableSpellcheckDownloads('const w = { spellcheck: !1, };'), /switch owner/);
+});
+
+test('extension control manifest URL is removed only while the empty-manifest guard exists', () => {
+  const product = { extensionsGallery: { serviceUrl: 'https://gallery.example', controlUrl: 'https://control.example' } };
+  assert.deepEqual(removeControlUrl(product, [controlManifestGuard]), { extensionsGallery: { serviceUrl: 'https://gallery.example' } });
+  assert.throws(() => removeControlUrl(product, ['changed']), /control manifest contract/);
+});
+
+test('bundled-extension network defaults are set at the contributed configuration', () => {
+  const manifest = { contributes: { configuration: [{ properties: { a: { type: 'boolean', default: true } } }] } };
+  assert.equal(setContributedDefaults(manifest, { a: false }).contributes.configuration[0].properties.a.default, false);
+  assert.equal(manifest.contributes.configuration[0].properties.a.default, true, 'input is not mutated');
+  assert.throws(() => setContributedDefaults(manifest, { missing: false }), /contract missing/);
+  assert.throws(() => setContributedDefaults(manifest, { a: 'off' }), /type changed/);
+});
+
+test('workbench experiment refresh and Cursor Tab fate reports never reach the backend client', async () => {
+  const text = `const Owner = class {
+  _startPolling() { this.timer = setInterval(() => {}, 1); }
+  async _refreshBootstrapFromServer(e = "poll") { return this._doRefreshBootstrapFromServer(e); }
+  async _doRefreshBootstrapFromServer(e) { const n = await this.client(); return n.bootstrapStatsig({}); }
+};
+const Cpp = class {
+  recordCppFate(e, t, n, i) { this.cppClient().then(o => o.recordCppFate({})); }
+};
+return { Owner, Cpp };`;
+  const patched = disableWorkbenchHostedReports(text);
+  assert.equal(disableWorkbenchHostedReports(patched), patched);
+  const { Owner, Cpp } = new Function(patched)();
+  const owner = Object.assign(new Owner(), { client() { throw Error('backend touched'); } });
+  owner._startPolling();
+  assert.equal(owner.timer, undefined);
+  assert.equal(await owner._refreshBootstrapFromServer(), undefined);
+  Object.assign(new Cpp(), { cppClient() { throw Error('fate sent'); } }).recordCppFate('id', 1, '.js', 0);
+  assert.throws(() => disableWorkbenchHostedReports(text.replace('bootstrapStatsig', 'other')), /bootstrap caller/);
+});
+
+const minified = `const T = class {
+  async applyAuthorization(t, e) {
+    const p = this.getAccessToken();
+    if (void 0 !== p) t.header.set("Authorization", \`Bearer \${e.maybeUseCppSpoofToken ? this.host.maybeGetSpoofedCppAccessToken(p, e.baseUrl) : p}\`);
+    else this.debugLog.warn("[TransportFactory] Authorization header omitted: no access token available");
+    return "sent";
+  }
+};
+return T;`;
+const daemon = `const T = class {
+  async applyAuthorization(req, options2) {
+    const accessToken = this.getAccessToken();
+    if (accessToken === void 0) { this.debugLog.warn("[TransportFactory] Authorization header omitted: no access token available"); return "sent"; }
+    req.header.set("Authorization", \`Bearer \${options2.maybeUseCppSpoofToken ? this.host.maybeGetSpoofedCppAccessToken(accessToken, options2.baseUrl) : accessToken}\`);
+    return "sent";
+  }
+};
+return T;`;
+
+for (const [name, text] of [['minified', minified], ['daemon', daemon]]) {
+  test(`anonymous Cursor RPCs are refused before sending (${name} transport)`, async () => {
+    const patched = refuseAnonymousHostedCalls(text);
+    assert.equal(refuseAnonymousHostedCalls(patched), patched);
+    const Transport = new Function(patched)();
+    const transport = token => Object.assign(new Transport(), { getAccessToken: () => token,
+      debugLog: { warn() {} }, host: { maybeGetSpoofedCppAccessToken: value => value } });
+    const request = () => ({ header: new Map() });
+    await assert.rejects(transport(undefined).applyAuthorization(request(), { baseUrl: 'https://api2.cursor.sh' }), /signed-in Cursor account/);
+    assert.equal(await transport(undefined).applyAuthorization(request(), { baseUrl: 'http://127.0.0.1:4000' }), 'sent');
+    assert.equal(await transport(undefined).applyAuthorization(request(), { baseUrl: 'http://localhost:4000/x' }), 'sent');
+    assert.equal(await transport('token').applyAuthorization(request(), { baseUrl: 'https://api2.cursor.sh' }), 'sent');
+  });
+}
+
+test('anonymous-call guard refuses a changed transport contract', () => {
+  assert.throws(() => refuseAnonymousHostedCalls(minified.replace('Authorization header omitted', 'changed')), /authorization owner/);
+});
+
+test('machine-wide device id file is replaced by the owner fallback', async () => {
+  const text = `async function sW(e) {\n  try {\n    return await (await import("@vscode/deviceid")).getDeviceId();\n  } catch (t) {\n    return (e(t), lt());\n  }\n}\nreturn sW;`;
+  const patched = disableDeviceIdFile(text);
+  assert.equal(disableDeviceIdFile(patched), patched);
+  assert.doesNotMatch(patched, /@vscode\/deviceid/);
+  const read = new Function('lt', patched)(() => 'fallback-uuid');
+  assert.equal(await read(() => { throw Error('error path'); }), 'fallback-uuid');
+  assert.throws(() => disableDeviceIdFile('return 1;'), /Device id owner/);
+});
+
+const built = existsSync(join(app, 'out/main.js'));
+test('built source carries every network-default owner change', { skip: !built && 'source/app is not built' }, async () => {
+  const read = relative => readFile(join(app, relative), 'utf8');
+  const main = await read('out/main.js');
+  assert.ok(disableDeviceIdFile(disableSpellcheckDownloads(main)) === main, 'main.js');
+  const cli = await read('out/vs/code/node/cliProcessMain.js');
+  assert.ok(disableDeviceIdFile(cli) === cli, 'cliProcessMain.js');
+  for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
+    const text = await read(relative);
+    assert.ok(disableWorkbenchHostedReports(text) === text, relative);
+  }
+  for (const relative of transportTargets) {
+    const text = await read(relative);
+    assert.ok(refuseAnonymousHostedCalls(text) === text, relative);
+  }
+  const product = JSON.parse(await read('product.json'));
+  assert.equal(product.extensionsGallery.controlUrl, undefined);
+  assert.ok(product.extensionsGallery.serviceUrl, 'Marketplace browsing stays available');
+  for (const [relative, defaults] of extensionDefaults) {
+    const manifest = JSON.parse(await read(relative));
+    assert.deepEqual(setContributedDefaults(manifest, defaults), manifest, relative);
+  }
+});
