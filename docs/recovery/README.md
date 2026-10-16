@@ -46,5 +46,6 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [WASM recovery follow-up](rea-wasm-follow-up.md)
 - [WebAssembly recovery evidence](rea-wasm-inventory.md)
 - [Recovery and product control](recovery-status.md)
+- [Shutdown ownership: terminals, tasks, debugger (OV-403)](rea-shutdown-ownership.md)
 
 [Documentation index](../README.md) · [Progress dashboard](../progress.md)
