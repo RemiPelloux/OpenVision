@@ -69,6 +69,9 @@ The [3.24.18 module index](../curs_source/modules/3.24.18/README.md) links each
 selected JavaScript input to its published structural files, while the
 [timeout report](recovery/rea-agent-timeout-recovery.md) records the current
 highest-priority Agent transport gap and its remaining native gate.
+The latest `npm run recovery:verify` run passed for the published archive:
+**30,111/30,111** files and **237/237** selected inputs match the manifest. This
+is an integrity result for the recovered reference, not a feature-parity score.
 
 | Version and measured scope | Completed | Remaining / limit |
 | --- | --- | --- |

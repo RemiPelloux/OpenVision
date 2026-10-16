@@ -83,17 +83,22 @@ introducing another completion score.
 
 ## Latest documentation and source reconciliation
 
-Reconciled against source parent `37f159e4`, the linked follow-up changes and the
-versioned publication manifest on **16 October 2026**. The module index was
-regenerated from that manifest after `3411bdc7` and now links its integrity
-authority and this source-to-gap map. This refresh changes navigation and the
-gap description. The linked Undo/Redo and timeout reports identify the
-subsequent implementation and native verification evidence separately.
+Reconciled against source parent `37f159e4`, source-index commit `b578b768`,
+and the latest live-provider edit evidence in `ac527049` on **16 October 2026**.
+The module index is generated from the versioned publication manifest and links
+its integrity authority and this source-to-gap map. The latest publication
+verification passed after restoring a stale working-tree mutation: **30,111**
+published files and **670,747,317** bytes matched their recorded SHA-256 values.
+This refresh changes navigation and the gap description; it does not change the
+42-story denominator or award partial credit. The linked Undo/Redo, timeout and
+live-edit reports identify implementation and native verification evidence
+separately.
 
 | Recent work | Gap now closed within its stated scope | What remains open |
 | --- | --- | --- |
 | [Selected-bundle recovery](javascript-bundles.md) and [source index](../../curs_source/modules/3.24.18/README.md) | Every selected input has a structural result: **237/237**, including the documented derived-input retry. | Original types/build inputs, executable module equivalence and independent builds; selected extraction coverage is not product completion. |
 | [Generated source-index reconciliation](../../curs_source/README.md#browse-the-code) | The versioned index now declares its manifest authority, exact selection coverage and links back to this gap map; regeneration remains reproducible from the local snapshot. | Browseable extracted representations still do not recover original source, native build inputs or feature semantics; no acceptance story is promoted by index generation. |
+| [Publication integrity refresh](../../curs_source/README.md#verify-the-git-checkout) | `npm run recovery:verify` passes for **30,111/30,111** published files and **237/237** selected inputs; current native inventory and historical pseudocode remain version-scoped. | Integrity proves the published archive matches its manifest. It does not prove executable equivalence, original-source completeness, or feature parity. |
 | [Storage ownership](../engineering/storage-write-ownership.md) | The newer reference's pending/in-flight invariant is ported into the prepared runtime; scoped native discovery and Quick Edit regressions pass. | Cross-window configuration races, close during IPC, physical faults and complete Undo-stack failure behavior. |
 | [Created-review recovery](rea-agent-review-recovery.md#created-review-snapshot-ownership) and [final-build regression](rea-agent-undo-retry.md#native-and-integration-verification) | Snapshot-service failure recovery and normal-restart review workflows pass their controlled native checks; failed reference release has producer coverage. | Remaining menu/group failures, physical faults, active-write/tool interruption and broader live editing. Older abrupt-exit checks retain their original runtime scope. |
 | [Native keyboard Undo/Redo](rea-agent-undo-retry.md) | Failed snapshot write/read operations preserve the correct history position and show retry guidance; keyboard retries pass on the rebuilt source. | Remaining menu/group and partial-removal failures, physical faults, active-write/tool interruption and broader live editing. Consolidated failure progress has producer coverage. |
@@ -358,8 +363,10 @@ documentation links respectively. They do not rerun native acceptance or live
 inference, prove extracted modules runnable, or promote any acceptance story.
 
 Refresh verification on **16 October 2026** passed: **30,111** current published
-text files and **9,354** historical native export files matched their manifests;
-all **13** source references in the map above matched recorded output hashes.
+text files (**670,747,317** bytes) and **9,354** historical native export files
+matched their manifests; all **237/237** selected inputs retained structural
+results, and all **13** source references in the map above matched recorded
+output hashes.
 The feature-status command confirmed **6 Verified / 22 Partial / 12 Planned /
 2 Unknown**, and the documentation check reported no missing paths or anchors.
 

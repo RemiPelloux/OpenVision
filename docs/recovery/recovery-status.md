@@ -38,6 +38,9 @@ browsable source-level index for every selected JavaScript input; the
 [manifest](../../curs_source/manifest.json) is authoritative for hashes and
 representation provenance. The [native timeout report](rea-agent-timeout-recovery.md)
 links this recovery boundary to the remaining OV-102/OV-204 feature gates.
+The latest publication check passed for **30,111/30,111** files and
+**237/237** selected inputs; use `npm run recovery:verify` to repeat the
+published-text and historical-native checks from the repository root.
 
 Published code and native Evidence live under `curs_source/javascript`,
 `curs_source/modules`, and `curs_source/native`. Complete local captures,

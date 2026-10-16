@@ -46,6 +46,9 @@ to connect recovered owners to maintained OpenVision code and acceptance gates.
 The index currently covers **237/237** selected inputs; that is structural
 extraction coverage, not a claim that the modules are independently runnable
 or that the original feature set has been recovered.
+The publication manifest was generated on **16 October 2026**. The latest
+checkout verification passed for **30,111** published files and
+**670,747,317** bytes; run the commands below to repeat that check.
 
 ## Current Windows snapshot: 3.24.18
 
