@@ -7,8 +7,22 @@ const gptModels = new Set([
 // Local UI intent, never an upstream effort value.
 export const providerDefaultReasoning = 'openvision-provider-default';
 
+// User-specified values (Models settings or an explicit import) override discovered
+// values one field at a time; fields the user left unset keep the discovered value.
+export const capabilityFields = ['reasoningEffortValues', 'supportsVision', 'contextLength', 'maxOutputTokens'];
+export function effectiveCapabilities(model) {
+  const user = model?.userCapabilities;
+  if (!user) return model?.capabilities;
+  const result = { ...model.capabilities };
+  for (const field of capabilityFields) if (user[field] !== undefined) result[field] = user[field];
+  return result;
+}
+export function userSpecified(model, field) {
+  return model?.userCapabilities?.[field] !== undefined;
+}
+
 export function reasoningChoices(model, provider) {
-  return model.capabilities?.reasoningEffortValues ??
+  return effectiveCapabilities(model)?.reasoningEffortValues ??
     (fallbackReasoningValues(provider.url, model.id) ?? []).map(id => ({ id, value: id }));
 }
 
@@ -18,6 +32,8 @@ export function unavailableReasoning(parameters, allowed) {
 }
 
 export function reasoningSource(model, provider) {
+  if (userSpecified(model, 'reasoningEffortValues'))
+    return model.userCapabilities.reasoningEffortValues.length ? 'User-specified' : 'No reasoning · User-specified';
   if (Array.isArray(model.capabilities?.reasoningEffortValues))
     return model.capabilities.reasoningEffortValues.length ? 'Provider-declared · Unverified' : 'No reasoning levels declared';
   return fallbackReasoningValues(provider.url, model.id)?.length ? 'Compatibility hints · Unverified' : 'No reasoning levels declared';

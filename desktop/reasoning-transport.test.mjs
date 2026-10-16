@@ -21,7 +21,7 @@ test('reasoning defaults are model-specific, endpoint-specific and subordinate t
 });
 
 test('provider credentials are resolved per request even before settings mount', async () => {
-  const input = 'class Service { async getLocalAgentProviderConfig(e, t) { return "old"; } async getLocalInferenceProviderConfig() { return "old"; } async runLocalAgentInExtensionHost(u) { return {baseUrl: u.baseUrl, apiKey: u.apiKey,}; } } const service = new Service();';
+  const input = 'class Service { async getLocalAgentProviderConfig(e, t) { return "old"; } async getLocalInferenceProviderConfig() { return "old"; } async runLocalAgentInExtensionHost(e, t, n, i, r, s, o, a, c, l) { const u = l; return {baseUrl: u.baseUrl, apiKey: u.apiKey,}; } } const service = new Service();';
   const output = requestProviderRouting(input, 'desktop');
   assert.equal(requestProviderRouting(output, 'desktop'), output);
   const calls = [];
@@ -48,6 +48,24 @@ test('provider credentials are resolved per request even before settings mount',
   assert.equal(inference.customHeaders['x-key'], 'inference-header');
   const legacy = output.replaceAll('customHeaders: openvisionProvider.customHeaders ?? {}', 'customHeaders: {}');
   assert.equal(requestProviderRouting(legacy, 'desktop'), output, 'Existing v2 runtimes upgrade without dropping headers');
+});
+
+test('Agent turns with images are gated by the model image-input capability before dispatch', async () => {
+  const input = 'class Service { async getLocalAgentProviderConfig(e, t) { return "old"; } async getLocalInferenceProviderConfig() { return "old"; } ' +
+    'async runLocalAgentInExtensionHost(e, t, n, i, r, s, o, a, c, l) { const u = l; return {baseUrl: u.baseUrl, apiKey: u.apiKey,}; } } const service = new Service();';
+  const output = requestProviderRouting(input, 'desktop');
+  assert.match(output, /assertImageInput as openvisionAssertImageInput/);
+  assert.equal(requestProviderRouting(output, 'desktop'), output);
+  const calls = [];
+  const service = runInNewContext(output.replace(/^import .*;$/m, '') + '\nservice;', {
+    openvisionAssertImageInput: (storage, model, images) => { calls.push([storage, model, images]); if (images && model === 'text-only') throw new Error('text-only'); },
+  });
+  service.storageService = 'storage';
+  const message = images => ({ action: { case: 'userMessageAction', value: { userMessage: { selectedContext: { selectedImages: Array(images).fill({}) } },
+    prependUserMessages: [{ selectedContext: { selectedImages: [{}] } }] } } });
+  await assert.rejects(service.runLocalAgentInExtensionHost({}, {}, message(1), { modelId: 'other' }, 0, 0, 0, 0, 0, { requestedModel: { modelId: 'text-only' } }), /text-only/);
+  await service.runLocalAgentInExtensionHost({}, {}, { action: { case: 'resumeAction', value: {} } }, { modelId: 'text-only' }, 0, 0, 0, 0, 0, { baseUrl: 'b', apiKey: 'k' });
+  assert.deepEqual(calls, [['storage', 'text-only', 2], ['storage', 'text-only', 0]]);
 });
 
 test('simultaneous models retain their own saved provider keys without global activation', async () => {

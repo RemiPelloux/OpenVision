@@ -1,5 +1,5 @@
 import { catalogModel } from './model-catalog.js';
-import { reasoningChoices, unavailableReasoning, providerDefaultReasoning } from './model-reasoning.js';
+import { reasoningChoices, unavailableReasoning, providerDefaultReasoning, effectiveCapabilities } from './model-reasoning.js';
 import { modelSelectionId, parseModelSelection, modelSelectionError } from './model-identity.js';
 import { accountProviders, refreshAccountModels } from './account-models.js';
 import { validHeaderMetadata, readProviderHeaders } from './provider-headers.js';
@@ -76,6 +76,36 @@ function normalizeReasoningValues(values) {
   });
 }
 
+const maxTokenCount = 100_000_000;
+// User-specified capabilities: every field is optional and independently overrides
+// discovery. Reasoning levels use the same shape as discovered declarations.
+export function normalizeUserCapabilities(value) {
+  if (value === undefined) return undefined;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid user-specified model capabilities.');
+  const result = {};
+  for (const [field, entry] of Object.entries(value)) {
+    if (entry === undefined) continue;
+    if (field === 'reasoningEffortValues') {
+      if (!Array.isArray(entry)) throw new Error('User-specified reasoning levels must be a list.');
+      try { result.reasoningEffortValues = normalizeReasoningValues(entry.map(item => typeof item === 'string' ? item.trim() : item)); }
+      catch { throw new Error('Reasoning levels must be unique, non-empty names.'); }
+    } else if (field === 'supportsVision') {
+      if (typeof entry !== 'boolean') throw new Error('User-specified image input must be true or false.');
+      result.supportsVision = entry;
+    } else if (field === 'contextLength' || field === 'maxOutputTokens') {
+      if (!Number.isSafeInteger(entry) || entry <= 0 || entry > maxTokenCount)
+        throw new Error(`${field === 'contextLength' ? 'Context window' : 'Max output tokens'} must be a whole number from 1 to 100,000,000.`);
+      result[field] = entry;
+    } else throw new Error('Unknown user-specified model capability.');
+  }
+  return Object.keys(result).length ? result : undefined;
+}
+
+function validImportSource(source) {
+  return source === undefined || (source && source.kind === 'pi' && typeof source.providerId === 'string' &&
+    source.providerId.length > 0 && source.providerId.length <= 200 && Object.keys(source).length === 2);
+}
+
 function readState(text) {
   if (!text) return { version: 1, providers: [], activeId: null };
   const state = JSON.parse(text);
@@ -85,12 +115,16 @@ function readState(text) {
   for (const provider of state.providers) {
     if (typeof provider.id !== 'string' || ids.has(provider.id) || typeof provider.name !== 'string' ||
         normalizeBaseUrl(provider.url) !== provider.url || !Array.isArray(provider.models) ||
-        !validHeaderMetadata(provider))
+        !validHeaderMetadata(provider) || !validImportSource(provider.importSource))
       throw new Error('Invalid saved provider.');
     ids.add(provider.id);
     for (const model of provider.models)
       if (typeof model.id !== 'string' || !model.id || typeof model.name !== 'string' || typeof model.enabled !== 'boolean')
         throw new Error('Invalid saved model.');
+      else if (model.userCapabilities !== undefined) {
+        try { if (!normalizeUserCapabilities(model.userCapabilities)) throw new Error(); }
+        catch { throw new Error('Invalid saved model capabilities.'); }
+      }
   }
   if (state.activeId !== null && !ids.has(state.activeId)) throw new Error('Invalid active provider.');
   return state;
@@ -272,9 +306,48 @@ export class ModelProviders {
   async remove(id) {
     return this.mutate(() => removeProvider(this, id));
   }
+  // Explicit, confirmed import. Each entry is one provider from an import plan;
+  // keys are held only in memory and written through the encrypted secret store.
+  async importProviders(entries, keys = new Map()) {
+    const results = [];
+    for (const entry of entries) {
+      const previous = entry.existingId ? this.get(entry.existingId) : undefined;
+      if (previous && entry.replace !== true) { results.push({ id: previous.id, name: previous.name, skipped: true }); continue; }
+      const models = mergeImportedModels(previous?.models ?? [], entry.models);
+      const key = keys.get(entry.sourceId);
+      const saved = await this.mutate(() => saveProvider(this, { id: previous?.id, name: previous?.name ?? entry.name,
+        url: normalizeBaseUrl(entry.url), key: key === undefined ? undefined : key, models,
+        importSource: { kind: 'pi', providerId: entry.sourceId } }));
+      results.push({ id: saved.id, name: saved.name, models: saved.models.length, keyStored: key !== undefined });
+    }
+    if (results.some(result => !result.skipped)) {
+      if (!this.state.activeId) {
+        const first = results.find(result => !result.skipped);
+        await this.mutate(() => this.activate(first.id));
+      } else this.publishModels();
+    }
+    return results;
+  }
   async cleanupCredentials() {
     return this.mutate(() => cleanupProviderCredentials(this));
   }
+}
+
+// Existing models keep their names, enabled state and user-specified values.
+// Imported values fill only fields the user has not set; new models are appended.
+export function mergeImportedModels(existing, imported) {
+  const byId = new Map(existing.map(model => [model.id, model]));
+  const merged = existing.map(model => {
+    const source = imported.find(item => item.id === model.id);
+    if (!source?.userCapabilities) return model;
+    const userCapabilities = normalizeUserCapabilities({ ...source.userCapabilities, ...model.userCapabilities });
+    return { ...model, ...(userCapabilities ? { userCapabilities } : {}) };
+  });
+  for (const model of imported) if (!byId.has(model.id)) {
+    const userCapabilities = normalizeUserCapabilities(model.userCapabilities);
+    merged.push({ id: model.id, name: model.name || model.id, enabled: true, manual: true, ...(userCapabilities ? { userCapabilities } : {}) });
+  }
+  return merged;
 }
 
 export function activeModelIds(storage) {
@@ -335,6 +408,7 @@ function routingSnapshot(storage) {
   if (previous && previous.text === text && previous.accounts === accounts) return previous;
   routeSnapshots.delete(storage);
   const state = combinedState(storage), routes = new Map(), aliases = new Map();
+  const accountIds = new Set(accounts.map(provider => provider.id));
   for (const provider of state.providers) {
     const customHeaderNames = Object.freeze(provider.customHeaderNames ?? []);
     for (const model of provider.models) {
@@ -342,6 +416,9 @@ function routingSnapshot(storage) {
       if (model.enabled) routes.set(selectionId, Object.freeze({ providerId: provider.id,
         baseUrl: provider.url, modelId: model.id, selectionId,
         reasoningValues: reasoningChoices(model, provider).map(item => item.value ?? item.id),
+        // Only an explicit text-only declaration (discovered or user-specified) blocks images;
+        // unknown capability keeps the provider's own decision.
+        imageInput: accountIds.has(provider.id) ? undefined : effectiveCapabilities(model)?.supportsVision,
         customHeaderNames, customHeaderRevision: provider.customHeaderRevision }));
       aliases.set(model.id, aliases.has(model.id) ? null : selectionId);
     }
@@ -400,6 +477,13 @@ export async function requestAgentProvider(storage, secrets, selection) {
   const selected = openvisionProviders.find(provider => provider.id === route.providerId);
   return { baseUrl: selected.baseUrl, apiKey: selected.apiKey, modelId: route.modelId, openvisionProviders,
     ...(selected.customHeaders ? { customHeaders: selected.customHeaders } : {}) };
+}
+
+export function assertImageInput(storage, modelId, images) {
+  if (!images) return;
+  const route = requestProviderRoute(storage, modelId);
+  if (route?.imageInput === false)
+    throw modelSelectionError('This model is set to text-only input, so the attached image was not sent. Remove the image, choose a model that accepts images, or change Image input for this model in OpenVision settings (Models).');
 }
 
 async function routeKey(storage, secrets, id) {

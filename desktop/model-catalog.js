@@ -1,4 +1,4 @@
-import { reasoningChoices, providerDefaultReasoning, reasoningSource } from './model-reasoning.js';
+import { reasoningChoices, providerDefaultReasoning, reasoningSource, effectiveCapabilities, userSpecified } from './model-reasoning.js';
 import { modelSelectionId } from './model-identity.js';
 
 const reasoningLabels = {
@@ -11,13 +11,25 @@ function reasoningParameter(values) {
     isCycleableByHotkey: true };
 }
 
+function capabilityNotes(model, capabilities) {
+  const source = field => userSpecified(model, field) ? 'user-specified' : 'discovered';
+  const notes = [];
+  if (typeof capabilities?.supportsVision === 'boolean')
+    notes.push(`Images: ${capabilities.supportsVision ? 'accepted' : 'not accepted'} (${source('supportsVision')}).`);
+  if (capabilities?.contextLength) notes.push(`Context: ${capabilities.contextLength.toLocaleString('en-US')} tokens (${source('contextLength')}).`);
+  if (capabilities?.maxOutputTokens) notes.push(`Max output: ${capabilities.maxOutputTokens.toLocaleString('en-US')} tokens (${source('maxOutputTokens')}).`);
+  return notes;
+}
+
 export function catalogModel(model, provider, namedModelSectionIndex) {
   const selectionId = modelSelectionId(provider.id, model.id);
   const efforts = reasoningChoices(model, provider);
   // Keep an explicit recovery choice when a server removes every reasoning level.
   const reasoning = [{ id: providerDefaultReasoning, label: 'Provider default' }, ...efforts];
   const defaultEffort = reasoning[0];
-  const reasoningDescription = `${reasoningSource(model, provider)}\n\nExplicit levels are not verified for this connection. Provider default lets your server choose.`;
+  const capabilities = effectiveCapabilities(model);
+  const reasoningDescription = [`${reasoningSource(model, provider)}\n\nExplicit levels are not verified for this connection. Provider default lets your server choose.`,
+    ...capabilityNotes(model, capabilities)].join('\n\n');
   const variants = reasoning.map(item => {
     const label = item.label ?? reasoningLabels[item.id] ?? item.id;
     return { parameterValues: [{ id: 'reasoning', value: item.value ?? item.id }], displayName: `${model.name} · ${label}`,
@@ -35,7 +47,7 @@ export function catalogModel(model, provider, namedModelSectionIndex) {
     tagline: provider.name,
     providerId: provider.id,
     supportsMaxMode: false, supportsNonMaxMode: true,
-    supportsImages: model.capabilities?.supportsVision ?? false,
+    supportsImages: capabilities?.supportsVision ?? false,
     idAliases: [], legacySlugs: [], cloudAgentEffortModes: [], modelPickerBadges: [],
   };
 }

@@ -1,6 +1,7 @@
-import { ModelProviders, refreshAccountModels } from './openvision-model-providers.js';
+import { ModelProviders, refreshAccountModels, normalizeBaseUrl, normalizeUserCapabilities } from './openvision-model-providers.js';
 import { completionControl } from './openvision-completion-provider.js';
 import { reasoningSource } from './model-reasoning.js';
+import { planPiImport, describeCapabilities } from './pi-import.js';
 import { createAccountSettings } from './model-accounts.js';
 
 const icons = { plus: 'plus', refresh: 'refresh-cw', edit: 'pencil', remove: 'trash-2' };
@@ -36,6 +37,31 @@ function field(form, title, value = '', type = 'text', placeholder = '') {
   form.append(label);
   return input;
 }
+function choice(form, title, options, value = '') {
+  const label = element('label', title);
+  const select = element('select');
+  select.setAttribute('aria-label', title);
+  for (const [optionValue, text] of options) {
+    const option = element('option', text); option.value = optionValue; select.append(option);
+  }
+  select.value = value;
+  label.append(select);
+  form.append(label);
+  return select;
+}
+// Pi import requests go to the main process, which reads the pi files read-only.
+function piRequest(bridge, request) {
+  if (bridge.piImport) return bridge.piImport(request);
+  return globalThis.vscode.ipcRenderer.invoke('vscode:openvision-pi-import', request);
+}
+const levelsText = values => values?.map(item => item.value && item.value !== item.id ? `${item.id}=${item.value}` : item.id).join(', ') ?? '';
+function parseLevels(text) {
+  return text.split(',').map(item => item.trim()).filter(Boolean).map(item => {
+    const [id, value] = item.split('=').map(part => part.trim());
+    return value ? { id, value } : { id, value: id };
+  });
+}
+
 function dialog(title) {
   const node = element('dialog', '', 'openvision-model-dialog');
   node.setAttribute('aria-label', title);
@@ -164,6 +190,30 @@ export function mountModels(container, bridge) {
     const id = field(ui.form, 'Model ID', model?.id, 'text', 'Exact model ID from your provider');
     id.required = true;
     const name = field(ui.form, 'Display Name', model?.name);
+    // User-specified capabilities override discovery field by field; "Use discovered" clears an override.
+    const discovered = model?.capabilities ?? {}, user = model?.userCapabilities ?? {};
+    const capabilities = element('fieldset', '', 'openvision-capability-fields');
+    capabilities.append(element('legend', 'Capabilities · User-specified'),
+      element('small', 'Set these when discovery fails or reports them wrongly. Fields left on "Use discovered" keep the provider value.'));
+    ui.form.append(capabilities);
+    const discoveredLevels = discovered.reasoningEffortValues;
+    const reasoning = choice(capabilities, 'Reasoning', [
+      ['', `Use discovered (${discoveredLevels ? (discoveredLevels.length ? levelsText(discoveredLevels) : 'none') : 'not reported'})`],
+      ['none', 'Not supported'], ['levels', 'Supported with these levels']],
+    user.reasoningEffortValues ? (user.reasoningEffortValues.length ? 'levels' : 'none') : '');
+    const levels = field(capabilities, 'Reasoning Levels', levelsText(user.reasoningEffortValues?.length ? user.reasoningEffortValues
+      : discoveredLevels?.length ? discoveredLevels : undefined) || 'low, medium, high', 'text', 'low, medium, high');
+    const syncLevels = () => { levels.disabled = reasoning.value !== 'levels'; };
+    reasoning.onchange = syncLevels; syncLevels();
+    const vision = choice(capabilities, 'Image Input', [
+      ['', `Use discovered (${discovered.supportsVision === undefined ? 'not reported' : discovered.supportsVision ? 'text and images' : 'text only'})`],
+      ['text', 'Text only'], ['image', 'Text and images']],
+    user.supportsVision === undefined ? '' : user.supportsVision ? 'image' : 'text');
+    const context = field(capabilities, 'Context Window (tokens)', user.contextLength ?? '', 'number',
+      discovered.contextLength ? `Discovered: ${discovered.contextLength}` : 'Not reported');
+    const output = field(capabilities, 'Max Output Tokens', user.maxOutputTokens ?? '', 'number',
+      discovered.maxOutputTokens ? `Discovered: ${discovered.maxOutputTokens}` : 'Not reported');
+    for (const input of [context, output]) { input.min = '1'; input.step = '1'; }
     const save = button('Save', () => ui.form.requestSubmit());
     save.className = 'openvision-primary';
     ui.actions.append(save);
@@ -172,6 +222,15 @@ export function mountModels(container, bridge) {
       const next = { ...(model?.id === id.value.trim() ? model : {}),
         id: id.value.trim(), name: name.value.trim() || id.value.trim(), enabled: model?.enabled ?? true, manual: true };
       if (!next.id) return;
+      try {
+        const count = input => input.value.trim() === '' ? undefined : Number(input.value);
+        const userCapabilities = normalizeUserCapabilities({
+          reasoningEffortValues: reasoning.value === 'none' ? [] : reasoning.value === 'levels' ? parseLevels(levels.value) : undefined,
+          supportsVision: vision.value === '' ? undefined : vision.value === 'image',
+          contextLength: count(context), maxOutputTokens: count(output) });
+        if (reasoning.value === 'levels' && !userCapabilities?.reasoningEffortValues?.length) throw new Error('Enter at least one reasoning level.');
+        if (userCapabilities) next.userCapabilities = userCapabilities; else delete next.userCapabilities;
+      } catch (error) { ui.status.textContent = error.message; return; }
       if (provider.models.some(item => item !== model && item.id === next.id)) {
         ui.status.textContent = 'This model ID already exists.'; return;
       }
@@ -182,6 +241,83 @@ export function mountModels(container, bridge) {
       } catch (error) { ui.status.textContent = error.message; }
     };
     id.focus();
+  }
+  async function piImportDialog(staged) {
+    const ui = dialog('Import from pi');
+    ui.node.classList.add('openvision-import-dialog');
+    ui.status.textContent = 'Reading pi configuration…';
+    let source;
+    try {
+      source = await piRequest(bridge, { action: 'read' });
+      if (!source.ok) throw new Error(source.error);
+    } catch (error) { ui.status.textContent = error.message; return; }
+    let plan;
+    try {
+      plan = planPiImport({ models: source.models, auth: source.auth, existing: providers.state.providers },
+        { normalizeUrl: normalizeBaseUrl, normalizeCapabilities: normalizeUserCapabilities });
+    } catch (error) { ui.status.textContent = error.message; return; }
+    const request = source.staged && !source.staged.invalid ? source.staged : undefined;
+    ui.form.append(element('p', `Source: ${source.dir} (read only; pi files are never changed).`, 'openvision-model-status'));
+    if (staged || request) ui.form.append(element('p', request?.current === false
+      ? 'An import was queued from the command line, but the pi files changed since that preview. Review the current preview below.'
+      : 'An import was queued from the command line. Review it and choose Import to store keys in encrypted storage.', 'openvision-model-status'));
+    const choices = new Map();
+    for (const entry of plan.providers) {
+      const section = element('section', '', 'openvision-import-provider');
+      section.setAttribute('aria-label', `pi provider ${entry.sourceId}`);
+      const header = element('div', '', 'openvision-import-header');
+      const selectable = ['new', 'imported', 'conflict'].includes(entry.status);
+      if (selectable) {
+        const box = element('input'); box.type = 'checkbox';
+        box.checked = request ? request.providers.includes(entry.sourceId) && (entry.status === 'new' || request.replace.includes(entry.sourceId)) : entry.selected;
+        box.setAttribute('aria-label', `${entry.status === 'new' ? 'Import' : 'Update'} ${entry.sourceId}`);
+        choices.set(entry, box); header.append(box);
+      }
+      const label = { new: 'New', imported: 'Already imported', conflict: 'Name conflict', unsupported: 'Not supported', invalid: 'Invalid' }[entry.status];
+      header.append(element('strong', entry.sourceId), element('span', label, 'openvision-import-status'));
+      section.append(header);
+      if (entry.url) section.append(element('small', `${entry.url} · ${entry.apiLabel}`));
+      if (entry.reason) section.append(element('small', entry.reason));
+      if (entry.key) section.append(element('small', entry.key === 'available' ? 'API key: found in auth.json; stored encrypted on import' : `API key: ${entry.key}`));
+      if (selectable) {
+        const list = element('ul');
+        for (const model of entry.models) {
+          const item = element('li', `${model.name} (${model.id}) · ${describeCapabilities(model.userCapabilities)}`);
+          if (entry.newModelIds && !entry.newModelIds.includes(model.id)) item.append(element('small', ' · already saved'));
+          list.append(item);
+        }
+        if (!entry.models.length) list.append(element('li', 'No models listed; use Discover Models after import.'));
+        section.append(list);
+      }
+      for (const note of [...entry.notes, ...entry.models.flatMap(model => (model.notes ?? []).map(text => `${model.id}: ${text}`))])
+        section.append(element('small', note, 'openvision-import-note'));
+      ui.form.append(section);
+    }
+    const summary = plan.summary;
+    ui.status.textContent = `${summary.new.length} new, ${summary.imported.length} already imported, ${summary.conflicts.length} conflicts, ${summary.unsupported.length + summary.invalid.length} not importable.`;
+    const confirm = button('Import', () => ui.form.requestSubmit());
+    confirm.className = 'openvision-primary';
+    ui.actions.append(confirm);
+    if (request) ui.actions.prepend(button('Discard queued import', async () => {
+      await piRequest(bridge, { action: 'clear-staged' }); ui.node.close();
+    }));
+    ui.form.onsubmit = async event => {
+      event.preventDefault();
+      const selected = [...choices].filter(([, box]) => box.checked).map(([entry]) => ({ ...entry, replace: entry.status !== 'new' }));
+      if (!selected.length) { ui.status.textContent = 'Select at least one provider to import.'; return; }
+      confirm.disabled = true;
+      try {
+        const keys = await piRequest(bridge, { action: 'keys', digest: source.digest, providers: selected.map(entry => entry.sourceId) });
+        if (!keys.ok) throw new Error(keys.error);
+        const results = await providers.importProviders(selected, new Map(Object.entries(keys.keys)));
+        if (request) await piRequest(bridge, { action: 'clear-staged' });
+        ui.node.close();
+        status.textContent = `Imported from pi: ${results.filter(result => !result.skipped).map(result =>
+          `${result.name} (${result.models} models${result.keyStored ? ', key stored encrypted' : ', no key'})`).join('; ')}.`;
+        render();
+      } catch (error) { ui.status.textContent = error.message; render(); }
+      finally { confirm.disabled = false; }
+    };
   }
   function modelRow(provider, model) {
     const row = element('div', '', 'openvision-model-row');
@@ -194,6 +330,8 @@ export function mountModels(container, bridge) {
     const title = element('div', '', 'openvision-model-title');
     title.append(element('span', model.name), element('small', model.id));
     title.append(element('small', reasoningSource(model, provider), 'openvision-reasoning-source'));
+    if (model.userCapabilities)
+      title.append(element('small', `User-specified · ${describeCapabilities(model.userCapabilities)}`, 'openvision-capability-source'));
     if (model.discoveryStatus === 'unlisted') {
       const availability = element('small', 'Not in latest catalog', 'openvision-model-availability');
       availability.title = 'This saved model is still selectable. The provider did not list it in its latest discovery response.';
@@ -258,7 +396,8 @@ export function mountModels(container, bridge) {
     add.className = 'openvision-primary';
     const actions = element('div', '', 'openvision-provider-actions');
     actions.append(button('Add Codex Easy', () => providerDialog(undefined, { name: 'Codex Easy', url: 'https://codex-easy.ai/v1' })),
-      button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })), add);
+      button('Add OpenAI', () => providerDialog(undefined, { name: 'OpenAI', url: 'https://api.openai.com/v1' })),
+      button('Import from pi…', () => piImportDialog()), add);
     if (providers.state.credentialCleanup?.length)
       actions.append(button('Retry credential cleanup', () => run(() => providers.cleanupCredentials()), 'refresh'));
     heading.append(element('h3', 'API connections'));
@@ -285,6 +424,9 @@ export function mountModels(container, bridge) {
   }
   render();
   void accounts.refresh();
+  void piRequest(bridge, { action: 'staged' }).then(result => {
+    if (result?.ok && result.staged && container.isConnected) return piImportDialog(true);
+  }).catch(() => {});
   void providers.ready.then(async () => {
     if (!container.isConnected) return;
     status.textContent = 'Refreshing model capabilities…';

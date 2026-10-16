@@ -18,6 +18,10 @@ function methodBody(text, name) {
 }
 
 export function requestProviderRouting(text, variant) {
+  return imageInputGate(providerRouting(text, variant));
+}
+
+function providerRouting(text, variant) {
   if (text.includes(marker)) return selectionParameters(preserveProviderHeaders(text));
   if (text.includes(previousMarker)) {
     const upgrades = [
@@ -83,6 +87,47 @@ function selectionParameters(text) {
   if (body.split(before).length !== 2) throw new Error('Agent reasoning selection payload changed');
   const after = body.replace(before, `${marker}\n      ${context}?.requestedModel ?? ${model});`);
   return text.slice(0, method.offset) + after + text.slice(method.end);
+}
+
+// The recovered workbench defines doesModelSupportImages but never calls it, so
+// pasted images reached every model. Gate the Agent turn at its owner, before
+// provider credentials are resolved or any request is sent.
+const imageMarker = '/* OpenVision image input capability gate */';
+export function imageInputGate(text) {
+  // Same native non-retryable error contract as provider selection errors.
+  const constructors = [...text.matchAll(/case "NonRetriableError":\s+return new ([\w$]+)\([\w$]+\.message,/g)];
+  if (constructors.length > 1) throw new Error('Native non-retryable Agent error contract changed');
+  const errorClass = constructors[0]?.[1] ?? 'Error';
+  const wrap = call => `try { ${call} }
+      catch (error) {
+        if (error?.name !== 'LocalProviderError') throw error;
+        throw new ${errorClass}(error.message, {cause: error, displayInfo: {
+          title: 'Image input is off for this model', detail: error.message, isRetryable: false, showRequestId: false }});
+      }`;
+  if (text.includes(imageMarker)) {
+    // Upgrade an earlier gate that threw a plain error (shown as a generic connection failure).
+    const unwrapped = /\n      (openvisionAssertImageInput\(this\.storageService, [^\n]+\);)\n    \}/g;
+    if (text.includes('Image input is off for this model')) return text;
+    if ([...text.matchAll(unwrapped)].length !== 1) throw new Error('Image input gate changed');
+    return text.replace(unwrapped, (_match, call) => `\n      ${wrap(call)}\n    }`);
+  }
+  const method = methodBody(text, 'runLocalAgentInExtensionHost');
+  const [, , action, model, , , , , , options] = method.parameters;
+  if (!action || !model || !options) throw new Error('Agent turn parameters changed');
+  const importLine = 'import {requestProvider as openvisionRequestProvider, requestAgentProvider as openvisionAgentProvider} from "../code/electron-sandbox/workbench/openvision-model-providers.js";';
+  if (text.split(importLine).length !== 2) throw new Error('Provider routing import changed');
+  const guard = `
+    ${imageMarker}
+    {
+      const openvisionMessage = ${action}?.action?.case === "userMessageAction" ? ${action}.action.value : undefined;
+      const openvisionImages = [openvisionMessage?.userMessage, ...(openvisionMessage?.prependUserMessages ?? [])]
+        .reduce((count, message) => count + (message?.selectedContext?.selectedImages?.length ?? 0), 0);
+      ${wrap(`openvisionAssertImageInput(this.storageService, ${options}?.requestedModel?.modelId ?? ${model}?.modelId, openvisionImages);`)}
+    }
+`;
+  text = text.slice(0, method.offset) + guard + text.slice(method.offset);
+  return text.replace(importLine, importLine.replace('requestAgentProvider as openvisionAgentProvider}',
+    'requestAgentProvider as openvisionAgentProvider, assertImageInput as openvisionAssertImageInput}'));
 }
 
 function agentRoutingPayload(text) {

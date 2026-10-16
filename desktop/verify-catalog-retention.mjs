@@ -86,7 +86,7 @@ const provider = () => page.locator('.openvision-provider').filter({ hasText: 'R
 async function discover(next, expected = 'Saved') {
   catalog = next;
   await provider().getByRole('button', { name: 'Discover Models', exact: true }).click();
-  await page.locator('.openvision-model-settings > .openvision-model-status').getByText(expected, { exact: true }).waitFor();
+  await page.locator('.openvision-model-settings .openvision-api-settings > .openvision-model-status').getByText(expected, { exact: true }).waitFor();
 }
 async function infer(label) {
   phase = label;

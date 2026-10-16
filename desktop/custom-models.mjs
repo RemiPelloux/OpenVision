@@ -210,6 +210,7 @@ export async function installModelSettings(root) {
   for (const name of ['model-settings.js', 'model-settings.css', 'model-providers.js', 'model-picker.css'])
     await copyFile(join(root, 'desktop', name), join(workbench, `openvision-${name}`));
   await copyFile(join(root, 'desktop/model-accounts.js'), join(workbench, 'model-accounts.js'));
+  await copyFile(join(root, 'desktop/pi-import.js'), join(workbench, 'pi-import.js'));
   await copyFile(join(root, 'desktop/account-models.js'), join(workbench, 'account-models.js'));
   await copyFile(join(root, 'desktop/account-models.js'), join(app, 'out/account-models.js'));
   await copyFile(join(root, 'desktop/account-picker.js'), join(workbench, 'account-picker.js'));

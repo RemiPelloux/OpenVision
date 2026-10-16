@@ -41,6 +41,7 @@ capability field. The model rows show `Compatibility hints · Unverified`.
 
 **Possible feature:** an importer for an existing agent's provider and model
 configuration, which would also carry capabilities. None was built here.
+Follow-up: [provider import from pi and user-specified capabilities](provider-import-linux.md).
 
 **Persistence and storage.** After a full restart, all three providers and 13
 models were restored with every model enabled.

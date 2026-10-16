@@ -38,14 +38,16 @@ export async function cleanupProviderCredentials(store) {
 }
 
 export async function saveProvider(store, options) {
-  const { id, name, url, key, headers, clearHeaders } = options;
+  const { id, name, url, key, headers, clearHeaders, models, importSource } = options;
   const previous = store.state.providers.find(provider => provider.id === id);
   const providerId = previous?.id ?? crypto.randomUUID();
   const normalized = clearHeaders ? {} : headers !== undefined ? normalizeCustomHeaders(headers) : undefined;
   const names = normalized ? Object.keys(normalized) : previous?.customHeaderNames ?? [];
   const revision = normalized ? (names.length ? crypto.randomUUID() : undefined) : previous?.customHeaderRevision;
-  const provider = { id: providerId, name, url, models: previous?.models ?? [],
+  const source = importSource ?? previous?.importSource;
+  const provider = { id: providerId, name, url, models: models ?? previous?.models ?? [],
     ...(names.length ? { customHeaderNames: names, customHeaderRevision: revision } : {}),
+    ...(source ? { importSource: source } : {}),
     capabilitiesDiscovered: previous?.url === url && normalized === undefined && previous.capabilitiesDiscovered === true };
   await cleanupProviderCredentials(store);
   await retainCleanup(store, [
