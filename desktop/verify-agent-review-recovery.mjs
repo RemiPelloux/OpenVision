@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const timeoutMs = 5000;
-const redo = process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y';
+const redo = process.platform === 'win32' ? 'Control+y' : 'ControlOrMeta+Shift+z';
 
 export async function createReviewRecoveryFixture({ directory, project }) {
   const repeated = join(project, 'repeat café.js'), parked = join(project, 'parked.js');
