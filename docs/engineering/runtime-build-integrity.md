@@ -96,3 +96,28 @@ These checks do not establish live-provider availability, native macOS/Linux
 behavior, whole-app RAM savings, or independent native-source rebuilding.
 The earlier unexplained exit 134 in the development matrix remains unresolved;
 successful repeats alone do not close OV-403. No full story is promoted.
+
+## 16 October working-tree blocker
+
+The pending custom-provider-header build has not completed. Its first failure
+reported a changed generated Agent input outside the namespace journal. All 108
+recorded namespace edits matched their exact locations. The file and original
+journal were preserved under the ignored local
+`backups/provider-header-namespace-20261016/` directory before reconciling the
+journal hashes with those observed bytes. This preserved the unknown changes;
+it did not establish that the resulting input was valid.
+
+The subsequent build stopped during namespace tokenization of the generated
+Agent main bundle. A read-only repeat under Node **24.18.0** on 16 October
+reproduces `Unexpected character '\u0013' (198301:7)`, character offset
+`8051348`. The producing cause remains unknown. This is a generated runtime
+input failure; it is not evidence that the published 3.24.18 source archive is
+corrupt, nor a regression result for the existing portable download.
+
+Recovery must compare retained inputs and exact hashes, preserve unknown
+differences and avoid stripping control characters globally: some occur legally
+inside recovered string tables. Required follow-up is a successful full build,
+repeat build/integrity checks and native provider-header workflows against the
+final generated artifacts. Earlier passing runs above remain valid only for
+their recorded revisions. The [gap audit](../recovery/feature-gap-audit.md#current-build-and-pending-work)
+keeps this blocker and unverified provider work separate from the acceptance score.

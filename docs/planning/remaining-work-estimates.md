@@ -11,6 +11,11 @@ menu/group failures, physical faults and active-write/tool interruption remain.
 The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
+The [current working-tree build gate](../recovery/feature-gap-audit.md#current-build-and-pending-work)
+is separate from earlier passing runs: pending provider headers have no final
+build/native acceptance, and generated Agent tokenization currently fails.
+Recovery and repeat verification remain within the existing points below.
+
 The 16 October transactional review-storage follow-up now covers source-level
 cache rollback and initial snapshot-write retry. Its **58/58** Agent tests,
 production build and **26/26** build-integrity checks pass. The remaining storage

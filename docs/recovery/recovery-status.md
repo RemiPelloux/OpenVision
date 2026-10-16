@@ -42,6 +42,13 @@ The latest publication check passed for **30,111/30,111** files and
 **237/237** selected inputs; use `npm run recovery:verify` to repeat the
 published-text and historical-native checks from the repository root.
 
+The prepared runtime still uses the **3.21.13** base; the **3.24.18** index is a
+reference archive, not a wholesale runtime upgrade. The
+[version comparison](feature-gap-audit.md#reference-implementation-and-release-versions)
+separates both from preview.6. The pending provider-header working tree currently
+has a [generated Agent build blocker](feature-gap-audit.md#current-build-and-pending-work);
+previous passing builds do not verify that unfinished work.
+
 Published code and native Evidence live under `curs_source/javascript`,
 `curs_source/modules`, and `curs_source/native`. Complete local captures,
 dependency text, JavaScript Evidence and decoded WAT live in

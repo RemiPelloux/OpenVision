@@ -3,7 +3,8 @@
 [Current percentages and delivery gates](../progress.md) ·
 [Prioritized backlog and points](../planning/roadmap.md#ranked-rea-implementation-and-verification-work) ·
 [Published recovery archive](../../curs_source/README.md) ·
-[Source-to-gap map](#source-index-to-implementation-gaps)
+[Source-to-gap map](#source-index-to-implementation-gaps) ·
+[Current build and pending work](#current-build-and-pending-work)
 
 Audit baseline: **12 October 2026**; recovery and implementation updates through
 **16 October 2026**. Product baseline: commit
@@ -87,11 +88,40 @@ The ledger owns status, the roadmap owns priority/points, and the publication
 manifest owns source identities. This audit links those records without
 introducing another completion score.
 
+### Reference, implementation and release versions
+
+| Layer | Current identity | How it affects the gap |
+| --- | --- | --- |
+| Published reference | **3.24.18**, [237-input source index](../../curs_source/modules/3.24.18/README.md) | Every selected input has a structural result. Original source/build inputs and semantic equivalence remain unproven. |
+| Prepared OpenVision runtime | **3.21.13** base, with maintained [desktop customizations](../../desktop/README.md) | Newer recovered owners must be ported and verified individually. The local `build/source-build.json` records this base; publishing the newer archive does not upgrade it. |
+| Downloadable application | **0.2.0-preview.6**, [packaged verification](../verification/portable-preview6.md) | Later source fixes and pending work are outside that payload; see [source additions](../verification/release-claims.md#source-additions-after-preview6). |
+
+### Current build and pending work
+
+The earlier passing build and native reports below describe their recorded
+revisions, not the current working tree. On **16 October 2026**, the local
+provider-header build stopped at the generated Agent namespace boundary.
+A read-only tokenization check under pinned Node **24.18.0** reproduces
+`Unexpected character '\u0013' (198301:7)` at character offset `8051348`.
+The [build-integrity follow-up](../engineering/runtime-build-integrity.md#16-october-working-tree-blocker)
+records preservation, unknown cause and required recovery checks. The current
+generated tree has no passing final build or native verification for this work.
+
+| Pending scope | Implementation/evidence boundary | Gate still required |
+| --- | --- | --- |
+| Custom provider authentication headers | Uncommitted forwarding, secret-storage, settings and redaction changes; focused tests are not final runtime evidence. The recovered [Agent provider module][source-provider-transport] is a reference, not a verified port. | Recover the generated input without discarding unknown changes; complete/repeat the pinned-toolchain build, then native discovery, Agent/child, completion, Quick Edit, restart and reflected-error/redaction checks. |
+| Generated Agent input integrity | Exact namespace edits were preserved with local backups; an unexpected control character still stops tokenization. | Reconcile against retained known hashes, keep unknown differences, pass repeat build/integrity checks and explain any remaining uncertainty. No corruption cause has been established. |
+
+Neither item changes story status or complexity points. They belong to the
+existing provider failure/release gates, not a new missing-bundle count.
+
 ## Latest documentation and source reconciliation
 
 Reconciled against source parent `37f159e4`, source-index commit `b578b768`,
 live-provider edit evidence in `ac527049`, and the current transactional review
-fix in `d3df7cb4` on **16 October 2026**. This follow-up corrects the evidence
+fix in `d3df7cb4` on **16 October 2026**. Documentation corrections through
+`5b20b881` retain their original evidence scope; the pending working-tree build
+is tracked [separately above](#current-build-and-pending-work). This follow-up corrects the evidence
 register introduced in `dcb0f880`: OV-201 remains Verified, later startup/build
 results have their own scope, and authored control-plane code has a separate
 implementation owner from recovered desktop MCP code. The module index is generated from
@@ -99,7 +129,7 @@ the versioned publication manifest and links its integrity authority and this
 source-to-gap map. The latest publication verification passed after restoring a
 stale working-tree mutation: **30,111**
 published files and **670,747,317** bytes matched their recorded SHA-256 values.
-The latest source follow-up also passes **58/58** focused Agent recovery tests,
+The recorded transactional source follow-up passed **58/58** focused Agent recovery tests,
 `npm run build:desktop`, `npm run test:build-integrity` (**26/26**) and desktop
 syntax checks. This refresh changes navigation and the gap description; it does
 not change the 42-story denominator or award partial credit. The linked
@@ -247,6 +277,7 @@ configuration story OV-201 already has Verified evidence.
 [source-terminal]: ../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/terminalService.js
 [source-agent-host]: ../../curs_source/modules/3.24.18/b44c1faa5bfa37155615f20a7678c46b5f217a47777be57cf3f68ace7d909579-b92644f55a72/entry.js
 [source-agent-exec]: ../../curs_source/modules/3.24.18/bfd9c46359253e0a4ec6c03bae57cfb837af746699a715df8e7fafe978e48cdf-4766f708d5db/entry.js
+[source-provider-transport]: ../../curs_source/modules/3.24.18/bfd9c46359253e0a4ec6c03bae57cfb837af746699a715df8e7fafe978e48cdf-4766f708d5db/module-74150.js
 [source-retrieval]: ../../curs_source/modules/3.24.18/0ef754f0098ead080313e791a4c23e4e11f21e07cf5e620cea6cac7936091b1d-110efb3ab2ed/entry.js
 [source-retrieval-worker]: ../../curs_source/modules/3.24.18/e659303a36e9541189116c6b125485bc1b4d856ff6fe86a000559f31b8642c11-684debf3a036/entry.js
 [source-main]: ../../curs_source/modules/3.24.18/208e7b1ba65e410e50a6ddc167ffe358b469aa6079c2b6a7eb6937682771871d-768b05080f06/entry.js
@@ -407,7 +438,7 @@ inference, prove extracted modules runnable, or promote any acceptance story.
 Refresh verification on **16 October 2026** passed: **30,111** current published
 text files (**670,747,317** bytes) and **9,354** historical native export files
 matched their manifests; all **237/237** selected inputs retained structural
-results, and all **13** source references in the map above matched recorded
+results, and all **14** source references in this audit matched recorded
 output hashes.
 The feature-status command confirmed **6 Verified / 22 Partial / 12 Planned /
 2 Unknown**, and the documentation check reported no missing paths or anchors.

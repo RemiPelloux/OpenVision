@@ -4,6 +4,12 @@ Updated **16 October 2026**. Start here for the feature backlog, recovery result
 and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
+The [current build and pending-work register](recovery/feature-gap-audit.md#current-build-and-pending-work)
+records a generated Agent tokenization blocker in the unfinished provider-header
+build. Earlier passing source/native reports do not verify that working tree.
+The [version comparison](recovery/feature-gap-audit.md#reference-implementation-and-release-versions)
+separates the 3.24.18 reference archive, 3.21.13 runtime base and preview.6 download.
+
 ## Product feature coverage
 
 The [acceptance ledger](planning/completion-sprints.md) owns the 42 stories and their
