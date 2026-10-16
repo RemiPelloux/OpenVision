@@ -154,6 +154,22 @@ The abrupt exit is the verifier-owned host signalling itself through its
 Inspector connection; no process was selected by PID. Screenshots of the
 restart, failure, menu and grouped states were inspected with the assertions.
 
+### After merging main
+
+After merging local main (Agent write durability `88d2be4e`, provider-error
+policy `02867b27`, Linux redo key `6680c21d`) at merge `0c0ae064`, the rebuilt
+workbench is `e3a02e2bba65a9daa2fc895109cf39802d7109c470a3229b7b6884f9742b00b0`.
+On that build `test:agent-review` passes **88/88** (now including the write
+durability suite), `test:build-integrity` **26/26**, `check:desktop` and
+`docs:check` pass, and these native runs pass:
+
+- `review-deletion-verification-XWopVD`: all seven scenarios, 15 authenticated
+  controlled requests, three injected deletion errors only, no rows left.
+- `review-storage-verification-U0MDtU`: Edit-menubar removal/snapshot failures.
+- `agent-verification-zWuWkY` (`verify:agent -- --review-recovery`): the full
+  Agent regression, 29 authenticated controlled requests, no renderer errors,
+  five host exits 0 — the first Linux pass of this regression recorded here.
+
 ## Unverified and remaining
 
 - **Linux x64 only.** Windows and macOS were not run.
