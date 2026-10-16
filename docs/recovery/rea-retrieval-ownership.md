@@ -120,6 +120,8 @@ Addon SHA-256: `f4cd2c907a9891b48f932d8e6e9035c6a2cfefdc980f26c9f1237148538dc452
 
 ## Next gates, in dependency order
 
+OV-501 follow-up: [project-data destinations](rea-project-data-destinations.md).
+
 1. **OV-501 / 13 points:** trace the actual loaded addon and process-family
    traffic on disposable search/index fixtures; resolve semantic-search callers
    and record each operation's destination without enabling hidden uploads.
