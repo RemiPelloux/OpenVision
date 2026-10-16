@@ -12,8 +12,8 @@ New project configuration uses `.openvision/`:
 | Project MCP servers | `.openvision/mcp.json` |
 
 Plans initially use `~/.openvision/plans/`, with the existing workspace fallback
-and Move to Workspace flow. Profile rules, global MCP configuration and user
-agents keep their existing isolated OpenVision profile storage. Legacy single-file
+and Move to Workspace flow. Profile rules, global MCP configuration, user
+agents, skills, commands and hooks use isolated OpenVision profile storage. Legacy single-file
 project rules use `.openvisionrules`; new rules belong in `.openvision/rules/`.
 
 The launcher additively migrates its selected Playground project. For another
@@ -37,6 +37,33 @@ extensibility enabled, `CLAUDE.md`. Parent folders, the enclosing Git root and t
 home directory are not searched, and rule deep links cannot write home-directory
 rule files. To keep rules that a project previously inherited from a parent
 folder, copy them into the project. See [rule isolation](../recovery/rea-rules-isolation.md).
+
+## User-level customization
+
+User skills, commands and hooks belong to the OpenVision profile, not your home
+directory. The profile home is the profile's `User` folder (`data/local/User`
+for the default launcher profile). It uses the same layout as before:
+`.openvision/skills/`, `.openvision/commands/` and `.openvision/hooks.json`.
+Customize → New writes there. User subagents stay in `User/agents/`.
+
+OpenVision no longer reads `~/.openvision`, `~/.cursor`, `~/.claude`, `~/.codex`,
+`~/.agents` or `~/.grok` skills, commands, subagents or hook settings from your
+home directory. Each profile and installation sees only its own items. With
+third-party extensibility enabled, the same third-party folder names are read
+inside the profile home, for example `User/.claude/skills/`. Nothing is moved or
+deleted. To keep items you stored in your home directory, copy them into the
+profile once, without overwriting:
+
+```sh
+mkdir -p data/local/User/.openvision
+cp -Rn ~/.openvision/skills ~/.openvision/commands data/local/User/.openvision/
+cp -n ~/.openvision/hooks.json data/local/User/.openvision/
+```
+
+Project folders (`.openvision/skills`, `.openvision/commands`, and `.claude/…`
+with third-party extensibility) are unchanged. Some agent data, such as per-project
+transcripts, plans and worktrees, still uses the home directory. See
+[global path isolation](../recovery/rea-global-path-isolation.md).
 
 ## Implementation and limits
 
