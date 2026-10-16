@@ -34,6 +34,9 @@ The [Agent I/O-fault report](recovery/rea-agent-io-faults.md) fixes saved-file l
 volume (Linux x64 evidence); OV-103 status and points are unchanged.
 The Linux [provider failure matrix](recovery/rea-provider-failure-matrix.md) verifies certificate expiry/hostname, mid-stream, capability and restart cells, and fixes unfinished-stream automatic repeats. OV-102/204 stay Partial.
 
+The [Agent interruption report](recovery/rea-agent-interruption.md) covers Stop, close and abrupt
+exit during outstanding writes/tools (Linux x64 evidence); OV-103 status and points are unchanged.
+
 The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and
 resumes cleanup without repeating completed steps. It advances P0 OV-103 within

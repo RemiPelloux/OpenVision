@@ -16,6 +16,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Live-provider Agent multi-file editing](rea-agent-live-edit.md)
 - [Retryable Agent review Undo/Redo: native keyboard failures and history ownership](rea-agent-undo-retry.md)
 - [Agent review cancellation and resumable handler cleanup](rea-agent-review-removal.md)
+- [Agent interruption during outstanding writes and tools](rea-agent-interruption.md)
 - [Agent retry history and live authentication recovery](rea-agent-retry-history.md)
 - [Native Agent timeout and explicit retry recovery](rea-agent-timeout-recovery.md)
 - [Agent provider failure-to-history matrix (Linux)](rea-provider-failure-matrix.md)

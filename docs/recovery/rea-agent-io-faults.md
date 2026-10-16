@@ -110,15 +110,31 @@ but never ran; they are replaced so that every copy behaves the same.
   whitespace and trailing commas. Each helper must have exactly one caller, and
   the executor's ENOSPC mapping must be present. Otherwise the build fails.
   First backups go to `backups/agent-write/`; reapplying is a no-op (marker
-  `/* OpenVision durable Agent write v1 */`).
+  `/* OpenVision durable Agent write v2 */`). Built v1 output from `88d2be4e`
+  is upgraded only if it matches the generated v1 text exactly.
 
 Trade-off: on POSIX, the atomic path needs free space for a complete copy. A
 write that would barely have fitted in place now fails with "No space left on
 device" and leaves the saved file intact. Hard links, ACLs and extended
 attributes are not carried over to the new inode, which is why multi-link and
-foreign-owned files stay in place. A process killed between the temp write and
-the rename can leave an orphan `.openvision-*.tmp` sibling. The saved file is
-still intact, but nothing currently removes orphans.
+foreign-owned files stay in place.
+
+### Interrupted-writer temporaries
+
+The parallel interruption investigation cherry-picked `88d2be4e` (v1) and ran
+its native Linux probe (its own worktree, run `agent-interruption-rUWFJw`, controlled fixture). The probe held
+the write after half of the bytes had reached the temp sibling, then closed the window or
+killed the process group. In both cases the target kept its exact original
+bytes and no review appeared, with no extra requests. Each case left exactly one
+`.<name>.openvision-<uuid>.tmp` sibling in the project, which survived restart.
+
+v2 adds a bounded sweep to the POSIX atomic path. Before writing its own
+temporary, the helper removes siblings for the **same target** that match the
+exact generated pattern (`.<basename>.openvision-<UUID>.tmp`), are regular
+files, and are older than 60 seconds. Newer temporaries may belong to a
+concurrent writer and are kept. The cost is one `readdir` of the target's
+directory per Agent write. An orphan of a file that is never written again
+remains.
 
 ## Verification
 
@@ -136,18 +152,19 @@ npm run docs:check
 
 | Check | Result |
 | --- | --- |
-| `test:agent-review` | **77/77** pass, 0 skipped (71 existing + 6 new in [`agent-write-durability.test.mjs`](../../desktop/agent-write-durability.test.mjs)) |
-| New real-fault tests | For each of the three durable helpers: ENOSPC, EROFS and EFBIG leave the saved bytes intact with no temp files. The same write succeeds after space is freed, and a new process reads the complete bytes. A failed new file is removed. Hard-linked files restore both names. The recovered control reproduces the partial file. |
+| `test:agent-review` | **79/79** pass, 0 skipped (71 existing + 8 new in [`agent-write-durability.test.mjs`](../../desktop/agent-write-durability.test.mjs)) |
+| New real-fault tests | For each of the three durable helpers: ENOSPC, EROFS and EFBIG leave the saved bytes intact with no temp files. The same write succeeds after space is freed, and a new process reads the complete bytes. A failed new file is removed. Hard-linked files restore both names. The recovered control reproduces the partial file. A stale same-target orphan is swept, while recent, other-target and non-matching names are kept. Exact v1 output upgrades to v2. |
 | `check:desktop` | Pass |
 | `build:desktop` | Pass: 239 scripts, 124 manifests, 30 local main-process modules validated; one marker in each of the three outputs; three first backups |
 | `test:build-integrity` | **26/26** pass |
-| `verify:agent-io-faults` | **Pass**: `logs/agent-io-fault-verification-z4JDny/result.json` (final, below) and `kSNHD4` (earlier build of the same source) |
+| `verify:agent-io-faults` | **Pass**: `logs/agent-io-fault-verification-8yDpIj/result.json` (final v2, below); v1 builds also passed in `z4JDny` and `kSNHD4` |
 | `verify:agent -- --review-recovery` | **Pass** after a Linux redo-key correction; see [native regression](#native-regression) |
 | `docs:check` | Pass, no failures |
 
-Final native run `z4JDny`: parent 1c753c64 plus the changes committed as
-`88d2be4e`, on the build with all three helpers replaced. The same build passed
-the full regression below.
+Final native run `8yDpIj`: the v2 build, with all three helpers replaced. After
+space was freed, the verifier added a two-minute-old `.notes.md.openvision-<uuid>.tmp`
+orphan. The retried write removed it (0 temp files at every later stage). The
+same build passed the full regression below.
 
 | Stage | `notes.md` on disk | Free bytes | Temp files | Pending review |
 | --- | --- | --- | --- | --- |
@@ -167,18 +184,18 @@ SHA-256 values:
 | File | SHA-256 |
 | --- | --- |
 | Workbench | `865a11e824df62da0255efc6362fc0252b6ecefbc1b390aaa920f5f3fe0c37ee` |
-| Agent-exec | `995fa4386a90445e12a9d7b811ddc7a1ac71bc463bc9024513a382c12099f7e9` |
-| Agent-host | `cc1c8065bd49723110dccc802946fb5eb4fb1482a7cfa51b2d36d88f537f8f4c` |
-| Daemon | `be23c2e60a7eba07d9d4bde43e57adc86b4c2194911d31a1572f1b79e525edc2` |
-| Verifier | `ade28ea8aac686a4d49d1085bd71b760a344ee2142f7071b0b513ad4fe80d5ea` |
+| Agent-exec | `7e34c863571c15f64ecfa7d129d884a70eb9cf179f70b1e22314df5d2745aeca` |
+| Agent-host | `56428e0b894f095ffe277ff126ff7542793636ca713c40f4f4df3de3fdd9fd85` |
+| Daemon | `900857e35dbafb323ef7929462214300e1df479f3eca469d8991d257592436bb` |
+| Verifier | `ed8cf00eed981fb44e72fe8ae0a8e7c51bea94ff0ff7ed85d862d98fb6d192ab` |
 | Recovered agent-exec input | `09ddedf110515bef38ab4acc3b6e4f5b345abd5aae99dc20f4bd0b823426c919` |
 | Recovered agent-host input | `243e919a5ee45a294ce25b004901fc5599fbafd661dee2bfaeb8f63b26ede83a` |
 | Recovered daemon input | `88c68aadf62907a744dd77e45e9858cc55593a51d866cc88a35ddbc248f65db2` |
 
-Run `kSNHD4` passed with the same stage results on an earlier build of the same
-source; its agent-exec hash was `51e353ed…`. The rebuild in between (for the
-control below) produced a different agent-exec output. Both outputs contain exactly one durable
-helper; the cause of the hash difference was not investigated.
+The v1 runs `kSNHD4` and `z4JDny` (agent-exec `51e353ed…` and `995fa438…`)
+passed with the same stage results, apart from the orphan stage. The rebuild for
+the control below changed the v1 agent-exec output hash; each output contains
+exactly one durable helper, and the cause was not investigated.
 Intermediate run `AvSEFu` (agent-exec only) showed the same fault behavior but
 failed its assertion because the single-file control is labelled "Keep", not
 "Keep All". Run `svA4gp` passed after the verifier was corrected; neither is
@@ -198,12 +215,13 @@ verifier, not the fix: `verify-agent-edits.mjs` and
 Windows. They now send `Control+y` on Windows and
 `ControlOrMeta+Shift+z` elsewhere, as `verify-project.mjs` already did.
 
-With that change, `logs/agent-verification-VGFMaL/result.json` **passes** on the
-final fixed build. It covers native read/search, multi-file review with Undo
+With that change, `logs/agent-verification-VGFMaL/result.json` (v1 build) and
+`logs/agent-verification-fRcPwc/result.json` (final v2 build, agent-exec
+`7e34c863…`) both **pass**. It covers native read/search, multi-file review with Undo
 All and Keep All, kept-edit Undo/Redo through each intermediate value, repeated
 edits, pending review rejected and accepted across normal restarts, accepted
 bytes after restart, command deny/allow/Stop and resume. All 29 controlled
-requests were authenticated, with no renderer errors and five host exits 0.
+requests were authenticated in each run, with no renderer errors and five host exits 0.
 Verifier SHA-256:
 `3462b5fe63c0267c2b70d3ea804e2bcc280cf8137b1646d2e345208de3c4c051`. Edit
 fixture: `7c276783907b151a7dc1345b35a07958d3681be228432e4804b4d1426ebfe243`.
@@ -220,8 +238,10 @@ controlled fixture, not live inference.
   were not run natively.
 - EIO from a failing device, torn sectors and power loss were not tested.
   Termination during an outstanding write belongs to the interruption gate.
-- Orphaned temp files after termination between the temp write and the
-  rename.
+- Orphans of files that are never written again, and the 60-second age
+  threshold under clock changes. After v2, the interruption probe has not been
+  re-run against the sweep; the sweep is covered by producer tests and the
+  native seeded-orphan stage below.
 - Windows and macOS: the Windows in-place restore path is exercised only by the
   POSIX hard-link fallback. `verify:review-storage` is Windows-only and was not
   run here.
