@@ -65,6 +65,7 @@ filename-label input and the verification limits.
 | Understand failed Undo/Redo recovery and retry guidance | [Review callback and native history ownership](recovery/rea-agent-undo-retry.md) |
 | Understand recovery limitations | [Recovery status](recovery/recovery-status.md) · [Native inventory](recovery/native-recovery-inventory.md) |
 | See which gaps the new source/docs close and which remain | [Latest reconciliation and documentation owners](recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation) |
+| Check current evidence, story status and its exact implementation owner | [Evidence register: recovered desktop code versus authored services](recovery/feature-gap-audit.md#current-evidence-register) |
 | Connect recovered source to current missing features | [Updated gap audit and source-to-implementation map](recovery/feature-gap-audit.md#source-index-to-implementation-gaps) |
 | Browse recovered application code, extracted modules and native pseudocode | [`curs_source` recovery archive](../curs_source/README.md) |
 | Read this release's scope | [0.2.0-preview.6 projects in one window](releases/0.2.0-preview.6.md) |

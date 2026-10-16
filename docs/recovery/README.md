@@ -7,7 +7,8 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Selected JavaScript bundles: final extraction, provenance and limitations](javascript-bundles.md)
 
 - [OpenVision: recovery gaps and remaining product work](feature-gap-audit.md)
-- [Current evidence register and source-to-gap map](feature-gap-audit.md#current-evidence-register)
+- [Current evidence register: implementation owners, verified scopes and remaining gates](feature-gap-audit.md#current-evidence-register)
+- [Source index to maintained implementation and acceptance gaps](feature-gap-audit.md#source-index-to-implementation-gaps)
 - [Storage notification ownership and native model-discovery failure](../engineering/storage-write-ownership.md)
 - [Native recovery checklist](native-recovery-inventory.md)
 - [Agent review and editor undo ownership](rea-agent-edit-history.md)
