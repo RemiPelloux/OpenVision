@@ -50,6 +50,8 @@ failure/history cases still prevent story promotion; **6/42 (14.29%)** is unchan
 The [review-deletion follow-up](../recovery/rea-agent-review-deletion.md) covers
 live-review record deletion, grouped post-commit cleanup and menu Undo/Redo on
 Linux x64 only; OV-103 keeps its status and points.
+The [Agent I/O-fault follow-up](../recovery/rea-agent-io-faults.md) reproduces real full-volume
+loss of saved bytes on Linux and makes Agent writes temp-file/rename durable. OV-103 stays Partial.
 
 The [review-removal follow-up](../recovery/rea-agent-review-removal.md) fixes
 cancellation failure advancing history and handler cleanup losing its owner.
@@ -149,8 +151,8 @@ and detailed evidence links.
 | ---: | --- | --- | --- | ---: |
 | 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Physical I/O and interruption during active writes/tools, remaining menu/group/post-commit and live-provider cases; [cancellation and resumable cleanup](../recovery/rea-agent-review-removal.md), cache rollback and initial-write retry have scoped coverage | 8 |
 | 2 | OV-102 · Chat, Stop and retry | Remaining error-to-history ownership across both Agent paths | Complete interruption/history matrix after passing full-duration native header/body release and explicit live retries | 8 |
-| 3 | OV-204 · Provider failures | Capability rejection and stream-error propagation beyond established cases | Certificate expiry/hostname, unsupported actual inputs, remaining malformed streams and secret-safe recovery | 5 |
-| 4 | OV-302 · Local configuration isolation | Remaining global path producers, classifiers, watchers and consumers | Complete additive migration with backups; two profiles and another installation; preserve explicit project compatibility | 8 |
+| 3 | OV-204 · Provider failures | Capability rejection and stream-error propagation beyond established cases | Certificate expiry/hostname, unsupported actual inputs, remaining malformed streams and secret-safe recovery; Linux cells verified in the [failure matrix](../recovery/rea-provider-failure-matrix.md), with failure records after restart still open | 5 |
+| 4 | OV-302 · Local configuration isolation | Remaining global path producers, classifiers, watchers and consumers; [rule discovery](../recovery/rea-rules-isolation.md) is now confined to the opened folder | Complete additive migration with backups; two profiles and another installation; preserve explicit project compatibility | 8 |
 | 5 | OV-303 · MCP tool ownership | Named-profile/configuration ownership and failed-close consumers | Same-name overrides, simultaneous config changes and cross-window failed-cleanup recovery without replay | 5 |
 | 6 | OV-301 · Rules and approved memories | Revisit persistence only if physical-failure evidence exposes an owner gap | Physical full-disk/I/O failure and recovery; preserve acknowledged rules and original memory records | 5 |
 | 7 | OV-403 · Terminals, tasks and shutdown | Explain earlier host exit 134 and utility-worker shutdown diagnostics | Repeat close/restart with active children; preserve state and release only owned processes | 8 |

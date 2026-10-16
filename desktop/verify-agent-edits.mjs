@@ -53,7 +53,7 @@ export async function verifyKeptUndoForFiles(page, { directory, files, assertFil
   await page.screenshot({ path: join(directory, 'kept-edits-undone.png') });
   for (const file of files) {
     await open(file);
-    const redo = process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y';
+    const redo = process.platform === 'win32' ? 'Control+y' : 'ControlOrMeta+Shift+z';
     await page.keyboard.press(redo); await saveAndCheck(page, file, file.changed);
     const keep = page.getByText('Keep File', { exact: true }).filter({ visible: true });
     // Returning to the original bytes may dispose the diff; text redo need not recreate it.

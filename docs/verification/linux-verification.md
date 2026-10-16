@@ -38,13 +38,13 @@ fixtures; no paid inference. `logs/` paths are private run artifacts.
 | `verify:language`, `verify:inline-edit`, `verify:save-all`, `verify:local-rules`, `verify:telemetry`, `verify:import` | Pass |
 | `verify:memory`, `verify:legacy-memory`, `verify:mcp-cleanup`, `verify:model-menu`, `verify:provider-errors` | Pass |
 | `verify:model-menu:large`, `verify:catalog-retention`, `verify:reasoning-capabilities`, `verify:subagent-reasoning` | Pass |
+| `verify:paste`, `verify:rules-isolation` (16 October, source build) | Pass. The earlier project-rule failure came from rules discovered in parent folders and the home directory; discovery now stays inside the opened folder ([rule isolation](../recovery/rea-rules-isolation.md)) |
 | Portable package (`npm run package:linux`): launch, profile in `electron-host/data/local`, restart persistence, Wayland app ID `openvision` | Pass |
 
 ### Open
 
 | Check | Status |
 | --- | --- |
-| `verify:paste` | Large-paste storage, undo/redo, repeats and failed-write recovery pass. The final project-rule step fails: Customize → Rules lists rules from this checkout's parent `.cursor/rules` and the user's real `~/.cursor/rules`, and omits the project's `.openvision/rules`. Rule discovery still reads unmapped `.cursor` locations; this is a profile-isolation defect, not Linux-specific |
 | Windows-only verifiers (`verify:rules:windows`, `verify:legacy-memory:windows`, `benchmark:native`) | Not applicable |
 
 ## Linux-specific fixes made during verification
