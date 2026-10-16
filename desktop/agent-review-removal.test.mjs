@@ -40,7 +40,8 @@ function fixture(source = patched) {
   const handlerOwner = reviewRemovalHandlerOwner(source);
   const handlerRemoval = handlerOwner.body.body.find(node => node.key?.name === 'remove');
   const methods = ['addDiff', 'remove', '_remove', 'getStoredInlineDiff', 'setStoredInlineDiff',
-    'openvisionReleaseReviewReference', 'openvisionRetryReviewReferences'].map(name => {
+    // Every OpenVision service owner, including record deletion where present.
+    ...owner.body.body.filter(node => node.key?.name?.startsWith('openvision')).map(node => node.key.name)].map(name => {
     const node = owner.body.body.find(method => method.key?.name === name);
     return source.slice(node.start, node.end);
   });

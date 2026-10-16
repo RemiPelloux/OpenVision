@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { historyCommand } from './verify-review-undo-stack.mjs';
 
 async function state(page) {
   return page.evaluate(async () => {
@@ -40,9 +41,9 @@ async function injectFault(page, kind) {
   }, kind);
 }
 
-async function focusAndUndo(page) {
+async function focusAndUndo(page, result) {
   await page.locator('.editor-instance .monaco-editor .inputarea').filter({ visible: true }).first().focus();
-  await page.keyboard.press('ControlOrMeta+z');
+  await historyCommand(page, result, 'undo');
 }
 
 async function clearNotifications(page) {
@@ -60,7 +61,7 @@ export async function checkNativeReviewRemovalFailures({ page, result }) {
     await injectFault(page, kind);
     const check = { kind }; result.removal.cases.push(check);
     try {
-      await focusAndUndo(page);
+      await focusAndUndo(page, result);
       await page.waitForFunction(() => globalThis.__openvisionCreatedReviewProbe.removalFault.injected >= 1);
       await page.waitForTimeout(500);
       check.failed = await state(page);
@@ -75,7 +76,7 @@ export async function checkNativeReviewRemovalFailures({ page, result }) {
       assert.match(check.notification, /try Undo again/i);
       await page.screenshot({ path: `${result.directory}/removal-${kind.replaceAll(' ', '-')}.png` });
       await page.evaluate(() => { globalThis.__openvisionCreatedReviewProbe.removalFault.enabled = false; });
-      await focusAndUndo(page);
+      await focusAndUndo(page, result);
       await page.waitForFunction(() => {
         const probe = globalThis.__openvisionCreatedReviewProbe;
         return !probe.service.diffHandlers.has(probe.id) &&
@@ -85,7 +86,7 @@ export async function checkNativeReviewRemovalFailures({ page, result }) {
       assert.equal(check.retried.historyCalls, 1, 'Completed partial-history work is not replayed');
       assert.equal(check.retried.removalStep, 4, 'Handler cleanup finishes before its registry ownership is dropped');
       assert.equal(check.retried.snapshotPresent, true);
-      await page.keyboard.press('ControlOrMeta+Shift+z');
+      await historyCommand(page, result, 'redo');
       await page.waitForFunction(() => {
         const probe = globalThis.__openvisionCreatedReviewProbe;
         return probe.service.diffHandlers.has(probe.id) &&

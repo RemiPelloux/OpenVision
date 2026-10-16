@@ -47,6 +47,10 @@ failure/history cases still prevent story promotion; **6/42 (14.29%)** is unchan
 
 ## Critical-first backlog and ETA
 
+The [review-deletion follow-up](../recovery/rea-agent-review-deletion.md) covers
+live-review record deletion, grouped post-commit cleanup and menu Undo/Redo on
+Linux x64 only; OV-103 keeps its status and points.
+
 The [review-removal follow-up](../recovery/rea-agent-review-removal.md) fixes
 cancellation failure advancing history and handler cleanup losing its owner.
 Cleanup resumes at its failed step across model-overlap and review callbacks;

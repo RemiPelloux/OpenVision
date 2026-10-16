@@ -1,5 +1,18 @@
 import assert from 'node:assert/strict';
 
+// Keyboard by default; --menu drives the same commands through the Edit menubar.
+export async function historyCommand(page, result, direction) {
+  if (!result.menu) return page.keyboard.press(direction === 'undo' ? 'ControlOrMeta+z' : 'ControlOrMeta+Shift+z');
+  await page.locator('.menubar .menubar-menu-button[aria-label="Edit"]').click();
+  const entry = page.locator('.monaco-menu-container .action-item').filter({ hasText: direction === 'undo' ? /^Undo/ : /^Redo/ })
+    .first();
+  // Pointer activation as a user does it; the menu ignores a release immediately after opening.
+  await entry.waitFor(); await page.waitForTimeout(300); await entry.hover(); await page.waitForTimeout(200);
+  await page.mouse.down(); await page.waitForTimeout(80); await page.mouse.up();
+  await page.locator('.monaco-menu-container').filter({ visible: true }).waitFor({ state: 'hidden' });
+  (result.menuCommands ??= []).push(direction);
+}
+
 async function historyState(page) {
   return page.evaluate(async () => {
     const probe = globalThis.__openvisionCreatedReviewProbe;
@@ -45,7 +58,7 @@ export async function checkNativeReviewUndoFailure({ page, result }) {
     assert.equal(result.undoStack.before.elementInPast, true, 'Created review must be in real editor history');
     await page.locator('.editor-instance .monaco-editor .inputarea').filter({ visible: true }).first().focus();
     for (let step = 0; step < 4; step++) {
-      await page.keyboard.press('ControlOrMeta+z');
+      await historyCommand(page, result, 'undo');
       await page.waitForTimeout(750);
       if ((await historyState(page)).injected) break;
     }
@@ -58,7 +71,7 @@ export async function checkNativeReviewUndoFailure({ page, result }) {
     assert.match(result.undoStack.notification, /undo.*try again|try.*undo again/i, 'Undo failure must show useful retry guidance');
     await page.evaluate(() => { globalThis.__openvisionCreatedReviewProbe.fault.enabled = false; });
     await page.locator('.editor-instance .monaco-editor .inputarea').filter({ visible: true }).first().focus();
-    await page.keyboard.press('ControlOrMeta+z');
+    await historyCommand(page, result, 'undo');
     await page.waitForFunction(() => {
       const probe = globalThis.__openvisionCreatedReviewProbe;
       return !probe.service.diffHandlers.has(probe.id);
@@ -66,7 +79,7 @@ export async function checkNativeReviewUndoFailure({ page, result }) {
     result.undoStack.afterRetry = await historyState(page);
     assert.equal(result.undoStack.afterRetry.elementInFuture, true);
     await page.evaluate(() => { globalThis.__openvisionCreatedReviewProbe.fault.readEnabled = true; });
-    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await historyCommand(page, result, 'redo');
     await page.waitForFunction(() => globalThis.__openvisionCreatedReviewProbe.fault.readInjected === 1);
     await page.waitForTimeout(750);
     result.undoStack.afterRedoFailure = await historyState(page);
@@ -76,7 +89,7 @@ export async function checkNativeReviewUndoFailure({ page, result }) {
     result.undoStack.redoNotification = await page.locator('.notifications-toasts').innerText();
     assert.match(result.undoStack.redoNotification, /try Redo again/i);
     await page.evaluate(() => { globalThis.__openvisionCreatedReviewProbe.fault.readEnabled = false; });
-    await page.keyboard.press('ControlOrMeta+Shift+z');
+    await historyCommand(page, result, 'redo');
     await page.waitForFunction(() => {
       const probe = globalThis.__openvisionCreatedReviewProbe;
       return probe.service.diffHandlers.has(probe.id);

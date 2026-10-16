@@ -9,17 +9,20 @@ import { verificationSettings } from './verification-profile.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
 import { readableApp } from './recovered-source.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 import { agentReviewRecoveryOwner, agentReviewRecoveryEntry, preserveAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
 import { checkNativeReviewUndoFailure } from './verify-review-undo-stack.mjs';
 import { checkNativeReviewRemovalFailures } from './verify-review-removal.mjs';
 
-assert.equal(process.platform, 'win32', 'This overlay verifier currently covers Windows x64');
+assert.ok(['win32', 'linux'].includes(process.platform), 'This overlay verifier covers Windows x64 and Linux x64');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/review-storage-verification-'));
 const originalOwner = process.argv.includes('--original-owner');
 const updatedOwner = process.argv.includes('--updated-owner');
 const undoStack = process.argv.includes('--undo-stack');
 const removalFailures = process.argv.includes('--removal-failures');
+const menu = process.argv.includes('--menu');
+assert.ok(!menu || undoStack, 'Menu verification requires --undo-stack');
 assert.ok(!removalFailures || undoStack, 'Removal verification requires --undo-stack');
 assert.ok(!undoStack || !originalOwner, 'Undo-stack verification uses the prepared recovery owner');
 assert.ok(!updatedOwner || !originalOwner, 'Select either the original owner or the updated owner');
@@ -52,8 +55,8 @@ assert.equal(source.split(settingsBridge).length, 2, 'Expected one provider-sett
 source = source.replace(settingsBridge, `  globalThis.__openvisionReviewModelBridge = bridge;\n${settingsBridge}`);
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, source]]));
 await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
-const result = { directory, originalOwner, updatedOwner, success: false, checks: {}, errors: [], hostExits: [],
-  scope: 'Real Windows Quick Edit, mounted review callbacks, model service and SQLite storage in an owned overlay. Snapshot write/read/cleanup failures are injected at service calls; this is not physical I/O failure, live inference or the full undo-service error path.',
+const result = { directory, originalOwner, updatedOwner, menu, success: false, checks: {}, errors: [], hostExits: [],
+  scope: 'Real native Quick Edit, mounted review callbacks, model service and SQLite storage in an owned overlay. Snapshot write/read/cleanup failures are injected at service calls; this is not physical I/O failure, live inference or the full undo-service error path.',
   identity: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     platform: process.platform, arch: process.arch, node: process.version, runtimeHash, overlay: overlay.records,
     verifierHash: await fileHash(join(root, 'desktop/verify-review-storage.mjs')) } };
@@ -62,7 +65,7 @@ if (undoStack) {
   result.identity.undoStackVerifierHash = await fileHash(join(root, 'desktop/verify-review-undo-stack.mjs'));
 }
 if (removalFailures) result.identity.removalVerifierHash = await fileHash(join(root, 'desktop/verify-review-removal.mjs'));
-if (removalFailures) result.scope = 'Native keyboard Undo/Redo with injected snapshot, cancellation and handler-disposal failures, including model-overlap cleanup before the review callback. Real filesystem/SQLite and controlled HTTP inference; not physical I/O or live inference.';
+if (removalFailures) result.scope = (menu ? 'Native Edit-menubar' : 'Native keyboard') + ' Undo/Redo with injected snapshot, cancellation and handler-disposal failures, including model-overlap cleanup before the review callback. Real filesystem/SQLite and controlled HTTP inference; not physical I/O or live inference.';
 result.identity.recoveryCustomizationHash = await fileHash(join(root, 'desktop/agent-review-recovery-customization.mjs'));
 result.identity.undoCustomizationHash = await fileHash(join(root, 'desktop/agent-review-undo-customization.mjs'));
 const requests = [];
@@ -198,7 +201,8 @@ try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: overlay.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(profile, 'extensions'), '--new-window',
-      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', project, file] });
+      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(join(directory, 'host')) : []), project, file] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('pageerror', error => result.errors.push(error.message));
   result.reviewErrors = [];

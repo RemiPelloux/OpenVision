@@ -28,6 +28,9 @@ accounts, billing and cloud agents are excluded from this ledger.
 
 ## Critical-first delivery plan
 
+[Review record deletion and post-commit cleanup](recovery/rea-agent-review-deletion.md)
+follows it on Linux x64 only; OV-103 status and points are unchanged.
+
 The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and
 resumes cleanup without repeating completed steps. It advances P0 OV-103 within
