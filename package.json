@@ -124,7 +124,7 @@
     "verify:git": "node desktop/verify-git.mjs",
     "verify:development": "node desktop/verify-development.mjs",
     "verify:shutdown-cycles": "node desktop/verify-shutdown-cycles.mjs",
-    "test:shutdown": "node --test desktop/shutdown.test.mjs desktop/utility-process.test.mjs desktop/agent-command-exit.test.mjs"
+    "test:shutdown": "node --test desktop/shutdown.test.mjs desktop/utility-process.test.mjs desktop/agent-command-exit.test.mjs desktop/owned-process-journal.test.mjs desktop/pty-exec.test.mjs desktop/pty-host-ownership.test.mjs"
   },
   "engines": {
     "node": ">=24.18.0"

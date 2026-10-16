@@ -44,6 +44,8 @@ import { installProfileStorageDurability } from './profile-storage-durability-cu
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
 import { installShutdownOwnership } from './shutdown-customization.mjs';
 import { installUtilityProcessOwnership } from './utility-process-customization.mjs';
+import { installOwnedProcesses } from './owned-process-journal.mjs';
+import { installPtyHostOwnership } from './pty-host-ownership-customization.mjs';
 import { installIsolatedNotifications } from './notification-customization.mjs';
 import { installLinuxKeyringSelection } from './linux-keyring-customization.mjs';
 import { installApprovalDefault } from './autorun-customization.mjs';
@@ -101,6 +103,8 @@ await installUtilityProcessOwnership(root);
 await installIsolatedNotifications(root);
 await installLinuxKeyringSelection(root);
 await installExtensionTelemetryPolicy(root);
+await installOwnedProcesses(root);
+await installPtyHostOwnership(root);
 await installRetrievalOwnership(root);
 await installAgentReviewAcceptance(root);
 await installUnopenedAgentUndo(root);
