@@ -1,0 +1,10 @@
+var __wakaru_J6_cache;
+export function J6() {
+if (__wakaru_J6_cache) return __wakaru_J6_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_J6_cache = t;
+t.exports = {};
+
+return t.exports;
+}

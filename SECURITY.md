@@ -13,8 +13,8 @@ Include the commit/version, operating system, minimal reproduction, expected
 and actual behavior, and whether the issue was observed in a native runtime or
 a fixture. Share only the smallest redacted diagnostic excerpt needed.
 
-Review [telemetry coverage](docs/rea-telemetry-audit.md),
-[provider error handling](docs/provider-failure-handling.md) and
-[release limitations](docs/release-claims.md) before relying on a privacy or
+Review [telemetry coverage](docs/recovery/rea-telemetry-audit.md),
+[provider error handling](docs/engineering/provider-failure-handling.md) and
+[release limitations](docs/verification/release-claims.md) before relying on a privacy or
 capability claim. Disabling built-in telemetry does not disable networking by
 configured providers or independently installed extensions.

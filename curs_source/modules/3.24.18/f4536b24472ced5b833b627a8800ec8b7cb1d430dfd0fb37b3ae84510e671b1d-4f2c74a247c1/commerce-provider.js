@@ -1,0 +1,105 @@
+import { y2 } from "./I18nextProvider.js";
+import { EV, R2 } from "./analytics.js";
+import { a } from "./business-error.js";
+import { A2, op } from "./i18n_2.js";
+import { E2 } from "./init-scoped.js";
+import { SV, ap } from "./payment-collectors.js";
+import { jsx as Lb } from "./react-runtime/react/esm-jsx-runtime-production.js";
+import { useState as SD } from "./react-runtime/react/esm-index-production.js";
+import { createContext as bD } from "./react-runtime/react/esm-index-production.js";
+import { useMemo as wD } from "./react-runtime/react/esm-index-production.js";
+import { use as yD } from "./react-runtime/react/esm-index-production.js";
+function P2({ client: e, addressSuggestions: t, checkoutAccess: r, checkoutAccessContent: n, checkoutAccessNavigation: o, legacySubscriptions: i, locale: s, navigate: c, analytics: l, journey: m, stripePublishableKey: u, migrationNoticeEnabled: d = !1, redirectPaymentMethodsEnabled: p = !1, applePayManagementUrl: h, onSwitchAccount: f, extraPlanFeatures: v, planFootnote: x, planCardNote: g, migrationReview: y, checkoutConsent: w, children: b }) {
+    const [{ tracker: T, host: R, paymentCollectors: E, reportedDroppedPrices: S, reportedPaywallViews: A, reportedOfferExposures: C }] = SD(a(function() {
+        const F = l && "tracker" in l ? l.tracker : R2(l ?? {
+            sink: _2,
+            source: "unconfigured"
+        });
+        return m !== void 0 && F.startJourney(m), {
+            tracker: F,
+            host: l && !("tracker" in l) ? l.host : void 0,
+            paymentCollectors: {
+                stripe: ap(),
+                paypal: ap()
+            },
+            reportedDroppedPrices: new Set,
+            reportedPaywallViews: new Map,
+            reportedOfferExposures: new Set
+        };
+    }, "createInitialContext")), P = wD(()=>({
+            addressSuggestions: t,
+            applePayManagementUrl: h,
+            checkoutAccess: r,
+            checkoutAccessContent: n,
+            checkoutAccessNavigation: o,
+            checkoutConsent: w,
+            client: e,
+            declineCardRetryEnabled: !0,
+            extraPlanFeatures: v,
+            host: R,
+            legacySubscriptions: i,
+            locale: s,
+            migrationNoticeEnabled: d,
+            migrationReview: y,
+            navigate: c,
+            onSwitchAccount: f,
+            paymentCollectors: E,
+            planCardNote: g,
+            planFootnote: x,
+            redirectPaymentMethodsEnabled: p,
+            reportedDroppedPrices: S,
+            reportedOfferExposures: C,
+            reportedPaywallViews: A,
+            stripePublishableKey: u,
+            tracker: T
+        }), [
+        e,
+        t,
+        r,
+        n,
+        o,
+        i,
+        s,
+        c,
+        E,
+        S,
+        A,
+        C,
+        T,
+        R,
+        u,
+        d,
+        p,
+        h,
+        f,
+        v,
+        x,
+        g,
+        y,
+        w
+    ]), O = op(s).instance;
+    return Lb(ip.Provider, {
+        value: P,
+        children: Lb(y2, {
+            i18n: O,
+            children: b
+        })
+    });
+}
+function xt() {
+    const e = yD(ip);
+    if (!e) throw new Error("useCommerce requires a <CommerceProvider> ancestor");
+    return e;
+}
+var ip, _2;
+export { P2, _2, ip, xt };
+var __wakaru_Lt_initialized = false;
+export function Lt() {
+if (__wakaru_Lt_initialized) return;
+__wakaru_Lt_initialized = true;
+"use client";
+A2(), SV(), EV(), E2(), ip = bD(null), _2 = {
+    track () {}
+}, a(P2, "CommerceProvider"), a(xt, "useCommerce");
+
+}

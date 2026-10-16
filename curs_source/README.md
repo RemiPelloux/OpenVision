@@ -47,7 +47,7 @@ SHA-256 is `982b7d93952d3b156abb7cc4f0204b9055b1dd0f3c273aef0d58ec7abe0e7510`.
 | --- | --- | --- |
 | Installation | 15,161 files, 1,022,502,571 bytes; capture hashes checked | Includes compiled artifacts and installed dependencies |
 | Readable text | 13,925/13,925 formatted; 916 application files published | Formatted installed dependencies remain local |
-| Selected JavaScript | 237 inputs; 236 structurally extracted after retries; one split into 2,939 top-level statements | Static extraction is not a runnable module reconstruction |
+| Selected JavaScript | All 237 inputs have structural results: 236 unchanged inputs and one derived analysis input with a portable filename label | Static extraction is not a runnable module reconstruction ([final retry](../docs/recovery/javascript-bundles.md)) |
 | Original maps | Zero parsed source maps and zero embedded original sources | Remote map references recorded without fetching |
 | WebAssembly | 23 paths, 15 distinct payloads; all validated and decoded to WAT with WABT 1.0.42 | WAT is local low-level text, not original Rust/C++ source |
 | Current native payloads | 53 executable/library/addon paths inventoried by hash | None has matching pseudocode in the historical native export |
@@ -63,7 +63,11 @@ The first extraction attempt failed because raw extraction and source-map
 emission were combined. Its failure records remain locally. Corrected extraction
 completed 235 inputs; an extended bounded retry completed the large workbench
 bundle. The remaining input hit an invalid Windows output filename and received
-a separate Babel statement extraction. These attempts remain distinct.
+a separate Babel statement extraction. A subsequent offset-preserving filename
+label adjustment in an analysis copy produced 101 structural modules; the
+original captured input remained unchanged. Both representations and their
+attempts remain distinct. Published totals are 916 application files and 29,195
+derived files, including the retained fallback.
 
 ## Historical native recovery: 3.21.13
 
@@ -83,8 +87,8 @@ The `.c` files are decompiler pseudocode and cannot rebuild the native host.
 From the repository root, using Node.js:
 
 ```sh
-node desktop/recovery-published-verify.mjs
-node desktop/recovery-native-verify.mjs
+node scripts/recovery/published-verify.mjs
+node scripts/recovery/native-verify.mjs
 ```
 
 These check source hashes and native pseudocode against retained Evidence.
@@ -94,17 +98,17 @@ Git attributes preserve exact recovery bytes across Windows/Linux/macOS clones.
 
 The recovery-producing scripts additionally require this original REA workspace,
 its pinned Node toolchain, matching captured inputs and existing analysis tools.
-`desktop/recovery-current.mjs` captures and analyzes a supplied installation;
-`desktop/recovery-publish.mjs` publishes verified local outputs. Retained reports
+`scripts/recovery/current.mjs` captures and analyzes a supplied installation;
+`scripts/recovery/publish.mjs` publishes verified local outputs. Retained reports
 and applicable hashes are checked before orchestration resumes. Failures remain
 recorded. No target code was executed to produce these recovery exports.
 
 For progress and remaining work, see the
 [percentages and gate-based ETA](../docs/progress.md),
-[prioritized implementation backlog](../docs/roadmap.md#ranked-rea-implementation-and-verification-work),
-[acceptance ledger](../docs/completion-sprints.md) and
-[Rust rewrite plan](../docs/rust-roadmap.md).
+[prioritized implementation backlog](../docs/planning/roadmap.md#ranked-rea-implementation-and-verification-work),
+[acceptance ledger](../docs/planning/completion-sprints.md) and
+[Rust rewrite plan](../docs/planning/rust/rust-roadmap.md).
 
-For the runnable OpenVision application, use the [run guide](../docs/native-runtime.md).
+For the runnable OpenVision application, use the [run guide](../docs/guides/native-runtime.md).
 Editing this archive does not automatically modify the prepared app; durable
 OpenVision changes belong in its customization and build pipeline.

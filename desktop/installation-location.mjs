@@ -20,5 +20,5 @@ export async function detectInstallation(context = process, candidates = install
       return candidate;
     } catch (error) { if (!['ENOENT', 'ENOTDIR'].includes(error.code)) throw error; }
   }
-  throw new Error('Native input installation not found. Use --installation PATH; see docs/native-runtime.md for required inputs.');
+  throw new Error('Native input installation not found. Use --installation PATH; see docs/guides/native-runtime.md for required inputs.');
 }

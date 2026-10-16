@@ -16,5 +16,5 @@ remain included in the portable package; OpenVision branding does not replace th
 
 Editable application JavaScript is included. Native hosts, addons and WASM remain
 compiled implementations; this release does not claim their original source or
-an independent source rebuild. See the [installation guide](docs/native-runtime.md)
-and [Rust roadmap](docs/rust-roadmap.md).
+an independent source rebuild. See the [installation guide](docs/guides/native-runtime.md)
+and [Rust roadmap](docs/planning/rust/rust-roadmap.md).

@@ -1,0 +1,10 @@
+var __wakaru_rV_cache;
+export function rV() {
+if (__wakaru_rV_cache) return __wakaru_rV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_rV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

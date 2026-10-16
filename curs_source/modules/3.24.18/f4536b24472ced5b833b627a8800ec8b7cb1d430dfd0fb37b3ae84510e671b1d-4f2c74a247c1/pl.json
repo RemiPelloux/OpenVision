@@ -1,0 +1,10 @@
+var __wakaru_sV_cache;
+export function sV() {
+if (__wakaru_sV_cache) return __wakaru_sV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_sV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

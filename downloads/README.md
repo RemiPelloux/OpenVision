@@ -11,4 +11,4 @@ verifies and extracts them using bounded streaming copies.
 
 For a single ZIP download, use [OpenVision releases](https://github.com/RemiPelloux/OpenVision/releases).
 Installation, editable code, profiles and manual updates are covered in the
-[installation guide](../docs/native-runtime.md). Preserve bundled license notices.
+[installation guide](../docs/guides/native-runtime.md). Preserve bundled license notices.

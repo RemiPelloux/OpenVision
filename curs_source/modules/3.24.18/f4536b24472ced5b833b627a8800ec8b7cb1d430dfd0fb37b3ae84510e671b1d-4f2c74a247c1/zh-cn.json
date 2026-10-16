@@ -1,0 +1,10 @@
+var __wakaru_bV_cache;
+export function bV() {
+if (__wakaru_bV_cache) return __wakaru_bV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_bV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

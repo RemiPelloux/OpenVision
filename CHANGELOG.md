@@ -2,23 +2,23 @@
 
 ## Unreleased
 
-- Release native utility-process listeners after exit instead of retaining each completed run. Keep process ownership until actual termination, including failed kills. Real Windows fork/restart/kill/window-close checks pass; [evidence and remaining RAM work](docs/utility-process-ownership.md). Source build only.
-- Preserve model-route caches across unchanged account refreshes and apply a 30-second automatic cooldown after account-host failures; explicit Refresh remains immediate. Remove duplicate streamed text/reasoning retention and clear output references on close. See [controlled before/after measurements](docs/account-performance.md) and remaining whole-app RAM checks.
-- Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/local-startup.md). These source changes do not refresh the preview.6 payload.
+- Release native utility-process listeners after exit instead of retaining each completed run. Keep process ownership until actual termination, including failed kills. Real Windows fork/restart/kill/window-close checks pass; [evidence and remaining RAM work](docs/engineering/utility-process-ownership.md). Source build only.
+- Preserve model-route caches across unchanged account refreshes and apply a 30-second automatic cooldown after account-host failures; explicit Refresh remains immediate. Remove duplicate streamed text/reasoning retention and clear output references on close. See [controlled before/after measurements](docs/performance/account-performance.md) and remaining whole-app RAM checks.
+- Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/engineering/local-startup.md). These source changes do not refresh the preview.6 payload.
 
-- Skip hosted conversation-metadata contribution registration in local mode, avoiding its dependencies, watchers and client calls. Native Windows title/history restart verification passes with controlled inference; broader traffic and platform gates remain open. See [metadata ownership](docs/local-conversation-metadata.md).
-- Add experimental signed-in Claude/Codex models to Agent, account usage in the bottom bar and GPT-6-only Codex account choices. Real Claude file editing passed; the tested Codex account offered no GPT-6 models and the separate GPT-6 API check was blocked by provider balance. See [account evidence](docs/account-integrations.md#verification-limits).
+- Skip hosted conversation-metadata contribution registration in local mode, avoiding its dependencies, watchers and client calls. Native Windows title/history restart verification passes with controlled inference; broader traffic and platform gates remain open. See [metadata ownership](docs/engineering/local-conversation-metadata.md).
+- Add experimental signed-in Claude/Codex models to Agent, account usage in the bottom bar and GPT-6-only Codex account choices. Real Claude file editing passed; the tested Codex account offered no GPT-6 models and the separate GPT-6 API check was blocked by provider balance. See [account evidence](docs/guides/account-integrations.md#verification-limits).
 - Verify native MCP HTTP session-expiry and direct session-reinitialization recovery with retained failed-close ownership and no automatic replay of the failed tool.
 - Verify native Agent MCP approval, shared STDIO ownership across two project windows, isolated same-named servers in separate user-data directories and recorded child shutdown. Broader profile/configuration ownership and logged startup diagnostics remain open.
 - Align the README, verification matrix and complexity-point roadmap with these source additions. They do not refresh the preview.6 portable payload or increase the fixed 6/42 verified-story count.
 - Replace the account selector's unreadable system menu with an editor-themed, keyboard-accessible list and a separate Disconnected option.
 - Improve account-control spacing, narrow-panel wrapping and focus recovery after switching; close open menus when refreshing or leaving onboarding.
-- Run OpenVision natively on Linux x64: `npm run prepare:desktop` downloads the pinned Cursor 3.21.13 AppImage, verifies its SHA-256 and recovers readable sources; `npm start` builds and launches. See the [Linux guide](docs/linux.md).
+- Run OpenVision natively on Linux x64: `npm run prepare:desktop` downloads the pinned Cursor 3.21.13 AppImage, verifies its SHA-256 and recovers readable sources; `npm start` builds and launches. See the [Linux guide](docs/guides/linux.md).
 - Add `npm run package:linux` with an `./OpenVision` launcher and an optional desktop entry.
 - Store API keys in the desktop keyring (Secret Service) on desktops Chromium does not recognize, such as Hyprland, Sway and i3, instead of the plaintext `basic_text` fallback; keep KDE, explicit choices and keyring-less systems unchanged. Add `npm run verify:linux-secrets`.
 - Keep Agent commands approval-first on Linux instead of auto-running them in the upstream command sandbox.
 - Fix Linux profiles being redirected by portable-mode detection, the `cursor.desktop` window identity, and a launch-argument bug where `--disable-setuid-sandbox` swallowed the following folder path.
-- Recover every application script in readable form during preparation, reject mismatched input versions with a clear message, and make native verifiers platform-aware (POSIX write denial, bash/sh terminals, Linux paths, layout-independent shortcuts, Project Home startup). See [Linux verification](docs/linux-verification.md).
+- Recover every application script in readable form during preparation, reject mismatched input versions with a clear message, and make native verifiers platform-aware (POSIX write denial, bash/sh terminals, Linux paths, layout-independent shortcuts, Project Home startup). See [Linux verification](docs/verification/linux-verification.md).
 
 ## 0.2.0-preview.6 — 2026-10-14
 
@@ -34,7 +34,7 @@
 - Simplify Project Home and cloning to match the selected editor theme, with compact controls and a monochrome eye.
 - Replace fixed green accents in home, clone, profile and model settings with native theme colors.
 - Add a Color theme shortcut on Project Home and Appearance settings in the local profile menu.
-- Document theme choices and custom colors, fonts and icons in the [appearance guide](docs/appearance.md).
+- Document theme choices and custom colors, fonts and icons in the [appearance guide](docs/guides/appearance.md).
 
 ## 0.2.0-preview.4 — 2026-10-14
 
@@ -51,7 +51,7 @@
 - Route native Quick Edit through the selected custom provider, model and reasoning setting, with cancellation and native diff review.
 - Explain DNS, refused connections and TLS failures using structured transport errors while preserving manual retry control.
 - Import settings into the active default profile and selected extension directory; preserve exact backups and avoid registry casing changes that blocked restore.
-- Extend local verification with cross-window memory review and large-project watcher workloads. Evidence and remaining gates are recorded in the [roadmap](docs/roadmap.md).
+- Extend local verification with cross-window memory review and large-project watcher workloads. Evidence and remaining gates are recorded in the [roadmap](docs/planning/roadmap.md).
 - Recover native import backups after restart using explicit profile/extension destinations, backup discovery and a read-only restore preview.
 - Verify JavaScript and C cross-file navigation, three-file rename, Save All, undo/redo and overlapping edits to separate documents with real installed language providers.
 - Refresh the complete Windows portable download and offline Git payload. The launcher opens Project Home when no project argument is supplied; packaging reads the project version.
@@ -98,5 +98,5 @@ Agent/completion quality, retrieval, next-edit prediction, independent builds,
 installers, remote development and native macOS/Linux checks remain unfinished.
 
 See [release notes](docs/releases/0.2.0-preview.1.md),
-[feature roadmap](docs/roadmap.md) and
-[verification matrix](docs/release-claims.md). No GitHub Actions workflows run.
+[feature roadmap](docs/planning/roadmap.md) and
+[verification matrix](docs/verification/release-claims.md). No GitHub Actions workflows run.

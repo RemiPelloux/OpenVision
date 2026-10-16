@@ -1,0 +1,10 @@
+var __wakaru_tV_cache;
+export function tV() {
+if (__wakaru_tV_cache) return __wakaru_tV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_tV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

@@ -1,0 +1,22 @@
+# Verification and release claims
+
+Executed tests, platform coverage and explicit limits. Start with [release claims](release-claims.md); a source change does not automatically update a portable release or complete an acceptance story.
+
+## Documents
+
+- [Import profile ownership and exact restore](import-profile-verification.md)
+- [Linux verification](linux-verification.md)
+- [Live provider compatibility — 14 October 2026](live-provider-compatibility.md)
+- [Readable native model menu](model-menu-verification.md)
+- [Windows portable verification — preview.3](portable-preview3.md)
+- [Windows portable verification — preview.4](portable-preview4.md)
+- [Windows portable verification — preview.5](portable-preview5.md)
+- [Windows portable verification — preview.6](portable-preview6.md)
+- [Windows portable package verification](portable-verification.md)
+- [Native project lifecycle verification](project-lifecycle-verification.md)
+- [Native project scale verification](project-scale-verification.md)
+- [OpenVision release claims and verification matrix](release-claims.md)
+- [Save All includes files without tabs](save-all-verification.md)
+- [Subagent model and reasoning verification](subagent-reasoning-verification.md)
+
+[Documentation index](../README.md) · [Progress dashboard](../progress.md)

@@ -1,0 +1,10 @@
+var __wakaru_oV_cache;
+export function oV() {
+if (__wakaru_oV_cache) return __wakaru_oV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_oV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

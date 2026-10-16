@@ -31,8 +31,8 @@ export function featureStatus(ledger, manifest) {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [ledger, manifest] = await Promise.all([
-    readFile(new URL('../docs/completion-sprints.md', import.meta.url), 'utf8'),
-    readFile(new URL('../docs/feature-acceptance.json', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/planning/completion-sprints.md', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/planning/feature-acceptance.json', import.meta.url), 'utf8'),
   ]);
   console.log(JSON.stringify(featureStatus(ledger, JSON.parse(manifest)), null, 2));
 }

@@ -8,7 +8,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 try {
   const args = process.argv.slice(2);
   if (args.includes('--help')) {
-    console.log('Usage: npm run prepare:desktop -- [--installation PATH]\nAutomatically detects native inputs (on Linux x64, downloads the pinned AppImage), or uses the selected installation. See docs/native-runtime.md and docs/linux.md.');
+    console.log('Usage: npm run prepare:desktop -- [--installation PATH]\nAutomatically detects native inputs (on Linux x64, downloads the pinned AppImage), or uses the selected installation. See docs/guides/native-runtime.md and docs/guides/linux.md.');
     process.exit(0);
   }
   if (args.length && (args.length !== 2 || args[0] !== '--installation'))

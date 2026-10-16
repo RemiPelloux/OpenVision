@@ -46,6 +46,6 @@ export async function linuxInstallation(root, context = process) {
   const extracted = spawnSync(image, ['--appimage-extract'], { cwd: directory, stdio: 'ignore', env: { ...process.env, APPIMAGE_EXTRACT_AND_RUN: '' } });
   if (extracted.error) throw extracted.error;
   if (extracted.status !== 0 || !await exists(join(installation, 'resources/app/package.json')))
-    throw new Error('AppImage extraction failed; see docs/linux.md for manual extraction.');
+    throw new Error('AppImage extraction failed; see docs/guides/linux.md for manual extraction.');
   return installation;
 }

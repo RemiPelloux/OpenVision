@@ -240,4 +240,4 @@ These are derived static representations. Filenames ending in TypeScript do not 
 | `out/vs/workbench/workbench.anysphere-ui-automations.js` | structural-raw-module-extraction | 622 | [Browse](fe4faf0e5f991c0cbb507e6e61647cb4c217266e96a93ba02699fcf5f0a56039-d9a525efe550/entry.js) |
 | `out/vs/workbench/workbench.desktop.main.js` | structural-raw-module-extraction | 4780 | [Browse](ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/entry.js) |
 | `out/vs/workbench/workbench.glass.main.js` | structural-raw-module-extraction | 8873 | [Browse](8660a1449025c353bcb9e076d609a427955eb0a94b2d84646d2f758c6947813b-836837e267ae/entry.js) |
-| `out/vs/workbench/workbench.xai-commerce-prepaid.js` | Babel top-level statements; not a runnable module graph or original source | 2939 | [Browse](f4536b24472ced5b833b627a8800ec8b7cb1d430dfd0fb37b3ae84510e671b1d-4f2c74a247c1/0000.js) |
+| `out/vs/workbench/workbench.xai-commerce-prepaid.js` | structural-raw-module-extraction-with-portable-factory-label | 102 | [Browse](f4536b24472ced5b833b627a8800ec8b7cb1d430dfd0fb37b3ae84510e671b1d-4f2c74a247c1/entry.js) |

@@ -1,0 +1,10 @@
+var __wakaru_vV_cache;
+export function vV() {
+if (__wakaru_vV_cache) return __wakaru_vV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_vV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

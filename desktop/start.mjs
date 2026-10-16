@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 if (process.argv.includes('--help')) {
-  console.log('Usage: npm start [-- <project-path> | --inspect-preview]\nBuild and open the OpenVision project home, or open the supplied project. See docs/native-runtime.md.');
+  console.log('Usage: npm start [-- <project-path> | --inspect-preview]\nBuild and open the OpenVision project home, or open the supplied project. See docs/guides/native-runtime.md.');
   process.exit(0);
 }
 

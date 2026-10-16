@@ -1,0 +1,10 @@
+var __wakaru_cV_cache;
+export function cV() {
+if (__wakaru_cV_cache) return __wakaru_cV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_cV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

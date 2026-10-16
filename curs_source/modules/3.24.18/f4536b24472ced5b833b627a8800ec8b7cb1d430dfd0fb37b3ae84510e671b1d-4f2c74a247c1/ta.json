@@ -1,0 +1,10 @@
+var __wakaru_fV_cache;
+export function fV() {
+if (__wakaru_fV_cache) return __wakaru_fV_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_fV_cache = t;
+t.exports = {};
+
+return t.exports;
+}

@@ -1,0 +1,10 @@
+var __wakaru_N6_cache;
+export function N6() {
+if (__wakaru_N6_cache) return __wakaru_N6_cache.exports;
+var e = {};
+var t = { exports: e };
+__wakaru_N6_cache = t;
+t.exports = {};
+
+return t.exports;
+}
