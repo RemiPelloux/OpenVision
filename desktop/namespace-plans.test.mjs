@@ -33,12 +33,14 @@ async function recoveredPlanMethods(variant) {
 async function harness(t, recovered, { deniedAt, workspace = true, errorCode = 'EACCES' } = {}) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'openvision-plan-paths-'));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const home = path.join(root, 'home'), project = path.join(root, 'project');
-  await mkdir(home); await mkdir(project);
+  // Plans belong to the OpenVision profile home (<user-data-dir>/User); the
+  // operating-system home must not be consulted.
+  const home = path.join(root, 'profile', 'User'), project = path.join(root, 'project');
+  await mkdir(home, { recursive: true }); await mkdir(project);
   const userPlans = path.join(home, '.openvision', 'plans');
   const service = {
     ...recovered,
-    pathService: { async userHome() { return uri(home); } },
+    pathService: { openvisionProfileHome: uri(home), async userHome() { throw new Error('operating-system home consulted'); } },
     workspaceContextService: { getWorkspace() { return { folders: workspace ? [{ uri: uri(project) }] : [] }; } },
     fileService: {
       async createFolder(value) {
@@ -56,7 +58,7 @@ async function harness(t, recovered, { deniedAt, workspace = true, errorCode = '
 
 for (const variant of ['desktop', 'glass']) {
   const recovered = await recoveredPlanMethods(variant);
-  test(`${variant}: actual plan owner writes user-home .openvision/plans`, async t => {
+  test(`${variant}: actual plan owner writes profile-home .openvision/plans`, async t => {
     const { service, home, project, userPlans } = await harness(t, recovered);
     assert.equal((await service.getUserPlansDir()).fsPath, userPlans);
     assert.equal(service.getWorkspacePlansDir().fsPath, path.join(project, '.openvision', 'plans'));
@@ -76,7 +78,7 @@ for (const variant of ['desktop', 'glass']) {
     await assert.rejects(lstat(path.join(project, '.cursor')), { code: 'ENOENT' });
   });
 
-  test(`${variant}: denied home without workspace throws; other write failures do not fall back`, async t => {
+  test(`${variant}: denied profile home without workspace throws; other write failures do not fall back`, async t => {
     const noWorkspace = await harness(t, recovered, { deniedAt: 'mkdir', workspace: false });
     await assert.rejects(noWorkspace.service.writePlanFileWithFallback('missing.plan.md', 'plan'), /no workspace folder is available/);
     const otherFailure = await harness(t, recovered, { deniedAt: 'write', errorCode: 'ENOSPC' });

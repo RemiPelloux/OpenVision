@@ -56,6 +56,7 @@ the existing status and points; the preview.7 portable payload is unchanged.
 producer in source (Linux native pass); OV-302 stays Partial.
 [Global path isolation](recovery/rea-global-path-isolation.md) moves user skills, commands,
 hooks and third-party user folders into the profile (Linux native pass); OV-302 stays Partial.
+Its follow-up moves agent data, plans, worktrees, sandbox, plugins and `argv.json` into the profile home; a full native session in two installations leaves HOME untouched (Linux x64). OV-302 stays Partial.
 The [project-data destination trace](recovery/rea-project-data-destinations.md) maps indexing/file-sync/upload owners and blocks hosted Quick Edit reranking and file sync after native capture (Linux x64); OV-501 is Partial.
 
 The [ranked feature roadmap](planning/roadmap.md#ranked-rea-implementation-and-verification-work)

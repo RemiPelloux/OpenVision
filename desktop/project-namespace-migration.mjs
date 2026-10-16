@@ -24,14 +24,12 @@ async function identicalFiles(source, destination, size) {
   } finally { await input.close(); if (output) await output.close(); }
 }
 
-/** Additively import one explicit project's legacy configuration. Never follows directory links. */
-export async function migrateProjectNamespace(project) {
-  if (typeof project !== 'string' || !path.isAbsolute(project)) throw new TypeError('An absolute project directory is required');
-  const root = path.resolve(project);
-  const result = { project: root, copied: 0, unchanged: 0, conflicts: [], skippedLinks: [], errors: [] };
-  const rootStat = await lstat(root);
-  if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) throw new Error('Project must be a directory, not a symbolic link');
-
+/**
+ * Copy one file or directory tree without overwriting and without following
+ * links. Identical existing files count as unchanged; different ones are conflicts.
+ */
+export async function additiveImport(source, destination, result) {
+  return importEntry(source, destination);
   async function importEntry(source, destination) {
     try {
       const from = await statOrMissing(source);
@@ -60,7 +58,16 @@ export async function migrateProjectNamespace(project) {
       } else result.errors.push({ path: source, reason: 'Unsupported filesystem entry' });
     } catch (error) { result.errors.push({ path: source, reason: error.code || error.message }); }
   }
+}
 
+/** Additively import one explicit project's legacy configuration. Never follows directory links. */
+export async function migrateProjectNamespace(project) {
+  if (typeof project !== 'string' || !path.isAbsolute(project)) throw new TypeError('An absolute project directory is required');
+  const root = path.resolve(project);
+  const result = { project: root, copied: 0, unchanged: 0, conflicts: [], skippedLinks: [], errors: [] };
+  const rootStat = await lstat(root);
+  if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) throw new Error('Project must be a directory, not a symbolic link');
+  const importEntry = (source, destination) => additiveImport(source, destination, result);
   await importEntry(path.join(root, '.cursor'), path.join(root, '.openvision'));
   await importEntry(path.join(root, '.cursorrules'), path.join(root, '.openvisionrules'));
   return result;
