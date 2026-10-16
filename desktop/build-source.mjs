@@ -49,6 +49,7 @@ import { installRetrievalOwnership } from './retrieval-lifecycle-customization.m
 import { installAgentReviewAcceptance } from './agent-review-customization.mjs';
 import { installUnopenedAgentUndo } from './agent-closed-file-undo-customization.mjs';
 import { installAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
+import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -94,6 +95,7 @@ await installRetrievalOwnership(root);
 await installAgentReviewAcceptance(root);
 await installUnopenedAgentUndo(root);
 await installAgentReviewRecovery(root);
+await installAgentWriteDurability(root);
 await installRenameVersionGuard(root);
 await installCompletion(root);
 await installInlineEdit(root);
