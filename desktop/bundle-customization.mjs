@@ -48,6 +48,7 @@ export async function customizeBundles(root) {
   const dependencies = ['desktop/bundle-customization.mjs', 'desktop/build-cache.mjs', 'desktop/import-files.mjs',
     'desktop/local-workbench.mjs', 'desktop/cloud-features.mjs', 'desktop/custom-models.mjs', 'desktop/model-picker.mjs', 'desktop/model-picker-layout.mjs',
     'desktop/model-selection-customization.mjs',
+    'desktop/storage-write-ownership.mjs',
     'desktop/provider-error-ui.mjs',
     'desktop/welcome-customization.mjs',
     'desktop/paste-customization.mjs',

@@ -3,7 +3,7 @@
 [Progress, percentages and gate-based ETA](../progress.md) ·
 [Recovery archive](../../curs_source/README.md) · [Recovery limits](../recovery/recovery-status.md)
 
-Updated 15 October 2026; latest portable release **0.2.0-preview.6**, with Linux x64 source support. The verified-coverage target is **80%**.
+Updated 16 October 2026; latest portable release **0.2.0-preview.6**, with Linux x64 source support. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 22 Partial, 12 Planned, 2 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
@@ -47,9 +47,29 @@ failure cases retain their priority and provisional points.
 Agent reliability remains first: the [review-recovery follow-up](../recovery/rea-agent-review-recovery.md)
 retains recovery data on failed restoration and adds repeated-edit/pending-review
 restart coverage. Native Windows checks now also recover pending and accepted
-review after three injected abrupt app exits. Native storage faults and
+review after three injected abrupt app exits. Physical storage faults and
 interruption during outstanding writes/tools remain gates; exit after visible
 review does not establish arbitrary crash or power-loss recovery.
+
+The 16 October [created-review ownership correction](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
+extends this rule to Undo Create Diff: failed snapshot persistence keeps the live
+review, failed Redo keeps saved recovery, and cleanup is joined before another
+Undo. The [published recovered owner](../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/inlineDiffService.js)
+links the static contract to that investigation. This is part of OV-103's existing
+**8 points**, not an added story, completed-point claim or higher parity score.
+
+The [refreshed gap audit](../recovery/feature-gap-audit.md#source-index-to-implementation-gaps)
+maps the 3.24.18 source index to implementation reports and remaining gates.
+Its [storage follow-up](../engineering/storage-write-ownership.md) ports the newer
+pending/in-flight ownership invariant into the prepared 3.21.13 runtime after a
+native model-discovery failure. Scoped Windows Quick Edit snapshot-failure and
+provider regressions pass; physical faults and complete Undo-stack failure
+handling remain. This adds no story or points and does not upgrade the whole
+runtime to 3.24.18.
+The [final source-build Agent regression](../recovery/rea-agent-review-recovery.md#final-source-build-regression)
+passes repeated edits, review acceptance/rejection across normal restarts and
+command lifecycle on that build. Active-write interruption, full Undo error
+handling and the OV-102 timeout dependency retain their existing gates.
 
 15 October Agent review follow-up: the [edit-history audit](../recovery/rea-agent-edit-history.md)
 records native filename/text search and fixes acceptance returning before

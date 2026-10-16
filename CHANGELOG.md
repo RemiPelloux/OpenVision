@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Port recovered storage write ownership so stale notifications cannot hide a
+  newly discovered model while its configuration is pending or in flight.
+  Acknowledged IPC chunks release their own keys. See [evidence and limits](docs/engineering/storage-write-ownership.md).
+- Preserve created edit reviews when snapshot writes fail and retain saved review
+  data when Redo restoration fails. Join cleanup before the next Undo and retain
+  failed model-reference releases with the review service even after Undo
+  history is discarded. See [review recovery](docs/recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
+  for source provenance, native verification scope and remaining gates.
 - Preserve OpenVision's header and body inactivity deadlines through proxy and
   certificate selection, release stalled Agent sockets, and keep retry explicit.
   Focused real-socket checks pass; full-duration native post-fix timeout runs

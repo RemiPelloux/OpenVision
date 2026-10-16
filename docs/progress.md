@@ -44,6 +44,13 @@ editing/storage-failure checks. See the
 [delivery gates and dependencies](planning/roadmap.md#critical-first-backlog-and-eta) and
 [release claims](verification/release-claims.md) before treating source work as a shipped app.
 
+The latest [storage ownership report](engineering/storage-write-ownership.md)
+connects a native model-discovery failure to the newer recovered storage owner.
+Its pending/in-flight correction passes focused tests and scoped Windows Quick
+Edit/provider regressions. Physical storage faults, complete Undo-stack failure
+handling and platform checks remain. This is progress within existing stories, with
+no change to the acceptance percentage or backlog points.
+
 ## Recovery coverage by version
 
 The [recovery archive](../curs_source/README.md) links the actual published code,
@@ -51,7 +58,9 @@ The [recovery archive](../curs_source/README.md) links the actual published code
 [publication manifest](../curs_source/manifest.json) and
 [historical native Evidence](../curs_source/native/README.md).
 The [recovery status](recovery/recovery-status.md) explains each representation; the
-[gap audit](recovery/feature-gap-audit.md) preserves the historical baseline.
+[gap audit](recovery/feature-gap-audit.md) reconciles the historical baseline with
+current feature reports. Its [source-to-gap map](recovery/feature-gap-audit.md#source-index-to-implementation-gaps)
+links recovered owners to implementation evidence and remaining acceptance gates.
 The [3.24.18 module index](../curs_source/modules/3.24.18/README.md) links each
 selected JavaScript input to its published structural files, while the
 [timeout report](recovery/rea-agent-timeout-recovery.md) records the current

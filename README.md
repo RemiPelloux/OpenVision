@@ -29,6 +29,10 @@ options without an OpenVision account.
 extracted modules, native pseudocode and provenance, alongside OpenVision's own
 customization source. Recovery versions and missing layers are documented there;
 the archive is not an independently buildable original-source checkout.
+The [source-to-gap map](docs/recovery/feature-gap-audit.md#source-index-to-implementation-gaps)
+connects the versioned source index to implementation evidence and remaining
+acceptance gates. All 237 selected JavaScript inputs have extraction results;
+that count is separate from verified feature coverage.
 
 > **Ready to run on Windows x64.** Download the complete portable app from
 > [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6),
@@ -201,8 +205,11 @@ The [critical-first queue and ETA](docs/planning/roadmap.md#critical-first-backl
 orders **36 unfinished stories / 322 provisional points**: safety and privacy,
 RAM/request efficiency and daily workflows, independent builds, retrieval,
 distribution/platform completion, then broader modes. Estimates describe scope;
-release readiness requires the named checks. The latest performance fixes are
-in source and have not updated the preview.6 download.
+release readiness requires the named checks. Latest source work includes
+[edit-review recovery](docs/recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
+and [storage ownership for discovered models](docs/engineering/storage-write-ownership.md).
+These fixes and the latest performance changes have not updated the preview.6
+download; the reports distinguish executed checks from remaining gates.
 
 The [Rust rewrite roadmap](docs/planning/rust/rust-roadmap.md) breaks the architecture track into
 **36 planned packages / 195 provisional points**, with dependencies, migration,

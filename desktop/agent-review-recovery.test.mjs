@@ -15,9 +15,10 @@ const drain = () => new Promise(resolve => setImmediate(resolve));
 // Inject failure only at model/storage/handler dependencies, never at undo logic.
 function fixture(source = patched, options = {}) {
   const owner = agentReviewRecoveryOwner(source);
-  const methods = ['remove', 'getStoredInlineDiff', 'setStoredInlineDiff'].map(name => {
+  const methods = ['remove', 'getStoredInlineDiff', 'setStoredInlineDiff',
+    'openvisionReleaseReviewReference', 'openvisionRetryReviewReferences', 'dispose'].flatMap(name => {
     const node = owner.body.body.find(method => method.key?.name === name);
-    return source.slice(node.start, node.end);
+    return node ? [source.slice(node.start, node.end)] : [];
   });
   const undoStart = source.indexOf('pK = class {');
   const undoEnd = source.indexOf('\n      };', undoStart) + '\n      }'.length;
@@ -29,7 +30,8 @@ function fixture(source = patched, options = {}) {
   const originalDiff = { id: 'diff', uri, originalTextLines: ['before'], newTextLines: ['after'],
     currentRange: { startLineNumber: 1, endLineNumberExclusive: 2 }, hideDecorations: options.hideDecorations ?? false };
   const handler = { inlineDiff: originalDiff, composerMetadata: { composerId: 'composer' }, remove() {} };
-  const definitions = runInNewContext(`const pK = (${undoClass}); ({ Class: class { ${methods.join('\n')} } })`, {
+  const definitions = runInNewContext(`const pK = (${undoClass}); ({ Class: class extends Base { ${methods.join('\n')} } })`, {
+    Base: class { dispose() { state.serviceDisposals = (state.serviceDisposals ?? 0) + 1; } },
     Nnd: () => 'undo-key', Hlf: value => ({ uri: value.uri, currentRange: { ...value.currentRange } }), Mge: class {},
     fie: value => ({ ...value }), Kkf: value => value,
     console: { error(...args) { state.errors.push(args); } },
@@ -56,7 +58,8 @@ function fixture(source = patched, options = {}) {
     } },
     instantiationService: { createInstance(Type, reference, diff) {
       if (state.failConstruct) throw new Error('construction failed');
-      return { inlineDiff: diff, reference, composerMetadata: { composerId: 'composer' }, remove() { reference.dispose(); } };
+      return { inlineDiff: diff, reference, composerMetadata: { composerId: 'composer' },
+        remove() { reference.dispose(); }, dispose() { reference.dispose(); } };
     } },
     _onDidChangeDiffInfos: { fire() {} }, _onDidAddDiffFromUndoRedo: { fire() { state.added++; } },
     _onDidRemoveDiffFromUndoRedo: { fire() { state.removed++; } },
@@ -135,6 +138,28 @@ test('failed release retains the reference until a retry can release it', async 
   f.state.failConstruct = f.state.failDispose = false; await f.state.element.undo();
   assert.equal(f.state.refs[0].disposed, true); assert.equal(f.state.refs.length, 2);
   assert.equal(f.service.diffHandlers.size, 1);
+});
+
+test('failed Undo release survives discarded history and is retried by later review activity', async () => {
+  const f = fixture(); await drain(); f.state.failConstruct = f.state.failDispose = true;
+  await f.state.element.undo(); const reference = f.state.refs[0];
+  assert.equal(f.service.openvisionFailedReviewReferences.has(reference), true);
+  f.state.element = undefined;
+  f.state.failDispose = false;
+  f.service.remove('unrelated');
+  assert.equal(reference.disposed, true);
+  assert.equal(f.service.openvisionFailedReviewReferences.size, 0);
+});
+
+test('review service cleanup retains failed Undo releases and reports errors until cleanup succeeds', async () => {
+  const f = fixture(); await drain(); f.state.failConstruct = f.state.failDispose = true;
+  await f.state.element.undo(); const reference = f.state.refs[0]; f.state.element = undefined;
+  assert.throws(() => f.service.dispose(), error => error.name === 'AggregateError' &&
+    error.errors.some(failure => failure.message === 'release failed'));
+  assert.equal(f.service.openvisionFailedReviewReferences.has(reference), true);
+  assert.equal(reference.disposed, false); assert.equal(f.state.serviceDisposals, 1);
+  f.state.failDispose = false; assert.doesNotThrow(() => f.service.dispose());
+  assert.equal(reference.disposed, true); assert.equal(f.service.openvisionFailedReviewReferences.size, 0);
 });
 
 test('cleanup failure preserves the restored handler and does not erase other undo history', async () => {

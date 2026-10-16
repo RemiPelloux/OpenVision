@@ -12,6 +12,24 @@ The [feature gap audit](../recovery/feature-gap-audit.md) is the recovery baseli
 
 ## Current baseline
 
+16 October created-review follow-up: [snapshot ownership](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
+corrects Undo Create Diff removing the live review after a failed snapshot write
+and Redo deleting recovery after a failed restore. Producer regressions execute
+the actual recovered callbacks and cover cleanup/ref-release retry. The Windows
+Quick Edit overlay passes injected snapshot-service failures and reproduces the
+original review-loss defect with its recovered-owner control. Failed reference
+release is now service-owned and survives discarded history in producer tests.
+Full Undo-stack failure behavior, physical I/O, active-write interruption and
+live-provider gates remain distinct. The [storage report](../engineering/storage-write-ownership.md)
+records the model-discovery fix and scoped native regressions.
+OV-103 stays Partial; the fixed ledger remains **6/42 Verified (14.29%)**.
+
+The [final source-build regression](../recovery/rea-agent-review-recovery.md#final-source-build-regression)
+passes native reads/search, multi-file review, repeated-edit Undo/Redo,
+normal-restart acceptance/rejection, command approval/cancellation and resume.
+All 29 local fixture requests are authenticated; five app launches exit 0.
+This does not close live-inference, physical-fault or full Undo error gates.
+
 15 October live retry follow-up: [failed-stream history ownership](../recovery/rea-agent-retry-history.md)
 fixes an empty assistant added before any response content in both Agent bundles.
 Two real DeepSeek manual retries failed with HTTP 400 before the fix; the rebuilt

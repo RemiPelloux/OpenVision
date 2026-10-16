@@ -1,8 +1,9 @@
 # OpenVision ETA and priorities
 
-Updated 15 October 2026 against the acceptance ledger and the
-[control-plane HTTP follow-up](../performance/control-plane-http-resources.md) and
-[native discovery/startup evidence](../performance/model-discovery-resources.md).
+Updated 16 October 2026 against the acceptance ledger,
+[source-to-gap map](../recovery/feature-gap-audit.md#source-index-to-implementation-gaps),
+[build-integrity correction](../engineering/runtime-build-integrity.md) and
+[Agent recovery evidence](../recovery/rea-agent-review-recovery.md).
 The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
@@ -22,17 +23,29 @@ for the 80% target. The 322 points cover the entire unfinished scope; a reliable
 point estimate for the 80% subset requires choosing its stories and dependencies.
 Account work packages overlap this scope and must not be added twice.
 
-The missing provider-error fixture is restored and its 25 focused checks pass.
-Control-plane HTTP deadlines/disconnects now cancel actual work, with bounded
-response bodies and passing real HTTP/public-route checks. Discovery now releases
-window-owned requests and unfinished error bodies, with native integration
-evidence. **First restore full Windows workbench startup:** the latest unchanged
-and candidate builds exit 0xC000001D with a recorded `urlmon.dll` fault. Then rerun
-full-app gates; close remaining P0 failure checks; bound control-plane subprocess output/cache memory,
-measure whole-app long sessions, and refresh the Windows package after its
-declared checks pass. GPT-6 account eligibility, the last observed API balance
-failure and access to further native platform environments remain blockers for
-their respective checks. Work that does not depend on them can continue.
+Windows startup and native Agent workflows passed after the
+[build-integrity correction](../engineering/runtime-build-integrity.md#verification-scope).
+The earlier `urlmon.dll` failure remains historical evidence; successful app
+containment does not identify or repair its OS-level cause. Control-plane
+[HTTP](../performance/control-plane-http-resources.md),
+[STDIO](../performance/control-plane-stdio-resources.md) and
+[lifecycle](../performance/control-plane-mcp-lifecycle.md) checks have separate
+bounded-resource evidence.
+
+**Next: finish Agent editing/recovery and its chat transport dependency.** Close
+the [remaining review gates](../recovery/rea-agent-review-recovery.md#remaining-acceptance),
+[full-duration native timeout checks](../recovery/rea-agent-timeout-recovery.md)
+and the remaining [storage-failure matrix](../engineering/storage-write-ownership.md#verification).
+Then follow P0/P1 in the roadmap, including configuration durability, MCP
+ownership and measured long-session resources. The Windows payload needs a
+refresh after its declared packaging checks pass.
+
+Official-account GPT-6 eligibility and missing platform environments remain
+specific open gates. The earlier API balance failure does not establish a
+current universal blocker: later [live API retry checks](../recovery/rea-agent-retry-history.md)
+passed. Native Linux now has [scoped x64 evidence](../verification/linux-verification.md);
+native macOS and the remaining Linux matrix are still open. Work independent
+of those gates continues.
 
 The [latest performance fixes](../performance/autocomplete-stream-performance.md) are implemented
 and locally verified in source; they do not promote a whole story or update the

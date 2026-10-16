@@ -7,6 +7,7 @@ import { strictModelSelection } from './model-selection-customization.mjs';
 import { paginateModelPicker } from './model-picker-pagination.mjs';
 import { readablePickerLabels } from './model-picker-labels.mjs';
 import { preserveReasoningSelection } from './reasoning-selection-customization.mjs';
+import { preserveUnacknowledgedWrites } from './storage-write-ownership.mjs';
 
 const options = { ecmaVersion: 'latest', sourceType: 'module' };
 const marker = '/* OpenVision custom model settings v2 */';
@@ -52,6 +53,7 @@ function localTaskSettings(text, variant) {
 }
 
 export function customModels(text, variant) {
+  text = preserveUnacknowledgedWrites(text);
   text = text.replace('import {allCatalog as openvisionCatalog, modelPreference as openvisionModelPreference, modelPreferences as openvisionModelPreferences} from "../code/electron-sandbox/workbench/openvision-model-providers.js";', catalogImport);
   text = text.replace(/async getModels\(([\w$]+)\) \{ const catalog = openvisionCatalog\(this.storageService\);/, 'async getModels($1) { await openvisionRefreshAccounts(this.storageService); const catalog = openvisionCatalog(this.storageService);');
   text = readablePickerLabels(text, variant);

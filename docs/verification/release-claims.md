@@ -1,6 +1,6 @@
 # OpenVision release claims and verification matrix
 
-Updated 15 October 2026; latest portable release 0.2.0-preview.6. This is a development build with incomplete release
+Updated 16 October 2026; latest portable release 0.2.0-preview.6. This is a development build with incomplete release
 acceptance. The fixed denominator remains the 42 stories
 in [feature-acceptance.json](../planning/feature-acceptance.json); at least 34 must be fully
 Verified. The [sprint ledger](../planning/completion-sprints.md) owns each story's status and
@@ -11,7 +11,7 @@ usability release gate, dependencies and complexity points.
 
 ## Input and build identity
 
-The current recovered input is version **3.21.13**, based on editor version
+The prepared and tested runtime input is version **3.21.13**, based on editor version
 **1.128.0**, Windows x64. The retained original executable SHA-256 is
 `757a63d3fe143103f8525f322b890de625061e827711afde197d63f833142242`.
 The baseline runner verifies those original bytes against the installation
@@ -20,6 +20,11 @@ and readability manifests, current host, workbench, Agent bundles, helpers and
 fixture code, plus Git commit, operating system, architecture and Node version.
 The manifest pins the original inventory; the baseline does not rehash every
 original payload or establish an independent rebuild.
+
+The separately published [source index](../../curs_source/modules/3.24.18/README.md)
+uses **3.24.18**. Its extraction results do not upgrade the runtime or establish
+feature parity; the [gap audit](../recovery/feature-gap-audit.md) keeps those
+versions and denominators separate.
 
 Runtime preparation still requires matching recovered files and shipped native
 components. Source recovery, pseudocode, original-source availability and a clean
@@ -92,11 +97,26 @@ source commits.
 The subsequent [discovery ownership fix](../performance/model-discovery-resources.md) passes
 34 focused socket/provider/identity checks and 12 real Electron integration
 checks in a minimal native host, including reproduced before/after cancellation
-failures. **Latest full-workbench startup fails** before these checks execute:
-both unchanged and candidate adapters exit 0xC000001D, with a captured fault in
-Windows `urlmon.dll`. The cause remains unresolved. Earlier native successes
-above are historical; no current usable-editor or refreshed-release claim is
-made from this minimal host. Preview.6 and story statuses remain unchanged.
+failures. Earlier full-workbench attempts exited 0xC000001D with a captured fault
+in Windows `urlmon.dll`. Later native discovery passed against an existing
+runtime, and the [build-integrity correction](../engineering/runtime-build-integrity.md#verification-scope)
+records repeat builds and native Agent/editor workflows after restoring damaged
+generated inputs and fixing the shell integration. These results establish
+their recorded Windows scope, not an OS-wide repair, independent rebuild or
+refreshed portable release. Preview.6 and story statuses remain unchanged.
+
+The 16 October [storage ownership correction](../engineering/storage-write-ownership.md)
+ports the newer recovered pending/in-flight invariant into the prepared runtime.
+Windows provider identity/lifecycle and Quick Edit snapshot-service regressions
+pass with controlled HTTP models. The [review recovery follow-up](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
+also retains failed model releases with the service when Undo history is
+discarded. Its 48 focused checks are distinct from native physical-storage,
+full Undo-stack error handling and live-inference gates. Source only; no full
+story is promoted or preview.6 payload replaced.
+The [final Windows Agent regression](../recovery/rea-agent-review-recovery.md#final-source-build-regression)
+passes on the rebuilt source with 29 authenticated fixture requests and five
+clean application exits. It verifies the listed edit/restart/command workflows,
+not live inference or physical storage-fault recovery.
 
 ## Feature and fixture matrix
 
@@ -169,7 +189,7 @@ the measured disabled-child model fallback was fixed. OV-104/203 remain Partial.
 | Linux x64, Omarchy (Arch based), kernel 7.2, Hyprland on Wayland | Local build and portable package, Secret Service keyring, namespace sandbox, bash/sh terminals and the native suite in [Linux verification](linux-verification.md) | Other distributions, X11 sessions and KDE/KWallet not run natively |
 | Linux ARM64 | None | Needs a pinned ARM64 input; unverified |
 | Text/JavaScript files in current Windows fixtures | Unicode text editing, search, Agent Read/StrReplace and saved bytes | Not a language-service acceptance result |
-| TypeScript/JavaScript language service and other languages/extensions | Bundles/registrations exist | Diagnostics, navigation, rename, formatting and large-file matrix not yet verified |
+| TypeScript/JavaScript and C/C++ language workflows | [Native diagnostics, navigation, rename, formatting and undo checks](../recovery/rea-language-workflows.md), with [clangd setup](../guides/cpp-support.md) | Remaining concurrent-edit conflicts, large-project/resource budgets, extension and platform matrix; other languages remain separately unverified |
 | Windows Command Prompt, Windows PowerShell 5.1 and pinned Node 24.18.0 | Agent command deny/allow/Stop; native shell resize/Unicode/environment/restart, task matcher, Node debugger break/step/Stop and child cleanup | [Declared no-profile shell matrix](../engineering/development-workflows.md); intermittent launcher exit 134 unresolved; other shells/debuggers and persistent sessions unverified |
 | SSH, WSL, containers | No complete native workflow evidence | Connection, remote extension host, routing and cleanup remain required |
 
