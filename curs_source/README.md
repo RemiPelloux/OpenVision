@@ -38,6 +38,15 @@ Useful application entry points:
 - [Local Agent runtime](javascript/3.24.18/extensions/cursor-local-agent-runtime/bundles/main.js)
 - [Searchable bundle index](modules/3.24.18/README.md) for smaller files instead of large entry points
 
+The [3.24.18 module index](modules/3.24.18/README.md) is generated from the
+[publication manifest](manifest.json). Use the index to browse each selected
+input, the manifest to verify its exact hashes and retry provenance, and the
+[source-to-gap map](../docs/recovery/feature-gap-audit.md#source-index-to-implementation-gaps)
+to connect recovered owners to maintained OpenVision code and acceptance gates.
+The index currently covers **237/237** selected inputs; that is structural
+extraction coverage, not a claim that the modules are independently runnable
+or that the original feature set has been recovered.
+
 ## Current Windows snapshot: 3.24.18
 
 The installed application was captured on 16 October 2026. Its executable

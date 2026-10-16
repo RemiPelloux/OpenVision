@@ -135,6 +135,12 @@ await writeFile(join(root, 'modules', version, 'README.md'),
   'These are derived static representations. Filenames ending in TypeScript do not establish original TypeScript recovery. ' +
   'The source manifest preserves input hashes, producer paths, retries and output hashes. ' +
   'File counts include extracted resources and provenance sidecars. Statement extraction does not establish a runnable module graph.\n\n' +
+  `This index is generated from [the publication manifest](../../manifest.json) and is the browseable companion to the ` +
+  `[source-to-gap map](../../../docs/recovery/feature-gap-audit.md#source-index-to-implementation-gaps). ` +
+  `The current snapshot has **${report.selection_coverage.selected_inputs}/${report.selection_coverage.selected_inputs}** ` +
+  `selected inputs with structural results (${report.selection_coverage.structural_unchanged_input} unchanged and ` +
+  `${report.selection_coverage.structural_derived_filename_label} derived filename-label result). ` +
+  `Use the [progress dashboard](../../../docs/progress.md) for acceptance coverage; extraction coverage is not feature parity.\n\n` +
   '| Input bundle | Representation | Files | Entry point |\n| --- | --- | ---: | --- |\n' + rows.join('\n') + '\n');
 console.log(JSON.stringify({ application: application.length, selection_coverage: report.selection_coverage,
   modules: bundles.reduce((n, x) => n + x.files.length, 0), supplemental: supplemental.map(x => ({ input: x.input, files: x.files.length })) }));

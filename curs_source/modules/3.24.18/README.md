@@ -2,6 +2,8 @@
 
 These are derived static representations. Filenames ending in TypeScript do not establish original TypeScript recovery. The source manifest preserves input hashes, producer paths, retries and output hashes. File counts include extracted resources and provenance sidecars. Statement extraction does not establish a runnable module graph.
 
+This index is generated from [the publication manifest](../../manifest.json) and is the browseable companion to the [source-to-gap map](../../../docs/recovery/feature-gap-audit.md#source-index-to-implementation-gaps). The current snapshot has **237/237** selected inputs with structural results (236 unchanged and 1 derived filename-label result). Use the [progress dashboard](../../../docs/progress.md) for acceptance coverage; extraction coverage is not feature parity.
+
 | Input bundle | Representation | Files | Entry point |
 | --- | --- | ---: | --- |
 | `extensions/cursor-agent-exec/dist/109.js` | structural-raw-module-extraction | 5 | [Browse](793a7b861676e72b56301aa3eb6cbc177714be09500eadd0fc878a8e45a665e6-4cf11af8458c/module-29846.js) |
