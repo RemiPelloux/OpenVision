@@ -19,6 +19,11 @@ options without an OpenVision account.
 [Releases](https://github.com/RemiPelloux/OpenVision/releases) ·
 [Documentation](docs/README.md)
 
+**Source availability:** The full original source has not been recovered.
+The Git payload includes editable bundled JavaScript and this repository includes
+OpenVision's own customization source. [See `curs_source` for the exact scope and
+missing layers](curs_source/README.md).
+
 > **Ready to run on Windows x64.** Download the complete portable app from
 > [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6),
 > extract it, and double-click **OpenVision.cmd**. The complete app payload is

@@ -6,6 +6,10 @@ This distinction also applies to the Agent and editor: local JavaScript behavior
 can be changed, but a remote model's speed, implementation and capabilities
 remain controlled by its provider.
 
+The full original source is not tracked in Git or available locally. The
+[`curs_source` index](../curs_source/README.md) identifies what the repository
+does contain and where to inspect the editable bundled JavaScript.
+
 ## Observed recovery coverage
 
 The local recovery reports describe the Windows input snapshot reviewed on
