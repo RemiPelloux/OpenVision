@@ -33,7 +33,7 @@ transformation and its limitation are recorded in the
 [final-bundle report](javascript-bundles.md). This is source-recovery evidence,
 not a runnable module graph or feature-parity score.
 
-The Linux [provider failure matrix](rea-provider-failure-matrix.md) records covered, newly verified, fixed and open OV-102/204 cells. An unresolved failure is not restored after restart.
+The Linux [provider failure matrix](rea-provider-failure-matrix.md) records covered, newly verified, fixed and open OV-102/204 cells. An unresolved failure, its recovery action and dismissal now survive restart (Linux fixtures).
 
 The new [native Agent timeout report](rea-agent-timeout-recovery.md) covers the
 OV-102 transport boundary: unchanged five-minute header and ten-minute body

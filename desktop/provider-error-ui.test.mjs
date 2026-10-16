@@ -78,7 +78,9 @@ test('recovered desktop retry classifier never automatically repeats a manual-re
 
 // Two Agent producers exist: cursor-agent-exec (legacy topology) and
 // cursor-agent-host (gated). Only the exec bundle carries the provider error
-// boundary, so the host topology must stay unreachable in local mode.
+// boundary, so the host topology must stay unreachable in local mode. Restart
+// persistence (provider-failure-persistence.mjs) also depends on it: only a
+// LocalProviderError from that boundary is flagged and saved with the chat.
 test('local mode keeps the Agent host topology off unless its bundle carries the provider error boundary', async () => {
   const host = await readFile(new URL('../source/app/extensions/cursor-agent-host/dist/main.js', import.meta.url), 'utf8');
   const exec = await readFile(new URL('../source/app/extensions/cursor-agent-exec/dist/main.js', import.meta.url), 'utf8');

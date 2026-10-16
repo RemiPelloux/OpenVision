@@ -83,7 +83,7 @@ const server = createServer(async (request, response) => {
   const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   const name = scenario.replace(/^(recovery|after-restart):/, '');
   const record = { scenario, authorized: request.headers.authorization === `Bearer ${secret}`, model: body.model, ...inspect(body, name) };
-  if (scenario.startsWith('after-restart:')) record.restartPrompts = Object.fromEntries(['stop-partial', 'restart-pending']
+  if (scenario.startsWith('after-restart:')) record.restartPrompts = Object.fromEntries(['stop-partial', 'restart-pending', 'restart-partial']
     .map(prompt => [prompt, inspect(body, prompt).promptOccurrences]));
   requests.push(record);
   response.on('close', () => { record.socketClosed = true; });
@@ -104,11 +104,11 @@ const server = createServer(async (request, response) => {
         param: 'messages.[1].content.[1].type', code: null } }));
   }
   response.writeHead(200, { 'content-type': 'text/event-stream' });
-  if (['partial-disconnect', 'partial-malformed', 'partial-stream-error', 'truncated-eof', 'stop-partial'].includes(scenario)) {
+  if (['partial-disconnect', 'partial-malformed', 'partial-stream-error', 'truncated-eof', 'stop-partial', 'restart-partial'].includes(scenario)) {
     sse(response, { role: 'assistant', content: `partial ${scenario} ` });
     if (scenario === 'stop-partial') return;
     await new Promise(resolveWait => setTimeout(resolveWait, 300));
-    if (scenario === 'partial-disconnect') return response.destroy();
+    if (scenario === 'partial-disconnect' || scenario === 'restart-partial') return response.destroy();
     if (scenario === 'partial-malformed') return response.end(`data: {"choices":[{"index":0,"delta":{"content":"${secret}\n\n`);
     if (scenario === 'partial-stream-error') return response.end(`data: ${JSON.stringify({ error: {
       message: `fixture partial-stream-error ${secret}`, type: 'fixture_error' } })}\n\n`);
@@ -190,9 +190,13 @@ function persistedTranscript(composer) {
     };
     const data = read(`composerData:${composer}`);
     assert.ok(data, 'Expected persisted chat record');
+    const failure = data.submitErrorDetails;
     result.persistedChatState = { status: data.status, abortReason: data.abortReason,
-      submitErrorDetails: data.submitErrorDetails === undefined ? undefined : { title: data.submitErrorDetails.title,
-        isRetryable: data.submitErrorDetails.isRetryable, openvisionProviderFailure: data.submitErrorDetails.openvisionProviderFailure } };
+      secretInRecord: JSON.stringify(data).includes(secret),
+      submitErrorDetails: failure === undefined ? undefined : { title: failure.title,
+        message: failure.message?.replaceAll(secret, '[redacted]'), isRetryable: failure.isRetryable,
+        resumeOnRetry: failure.resumeOnRetry, openvisionProviderFailure: failure.openvisionProviderFailure,
+        buttons: failure.extraButtons?.map(button => ({ ...button })), fields: Object.keys(failure).sort() } };
     return data.fullConversationHeadersOnly.map(header => {
       const bubble = read(`bubbleId:${composer}:${header.bubbleId}`) ?? {};
       return { type: header.type ?? bubble.type, text: bubble.text ?? '',
@@ -298,34 +302,96 @@ try {
   for (const name of selected.filter(value => scenarios[value].partial))
     assert.ok(persisted.some(entry => entry.type === 2 && entry.text.includes(`partial ${name}`)), `${name}: partial output persisted`);
   assert.ok(persisted.some(entry => entry.type === 2 && entry.text.includes('partial stop-partial')), 'Stopped partial output persisted');
+  // Restart cell 1: the unresolved pre-content failure must be saved with the chat.
+  result.persistedFailure = result.persistedChatState;
+  assert.equal(result.persistedFailure.secretInRecord, false, 'Saved chat record must not contain the credential');
+  assert.equal(result.persistedFailure.submitErrorDetails?.openvisionProviderFailure, true, 'Unresolved failure saved with the chat');
+  assert.deepEqual(result.persistedFailure.submitErrorDetails.buttons, [{ id: 'resume', label: 'Try again', variant: 'secondary' }]);
+  assert.ok(!result.persistedFailure.submitErrorDetails.fields.includes('stackTrace'), 'Stack trace is not saved');
+  const relaunchBefore = requests.length;
   await launch();
   await page.getByText('Trigger restart-pending.', { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
   result.restoredComposer = await composerId();
+  const retryAction = page.getByText('Try again', { exact: true }).filter({ visible: true });
+  await retryAction.last().waitFor({ timeout: 15000 }).catch(() => {});
   const restoredBody = await page.locator('body').innerText();
   result.afterRestart = { sameComposer: result.restoredComposer === source,
     failureVisible: /fixture restart-pending \[redacted\]/.test(restoredBody),
-    tryAgainVisible: await page.getByText('Try again', { exact: true }).filter({ visible: true }).count() > 0 };
+    tryAgainVisible: await retryAction.count() > 0, requestsOnRestore: requests.length - relaunchBefore };
+  await page.screenshot({ path: join(directory, 'restart-unresolved-failure.png') });
   assert.equal(result.afterRestart.sameComposer, true, 'Restart must restore the same chat');
   assert.equal(restoredBody.includes(secret), false, 'Restored UI must not contain the credential');
+  assert.equal(result.afterRestart.failureVisible, true, 'Restart must restore the unresolved failure');
+  assert.equal(result.afterRestart.tryAgainVisible, true, 'Restart must restore Try again');
+  assert.equal(result.afterRestart.requestsOnRestore, 0, 'Restoring a failure must not retry automatically');
+  // Restart cell 2: explicit retry after restart sends exactly once with one copy of the prompt.
   const followBefore = requests.length;
-  if (result.afterRestart.tryAgainVisible) {
-    result.afterRestart.recovery = 'Try again';
-    await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
-  } else {
-    result.afterRestart.recovery = 'follow-up';
-    await input().fill('Continue after restart. Do not use tools.'); await input().press('Enter');
-  }
+  result.afterRestart.recovery = 'Try again';
+  await retryAction.last().click();
   await page.getByText('fixture after restart', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 30000 });
   await idle();
   await page.waitForTimeout(2500);
   const follow = requests.slice(followBefore);
   assert.equal(follow.length, 1, 'Post-restart recovery sends once');
   Object.assign(result.afterRestart, { roles: follow[0].roles, emptyAssistants: follow[0].emptyAssistants,
-    promptOccurrences: follow[0].restartPrompts });
+    promptOccurrences: follow[0].restartPrompts, failureClearedAfterRetry:
+      !/fixture restart-pending \[redacted\]/.test(await page.locator('body').innerText()) });
   assert.equal(follow[0].emptyAssistants, 0, 'Restored history has no empty assistant');
-  assert.deepEqual(follow[0].restartPrompts, { 'stop-partial': 1, 'restart-pending': 1 },
+  assert.deepEqual(follow[0].restartPrompts, { 'stop-partial': 1, 'restart-pending': 1, 'restart-partial': 0 },
     'Stopped and failed prompts each appear once in restored history');
+  assert.equal(result.afterRestart.failureClearedAfterRetry, true, 'Successful retry clears the restored failure');
   await page.screenshot({ path: join(directory, 'native-provider-matrix.png') });
+  // Restart cell 3: a failure after partial output keeps its partial text and Resume
+  // across restart; dismissing it after restart is saved too.
+  scenario = 'restart-partial';
+  const partialBefore = requests.length;
+  await input().fill('Trigger restart-partial. Do not use tools.'); await input().press('Enter');
+  await page.getByText('Resume', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 30000 });
+  await idle();
+  await page.waitForTimeout(2500);
+  assert.equal(requests.length - partialBefore, 1, 'Partial failure must not retry automatically');
+  scenario = 'after-restart:restart-partial';
+  await closeOwnedApp();
+  const partialTranscript = persistedTranscript(source);
+  result.persistedPartialFailure = result.persistedChatState;
+  assert.equal(result.persistedPartialFailure.secretInRecord, false);
+  assert.equal(result.persistedPartialFailure.submitErrorDetails?.openvisionProviderFailure, true, 'Partial failure saved');
+  assert.deepEqual(result.persistedPartialFailure.submitErrorDetails.buttons.map(button => button.label), ['Resume']);
+  assert.ok(partialTranscript.some(entry => entry.type === 2 && entry.text.includes('partial restart-partial')), 'Partial output saved');
+  const partialRelaunch = requests.length;
+  await launch();
+  await page.getByText('Trigger restart-partial.', { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
+  const resumeAction = page.getByText('Resume', { exact: true }).filter({ visible: true });
+  await resumeAction.last().waitFor({ timeout: 15000 }).catch(() => {});
+  const partialBody = await page.locator('body').innerText();
+  result.partialAfterRestart = { partialVisible: partialBody.includes('partial restart-partial'),
+    guidanceVisible: guidance.interrupted.test(partialBody), resumeVisible: await resumeAction.count() > 0,
+    requestsOnRestore: requests.length - partialRelaunch };
+  await page.screenshot({ path: join(directory, 'restart-partial-failure.png') });
+  assert.deepEqual(result.partialAfterRestart, { partialVisible: true, guidanceVisible: true, resumeVisible: true, requestsOnRestore: 0 },
+    'Partial output, classification and Resume survive restart without a request');
+  const dismissBefore = requests.length;
+  await page.locator('.composer-warning-popup-close-button').filter({ visible: true }).last().click();
+  await resumeAction.first().waitFor({ state: 'hidden', timeout: 15000 });
+  await page.waitForTimeout(2500);
+  result.dismissAfterRestart = { requests: requests.length - dismissBefore };
+  assert.equal(result.dismissAfterRestart.requests, 0, 'Dismissal sends no request');
+  await closeOwnedApp();
+  persistedTranscript(source);
+  result.persistedAfterDismiss = result.persistedChatState;
+  assert.equal(result.persistedAfterDismiss.submitErrorDetails, undefined, 'Dismissal is saved');
+  const dismissRelaunch = requests.length;
+  await launch();
+  await page.getByText('Trigger restart-partial.', { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
+  await page.waitForTimeout(3000);
+  const dismissedBody = await page.locator('body').innerText();
+  Object.assign(result.dismissAfterRestart, { partialVisible: dismissedBody.includes('partial restart-partial'),
+    guidanceVisible: guidance.interrupted.test(dismissedBody),
+    recoveryVisible: await page.getByText(/^(Try again|Resume)$/).filter({ visible: true }).count() > 0,
+    requestsOnRestore: requests.length - dismissRelaunch });
+  await page.screenshot({ path: join(directory, 'restart-after-dismiss.png') });
+  assert.deepEqual({ ...result.dismissAfterRestart, requests: undefined }, { requests: undefined, partialVisible: true,
+    guidanceVisible: false, recoveryVisible: false, requestsOnRestore: 0 }, 'Dismissed failure stays dismissed after restart');
   result.success = Object.values(result.scenarios).every(value => value.passed);
 } catch (error) {
   result.error = error.message;

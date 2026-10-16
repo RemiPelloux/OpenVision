@@ -28,11 +28,11 @@ exercised. Exec path throughout; host path is not reachable natively.
 
 | Failure class | Error / guidance | Explicit retry | Stop | Restart / history |
 | --- | --- | --- | --- | --- |
-| HTTP 401/403/429/500/502/503, context limit, oversized/stalled error body | Covered; Linux Verified | Covered; Linux Verified | Covered (open stream) | Gap: unresolved failure is not restored (below) |
+| HTTP 401/403/429/500/502/503, context limit, oversized/stalled error body | Covered; Linux Verified | Covered; Linux Verified | Covered (open stream) | **Fixed**: 503 failure, Try again and dismissal survive restart (follow-up) |
 | Offline/refused, DNS, HTTPS protocol, untrusted certificate | Covered; Linux Verified | Covered; Linux Verified | n/a | Unverified |
 | **Expired certificate** | Verified: `certificate has expired` plus certificate guidance | Verified | n/a | Verified as part of the restart run |
 | **Hostname mismatch** | Verified: `Hostname/IP does not match certificate's altnames` | Verified | n/a | Verified as part of the restart run |
-| Mid-stream disconnect after content | **Fixed**: was only `terminated` | Verified: **Resume**, one request, partial replayed once | n/a | Partial output persisted |
+| Mid-stream disconnect after content | **Fixed**: was only `terminated` | Verified: **Resume**, one request, partial replayed once | n/a | Partial output, guidance and Resume restored (follow-up) |
 | Mid-stream malformed JSON | **Fixed**: raw parse text only; now invalid-stream guidance | Verified: Resume | n/a | Partial output persisted |
 | Mid-stream provider error event | Verified (redacted provider text) | Verified: Resume | n/a | Partial output persisted |
 | **Stream ends without finish reason** | **Fixed**: automatic paid repeats (below) | Verified: Resume, one request | n/a | Partial output persisted |
@@ -81,6 +81,99 @@ returns without the error or **Try again**. The screenshot shows the failed turn
 with no indicator. A new follow-up sends once, with each prior prompt once and
 no empty assistant. This fails the failed-response-record part of the history
 clause. The owner is chat-state persistence in the workbench and remains open.
+This paragraph records the pre-fix state; the follow-up below corrects it.
+
+## 16 October follow-up: unresolved failure persists across restart
+
+**Linux x64 only**, source build of the 3.21.13 runtime input, controlled
+loopback fixtures (**not live inference**). Windows and macOS were not run.
+
+**Owner (observed in the recovered workbench, both `desktop` and `glass`).**
+A terminal provider failure lives only in composer `submitErrorDetails`; the
+OpenVision retention patch flags it `openvisionProviderFailure`. Composer
+records are written by `persistLoadedComposer` → `X1u`/`fZh`, whose converter
+`Y1u`/`gZh` is an explicit field allowlist without `submitErrorDetails`. The
+loader `P4s`/`Uba` spreads every stored field back. The failed turn's AI bubble
+is stored with `errorDetails`, but the composer view reads the composer field,
+so restart showed an ordinary unanswered message. The shutdown save hook
+re-serializes every loaded composer, so dismissal and retry also reach disk
+through the same serializer (derived from the recovered code; confirmed below).
+
+**Reproduction before the fix.** `provider-matrix-2kQAr4` (parent `38d0fe82`):
+the 503 user turn was saved, the composer record had status `aborted` and no
+failure field, and after restart neither the error nor **Try again** appeared
+(screenshot inspected).
+
+**Correction.** `desktop/provider-failure-persistence.mjs` (bundle chain, after
+`providerManualRetry`; first backup and build cache through the existing
+bundle customizer) adds one additive field. The serializer stores it only for
+flagged provider failures, as an allowlist: request id, title, message,
+connect code, retryability, `resumeOnRetry` and a single callback-free
+`resume` button labelled **Try again** or **Resume**. The protobuf error, when
+present, is stored as JSON and revived with the same type the bubble reviver
+uses. Stack traces and all other fields are dropped. Credential-shaped text (URL
+user info, query and fragment, bearer/basic tokens, `sk-`/`xai-`/`pk-` keys) is
+scrubbed before storage. The loader re-applies the same allowlist, so unknown
+stored fields are never revived; records without the field load unchanged. No
+new callback is needed: the recovered error-button renderer already routes a
+`resume` button without a callback to `composerChatService.resumeChat(handle)`.
+Drift guards refuse a changed serializer, loader, reviver or resume fallback.
+The helper block carries a versioned marker and is replaced in place on an
+edited build.
+
+**Native result.** Full matrix `provider-matrix-EuBC0P` (parent `38d0fe82` plus
+this change): all 8 failure cells, Stop and three new restart cells pass with
+**20 requests** in total and four owned launches, each exiting 0. Focused run
+`provider-matrix-mZchVl` passed the same restart cells first. Observed:
+
+| Restart cell | Saved record (SQLite `composerData:<id>`, read directly) | After restart |
+| --- | --- | --- |
+| Unresolved 503 before content | `status: aborted`; failure with `Try again`; fields `extraButtons, isRetryable, message, openvisionProviderFailure, requestId, title`; no stack trace; no fixture key | Error text and **Try again** visible; **0 requests** on restore |
+| Retry after restart | — | **Try again** sends **1 request**; each earlier prompt once (`restart-pending` 1, `stop-partial` 1); no empty assistant; error cleared after the reply |
+| Failure after partial output | failure with `Resume`; partial text bubble saved | Partial text, interrupted-connection guidance and **Resume** visible; 0 requests |
+| Dismiss after restart | field absent after the next close; record has no key | Close button sends 0 requests; after a third launch the partial text stays, the error and recovery action do not return; 0 requests |
+
+The four screenshots (`restart-unresolved-failure.png`,
+`native-provider-matrix.png`, `restart-partial-failure.png`,
+`restart-after-dismiss.png`) were inspected. The fixture key was absent from
+**170 log files** and **5 profile storage files** in both runs. Hashes for
+`EuBC0P`: workbench
+`c03f9fac10b356a787fa7c8303b9c021b47303d74266e29df14d34f6d2a2ebb8`, Agent exec
+`ec5f9aca0315c293d94851db24d4bda7ca2d5ba1709be8551d53cab445a5d1aa`, helper
+`b1580c6860d81c633e315e49e78747810e0f9867c0b032fbf977e9185afe29b9`.
+
+Not observed natively: a stored protobuf `error` (the local provider failures
+had none; the reviver path is covered by tests only), retry by **Resume** after
+restart (Resume is restored and routes through the same `resumeChat` call as
+**Try again**), crash without the shutdown save hook, and live providers.
+
+`desktop/provider-failure-persistence.test.mjs` (in `npm run test:provider-errors`)
+executes the patched serializer and loader from both built workbench variants:
+allowlist and scrubbing, non-provider and dismissed records, old records,
+corrupt stored errors, unknown stored fields, the recovered resume fallback,
+retry and dismissal clearing, idempotence and in-place upgrade.
+
+Commands for this follow-up (same Linux x64 machine, parent `38d0fe82`):
+
+```sh
+export OPENVISION_RECOVERY_DIR=<prepared 3.21.13 input>
+npm run test:agent-retry        # 27/27
+npm run test:provider-errors    # 48/48 (8 new persistence tests)
+npm run test:provider-storage   # 60/60
+npm run test:agent-review       # 88/88
+npm run test:build-integrity    # 26/26
+npm run check:desktop && npm run build:desktop && npm run docs:check
+npm run verify:provider-matrix  # logs/provider-matrix-EuBC0P: 8/8 + Stop + 3 restart cells, 20 requests
+npm run verify:provider-errors  # logs/provider-errors-wE46H7: 17/17, 38 requests
+npm run verify:agent            # logs/agent-verification-PWDql5: success
+```
+
+**Producer paths.** The fix is in the workbench and keys only on the
+`LocalProviderError` flag set from the exec bundle's provider error boundary.
+The Agent host topology stays unreachable in local mode, and its guard test now
+states this dependency. The glass-environment branch that stores
+`submitErrorDetails` without the flag is not persisted; it is not reached by the
+desktop workbench (inferred from `isGlass`, not exercised).
 
 ## Secret handling
 
@@ -125,9 +218,10 @@ The displayed Node hint about `--use-system-ca` is observed, not changed.
 
 ## Status
 
-OV-102 remains **Partial**. Remaining gaps are live GPT/DeepSeek/Grok retry,
-timeout and Stop clauses, failure persistence across restart and the
-non-reachable host path. OV-204 remains **Partial**. Remaining gaps are live
-provider and Windows/macOS evidence, restart failure records, image capability
+OV-102 remains **Partial**. Failure persistence across restart is now fixed on
+Linux with fixtures. Remaining gaps are live GPT/DeepSeek/Grok retry, timeout,
+Stop and failure-restart clauses, branch conversation, Windows/macOS reruns of
+the restart cells and the non-reachable host path. OV-204 remains **Partial**.
+Remaining gaps are live provider and Windows/macOS evidence, image capability
 before submission and process-wide header/log handling. This is source-build
 evidence. The preview.7 portable package does not contain these changes.
