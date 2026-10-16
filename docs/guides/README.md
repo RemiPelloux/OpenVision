@@ -12,6 +12,7 @@ Install, configure and use OpenVision. Start with [Run OpenVision](native-runtim
 - [Run OpenVision](native-runtime.md)
 - [OpenVision project files](project-configuration.md)
 - [Project home](project-home.md)
+- [Import providers from pi and set model capabilities](provider-import.md)
 - [Approved project memories](project-memories.md)
 - [OpenVision user guide](user-guide.md)
 

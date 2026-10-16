@@ -131,7 +131,7 @@ try {
   result.malformedDiscoveryErrors = [];
   for (const invalid of [['low', { id: 'ultra', value: 7 }], 'high', null]) {
     await discover(invalid);
-    const status = page.locator('.openvision-model-settings > .openvision-model-status');
+    const status = page.locator('.openvision-model-settings .openvision-api-settings > .openvision-model-status');
     await status.getByText(/invalid reasoning metadata/).waitFor();
     result.malformedDiscoveryErrors.push(await status.innerText());
     await editor(); await trigger().getByText('Custom Thinker · Ultra', { exact: true }).waitFor();

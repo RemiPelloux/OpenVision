@@ -6,6 +6,14 @@ import { selectedImportDestinations } from './import-destinations.mjs';
 import { listImportBackups, previewImportRestore } from './import-backup.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+if (process.argv.includes('--pi')) {
+  // Separate, explicit pi provider import. It never prints or stores keys: --apply
+  // queues a key-free request that the app shows for confirmation in Models settings,
+  // where keys are written through the app's encrypted secret storage.
+  const { runPiImportCli } = await import('./pi-import-cli.mjs');
+  process.exitCode = await runPiImportCli(root, process.argv.slice(2));
+  process.exit();
+}
 const options = defaults(root);
 let apply = false;
 let restore;
