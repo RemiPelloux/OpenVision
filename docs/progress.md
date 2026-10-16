@@ -31,6 +31,9 @@ accounts, billing and cloud agents are excluded from this ledger.
 The [Agent I/O-fault report](recovery/rea-agent-io-faults.md) fixes saved-file loss on a full
 volume (Linux x64 evidence); OV-103 status and points are unchanged.
 
+The [Agent interruption report](recovery/rea-agent-interruption.md) covers Stop, close and abrupt
+exit during outstanding writes/tools (Linux x64 evidence); OV-103 status and points are unchanged.
+
 The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and
 resumes cleanup without repeating completed steps. It advances P0 OV-103 within

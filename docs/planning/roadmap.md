@@ -50,6 +50,9 @@ failure/history cases still prevent story promotion; **6/42 (14.29%)** is unchan
 The [Agent I/O-fault follow-up](../recovery/rea-agent-io-faults.md) reproduces real full-volume
 loss of saved bytes on Linux and makes Agent writes temp-file/rename durable. OV-103 stays Partial.
 
+The [Agent interruption follow-up](../recovery/rea-agent-interruption.md) keeps exact bytes, reviews
+and command ownership across Stop, close and abrupt exit mid-write. OV-103 stays Partial.
+
 The [review-removal follow-up](../recovery/rea-agent-review-removal.md) fixes
 cancellation failure advancing history and handler cleanup losing its owner.
 Cleanup resumes at its failed step across model-overlap and review callbacks;

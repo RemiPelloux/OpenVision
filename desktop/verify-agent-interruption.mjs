@@ -1,0 +1,485 @@
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { createServer as createNetServer } from 'node:net';
+import { randomUUID } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import { once } from 'node:events';
+import { lstat, mkdir, mkdtemp, readFile, readdir, realpath, symlink, unlink, utimes, writeFile } from 'node:fs/promises';
+import { release } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { _electron } from '../tooling/browser.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
+import { verificationSettings } from './verification-profile.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
+import { fileHash } from './import-files.mjs';
+import { enterWorkspace, openChat } from './verification-workspace.mjs';
+import { agentWriteHelpers, instrumentAgentWrite } from './verify-agent-interruption-overlay.mjs';
+
+// Interruption while Agent writes or tools are outstanding. Controlled local
+// HTTP model fixture; real Agent tools, filesystem, review and restart.
+assert.equal(process.platform, 'linux', 'This interruption verifier currently covers Linux process groups');
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const { layout, appRoot } = await verificationRuntime(root);
+const only = process.argv.find(argument => argument.startsWith('--cases='))?.slice('--cases='.length).split(',');
+await mkdir(join(root, 'logs'), { recursive: true });
+const directory = await mkdtemp(join(root, 'logs/agent-interruption-'));
+const project = join(directory, 'project'), probeDirectory = join(directory, 'probe');
+await mkdir(project); await mkdir(probeDirectory);
+await writeFile(join(project, 'README.md'), '# Interruption fixture\n');
+// Each case uses its own disposable profile so restored review state is attributable.
+let profile;
+async function freshProfile(name) {
+  profile = join(directory, `profile-${name}`);
+  await mkdir(join(profile, 'User'), { recursive: true });
+  await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
+    'git.openRepositoryInParentFolders': 'never', 'files.autoSave': 'off' }));
+}
+
+// Disposable overlay: a hard-linked tree with real directories, so the app root
+// resolves inside it, and every copy of the recovered write helper calls the probe.
+// Instrumented files replace their links; nothing is written through a link.
+const writers = agentWriteHelpers.map(helper => helper.file);
+const overlayHost = join(directory, 'host'), overlayApp = join(overlayHost, 'resources/app');
+execFileSync('cp', ['-al', '--', layout.host, overlayHost]);
+assert.ok((await lstat(overlayApp)).isSymbolicLink(), 'Expected the source build application link');
+await unlink(overlayApp);
+execFileSync('cp', ['-al', '--', await realpath(appRoot), overlayApp]);
+// Main-process modules import ../../../desktop relative to the application.
+await symlink(join(root, 'desktop'), join(overlayHost, 'desktop'), 'dir');
+const overlay = { executable: join(overlayHost, 'openvision'), records: [] };
+for (const helper of agentWriteHelpers) {
+  const path = join(overlayApp, helper.file), text = await readFile(path, 'utf8');
+  await unlink(path); await writeFile(path, instrumentAgentWrite(text, helper), { flag: 'wx' });
+  overlay.records.push({ path: helper.file, original: await fileHash(join(appRoot, helper.file)), instrumented: await fileHash(path) });
+}
+const runId = randomUUID();
+const probeModule = join(root, 'desktop/verify-agent-interruption-probe.cjs');
+
+const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+  dirty: execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean),
+  platform: process.platform, arch: process.arch, osRelease: release(), node: process.version, overlay: overlay.records,
+  hashes: Object.fromEntries(await Promise.all([
+    ['host', layout.executable], ['verifier', fileURLToPath(import.meta.url)], ['probe', probeModule],
+    ['overlayInstrumentation', join(root, 'desktop/verify-agent-interruption-overlay.mjs')],
+    ['agentExecProduction', join(appRoot, 'extensions/cursor-agent-exec/dist/main.js')],
+    ...writers.map(relative => [relative, join(appRoot, relative)]),
+  ].map(async ([name, path]) => [name, { path, sha256: await fileHash(path) }]))) };
+await writeFile(join(directory, 'identity.json'), JSON.stringify(identity, null, 2));
+
+// Shell children report to this nonce-authenticated socket. Cleanup instructions
+// go only through that connection, never to a PID.
+const shellToken = randomUUID(), shells = new Map();
+const shellServer = createNetServer(socket => {
+  socket.setEncoding('utf8'); let buffer = '';
+  socket.on('error', () => {});
+  socket.on('data', chunk => {
+    buffer += chunk;
+    if (buffer.length > 4096) return socket.destroy();
+    if (!buffer.includes('\n')) return;
+    let message; try { message = JSON.parse(buffer.slice(0, buffer.indexOf('\n'))); } catch { return socket.destroy(); }
+    if (message.token !== shellToken || shells.has(message.name)) return socket.destroy();
+    const closed = Promise.withResolvers();
+    socket.on('close', () => closed.resolve(Date.now()));
+    shells.set(message.name, { ...message, socket, closed: closed.promise, connectedAt: Date.now() });
+  });
+});
+await new Promise(resolve => shellServer.listen(0, '127.0.0.1', resolve));
+const shellScript = join(project, 'interrupt-command.cjs');
+await writeFile(shellScript, [
+  "const fs = require('node:fs');",
+  "const stat = fs.readFileSync('/proc/self/stat', 'utf8').slice(fs.readFileSync('/proc/self/stat', 'utf8').lastIndexOf(')') + 2).split(' ');",
+  `const socket = require('node:net').connect(${shellServer.address().port}, '127.0.0.1');`,
+  `socket.on('connect', () => socket.write(JSON.stringify({ token: ${JSON.stringify(shellToken)}, name: process.argv[2], pid: process.pid, ppid: process.ppid, pgid: Number(stat[2]), sid: Number(stat[3]) }) + '\\n'));`,
+  "fs.appendFileSync('interrupt-command-' + process.argv[2] + '.log', 'started\\n');",
+  "socket.on('data', () => process.exit(0)); socket.on('end', () => process.exit(0)); socket.on('error', () => process.exit(1));",
+  "setTimeout(() => process.exit(42), 180000);",
+].join('\n'));
+
+const requests = [], errors = [], held = new Set();
+let phase = 'reply';
+const fileFor = name => join(project, `interrupt-${name}.js`);
+const original = name => `export const value = "before ${name}";\n` +
+  Array.from({ length: 160 }, (_, index) => `export const filler${index} = "${'x'.repeat(40)}";\n`).join('');
+const changed = name => original(name).replace(`"before ${name}"`, `"after ${name}"`);
+const continuationHeld = new Map();
+const cases = {
+  'write-stop': { kind: 'write', interrupt: 'stop' },
+  'write-close': { kind: 'write', interrupt: 'close' },
+  'write-kill': { kind: 'write', interrupt: 'kill', retry: true },
+  'continuation-kill': { kind: 'continuation', interrupt: 'kill' },
+  'continuation-late-kill': { kind: 'continuation', interrupt: 'kill', settleMs: 15000 },
+  'approval-kill': { kind: 'approval', interrupt: 'kill' },
+  'shell-close': { kind: 'shell', interrupt: 'close' },
+  'shell-kill': { kind: 'shell', interrupt: 'kill' },
+};
+for (const name of only ?? []) assert.ok(cases[name], `Unknown case ${name}`);
+const selected = Object.entries(cases).filter(([name]) => !only || only.includes(name));
+
+const server = createServer(async (request, response) => {
+  if (request.url === '/v1/models') {
+    response.setHeader('content-type', 'application/json');
+    return response.end(JSON.stringify({ data: [{ id: 'fixture-agent' }] }));
+  }
+  if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end(); }
+  const chunks = []; for await (const chunk of request) chunks.push(chunk);
+  const payload = JSON.parse(Buffer.concat(chunks));
+  const toolResults = payload.messages?.filter(message => message.role === 'tool').map(message => message.tool_call_id) ?? [];
+  requests.push({ phase, at: Date.now(), model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
+    tools: payload.tools?.length ?? 0, messageCount: payload.messages?.length, toolResults });
+  response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+  const event = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({
+    id: 'fixture-response', object: 'chat.completion.chunk', model: payload.model, choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
+  const finish = text => { event({ role: 'assistant', content: text }); event({}, 'stop'); response.end('data: [DONE]\n\n'); };
+  const spec = cases[phase];
+  if (!spec) return finish('OpenVision interruption fixture reply.');
+  const id = `ov_interrupt_${phase.replaceAll('-', '_')}`;
+  if (toolResults.includes(id)) {
+    if (spec.kind === 'continuation' && !continuationHeld.has(phase)) {
+      held.add(response); response.on('close', () => held.delete(response));
+      continuationHeld.set(phase, payload.messages.findLast(message => message.tool_call_id === id));
+      return;
+    }
+    return finish(`OpenVision ${phase} finished.`);
+  }
+  if (spec.kind === 'write' || spec.kind === 'continuation') {
+    event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function', function: { name: 'StrReplace',
+      arguments: JSON.stringify({ path: fileFor(phase), old_string: `"before ${phase}"`, new_string: `"after ${phase}"` }) } }] });
+  } else {
+    event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function', function: { name: 'Shell',
+      arguments: JSON.stringify({ command: `node "${shellScript}" ${phase}`, working_directory: project,
+        description: `Run interruption fixture ${phase}`, block_until_ms: 120000 }) } }] });
+  }
+  event({}, 'tool_calls'); response.end('data: [DONE]\n\n');
+});
+await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+
+function procStat(pid) {
+  try {
+    const text = execFileSync('cat', [`/proc/${pid}/stat`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const fields = text.slice(text.lastIndexOf(')') + 2).split(' ');
+    return { pid, comm: text.slice(text.indexOf('(') + 1, text.lastIndexOf(')')), state: fields[0],
+      ppid: Number(fields[1]), pgid: Number(fields[2]), sid: Number(fields[3]) };
+  } catch { return undefined; }
+}
+// Read-only inventory of this run's process family: the run nonce is in the
+// inherited environment; sandboxed processes with unreadable environments are
+// matched by the owned host's process group instead.
+async function ownedProcesses(groups = []) {
+  const result = [];
+  for (const entry of await readdir('/proc')) {
+    if (!/^\d+$/.test(entry) || Number(entry) === process.pid) continue;
+    const stat = procStat(Number(entry)); if (!stat) continue;
+    let environment = '', cmdline = '';
+    try { environment = await readFile(`/proc/${entry}/environ`, 'latin1'); } catch {}
+    try { cmdline = (await readFile(`/proc/${entry}/cmdline`, 'utf8')).replaceAll('\0', ' ').slice(0, 200); } catch {}
+    const byNonce = environment.includes(`OPENVISION_INTERRUPTION_RUN=${runId}`), byGroup = groups.includes(stat.pgid);
+    if (byNonce || byGroup) result.push({ ...stat, byNonce, byGroup, cmdline });
+  }
+  return result;
+}
+
+let app, page;
+const hostExits = [], caseResults = [];
+const result = { checkedAt: new Date().toISOString(), identity, directory, runId, requests, errors, cases: caseResults, hostExits,
+  scope: 'Linux x64 native Agent with a controlled local HTTP model fixture. Write interruption is held deterministically by a verification-only probe in a disposable overlay copy of the recovered write helper; abrupt exit is SIGKILL of the owned host process group. Not power loss, not live inference, not Windows/macOS.',
+  success: false };
+
+async function launch() {
+  const env = { ...process.env, OPENVISION_INTERRUPTION_RUN: runId,
+    OPENVISION_INTERRUPTION_PROBE: probeModule, OPENVISION_INTERRUPTION_PROBE_DIR: probeDirectory };
+  delete env.ELECTRON_RUN_AS_NODE;
+  app = await _electron.launch({ executablePath: overlay.executable, env, timeout: 60000,
+    args: ['--user-data-dir', profile, '--extensions-dir', join(profile, 'extensions'),
+      '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry',
+      '--disable-crash-reporter', ...await linuxSandboxArguments(overlayHost), project] });
+  page = await app.firstWindow(); page.setDefaultTimeout(15000);
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (/\[inlineDiff\].*Error/i.test(message.text())) errors.push(message.text()); });
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
+  await enterWorkspace(page); await page.waitForTimeout(6000);
+  const child = app.process(), stat = procStat(child.pid);
+  assert.equal(stat?.pgid, child.pid, 'The owned host must lead its own process group');
+  return child;
+}
+
+async function closeOwnedApp(stage) {
+  if (!app) return;
+  const child = app.process(), window = app.windows()[0];
+  const exited = child.exitCode === null && child.signalCode === null ? once(child, 'exit') : undefined;
+  const closing = app.close();
+  // Only this verifier's disposable app is closed; confirm a pending-work quit prompt.
+  await window?.getByText('Quit Anyway', { exact: true }).click({ timeout: 5000 }).catch(() => {});
+  await closing; if (exited) await exited;
+  hostExits.push({ stage, mode: 'graceful close', pid: child.pid, exitCode: child.exitCode, signalCode: child.signalCode });
+  app = undefined;
+}
+
+async function killOwnedFamily(stage) {
+  const child = app.process();
+  assert.equal(child.exitCode, null, 'Only the live verifier-owned host can be interrupted');
+  // The group was created by this verifier's launch (detached spawn) and checked
+  // at launch: its leader is the owned child handle. Never a PID selected by name.
+  assert.equal(procStat(child.pid)?.pgid, child.pid);
+  const family = await ownedProcesses([child.pid]);
+  const exited = once(child, 'exit', { signal: AbortSignal.timeout(15000) });
+  process.kill(-child.pid, 'SIGKILL');
+  const [code, signal] = await exited;
+  hostExits.push({ stage, mode: 'SIGKILL owned process group', pid: child.pid, exitCode: code, signalCode: signal, familyBefore: family.length });
+  app = undefined;
+  return family;
+}
+
+async function survivors(groups) {
+  let remaining = [];
+  for (let attempt = 0; attempt < 40; attempt++) {
+    remaining = (await ownedProcesses(groups)).filter(process => process.state !== 'Z');
+    if (!remaining.length) break;
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+  return remaining;
+}
+
+async function probeEvents(target) {
+  let text = '';
+  try { text = await readFile(join(probeDirectory, 'probe.ndjson'), 'utf8'); } catch {}
+  return text.split('\n').filter(Boolean).map(line => JSON.parse(line)).filter(entry => !target || entry.target === target);
+}
+
+async function waitFor(check, message, timeout = 45000) {
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    const value = await check(); if (value) return value;
+    if (Date.now() > deadline) throw new Error(message);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+}
+
+async function configure() {
+  await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
+  await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
+  await page.locator('.openvision-model-settings').getByRole('button', { name: 'Add Provider', exact: true }).click();
+  await page.getByLabel('Provider Name', { exact: true }).fill('Interruption fixture');
+  await page.getByLabel('API Base URL', { exact: true }).fill(`http://127.0.0.1:${server.address().port}/v1`);
+  await page.getByLabel('API Key', { exact: true }).fill('fixture-key');
+  await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
+  await page.locator('dialog').waitFor({ state: 'detached' });
+  await page.keyboard.press('ControlOrMeta+w');
+  await page.keyboard.press('ControlOrMeta+Shift+l');
+  await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
+  await page.getByText('fixture-agent', { exact: true }).last().click(); await page.keyboard.press('Escape');
+}
+
+async function newChat(prompt) {
+  const input = await openChat(page);
+  if (await page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true }).count())
+    await page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true }).first().click();
+  await input.fill(prompt); await input.press('Enter');
+}
+
+const reviewControls = async () => (await page.locator('button,[role=button],.anysphere-button,.anysphere-text-button').evaluateAll(elements =>
+  elements.filter(element => element.offsetParent !== null).map(element => element.textContent.trim())
+    .filter(text => /^(Keep( All| File)?|Undo( All| File)?|Reject( All)?|Review|Run|Skip|Stop|Confirm)$/.test(text)))).sort();
+
+async function snapshot(name, label) {
+  await page.screenshot({ path: join(directory, `${name}-${label}.png`) }).catch(() => {});
+  const text = await page.locator('body').innerText().catch(() => '');
+  await writeFile(join(directory, `${name}-${label}.txt`), text);
+  return { controls: await reviewControls().catch(() => []), text };
+}
+
+async function fileState(name) {
+  const path = fileFor(name);
+  const temporary = (await readdir(project)).filter(entry => entry.startsWith(`.interrupt-${name}.js.`));
+  let bytes; try { bytes = await readFile(path, 'utf8'); } catch (error) { return { exists: false, error: error.code, temporary }; }
+  return { exists: true, length: Buffer.byteLength(bytes), sha256: (await fileHash(path)), temporary,
+    state: bytes === original(name) ? 'original' : bytes === changed(name) ? 'changed' : 'torn' };
+}
+
+async function runCase(name, spec) {
+  const record = { name, ...spec, stages: [], violations: [] };
+  caseResults.push(record);
+  await freshProfile(name); await launch(); phase = 'configure'; await configure();
+  phase = name;
+  const requestsBefore = requests.length;
+  let groupLeader = app.process().pid;
+  if (spec.kind === 'write' || spec.kind === 'continuation') {
+    await writeFile(fileFor(name), original(name));
+    if (spec.kind === 'write') await writeFile(join(probeDirectory, `pause-interrupt-${name}.js`), '');
+    await newChat(`Change "before ${name}" to "after ${name}" in interrupt-${name}.js.`);
+    if (spec.kind === 'write') {
+      await waitFor(async () => (await probeEvents(fileFor(name))).some(entry => entry.event === 'paused'), 'Write probe did not pause');
+      record.stages.push({ stage: 'write paused after partial data', file: await fileState(name), probe: await probeEvents(fileFor(name)) });
+    } else {
+      await waitFor(() => continuationHeld.has(name), 'Continuation request was not held');
+      record.toolResultDelivered = continuationHeld.get(name)?.content;
+      record.stages.push({ stage: 'write acknowledged; continuation inference outstanding', file: await fileState(name) });
+    }
+  } else {
+    await newChat(`Run the interruption command fixture ${name}.`);
+    await page.getByText(`Run interruption fixture ${name}`, { exact: true }).filter({ visible: true }).waitFor({ timeout: 30000 });
+    await page.getByText('Pending approval', { exact: true }).filter({ visible: true }).waitFor();
+    if (spec.kind === 'shell') {
+      await page.getByRole('button', { name: 'Run', exact: true }).filter({ visible: true }).click();
+      await waitFor(() => shells.has(name), 'Command child did not connect');
+      record.child = { ...shells.get(name), socket: undefined, closed: undefined };
+    }
+  }
+  if (spec.settleMs) await page.waitForTimeout(spec.settleMs);
+  record.before = await snapshot(name, 'before-interrupt');
+  record.requestsBeforeInterrupt = requests.length - requestsBefore;
+  if (spec.interrupt === 'stop') {
+    await page.locator('.stop-button').filter({ visible: true }).first().click();
+    await page.waitForTimeout(1500);
+    record.stages.push({ stage: 'after Stop, write still held', file: await fileState(name), ui: await snapshot(name, 'after-stop') });
+    await writeFile(join(probeDirectory, `release-interrupt-${name}.js`), '');
+    await page.waitForTimeout(3000);
+    record.stages.push({ stage: 'after Stop and write release', file: await fileState(name), ui: await snapshot(name, 'after-release') });
+    await closeOwnedApp(`${name} after stop`);
+  } else if (spec.interrupt === 'close') {
+    await closeOwnedApp(name);
+  } else {
+    record.family = await killOwnedFamily(name);
+  }
+  record.afterExit = { file: spec.kind === 'shell' || spec.kind === 'approval' ? undefined : await fileState(name),
+    survivors: await survivors([groupLeader]) };
+  if (spec.kind === 'shell') {
+    const shell = shells.get(name);
+    const closed = await Promise.race([shell.closed, new Promise(resolve => setTimeout(() => resolve(false), 5000))]);
+    record.afterExit.commandExited = closed !== false;
+    // Graceful close must end the command itself. After an abrupt exit nothing
+    // can run until the next start, which must end the orphan.
+    if (!closed && spec.interrupt !== 'kill') { shell.socket.end('exit\n'); record.afterExit.commandCleanup = 'nonce-authenticated socket exit'; await shell.closed; }
+  }
+  // Restart into the same profile and inspect what recovery shows.
+  const requestsAtRestart = requests.length;
+  await launch(); await openChat(page);
+  await page.waitForTimeout(4000);
+  record.afterRestart = { file: spec.kind === 'shell' || spec.kind === 'approval' ? undefined : await fileState(name),
+    ui: await snapshot(name, 'after-restart'), restartRequests: requests.length - requestsAtRestart,
+    probe: await probeEvents(fileFor(name)) };
+  if (spec.kind === 'shell' && !record.afterExit.commandExited && spec.interrupt === 'kill') {
+    const shell = shells.get(name);
+    const closed = await Promise.race([shell.closed, new Promise(resolve => setTimeout(() => resolve(false), 10000))]);
+    record.afterRestart.commandEndedByRestart = closed !== false;
+    if (!closed) { shell.socket.end('exit\n'); record.afterRestart.commandCleanup = 'nonce-authenticated socket exit'; await shell.closed; }
+  }
+  if (record.afterRestart.file?.state === 'changed') record.recovery = await rejectRestored(name);
+  if (spec.kind !== 'write' && spec.kind !== 'continuation')
+    record.afterRestart.commandLog = await readFile(join(project, `interrupt-command-${name}.log`), 'utf8').catch(() => '');
+  record.requestsTotal = requests.length - requestsBefore;
+  if (spec.retry) record.retry = await retryAfterInterruption(name);
+  judge(record);
+  await closeOwnedApp(`${name} after inspection`);
+  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
+}
+
+// The same edit after restart: it must apply once with a review, and an interrupted
+// write's temporary sibling (aged past the sweep threshold here) must be removed.
+async function retryAfterInterruption(name) {
+  const before = await fileState(name), aged = new Date(Date.now() - 120000);
+  for (const entry of before.temporary) await utimes(join(project, entry), aged, aged);
+  const requestsBefore = requests.length;
+  await newChat(`Change "before ${name}" to "after ${name}" in interrupt-${name}.js again.`);
+  await page.getByText(`OpenVision ${name} finished.`, { exact: true }).first().waitFor({ timeout: 45000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  const after = await fileState(name), ui = await snapshot(name, 'after-retry');
+  return { temporaryBefore: before.temporary, file: after, controls: ui.controls, requests: requests.length - requestsBefore,
+    writes: (await probeEvents(fileFor(name))).filter(entry => entry.event === 'write').length };
+}
+
+// A restored change must remain reviewable: reject it through the native review
+// controls and require the exact original bytes, without inference.
+async function rejectRestored(name) {
+  const steps = [], requestsBefore = requests.length;
+  const click = async label => {
+    const control = page.getByText(label, { exact: true }).filter({ visible: true });
+    if (!await control.count()) return false;
+    await control.first().click(); steps.push(label); await page.waitForTimeout(1000); return true;
+  };
+  if (!await click('Undo All') && !await click('Undo')) {
+    await click('Review');
+    steps.push({ controls: await reviewControls() });
+    if (!await click('Undo All') && !await click('Undo File')) await click('Undo');
+  }
+  await click('Confirm');
+  if ((await fileState(name)).state !== 'original') {
+    // No review controls: the conversation checkpoint before the prompt is the
+    // remaining native restore path.
+    await page.getByText(`Change "before ${name}"`, { exact: false }).filter({ visible: true }).first().hover().catch(() => {});
+    await page.waitForTimeout(500);
+    await writeFile(join(directory, `${name}-restore-accessibility.txt`), await page.locator('body').ariaSnapshot().catch(() => ''));
+    const restore = page.locator('[aria-label="Restore Checkpoint"],[title="Restore Checkpoint"]').filter({ visible: true });
+    if (await restore.count()) { await restore.first().click(); steps.push('Restore Checkpoint'); await page.waitForTimeout(1000); }
+    else await click('Restore Checkpoint');
+    steps.push({ afterRestore: await reviewControls(), text: (await page.locator('body').innerText()).match(/.{0,80}(checkpoint|Restore|Continue|Discard).{0,80}/gi)?.slice(0, 6) });
+    for (const label of ['Continue', 'Restore', 'Confirm', 'Discard']) if (await click(label)) break;
+  }
+  let file = await fileState(name);
+  for (let attempt = 0; attempt < 50 && file.state !== 'original'; attempt++) { await page.waitForTimeout(100); file = await fileState(name); }
+  // Recorded, not asserted: the single-file review bar can remain after the
+  // bytes are restored (also observed after a graceful close).
+  let controls = await reviewControls();
+  for (let attempt = 0; attempt < 50 && controls.includes('Keep'); attempt++) { await page.waitForTimeout(100); controls = await reviewControls(); }
+  await snapshot(name, 'after-reject');
+  return { steps, file, controls, requests: requests.length - requestsBefore };
+}
+
+// Acceptance: exact original or new bytes, no extra execution or inference after
+// restart, a review for every applied change, and no surviving owned processes.
+function judge(record) {
+  const fail = message => record.violations.push(message);
+  const { name, kind, interrupt } = record;
+  const executions = record.afterRestart.probe.filter(entry => entry.event === 'write').length;
+  if (record.afterRestart.restartRequests !== 0) fail('restart issued inference');
+  const orphanEnded = interrupt === 'kill' && record.afterRestart.commandEndedByRestart === true;
+  if (record.afterExit.survivors.length && !orphanEnded) fail(`${record.afterExit.survivors.length} owned processes survived the interruption`);
+  const reviewed = record.afterRestart.ui.controls.includes('Review') || ['Keep', 'Undo'].every(control => record.afterRestart.ui.controls.includes(control));
+  if (kind === 'write' || kind === 'continuation') {
+    for (const [label, file] of [['after exit', record.afterExit.file], ['after restart', record.afterRestart.file]])
+      if (!['original', 'changed'].includes(file.state)) fail(`${label}: file is ${file.state} (${file.length} bytes)`);
+    if (record.afterRestart.file.state === 'changed' && !reviewed) fail('applied change has no restorable review after restart');
+    if (record.recovery && (record.recovery.file.state !== 'original' || record.recovery.requests !== 0))
+      fail(`rejecting the restored review left ${record.recovery.file.state} bytes after ${record.recovery.requests} requests`);
+    if (record.afterRestart.file.state === 'original' && reviewed) fail('review shown for a change that was not applied');
+    if (kind === 'write' && executions !== 1) fail(`write helper ran ${executions} times`);
+    if (record.requestsTotal !== (kind === 'continuation' ? 2 : 1)) fail(`unexpected request count ${record.requestsTotal}`);
+    if (interrupt === 'stop' && record.afterRestart.file.state !== 'changed') fail('released write after Stop was not applied');
+    if (record.afterRestart.file.temporary.length && interrupt === 'stop') fail('completed write left a temporary sibling');
+    if (record.retry && (record.retry.file.state !== 'changed' || record.retry.file.temporary.length || record.retry.requests !== 2 ||
+        record.retry.writes !== 2 || !record.retry.controls.includes('Keep'))) fail(`retry after interruption: ${JSON.stringify(record.retry)}`);
+  } else {
+    if (kind === 'approval' && record.afterRestart.commandLog) fail('unapproved command ran');
+    if (kind === 'shell' && !record.afterExit.commandExited && !orphanEnded) fail('running command survived the application');
+    if (kind === 'shell' && (record.afterRestart.commandLog.match(/started/g) ?? []).length !== 1) fail('command did not run exactly once');
+    if (record.requestsTotal !== 1) fail(`unexpected request count ${record.requestsTotal}`);
+  }
+}
+
+try {
+  for (const [name, spec] of selected) await runCase(name, spec);
+  assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized), 'Every inference uses the authenticated fixture');
+  assert.deepEqual(errors, []);
+  const violations = caseResults.flatMap(entry => entry.violations.map(message => `${entry.name}: ${message}`));
+  result.violations = violations;
+  assert.deepEqual(violations, [], 'Interruption acceptance');
+  result.success = true;
+} catch (error) {
+  result.failure = error.stack;
+  if (app) result.familyAtFailure = await ownedProcesses([app.process().pid]).catch(() => undefined);
+  if (page) await page.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
+  throw error;
+} finally {
+  for (const response of held) response.destroy();
+  for (const shell of shells.values()) if (!shell.socket.destroyed) shell.socket.end('exit\n');
+  await closeOwnedApp('final').catch(error => { result.cleanupFailure = error.stack; });
+  result.finalSurvivors = await ownedProcesses([]);
+  server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+  await new Promise(resolve => shellServer.close(resolve));
+  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
+  console.log(JSON.stringify({ directory, success: result.success, cases: caseResults.map(entry => ({ name: entry.name,
+    stages: entry.stages.map(stage => [stage.stage, stage.file?.state]), afterExit: entry.afterExit?.file?.state,
+    survivors: entry.afterExit?.survivors?.length, commandExited: entry.afterExit?.commandExited,
+    afterRestart: entry.afterRestart?.file?.state, temporary: entry.afterRestart?.file?.temporary?.length,
+    controls: entry.afterRestart?.ui?.controls, restartRequests: entry.afterRestart?.restartRequests, violations: entry.violations })) }, null, 2));
+}
