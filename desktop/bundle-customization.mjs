@@ -12,6 +12,7 @@ import { localUserRules } from './rules-customization.mjs';
 import { subagentModelParameters } from './subagent-model-customization.mjs';
 import { completionCancellation } from './completion-cancellation.mjs';
 import { providerManualRetry } from './provider-error-ui.mjs';
+import { persistProviderFailures } from './provider-failure-persistence.mjs';
 import { customizeWelcome } from './welcome-customization.mjs';
 import { customizePaste } from './paste-customization.mjs';
 import { customizeMemory } from './memory-customization.mjs';
@@ -30,7 +31,7 @@ async function customize(root, variant) {
   const cloud = disableCloudFeatures(local.text);
   const stream = customizeStream(customModels(cloud.text, variant));
   const providers = providerSelectionErrors(requestProviderRouting(stream.text, variant));
-  const welcome = customizeWelcome(providerManualRetry(completionCancellation(localUserRules(subagentModelParameters(providers, variant), variant))), variant);
+  const welcome = customizeWelcome(persistProviderFailures(providerManualRetry(completionCancellation(localUserRules(subagentModelParameters(providers, variant), variant)))), variant);
   const home = customizeProjectHome(customInlineEdit(fixSaveAllCommands(fixWorkspaceSaveAll(customizeLegacyMemories(customizeMemory(customizePaste(welcome, variant), variant), variant))), variant), variant);
   const after = customizeThemes(home, variant);
   if (before === after) return;
@@ -50,6 +51,7 @@ export async function customizeBundles(root) {
     'desktop/model-selection-customization.mjs',
     'desktop/storage-write-ownership.mjs',
     'desktop/provider-error-ui.mjs',
+    'desktop/provider-failure-persistence.mjs',
     'desktop/welcome-customization.mjs',
     'desktop/paste-customization.mjs',
     'desktop/memory-customization.mjs',
