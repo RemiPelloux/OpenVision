@@ -3,7 +3,7 @@ import { mcpLifecycleOwner } from './mcp-lifecycle-cleanup-customization.mjs';
 
 // This changes a disposable copy only. Rejection precedes the real close so the
 // fixture can prove that the actual child remains alive until a successful retry.
-export function injectMcpCloseFailure(source, { reportPath, failures = 1, releasePath, reason = 'dispose' }) {
+export function injectMcpCloseFailure(source, { reportPath, failures = 1, releasePath, reason = 'dispose', identifier }) {
   const owner = mcpAttemptOwner(source), commit = owner.body.body.find(method => method.key?.name === 'commit');
   source = source.slice(0, commit.value.body.start + 1) +
     `openvisionVerifyReport('attempt-committed', {identifier:this.identifier});` + source.slice(commit.value.body.start + 1);
@@ -36,7 +36,7 @@ function openvisionVerifyFailCloseOnce(instance, identifier) {
 `;
   return prefix + source.slice(0, offset) + `
     openvisionVerifyReport('transport-retirement', {identifier:this.identifier, reason:${argument}.reason});
-    if (${argument}.reason === ${JSON.stringify(reason)}) {
+    if (${argument}.reason === ${JSON.stringify(reason)}${identifier ? ` && String(this.identifier).includes(${JSON.stringify(identifier)})` : ''}) {
       openvisionVerifyReport(${JSON.stringify(reason.replaceAll(' ', '-') + '-request')}, {identifier:this.identifier});
       openvisionVerifyFailCloseOnce(this.serverInstance, this.identifier);
     }

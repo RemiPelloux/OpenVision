@@ -11,7 +11,7 @@ import { injectMcpSessionDriver } from './verify-mcp-session-injection.mjs';
 import { createMcpSessionFixture } from './verify-mcp-session-fixture.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
-assert.equal(process.platform, 'win32', 'This native session recovery verifier covers Windows');
+assert.ok(['win32', 'linux'].includes(process.platform), 'This native session recovery verifier covers Windows and Linux');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/mcp-session-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
@@ -26,11 +26,11 @@ const source = await readFile(originalPath, 'utf8');
 const instrumented = injectMcpSessionDriver(injectMcpCloseFailure(source,
   { reportPath, failures: 2, reason: closeReason }), commandPath);
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, instrumented]]));
-await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
+await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), process.platform === 'win32' ? 'junction' : 'dir');
 const transport = await createMcpSessionFixture(), configPath = join(profile, 'User/mcp.json');
 const config = { mcpServers: { 'openvision-session-verify': transport.configuration } };
 const result = { directory, direct, checkedAt: new Date().toISOString(), originalHash, overlay: overlay.records,
-  scope: `Windows native MCP adapter/SDK and ${direct ? 'direct lifecycle session reinitialization' : 'real HTTP 404 session expiry'}, deterministic close rejection in a disposable overlay. Production-boundary driver; no Agent approval UI or AI inference claim.`,
+  scope: `${process.platform} native MCP adapter/SDK and ${direct ? 'direct lifecycle session reinitialization' : 'real HTTP 404 session expiry'}, deterministic close rejection in a disposable overlay. Production-boundary driver; no Agent approval UI or AI inference claim.`,
   checks: {}, errors: [], requests: transport.requests };
 let app, page;
 async function events() {

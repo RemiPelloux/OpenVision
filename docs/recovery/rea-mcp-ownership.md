@@ -72,6 +72,7 @@ named-profile isolation inside one host, same-name project-local override
 ownership, simultaneous profile/configuration changes, or cross-window failed
 close recovery. Those broader ownership cases remain open under OV-303.
 HTTP close/session failures have [separate native evidence](rea-mcp-cleanup.md).
+Linux follow-up: the [configuration ownership matrix](rea-mcp-ownership-matrix.md).
 
 OAuth remains OV-304; remote hosts remain OV-703; indefinite retention, idle
 resources and long-session growth remain OV-1003. No macOS/Linux, live AI,

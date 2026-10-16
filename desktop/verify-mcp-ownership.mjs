@@ -8,11 +8,12 @@ import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { createMcpOwnershipFixture } from './verify-mcp-ownership-fixture.mjs';
+import { platformLayout } from './platform.mjs';
 
-assert.equal(process.platform, 'win32', 'Native ownership verification currently covers Windows');
+assert.ok(['win32', 'linux'].includes(process.platform), 'Native ownership verification covers Windows and Linux');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/mcp-ownership-verification-'));
-const executable = join(root, 'electron-host/OpenVision.exe');
+const executable = platformLayout(root).executable;
 const utility = join(root, 'electron-host/resources/app/out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js');
 const originalHash = await fileHash(utility);
 const projects = [join(directory, 'project-a'), join(directory, 'project-b')];
@@ -34,7 +35,7 @@ const result = { directory, checkedAt: new Date().toISOString(), originalHash,
       ['verifier', join(root, 'desktop/verify-mcp-ownership.mjs')],
       ['fixture', join(root, 'desktop/verify-mcp-ownership-fixture.mjs')],
     ].map(async ([name, path]) => [name, await fileHash(path)]))) },
-  scope: 'Windows native Agent approval and real STDIO processes across two project windows and two isolated user-data profiles. Controlled inference; no live AI compatibility or performance claim.',
+  scope: `${process.platform} native Agent approval and real STDIO processes across two project windows and two isolated user-data profiles. Controlled inference; no live AI compatibility or performance claim.`,
   checks: {}, pageErrors: [], hostExits: [], hostStderr: [], fixtures: fixtures.map(fixture => ({
     requests: fixture.requests, continuations: fixture.continuations, errors: fixture.errors,
     connections: fixture.transport.connections, transportRequests: fixture.transport.requests,
