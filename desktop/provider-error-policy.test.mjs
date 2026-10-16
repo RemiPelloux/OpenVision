@@ -123,6 +123,57 @@ test('recovery guidance uses parsed provider facts without inventing capability 
   assert.equal(policy.providerFailureDetail({ statusCode: 400, data: { error: { code: 'unknown' } } }, 'detail'), 'detail');
 });
 
+test('realistic capability rejections are attributed only to inputs that were actually sent', () => {
+  const image = [{ role: 'user', content: [{ type: 'text', text: 'look' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,AA' } }] }];
+  const text = [{ role: 'user', content: 'look' }];
+  const tools = [{ type: 'function', function: { name: 'Read' } }];
+  // OpenAI-compatible bodies without OpenVision-specific error codes.
+  const imageRejection = { message: 'Invalid content type. image_url is only supported by certain models.', type: 'invalid_request_error', param: 'messages.[0].content.[1].type', code: null };
+  const toolRejection = { message: 'tools is not supported for this model.', type: 'invalid_request_error', param: 'tools', code: null };
+  const failure = (status, error, body) => ({ statusCode: status, data: { error }, requestBodyValues: body });
+  assert.match(policy.providerFailureDetail(failure(400, imageRejection, { messages: image, tools }), 'd'), /attached image/);
+  assert.match(policy.providerFailureDetail(failure(422, toolRejection, { messages: text, tools }), 'd'), /requested tools/);
+  // Responses-style input and a raw (unparsed) response body are recognized too.
+  assert.match(policy.providerFailureDetail({ statusCode: 400, responseBody: 'unknown variant `image_url`, expected `text`',
+    requestBodyValues: { input: [{ role: 'user', content: [{ type: 'input_image', image_url: 'data:' }] }] } }, 'd'), /attached image/);
+  // No attribution without the input in the actual request, for server errors, or for unrelated rejections.
+  assert.equal(policy.providerFailureDetail(failure(400, imageRejection, { messages: text }), 'd'), 'd');
+  assert.equal(policy.providerFailureDetail(failure(400, toolRejection, { messages: text }), 'd'), 'd');
+  assert.doesNotMatch(policy.providerFailureDetail(failure(500, toolRejection, { messages: text, tools }), 'd'), /requested tools/);
+  assert.equal(policy.providerFailureDetail(failure(400, { message: 'temperature must be <= 2' }, { messages: image, tools }), 'd'), 'd');
+  assert.equal(policy.providerFailureDetail(failure(401, imageRejection, { messages: image, tools }), 'd'), 'd');
+});
+
+test('recovered stream wrapper: an unfinished stream is a terminal provider failure with recovery guidance', async () => {
+  const wrap = runInNewContext(`${expression('var Uke = function', 4)}\nconst $ke = new Set(["unknown"]);\n(() => { ${
+    expression('class Lke extends Error')}\n return { Lke, jke: ${expression('function jke(e)')} }; })()`, { Error, TransformStream, Promise, Set, Proxy, Reflect, Object });
+  const model = parts => wrap.jke({ doStream: async () => ({ stream: new ReadableStream({ start(controller) {
+    for (const part of parts) controller.enqueue(part); controller.close();
+  } }) }) });
+  const read = async stream => { const seen = []; for await (const part of stream) seen.push(part); return seen; };
+  // A clean close without a finish reason is the original Agent's incomplete-stream signal.
+  const failure = await read((await model([{ type: 'text-delta', textDelta: 'partial' }]).doStream({})).stream).then(() => undefined, error => error);
+  assert.equal(failure?.name, 'LocalIncompleteStreamError');
+  assert.equal(policy.isProviderFailure(failure), true);
+  assert.equal(policy.isProviderFailure(new Error('wrapped', { cause: failure })), true);
+  assert.equal(agentRetry(failure), false, 'Agent must not repeat paid inference automatically');
+  assert.match(policy.providerFailureDetail(failure, failure.message), /stream ended before the response finished.*Resume or Try again/s);
+  // A completed stream still succeeds unchanged.
+  const done = await read((await model([{ type: 'text-delta', textDelta: 'ok' }, { type: 'finish', finishReason: 'stop' }]).doStream({})).stream);
+  assert.equal(done.length, 2);
+  assert.equal(policy.isProviderFailure(new Error('unrelated local failure')), false);
+});
+
+test('interrupted and malformed streams receive guidance without changing the original detail', () => {
+  const socket = Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' });
+  assert.match(policy.providerFailureDetail(new TypeError('terminated', { cause: socket }), 'terminated'), /connection was interrupted[\s\S]*\n\nterminated$/);
+  for (const name of ['AI_JSONParseError', 'AI_TypeValidationError']) {
+    const error = Object.assign(new Error('JSON parsing failed'), { name });
+    assert.match(policy.providerFailureDetail(new Error('wrapper', { cause: error }), 'JSON parsing failed'), /not valid OpenAI-compatible streaming data[\s\S]*JSON parsing failed$/);
+  }
+  assert.equal(policy.isProviderFailure(Object.assign(new Error('x'), { name: 'AI_JSONParseError' })), false, 'parse errors keep their existing ownership path');
+});
+
 test('network guidance follows exact transport codes through cyclic causes and leaves unknown failures alone', () => {
   for (const [code, expected] of [['CERT_HAS_EXPIRED', /certificate could not be verified/],
     ['ERR_TLS_CERT_ALTNAME_INVALID', /hostname and system date/], ['UND_ERR_HEADERS_TIMEOUT', /connection timed out/],

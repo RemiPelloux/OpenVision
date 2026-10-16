@@ -18,6 +18,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Agent review cancellation and resumable handler cleanup](rea-agent-review-removal.md)
 - [Agent retry history and live authentication recovery](rea-agent-retry-history.md)
 - [Native Agent timeout and explicit retry recovery](rea-agent-timeout-recovery.md)
+- [Agent provider failure-to-history matrix (Linux)](rea-provider-failure-matrix.md)
 - [Agent review recovery and repeated edits](rea-agent-review-recovery.md)
 - [Native Agent runtime verification](rea-agent-runtime.md)
 - [REA sprint follow-up: autocomplete contracts and cancellation](rea-autocomplete-contract.md)
