@@ -18,7 +18,7 @@ tooling that was verified, and the gates that are still open.
 | `cursor-file-service` extension | None | None | `dist/main.js` exports only `DUMMY = 1`; the real service is the addon above | Static observation |
 | Cmd-K / inline edit (`CmdKService/*`), commit/branch naming, knowledge base, web search/fetch, share | Instruction, selection, diffs, transcripts | Cursor backend | The recovered bundle marks them hosted-only; OpenVision Quick Edit uses the configured provider ([inline edit](rea-inline-edit.md)) | Static, inferred |
 | Agent turns | Prompt, tool results (file contents) | Configured model provider | Allowed destination; [Agent runtime](rea-agent-runtime.md) observes one provider request per submit on Windows | Prior native evidence (Windows) |
-| TypeScript Automatic Type Acquisition | Package names derived from project imports | `registry.npmjs.org` | Reported by the OV-1005 telemetry agent from a Linux strace capture; that agent owns the `typescript.disableAutomaticTypeAcquisition` setting | Observed by OV-1005, not by this verifier |
+| TypeScript Automatic Type Acquisition | Package names derived from project imports | `registry.npmjs.org` | Reported by the OV-1005 telemetry agent from a Linux strace capture; ATA is still on by default; disabling it (`typescript.disableAutomaticTypeAcquisition`) is an open OV-1005 gate, not yet committed | Observed by OV-1005, not by this verifier |
 | Extension control metadata | No project data | `api2.cursor.sh/extensions-control` | Seen in earlier Windows telemetry captures | Prior observation |
 
 ## Capture tooling verified in this pass
