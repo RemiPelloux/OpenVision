@@ -39,9 +39,10 @@ that queue; detailed acceptance clauses remain in the
 
 Points measure provisional complexity, not completion or time. Do not calculate
 progress from completed points: no equivalent completed-point baseline exists.
-Native Agent header/body timeout recovery and explicit live retry now pass.
-Next are outstanding editing/storage-failure checks and other chat/provider
-failure classes. See the
+Native Agent header/body timeout recovery and explicit live retry now pass. A
+real Codex Easy `gpt-6.1-sol` run also passes the native two-file edit review,
+retry, Undo/Redo and restart path; remaining editing/storage-failure checks and
+other chat/provider failure classes stay open. See the
 [delivery gates and dependencies](planning/roadmap.md#critical-first-backlog-and-eta) and
 [release claims](verification/release-claims.md) before treating source work as a shipped app.
 

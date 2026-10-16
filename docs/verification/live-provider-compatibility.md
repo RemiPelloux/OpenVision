@@ -305,6 +305,13 @@ not test the entire catalog. `--reasoning` controls the exact wire value; `omit`
 removes that field. `--thinking enabled|disabled` adds an explicit diagnostic
 thinking field. Unsupported or failed requests exit nonzero and remain evidence.
 
+The native multi-file editing probe is documented separately in the
+[live-provider edit report](../recovery/rea-agent-live-edit.md). It uses the
+same saved-provider decryption and relay boundary, then verifies real
+`StrReplace` calls, review rejection/retry, acceptance, Undo/Redo and restart
+persistence. Its first round included one provider-requested `Read`, so it is
+success-path evidence rather than a request-efficiency benchmark.
+
 The runner reads the saved database read-only, creates an owned disposable
 OpenVision profile, waits for its window, and decrypts keys in memory. On Windows
 it copies only the DPAPI-wrapped profile encryption key, removing that disposable

@@ -3,7 +3,7 @@ import { once } from 'node:events';
 import { fallbackReasoningValues } from './model-reasoning.js';
 import { stallInitialResponse, timeoutLimit } from './verify-live-timeout.mjs';
 
-const requestLimit = 6;
+const defaultRequestLimit = 6;
 const byteLimit = 4 * 1024 * 1024;
 
 function streamEvidence(record, marker, redact) {
@@ -72,7 +72,10 @@ async function providerFailureBody(upstream, record, redact) {
 }
 
 export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest,
-  allowDownstreamCancellation = false, expectInitialUnauthorized = false, initialStall }) {
+  allowDownstreamCancellation = false, expectInitialUnauthorized = false, initialStall,
+  requestLimit = defaultRequestLimit }) {
+  if (!Number.isInteger(requestLimit) || requestLimit < 1 || requestLimit > 32)
+    throw new Error('Live verification request limit must be an integer from 1 to 32');
   if (initialStall !== undefined) {
     timeoutLimit(initialStall);
     if (expectInitialUnauthorized) throw new Error('Controlled timeout and real authentication failure are separate probes');

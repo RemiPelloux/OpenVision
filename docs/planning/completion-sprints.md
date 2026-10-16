@@ -21,6 +21,14 @@ clean host exit; 56 focused checks pass. Physical faults, active-write/tool
 interruption, menu/group combinations and broader live editing remain gates.
 OV-103 retains its existing status/points; **6/42 Verified (14.29%)** is unchanged.
 
+16 October live-provider follow-up: [native multi-file editing](../recovery/rea-agent-live-edit.md)
+passes real Codex Easy `gpt-6.1-sol` tool calls, review rejection/retry,
+acceptance, Undo/Redo and restart persistence in a disposable project. The
+provider made one preliminary Read round before its StrReplace calls; this is
+success-path evidence, not a request-efficiency result. OV-103 remains Partial
+because physical faults, active-write interruption, remaining review failures,
+other providers and platform coverage remain open.
+
 16 October created-review follow-up: [snapshot ownership](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
 corrects Undo Create Diff removing the live review after a failed snapshot write
 and Redo deleting recovery after a failed restore. Producer regressions execute

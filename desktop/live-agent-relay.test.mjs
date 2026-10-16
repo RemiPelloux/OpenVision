@@ -127,6 +127,20 @@ test('catalog authentication and selected model are checked before contacting a 
   assert.equal(calls, 0); assert.equal(relay.requests.length, 0);
 });
 
+test('custom request limits are bounded and admit a larger edit probe', async t => {
+  await assert.rejects(createLiveAgentRelay({ requestLimit: 0 }), /integer from 1 to 32/);
+  await assert.rejects(createLiveAgentRelay({ requestLimit: 33 }), /integer from 1 to 32/);
+  const relay = await fixture(t, (_request, response) => sse(response, []), { requestLimit: 8 });
+  const body = JSON.stringify({ model, stream: true });
+  for (let index = 0; index < 8; index++) {
+    const response = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body });
+    assert.equal(response.status, 200); await response.text();
+  }
+  const rejected = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body });
+  assert.equal(rejected.status, 502); await rejected.text();
+  assert.match(await relay.failure, /request limit/);
+});
+
 test('capture sees the first request, inspection sees every redacted request, and forwarded bytes stay unchanged', async t => {
   const received = [], captured = [], inspected = [], entered = Promise.withResolvers(), release = Promise.withResolvers();
   t.after(() => release.resolve());

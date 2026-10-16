@@ -46,6 +46,13 @@ consolidated callback progress has producer coverage. Physical faults,
 active-write/tool interruption, remaining menu/group combinations and broader
 live editing retain OV-103's P0 priority and existing 8 points. No story is promoted.
 
+The [live-provider edit follow-up](../recovery/rea-agent-live-edit.md) now covers
+one real Codex Easy `gpt-6.1-sol` Windows success path: two-file review,
+rejection/retry, acceptance, Undo/Redo and restart persistence. It removes that
+subcase from the evidence gap, while active-write/tool interruption, physical
+faults, remaining review combinations, other providers and other platforms stay
+within the existing OV-103 gate.
+
 The latest [live retry investigation](../recovery/rea-agent-retry-history.md) fixes empty
 failed-response history at both Agent producers. DeepSeek authentication retry
 now passes on the rebuilt app after two pre-fix HTTP 400 failures. This advances

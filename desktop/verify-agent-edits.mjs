@@ -23,11 +23,11 @@ export async function createAgentEditFixture({ directory, project }) {
     respond: (payload, event) => respondToEdit(payload, event, { files, state }),
     verifyReview: (page, action) => verifyReview(page, action, { directory, files, state, assertFiles }),
     assertKeptFiles: () => assertFiles(true),
-    verifyKeptUndo: page => verifyKeptUndo(page, { directory, files, assertFiles }),
+    verifyKeptUndo: page => verifyKeptUndoForFiles(page, { directory, files, assertFiles }),
   };
 }
 
-async function verifyKeptUndo(page, { directory, files, assertFiles }) {
+export async function verifyKeptUndoForFiles(page, { directory, files, assertFiles }) {
   const open = async file => {
     await page.keyboard.press('ControlOrMeta+p');
     const quick = page.locator('.quick-input-widget');
