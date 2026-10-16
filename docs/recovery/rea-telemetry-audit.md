@@ -94,3 +94,5 @@ subsystem initialized successfully.
 No universal “100% telemetry-free” percentage is assigned from this bounded audit.
 The identified built-in collectors and upload paths are disabled and covered by
 tests; the wider runtime assurance work remains explicit.
+
+Linux x64 process-family capture (16 October 2026): [rea-telemetry-linux.md](rea-telemetry-linux.md).
