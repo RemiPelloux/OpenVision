@@ -239,9 +239,12 @@ controlled fixture, not live inference.
 - EIO from a failing device, torn sectors and power loss were not tested.
   Termination during an outstanding write belongs to the interruption gate.
 - Orphans of files that are never written again, and the 60-second age
-  threshold under clock changes. After v2, the interruption probe has not been
-  re-run against the sweep; the sweep is covered by producer tests and the
-  native seeded-orphan stage below.
+  threshold under clock changes. The interruption investigation re-ran its probe
+  on v2 (its worktree, run `agent-interruption-q0Q97x`, controlled fixture).
+  Close and kill each left the exact original bytes plus one temporary. A
+  retried edit of the same file, after the temporary had aged 120 seconds,
+  applied once and the sweep removed the temporary. This is that
+  investigation's observation; it was not re-run here.
 - Windows and macOS: the Windows in-place restore path is exercised only by the
   POSIX hard-link fallback. `verify:review-storage` is Windows-only and was not
   run here.
