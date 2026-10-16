@@ -12,7 +12,12 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 //
 // The same recovered helper is bundled three times: the Agent execution
 // extension, the Agent host extension and the Agent host daemon.
-export const agentWriteMarker = '/* OpenVision durable Agent write v1 */';
+export const agentWriteMarker = '/* OpenVision durable Agent write v2 */';
+// v1 (commit 88d2be4e) lacked the stale-temporary sweep; built outputs are upgraded.
+export const previousAgentWriteMarker = '/* OpenVision durable Agent write v1 */';
+// A writer killed between its temporary write and rename leaves a sibling.
+// Later writes to the same file remove such siblings once they are this old.
+export const staleTemporaryMs = 60000;
 export const agentWriteEntry = 'extensions/cursor-agent-exec/dist/main.js';
 export const agentWriteTargets = [
   { id: 'agent-exec', entry: agentWriteEntry, shape: 'minified', caller: 'await yu(h, y, { flush: !0 });',
@@ -125,9 +130,27 @@ const shapes = {
 
 // Locals use an ov prefix so they cannot shadow the bundle's bindings; the
 // original parameter names are kept for the function's signature.
-function durableHelper({ name, params, fsp, fs, refuse }) {
+export function durableHelper({ name, params, fsp, fs, refuse }, version = 2) {
+  const sweep = version < 2 ? '' : `\n    await ovSweep();`;
+  const sweeper = version < 2 ? '' : `
+  const ovSweep = async () => {
+    // Only this helper's exact name pattern for the same target, and never a
+    // recent temporary that a concurrent writer may still own.
+    const ovDirectory = ovPath.dirname(ovTarget), ovPrefix = \`.\${ovPath.basename(ovTarget)}.openvision-\`;
+    let ovEntries;
+    try { ovEntries = await (0, ${fsp}.readdir)(ovDirectory); } catch { return; }
+    for (const ovEntry of ovEntries) {
+      if (!ovEntry.startsWith(ovPrefix) ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.tmp$/.test(ovEntry.slice(ovPrefix.length))) continue;
+      const ovStale = ovPath.join(ovDirectory, ovEntry);
+      try {
+        const ovStats = await (0, ${fsp}.lstat)(ovStale);
+        if (ovStats.isFile() && Date.now() - ovStats.mtimeMs > ${staleTemporaryMs}) await (0, ${fsp}.unlink)(ovStale);
+      } catch {}
+    }
+  };`;
   return `async function ${name}(${params.join(', ')}) {
-  ${agentWriteMarker}
+  ${version < 2 ? previousAgentWriteMarker : agentWriteMarker}
   const ovTarget = ${params[0]}, ovData = ${params[1]}, ovOptions = ${params[2]};
   const ovPath = require("node:path"), ovFlags = ${fs}.constants;
   const ovBytes = Buffer.isBuffer(ovData) ? ovData : Buffer.from(ovData);
@@ -159,12 +182,12 @@ function durableHelper({ name, params, fsp, fs, refuse }) {
     if (ovResolved !== ovTarget)
       throw new ${refuse}(ovTarget, \`Refusing write: \${ovTarget} now resolves through a symlinked parent to \${ovResolved}\`);
   };
-  ovCanonical();
+  ovCanonical();${sweeper}
   const ovUid = "function" == typeof process.getuid ? process.getuid() : void 0;
   if ("win32" !== process.platform &&
     (!ovCurrent || (1 === ovCurrent.nlink && (void 0 === ovUid || ovCurrent.uid === ovUid)))) {
     // Readers observe either the previous or the complete new file; a failed
-    // or short write removes only the temporary sibling.
+    // or short write removes only the temporary sibling.${sweep}
     const ovTemporary = ovPath.join(ovPath.dirname(ovTarget),
       \`.\${ovPath.basename(ovTarget)}.openvision-\${require("node:crypto").randomUUID()}.tmp\`);
     let ovHandle;
@@ -251,8 +274,8 @@ export function agentWriteHelper(text, shape = 'minified') {
 }
 
 // Installed durable helper (for tests and verification overlays).
-export function durableAgentWriteHelper(text) {
-  const index = text.indexOf(agentWriteMarker);
+export function durableAgentWriteHelper(text, marker = agentWriteMarker) {
+  const index = text.indexOf(marker);
   if (index < 0) throw new Error('Durable Agent write helper missing');
   const node = parseHelper(text, index);
   return { node, source: text.slice(node.start, node.end) };
@@ -262,6 +285,18 @@ export function preserveAgentWrites(text, target = agentWriteTargets[0]) {
   if (text.includes(agentWriteMarker)) {
     if (text.split(agentWriteMarker).length !== 2) throw new Error('Agent write helper marker is ambiguous');
     return text;
+  }
+  if (text.includes(previousAgentWriteMarker)) {
+    if (text.split(previousAgentWriteMarker).length !== 2) throw new Error('Agent write helper marker is ambiguous');
+    const { node, source } = durableAgentWriteHelper(text, previousAgentWriteMarker);
+    const names = { name: node.id.name, params: node.params.map(param => param.name),
+      fsp: source.match(/await \(0, ([\w$]+)\.lstat\)\(ovTarget\)/)?.[1],
+      fs: source.match(/ovFlags = ([\w$]+)\.constants;/)?.[1],
+      refuse: source.match(/throw new ([\w$]+)\(ovTarget, `Refusing to write through a symlink/)?.[1] };
+    // Upgrade only the exact v1 output; anything else is unexpected drift.
+    if (Object.values(names).some(value => !value) || source !== durableHelper(names, 1))
+      throw new Error(`Agent write helper v1 contract changed: ${target.id}`);
+    return text.slice(0, node.start) + durableHelper(names) + text.slice(node.end);
   }
   const shape = shapes[target.shape];
   if (text.split(shape.anchor).length !== 2) throw new Error('Agent write helper missing or ambiguous');

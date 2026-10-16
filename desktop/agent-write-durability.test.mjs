@@ -7,8 +7,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readableApp } from './recovered-source.mjs';
-import { agentWriteHelper, agentWriteMarker, agentWriteTargets, durableAgentWriteHelper,
-  preserveAgentWrites } from './agent-write-durability-customization.mjs';
+import { agentWriteHelper, agentWriteMarker, agentWriteTargets, durableAgentWriteHelper, durableHelper,
+  preserveAgentWrites, previousAgentWriteMarker, staleTemporaryMs } from './agent-write-durability-customization.mjs';
 
 const require = createRequire(import.meta.url);
 const runner = fileURLToPath(new URL('./agent-write-faults.cjs', import.meta.url));
@@ -199,3 +199,35 @@ test('real full-volume and read-only faults keep saved bytes and recover after s
       assert.deepEqual(fixed.erofs.temporariesAfterFault, []);
     }
   });
+
+test('v1 durable helpers from earlier builds upgrade exactly to the current helper', () => {
+  for (const target of agentWriteTargets) {
+    const text = recovered[target.id], { node, names } = agentWriteHelper(text, target.shape);
+    const v1 = text.slice(0, node.start) + durableHelper(names, 1) + text.slice(node.end);
+    assert.ok(v1.includes(previousAgentWriteMarker) && !v1.includes('ovSweep'), target.id);
+    assert.equal(preserveAgentWrites(v1, target), patched[target.id], target.id);
+    assert.throws(() => preserveAgentWrites(v1.replace('ovOffset += ovWritten;', 'ovOffset += ovWritten + 0;'), target),
+      /v1 contract changed/, target.id);
+  }
+});
+
+test('later writes remove stale temporaries left by an interrupted writer', { skip: !posix && 'POSIX atomic path' }, async () => {
+  for (const target of agentWriteTargets) {
+    const directory = workspace(), path = join(directory, 'edit.js');
+    fs.writeFileSync(path, 'before\n');
+    const uuid = index => `0000000${index}-1111-2222-3333-444444444444`;
+    const stale = join(directory, `.edit.js.openvision-${uuid(1)}.tmp`);
+    const recent = join(directory, `.edit.js.openvision-${uuid(2)}.tmp`);
+    const otherTarget = join(directory, `.other.js.openvision-${uuid(3)}.tmp`);
+    const foreignName = join(directory, '.edit.js.openvision-user-notes.tmp');
+    for (const file of [stale, recent, otherTarget, foreignName]) fs.writeFileSync(file, 'partial');
+    const old = new Date(Date.now() - 2 * staleTemporaryMs);
+    for (const file of [stale, otherTarget, foreignName]) fs.utimesSync(file, old, old);
+    await write[target.id](path, 'after\n', { flush: true });
+    assert.equal(fs.readFileSync(path, 'utf8'), 'after\n');
+    assert.equal(fs.existsSync(stale), false, `${target.id}: stale sibling removed`);
+    assert.equal(fs.existsSync(recent), true, `${target.id}: a recent temporary may belong to a live writer`);
+    assert.equal(fs.existsSync(otherTarget), true, `${target.id}: other targets are not swept`);
+    assert.equal(fs.existsSync(foreignName), true, `${target.id}: only the exact generated pattern is swept`);
+  }
+});

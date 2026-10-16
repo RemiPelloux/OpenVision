@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, readdir, statfs, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, statfs, unlink, utimes, writeFile } from 'node:fs/promises';
 import { release } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -80,7 +80,7 @@ const identity = { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: roo
     ['verifier', fileURLToPath(import.meta.url)],
   ].map(async ([name, path]) => [name, { path, sha256: await fileHash(path) }]))) };
 identity.durableWriteOwner = (await readFile(join(appRoot, 'extensions/cursor-agent-exec/dist/main.js'), 'utf8'))
-  .includes('/* OpenVision durable Agent write v1 */');
+  .match(/\/\* OpenVision durable Agent write (v\d+) \*\//)?.[1] ?? false;
 
 // One pending file shows Keep; several show Keep All.
 const keepLabel = /^Keep( All)?$/;
@@ -188,6 +188,10 @@ try {
 
   await unlink(filler);
   const freed = await stage('after-freeing-space');
+  // A sibling left by a writer interrupted before its rename, two minutes old.
+  const orphan = join(project, '.notes.md.openvision-00000000-1111-2222-3333-444444444444.tmp');
+  await writeFile(orphan, original.slice(0, 4096));
+  const orphanTime = new Date(Date.now() - 120000); await utimes(orphan, orphanTime, orphanTime);
   phase = 'retry';
   await submit('Space is available again. Insert the generated block into notes.md.', 'OpenVision retry edit turn finished.');
   await page.waitForTimeout(2000);
@@ -215,6 +219,7 @@ try {
   assert.equal(fault.pendingReviewVisible, false, 'A failed write must not create a pending review');
   assert.equal(freed.notes.original, true);
   assert.equal(retried.notes.changed, true, 'The retried edit must write the complete replacement');
+  assert.deepEqual(retried.temporaries, [], 'The retried write must remove the stale interrupted-writer sibling');
   assert.equal(retried.pendingReviewVisible, true, 'The successful retry must create a pending review');
   assert.equal(kept.notes.changed, true);
   assert.equal(restarted.notes.changed, true, 'Accepted bytes must survive restart');
