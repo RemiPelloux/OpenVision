@@ -10,6 +10,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Native recovery checklist](native-recovery-inventory.md)
 - [Agent review and editor undo ownership](rea-agent-edit-history.md)
 - [Agent retry history and live authentication recovery](rea-agent-retry-history.md)
+- [Native Agent timeout and explicit retry recovery](rea-agent-timeout-recovery.md)
 - [Agent review recovery and repeated edits](rea-agent-review-recovery.md)
 - [Native Agent runtime verification](rea-agent-runtime.md)
 - [REA sprint follow-up: autocomplete contracts and cancellation](rea-autocomplete-contract.md)

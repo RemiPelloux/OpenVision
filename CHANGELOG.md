@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Preserve OpenVision's header and body inactivity deadlines through proxy and
+  certificate selection, release stalled Agent sockets, and keep retry explicit.
+  Focused real-socket checks pass; full-duration native post-fix timeout runs
+  remain pending. See [Agent timeout recovery](docs/recovery/rea-agent-timeout-recovery.md)
+  and the updated [recovery gap audit](docs/recovery/feature-gap-audit.md).
 - Release native utility-process listeners after exit instead of retaining each completed run. Keep process ownership until actual termination, including failed kills. Real Windows fork/restart/kill/window-close checks pass; [evidence and remaining RAM work](docs/engineering/utility-process-ownership.md). Source build only.
 - Preserve model-route caches across unchanged account refreshes and apply a 30-second automatic cooldown after account-host failures; explicit Refresh remains immediate. Remove duplicate streamed text/reasoning retention and clear output references on close. See [controlled before/after measurements](docs/performance/account-performance.md) and remaining whole-app RAM checks.
 - Defer local Explorer startup until workbench restoration. Native Windows startup, editor reload and same-window project switching pass; restoring the old lifecycle reproduces the original error. See [startup evidence](docs/engineering/local-startup.md). These source changes do not refresh the preview.6 payload.

@@ -4,7 +4,8 @@
 [Prioritized backlog and points](../planning/roadmap.md#ranked-rea-implementation-and-verification-work) ·
 [Published recovery archive](../../curs_source/README.md)
 
-Audit date: **12 October 2026**. Product baseline: commit
+Audit baseline: **12 October 2026**; recovery and implementation updates through
+**16 October 2026**. Product baseline: commit
 `27f3a3cceeb80c31200bff48b5152dfdbef972f1`. Original input: **Cursor 3.21.13,
 Windows**, with VS Code version field `1.128.0`.
 
@@ -19,6 +20,22 @@ extraction use the newer **3.24.18** snapshot. Historical **3.21.13** native
 recovery increased to nine modules and 4,647 identified procedures; the updated
 historical native rows below retain their original 52-file denominator. The
 current version has 53 native paths and no matching historical pseudocode.
+
+The current JavaScript publication is indexed by input in the
+[3.24.18 module index](../../curs_source/modules/3.24.18/README.md) and checked
+by the [publication manifest](../../curs_source/manifest.json). All **237/237**
+selected inputs have structural results: 236 use unchanged captured bytes and
+one uses a separate, equal-width filename-label analysis copy. The exact
+transformation and its limitation are recorded in the
+[final-bundle report](javascript-bundles.md). This is source-recovery evidence,
+not a runnable module graph or feature-parity score.
+
+The new [native Agent timeout report](rea-agent-timeout-recovery.md) covers the
+OV-102 transport boundary: unchanged five-minute header and ten-minute body
+inactivity policies, selected-proxy dispatcher ownership, controlled local
+stall cleanup and explicit retry into real saved-provider inference. Focused
+transport tests pass; post-fix full-duration native runs remain pending, so OV-102
+and OV-204 stay Partial.
 
 Execution planning now lives in the [completion sprint ledger](../planning/completion-sprints.md).
 The [autocomplete follow-up](rea-autocomplete-contract.md) documents the next REA
@@ -58,8 +75,9 @@ rows cannot be added or averaged into a product completion score.
 
 | Scope and denominator | Observed coverage | Gap | What this establishes |
 | --- | --- | --- | --- |
-| Formatting: 15,805 text-file outcomes | 15,799 formatted: **99.96%** | 6 unchanged fallbacks: **0.04%** | Readability work; fallback files are retained, not lost. Types, comments and original names are not restored by formatting. |
-| Selected JavaScript bundle operations: 224 | Initially 218 without reported failure: **97.32%** | Initially 6: **2.68%**, subsequently retried successfully from raw inputs | No unresolved operation failures are reported for those six retries. Selected bundle processing does not establish complete semantic understanding. |
+| Current 3.24.18 formatting: 13,925 text-file outcomes | 13,925 formatted: **100%** | 0 formatting failures in the selected current snapshot | Readability work; formatting does not recover original names, types, comments or build inputs. |
+| Selected JavaScript inputs: 237 | Structural results for **237: 100%** | 0 selected inputs without a structural result; one result uses a derived filename-label analysis copy | The [module index](../../curs_source/modules/3.24.18/README.md) and manifest preserve input/output hashes and provenance. Structural extraction does not establish original source, runnable equivalence or feature parity. |
+| Published 3.24.18 recovery text: 30,111 files | **30,111** hash-verified files: 916 application + 29,195 derived | Historical statement fallback and failed attempts remain separately documented; installed dependencies and raw binaries stay local | A browsable, integrity-checked reference archive; file count is not semantic completeness. |
 | Native metadata: 52 Windows PE files | 52 parsed: **100%** | 0 unparsed: **0%** | Headers/resources/import metadata, not decompiled implementations. |
 | Historical native pseudocode: the same 52 PE files | 9 files with pseudocode: **17.31%** | 43 without pseudocode: **82.69%** | Updated 16 October. Files count equally; this is neither byte-weighted nor complexity-weighted and does not cover the current installation. |
 | Identified internal procedures in those nine modules: 4,647 | 4,647 pseudocode results: **100%** | 0 missing results: **0%** | Only analyzer-identified procedures in these selected modules; complete function discovery and recompilation are unproven. |
@@ -69,9 +87,10 @@ rows cannot be added or averaged into a product completion score.
 | Hosted service implementation | Absent from the captured client | **Percentage unknown** | A client installation cannot supply server implementations that were never shipped in it. |
 | Full original feature parity | No complete acceptance baseline | **Percentage unknown** | Static code presence and successful model discovery are not feature-parity tests. |
 
-The installation snapshot contains **17,092 files**. The historical integrity
-verification checked **101,617 hashes** across recovery outputs and inputs; it
-does not imply 101,617 original source files or successful runtime parity.
+The current 3.24.18 installation snapshot contains **15,161 files**. The
+historical integrity verification checked **101,617 hashes** across recovery
+outputs and inputs; that historical count does not imply 101,617 original source
+files or successful runtime parity.
 The 37 REA analysis operations use selected scopes and explicitly retain partial
 semantic coverage. Recovered module counts overlap between representations.
 
@@ -92,8 +111,8 @@ feature families, not an exhaustive or equally weighted inventory of the origina
 | Custom URL, key and model discovery | Local fixture verifies authorization, discovery, manual IDs, persistence and selected-model inference. Keys use workbench secret storage. | Live provider compatibility matrix; clear errors for unsupported streaming/tool/image requests. Listing a model does not verify inference. |
 | Combined model selector | Provider grouping/search and startup catalog fixes implemented; saved GPT/DeepSeek/Grok rows observed in the prior pass. Model settings fixture mounts at most 40 rows for 10,000 models. | Complete keyboard, focus, screen-reader and native submenu interaction checks; measure a large Agent picker separately from the settings list. |
 | Per-model reasoning | Model-specific capability handling and request encoding implemented. Synthetic transport tests cover selected effort; discovered capabilities take precedence. | Test actual upstream acceptance and tool continuations for GPT, DeepSeek and Grok at each advertised effort. Full submenu interaction verification was interrupted. |
-| AI chat | Chat path and local fixture inference exercised. | Real-provider stream, retry, timeout, cancellation, history reload and branching checks. No full live-provider parity result is claimed here. |
-| Agent and edit workflow | Recovered host/execution code present; per-request provider routing, reasoning relay and targeted context/stream changes implemented. | End-to-end file read/search, command approval, multi-file patch, diff review, reject/undo, interrupted tool call and resume using real models. |
+| AI chat | Chat path and local fixture inference exercised; the [timeout/recovery probe](rea-agent-timeout-recovery.md) now verifies the production transport policy boundary and explicit retry shape. | Post-fix full-duration native header/body timeout runs, real-provider stream/stop/history/branch coverage and remaining failure classes. No complete live-provider parity result is claimed here. |
+| Agent and edit workflow | Recovered host/execution code present; per-request provider routing, reasoning relay, targeted context/stream changes and native timeout guidance are implemented. | Storage-failure retry, interruption during active writes/tools, remaining edit/undo combinations and live-provider editing. Timeout evidence does not close OV-103. |
 | AI Tab / predictive autocomplete | Client stream/replacement-range/cursor-prediction code recovered. It uses a separate `AiService/StreamCpp` protocol. | Implement or validate a compatible completion backend; test suggestion ranges, partial acceptance, stale-result cancellation, latency and next-edit prediction. A Chat Completions URL alone does not establish compatibility. |
 | Codebase indexing and retrieval | Retrieval extension and ignore-rule UI present. Large native `file_service` addon remains compiled. | Trace local versus remote execution and uploads; provide working index/embedding/ranking components, incremental invalidation, ignore coverage and quality tests. |
 | MCP tools and custom servers | STDIO/HTTP configuration and extension code present. Local extension checksum consistency has been repaired. | Real server discovery, tool execution, approval, cancellation, auth/OAuth and process cleanup tests. Consistent checksums alone do not prove MCP works. |

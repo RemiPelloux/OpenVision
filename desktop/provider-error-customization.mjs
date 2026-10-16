@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { cachedFile } from './build-cache.mjs';
 import { digest, fileHash } from './import-files.mjs';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { installProxyDeadlines } from './provider-proxy-deadlines.mjs';
 
 const marker = '/* OpenVision provider error boundary v6 */';
 const target = 'extensions/cursor-agent-exec/dist/main.js';
@@ -75,6 +76,7 @@ export function redactProviderErrors(text) {
 }
 
 export async function installProviderErrorPolicy(root) {
+  await installProxyDeadlines(root);
   const path = join(root, 'source/app', target);
   const helper = join(root, 'desktop/provider-error-policy.js');
   const helperTarget = join(dirname(path), 'openvision-provider-errors.cjs');
@@ -83,6 +85,7 @@ export async function installProviderErrorPolicy(root) {
     .replace('export { fetchProviderWithDeadlines };', '')
     .replaceAll('export function ', 'function ').replaceAll('export async function ', 'async function ').replaceAll('export const ', 'const ');
   await copyFile(join(root, 'desktop/provider-request-deadlines.cjs'), join(dirname(path), 'openvision-provider-deadlines.cjs'));
+  await copyFile(join(root, 'desktop/openvision-provider-dispatch.cjs'), join(dirname(path), 'openvision-provider-dispatch.cjs'));
   await writeFile(helperTarget, `${helperSource}\nmodule.exports = {fetchProviderWithDeadlines, providerSecretFromHeaders, redactProviderSecret, redactProviderError, isProviderFailure, protectProviderResult, readProviderErrorBody, requireContextRecovery, providerFailureDetail};\n`);
   const recipe = digest(JSON.stringify(await Promise.all([
     fileHash(join(root, 'desktop/provider-error-customization.mjs')),

@@ -30,6 +30,14 @@ and cleanup, and preserves the live review if Redo persistence fails. The native
 scenario additionally checks repeated edits and pending review across restarts.
 This is continued P0 OV-103 work; the acceptance count remains **6/42 Verified**.
 
+16 October timeout follow-up: [native Agent timeout and retry recovery](../recovery/rea-agent-timeout-recovery.md)
+fixes the producing transport boundary where proxy/certificate selection replaced
+the application's inactivity policy. The source tests pass with real sockets and
+the native verifier now distinguishes a controlled local stall from a real
+saved-provider retry. Full-duration post-fix native runs and the remaining Agent
+failure matrix are still open; OV-102 and OV-204 remain Partial and the ledger
+stays **6/42 Verified (14.29%)**.
+
 15 October Agent review follow-up: [edit-history ownership](../recovery/rea-agent-edit-history.md)
 fixes early acceptance completion and missing closed-file text undo. The final
 Windows run passes search, multi-file review/undo/redo, command approval/Stop

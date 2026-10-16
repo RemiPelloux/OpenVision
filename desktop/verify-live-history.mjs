@@ -10,30 +10,55 @@ async function composerId(page) {
   return input(page).evaluate(element => element.closest('[data-composer-id]')?.getAttribute('data-composer-id'));
 }
 
-async function recall(page, relay, marker, prefix) {
+export const forkRecallPrompt = 'Without using tools, reply with BRANCHED: followed immediately by the exact single line you read earlier from probe.txt. Do not read the file again.';
+
+async function retryForkFailure({ page, relay, before, retry }) {
+  await Promise.race([
+    page.getByText('Try again', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 90000 }),
+    relay.failure.then(message => { throw Error(message); }),
+  ]);
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  await page.waitForTimeout(2500);
+  assert.equal(relay.requests.length, before + 1, 'Fork failure must not cause an automatic retry');
+  assert.equal(relay.requests[before].httpStatus, 401);
+  assert.equal(relay.requests[before].expectedAuthenticationFailure, true);
+  assert.match(await page.locator('body').innerText(), /401|unauthorized|invalid.*key|authentication/i);
+  retry.restore();
+  await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
+}
+
+function verifyRecallRequests(requests, retry) {
+  assert.equal(requests.length, retry ? 2 : 1, 'History recall must have only the expected requests without new tools or titles');
+  assert.ok(requests.every(request => request.assistantHistoryContainsMarker), 'Earlier assistant answer must be present in the actual outgoing history');
+  assert.equal(requests.at(-1).httpStatus, 200);
+  assert.equal(requests.at(-1).streamCompleted, true);
+  assert.equal(requests.at(-1).assistantReturnedMarker, true, 'The live provider must recall the original file marker');
+  assert.equal(requests.at(-1).responseToolCalls?.length ?? 0, 0, 'Recall must not reread the file');
+  if (retry) assert.deepEqual(requests[1].roles, requests[0].roles, 'Failed fork must retain valid history without duplicate messages');
+}
+
+async function recall({ page, relay, marker, prefix, retry }) {
   const before = relay.requests.length;
+  retry?.prepare();
   await input(page).fill(`Without using tools, reply with ${prefix} followed immediately by the exact single line you read earlier from probe.txt. Do not read the file again.`);
   await input(page).press('Enter');
+  if (retry) await retryForkFailure({ page, relay, before, retry });
   await Promise.race([
     page.getByText(new RegExp(`^${prefix}\\s*${marker}$`)).filter({ visible: true }).first().waitFor({ timeout: 90000 }),
     relay.failure.then(message => { throw new Error(message); }),
   ]);
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 });
-  const requests = relay.requests.slice(before);
-  assert.equal(requests.length, 1, 'History recall must make one request without new tools or titles');
-  assert.equal(requests[0].assistantHistoryContainsMarker, true, 'Earlier assistant answer must be present in the actual outgoing history');
-  assert.equal(requests[0].assistantReturnedMarker, true, 'The live provider must recall the original file marker');
-  assert.equal(requests[0].responseToolCalls?.length ?? 0, 0, 'Recall must not reread the file');
-  return { requestIndex: before, composerId: await composerId(page), replyPrefix: prefix };
+  verifyRecallRequests(relay.requests.slice(before), retry);
+  return { requestIndex: before + (retry ? 1 : 0), composerId: await composerId(page), replyPrefix: prefix };
 }
 
-export async function verifyLiveHistory({ page, relay, marker, restart, result }) {
+export async function verifyLiveHistory({ page, relay, marker, restart, result, retryFork }) {
   const sourceId = await composerId(page);
   assert.ok(sourceId, 'Visible chat must have an identity');
   page = await restart();
   await page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor();
   assert.equal(await composerId(page), sourceId, 'Restart must restore the same chat');
-  result.history = { sourceId, restored: await recall(page, relay, marker, 'RESTORED:') };
+  result.history = { sourceId, restored: await recall({ page, relay, marker, prefix: 'RESTORED:' }) };
   console.log('Live history: restart recall passed; checking Fork Chat.');
   await page.keyboard.press('ControlOrMeta+Shift+p');
   const command = page.locator('.quick-input-widget').getByRole('textbox', { name: 'input', exact: true });
@@ -48,9 +73,13 @@ export async function verifyLiveHistory({ page, relay, marker, restart, result }
     }), sourceId, { timeout: 15000 });
   const forkId = await composerId(page);
   assert.ok(forkId && forkId !== sourceId, 'Fork must create a separate chat identity');
-  result.history.fork = await recall(page, relay, marker, 'BRANCHED:');
+  result.history.fork = await recall({ page, relay, marker, prefix: 'BRANCHED:', retry: retryFork });
   assert.equal(result.history.fork.composerId, forkId);
   result.history.restartAndForkRecallVerified = true;
+  if (retryFork) {
+    assert.deepEqual(result.forkFailure.promptOccurrences.filter(count => count > 0), [1, 1]);
+    result.forkFailure.nativeRetryVerified = true;
+  }
   return page;
 }
 

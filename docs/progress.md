@@ -52,6 +52,10 @@ The [recovery archive](../curs_source/README.md) links the actual published code
 [historical native Evidence](../curs_source/native/README.md).
 The [recovery status](recovery/recovery-status.md) explains each representation; the
 [gap audit](recovery/feature-gap-audit.md) preserves the historical baseline.
+The [3.24.18 module index](../curs_source/modules/3.24.18/README.md) links each
+selected JavaScript input to its published structural files, while the
+[timeout report](recovery/rea-agent-timeout-recovery.md) records the current
+highest-priority Agent transport gap and its remaining native gate.
 
 | Version and measured scope | Completed | Remaining / limit |
 | --- | --- | --- |

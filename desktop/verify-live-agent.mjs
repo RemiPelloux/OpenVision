@@ -11,16 +11,17 @@ import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { createLiveAgentRelay } from './live-agent-relay.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
-import { verifyLiveHistory, verifyPersistedLiveHistory } from './verify-live-history.mjs';
+import { verifyLiveHistory, verifyPersistedLiveHistory, forkRecallPrompt } from './verify-live-history.mjs';
 import { prepareLivePaste, inspectPasteRequest, verifySavedLivePaste } from './verify-live-paste.mjs';
 import { createLiveUserRule, inspectRulesRequest } from './verify-live-rules.mjs';
 import { approveLiveMemory, inspectLiveMemoryContext } from './verify-live-memory.mjs';
 import { verifyLiveStop } from './verify-live-stop.mjs';
 import { liveReadPrompt, invalidProbeKey, inspectRetryPrompt, retryAuthenticationFailure, verifyRetryContinuation } from './verify-live-retry.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
+import { retryNativeTimeout, timeoutLimit } from './verify-live-timeout.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history] [--stop|--retry-auth] [--paste|--rules|--memory] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Capture saves the first request locally with the transport key redacted.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history|--history-failure] [--stop|--retry-auth|--timeout headers|body] [--paste|--rules|--memory] [--capture-payload]\nRuns a native Agent Read (optionally via a Task child) through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Capture saves the first request locally with the transport key redacted.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
@@ -28,12 +29,18 @@ assert.ok(modelIndex >= 0 && model && !model.startsWith('--'), 'Select an enable
 const reasoningIndex = process.argv.indexOf('--reasoning');
 const reasoning = reasoningIndex < 0 ? 'default' : process.argv[reasoningIndex + 1];
 const subagent = process.argv.includes('--subagent');
-const history = process.argv.includes('--history');
+const historyFailure = process.argv.includes('--history-failure');
+const history = process.argv.includes('--history') || historyFailure;
 const paste = process.argv.includes('--paste');
 const rules = process.argv.includes('--rules');
 const memory = process.argv.includes('--memory');
 const stop = process.argv.includes('--stop');
 const retryAuth = process.argv.includes('--retry-auth');
+assert.ok(!historyFailure || !subagent, '--history-failure verifies a direct Agent fork');
+const timeoutIndex = process.argv.indexOf('--timeout');
+const timeoutPhase = timeoutIndex < 0 ? undefined : process.argv[timeoutIndex + 1];
+if (timeoutIndex >= 0) timeoutLimit(timeoutPhase);
+assert.ok(!timeoutPhase || (!retryAuth && !stop && !memory && !rules && !paste && !history && !subagent), '--timeout headers|body is a separate controlled stall followed by live retry');
 assert.ok(!retryAuth || (!stop && !memory && !rules && !paste && !history && !subagent), '--retry-auth is a separate real authentication failure/manual recovery probe');
 assert.ok(!stop || (!memory && !rules && !paste && !history && !subagent), '--stop is a separate live stream cancellation/resubmission probe');
 assert.ok(!memory || (!rules && !paste && !history && !subagent), '--memory is a separate suggested-memory approval probe');
@@ -50,6 +57,15 @@ try {
   provider = matches[0]; encrypted = db.prepare('SELECT value FROM ItemTable WHERE key = ?').get(`secret://openvision.provider.${provider.id}`)?.value;
   assert.ok(encrypted, 'Selected provider has no saved credential');
 } finally { db.close(); }
+let nativeDeadlineHash, nativeDispatchHash, proxyFetchHash;
+if (timeoutPhase) {
+  nativeDeadlineHash = await fileHash(join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-provider-deadlines.cjs'));
+  assert.equal(nativeDeadlineHash, await fileHash(join(root, 'desktop/provider-request-deadlines.cjs')), 'Native exec production deadlines must match the unmodified policy');
+  nativeDispatchHash = await fileHash(join(root, 'desktop/openvision-provider-dispatch.cjs'));
+  for (const directory of ['extensions/cursor-agent-exec/dist', 'node_modules/@vscode/proxy-agent/out'])
+    assert.equal(await fileHash(join(root, 'source/app', directory, 'openvision-provider-dispatch.cjs')), nativeDispatchHash, 'Deadline marker and final dispatcher must share the source policy');
+  proxyFetchHash = await fileHash(join(root, 'source/app/node_modules/@vscode/proxy-agent/out/index.js'));
+}
 const directory = await mkdtemp(join(root, 'logs/live-agent-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
@@ -100,9 +116,25 @@ const captureRequest = async body => {
   if (process.argv.includes('--capture-payload')) await writeFile(join(directory, 'native-request.json'), body);
 };
 if (retryAuth) result.liveRetry = { promptOccurrences: [], scope: 'Real upstream HTTP 401 with a deliberately invalid key, then native Try again using the saved credential. No upstream failure is simulated.' };
+if (historyFailure) result.forkFailure = { promptOccurrences: [], scope: 'Real upstream 401 on the first fork recall, explicit native retry and persisted source/fork isolation.' };
+if (timeoutPhase) {
+  result.scope = 'Native Agent controlled loopback timeout followed by real saved-provider Read continuation. Initial stalled request is not forwarded upstream; subsequent inference bodies are unchanged.';
+  result.timeout = { phase: timeoutPhase, productionDeadlineMs: timeoutLimit(timeoutPhase), promptOccurrences: [],
+    scope: 'Controlled local transport stall at unchanged production deadlines, then native Try again with real saved-provider inference. The stall is not an upstream provider failure.' };
+  result.hashes.timeoutVerifier = await fileHash(join(root, 'desktop/verify-live-timeout.mjs'));
+  result.hashes.execDeadlines = nativeDeadlineHash;
+  result.hashes.dispatcherPolicy = nativeDispatchHash;
+  result.hashes.proxyFetch = proxyFetchHash;
+  result.hashes.execErrorPolicy = await fileHash(join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-provider-errors.cjs'));
+  result.timeout.packagedUndiciVersion = JSON.parse(await readFile(join(root, 'source/app/node_modules/undici/package.json'), 'utf8')).version;
+}
 const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, allowDownstreamCancellation: stop,
-  expectInitialUnauthorized: retryAuth, inspectRequest: body => {
+  expectInitialUnauthorized: retryAuth, initialStall: timeoutPhase, inspectRequest: body => {
   if (retryAuth) inspectRetryPrompt(body, result.liveRetry);
+  if (timeoutPhase) inspectRetryPrompt(body, result.timeout);
+  if (historyFailure) result.forkFailure.promptOccurrences.push(JSON.parse(body).messages
+    .filter(message => message.role === 'user')
+    .reduce((count, message) => count + JSON.stringify(message.content).split(forkRecallPrompt).length - 1, 0));
   if (inspectMemoryRetrieval) {
     inspectLiveMemoryContext(body, { filename: ruleFilename, marker }, result.memory);
     inspectMemoryRetrieval = false;
@@ -195,6 +227,7 @@ try {
     await input.press('Enter');
   }
   if (retryAuth) await retryAuthenticationFailure({ page, relay, restoreCredential: () => relay.setKey(key), result: result.liveRetry });
+  if (timeoutPhase) await retryNativeTimeout({ page, relay, phase: timeoutPhase, result: result.timeout });
   await Promise.race([
     page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: subagent ? 180000 : 90000 }),
     relay.failure.then(message => { throw new Error(message); }),
@@ -203,6 +236,7 @@ try {
   assert.ok(relay.requests.some(request => request.actualFileInToolResult), 'Actual file must appear in the tool continuation');
   assert.ok(relay.requests.some(request => request.assistantReturnedMarker), 'Provider must return the actual file marker as assistant text');
   if (retryAuth) await verifyRetryContinuation({ page, relay, result: result.liveRetry });
+  if (timeoutPhase) await verifyRetryContinuation({ page, relay, result: result.timeout });
   if (subagent) {
     const calls = relay.requests.flatMap(request => request.responseToolCalls ?? []);
     const task = calls.find(call => call.name === 'Task'), read = calls.find(call => call.name === 'Read');
@@ -212,7 +246,10 @@ try {
       request.toolResults?.some(result => result.callId === task.id && result.containsFileMarker)), 'The parent must receive the Task result and return its marker');
     result.subagentContinuationVerified = true;
   }
-  if (history) await verifyLiveHistory({ page, relay, marker, result, restart: async () => {
+  if (history) await verifyLiveHistory({ page, relay, marker, result, retryFork: historyFailure ? {
+    prepare() { relay.expectUnauthorizedOnNextRequest(); relay.setKey(invalidProbeKey); },
+    restore() { relay.setKey(key); },
+  } : undefined, restart: async () => {
     await closeOwnedApp(); return launch();
   } });
   assert.ok(relay.requests.every(request => reasoning === 'default' ? request.reasoning === undefined :

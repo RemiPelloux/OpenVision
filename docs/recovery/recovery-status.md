@@ -33,6 +33,12 @@ of original source recovered.
 | Current Windows native payloads | 53 paths inventoried by hash | No matching pseudocode in the historical export; versions must not be combined |
 | Hosted services | Client request code is available | Server source is absent from the installation |
 
+The [3.24.18 module index](../../curs_source/modules/3.24.18/README.md) is the
+browsable source-level index for every selected JavaScript input; the
+[manifest](../../curs_source/manifest.json) is authoritative for hashes and
+representation provenance. The [native timeout report](rea-agent-timeout-recovery.md)
+links this recovery boundary to the remaining OV-102/OV-204 feature gates.
+
 Published code and native Evidence live under `curs_source/javascript`,
 `curs_source/modules`, and `curs_source/native`. Complete local captures,
 dependency text, JavaScript Evidence and decoded WAT live in

@@ -1,4 +1,5 @@
 'use strict';
+const { deadlinePolicyKey } = require('./openvision-provider-dispatch.cjs');
 
 // Separate inactivity limits preserve arbitrarily long, progressing inference.
 const inferenceLimits = Object.freeze({ headersMs: 5 * 60 * 1000, inactivityMs: 10 * 60 * 1000 });
@@ -57,7 +58,8 @@ async function fetchProviderWithDeadlines(fetchImpl, url, options, limits = infe
   const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
   const timer = setTimeout(() => controller.abort(deadlineFailure('headers')), limits.headersMs);
   let response;
-  try { response = await fetchImpl(url, { ...options, signal }); }
+  // The extension host preserves this mark through proxy/certificate selection.
+  try { response = await fetchImpl(url, { ...options, [deadlinePolicyKey]: true, signal }); }
   catch (error) { throw signal.aborted ? signal.reason : error; }
   finally { clearTimeout(timer); }
   return response.body ? watchBody(response, { controller, signal, inactivityMs: limits.inactivityMs }) : response;

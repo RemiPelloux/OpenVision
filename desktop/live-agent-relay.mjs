@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { fallbackReasoningValues } from './model-reasoning.js';
+import { stallInitialResponse, timeoutLimit } from './verify-live-timeout.mjs';
 
 const requestLimit = 6;
 const byteLimit = 4 * 1024 * 1024;
@@ -71,10 +72,14 @@ async function providerFailureBody(upstream, record, redact) {
 }
 
 export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest,
-  allowDownstreamCancellation = false, expectInitialUnauthorized = false }) {
+  allowDownstreamCancellation = false, expectInitialUnauthorized = false, initialStall }) {
+  if (initialStall !== undefined) {
+    timeoutLimit(initialStall);
+    if (expectInitialUnauthorized) throw new Error('Controlled timeout and real authentication failure are separate probes');
+  }
   const requests = [], controllers = new Set(), pending = new Set();
   const failed = Promise.withResolvers();
-  let key;
+  let key, unauthorizedIndex = expectInitialUnauthorized ? 0 : undefined;
   const saved = provider.models?.find(entry => entry.id === model);
   const efforts = saved?.capabilities?.reasoningEffortValues ?? fallbackReasoningValues(provider.url, model);
   const redact = value => key ? String(value).replaceAll(key, '[redacted]') : String(value);
@@ -110,6 +115,10 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
     requests.push(record);
     if (inspectRequest) await inspectRequest(redact(body));
     if (requests.length === 1 && captureRequest) await captureRequest(redact(body));
+    if (initialStall && record === requests[0]) {
+      await stallInitialResponse(response, initialStall, record);
+      return;
+    }
     const controller = new AbortController(); controllers.add(controller);
     const timer = setTimeout(() => controller.abort(), 60000), started = performance.now();
     const cancel = () => {
@@ -126,7 +135,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       record.requestId = redact(upstream.headers.get('x-request-id') ?? '');
       if (!upstream.ok) {
         const failureBody = await providerFailureBody(upstream, record, redact);
-        if (expectInitialUnauthorized && record === requests[0] && upstream.status === 401 && !record.errorTruncated) {
+        if (record === requests[unauthorizedIndex] && upstream.status === 401 && !record.errorTruncated) {
           record.expectedAuthenticationFailure = true;
           response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'text/plain',
             'x-request-id': record.requestId });
@@ -134,7 +143,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
         }
         throw new Error(`Live provider returned HTTP ${upstream.status}`);
       }
-      if (expectInitialUnauthorized && record === requests[0]) {
+      if (record === requests[unauthorizedIndex]) {
         await upstream.body?.cancel();
         throw new Error('Live provider did not reject the deliberately invalid credential');
       }
@@ -167,6 +176,11 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   return { requests, catalogEfforts: efforts, failure: failed.promise, setKey(value) { key = value; },
+    expectUnauthorizedOnNextRequest() {
+      if (unauthorizedIndex !== undefined || initialStall || pending.size)
+        throw new Error('A single authentication failure may be armed only between completed requests');
+      unauthorizedIndex = requests.length;
+    },
     url: `http://127.0.0.1:${server.address().port}/v1`,
     async close() {
       for (const controller of controllers) controller.abort();

@@ -29,6 +29,13 @@ reproducible. The [build-integrity correction](../engineering/runtime-build-inte
 records the faulty import, damaged generated inputs, restoration and new checks.
 See also the [scoped Windows evidence](../performance/model-discovery-resources.md#full-app-startup-gate).
 
+The [native Agent timeout report](../recovery/rea-agent-timeout-recovery.md)
+now covers the selected-proxy transport owner for OV-102: application-owned
+header/body inactivity deadlines survive proxy and certificate selection, stalled
+sockets close, and retry remains explicit. Focused real-socket checks pass. The
+full-duration native post-fix run is still a gate, so this evidence does not add
+Verified credit or change the **6/42 (14.29%)** denominator.
+
 ## Critical-first backlog and ETA
 
 The latest [live retry investigation](../recovery/rea-agent-retry-history.md) fixes empty

@@ -9,6 +9,10 @@ import * as policy from './provider-error-policy.js';
 import { fetchProviderWithDeadlines, inferenceLimits } from './provider-request-deadlines.cjs';
 import { redactProviderErrors } from './provider-error-customization.mjs';
 import { readableApp } from './recovered-source.mjs';
+import { Agent, getGlobalDispatcher } from '../tooling/provider-transport.mjs';
+import { withDeadlineDispatch } from './openvision-provider-dispatch.cjs';
+
+const nativeFetch = withDeadlineDispatch(fetch, getGlobalDispatcher);
 
 const limits = { headersMs: 250, inactivityMs: 150 };
 const original = await readFile(new URL('extensions/cursor-agent-exec/dist/main.js', readableApp), 'utf8');
@@ -23,9 +27,10 @@ class ApiError extends Error {
 }
 const context = { Error, TypeError, Headers, Te: ApiError,
   Lt: error => error.name === 'AbortError', Ut: headers => headers,
-  qt: response => Object.fromEntries(response.headers), Zt: () => fetch,
+  qt: response => Object.fromEntries(response.headers), Zt: () => nativeFetch,
   openvisionProviderErrors: { ...policy,
-    fetchProviderWithDeadlines: (implementation, url, options) => fetchProviderWithDeadlines(implementation, url, options, limits) },
+    fetchProviderWithDeadlines: (implementation, url, options) => fetchProviderWithDeadlines(implementation, url,
+      { ...options, dispatcher: options.dispatcher ?? getGlobalDispatcher() }, limits) },
 };
 const transport = runInNewContext(`(${expression('er = async ({', 5)})`, context);
 const retry = runInNewContext(`(${expression('async function $r(')})`, context);
@@ -67,6 +72,44 @@ test('production policy bounds header wait and read inactivity, not total infere
   assert.deepEqual(inferenceLimits, { headersMs: 300000, inactivityMs: 600000 });
   assert.equal(redactProviderErrors(patched), patched);
   assert.ok(patched.includes('openvisionProviderErrors.fetchProviderWithDeadlines(i, e,'));
+});
+
+test('native fetch transport timeout is reproduced and the selected dispatcher delegates deadline ownership', { timeout: 10000 }, async () => {
+  const agent = new Agent(), observed = [];
+  // Compress only positive transport timers; retain their real HTTP/parser path.
+  const dispatcher = { dispatch(options, handler) {
+    observed.push({ headers: options.headersTimeout, body: options.bodyTimeout });
+    return agent.dispatch({ ...options, bodyTimeout: options.bodyTimeout === 0 ? 0 : 50 }, handler);
+  } };
+  try {
+    await fixture(async (base, requests) => {
+      const before = await fetch(`${base}/body`, { dispatcher });
+      await assert.rejects(before.text(), error => error.cause?.code === 'UND_ERR_BODY_TIMEOUT');
+      await requests[0].closed;
+      const started = performance.now();
+      const response = await fetchProviderWithDeadlines(nativeFetch, `${base}/body`, { dispatcher }, { headersMs: 2500, inactivityMs: 1600 });
+      await assert.rejects(response.text(), error => error.code === 'OPENVISION_PROVIDER_BODY_TIMEOUT');
+      await requests[1].closed;
+      assert.ok(performance.now() - started >= 1500, 'The transport must not preempt the application deadline');
+      assert.notEqual(observed[0].body, 0, 'The baseline must retain a transport timeout');
+      assert.deepEqual(observed[1], { headers: 0, body: 0 });
+      const recovered = await fetchProviderWithDeadlines(nativeFetch, `${base}/success`, { dispatcher }, limits);
+      assert.match(await recovered.text(), /data: done/);
+      assert.equal(requests.length, 3, 'No retries or replacement transport requests');
+    });
+  } finally { await agent.close(); }
+});
+
+test('production adapter uses the selected pool without changing caller options or closing it', async () => {
+  const options = { dispatcher: { dispatch() {} }, signal: new AbortController().signal };
+  let received;
+  const response = await policy.fetchProviderWithDeadlines(withDeadlineDispatch(async (_url, value) => {
+    received = value; return new Response(null, { status: 204 });
+  }, getGlobalDispatcher), 'https://provider.invalid/v1', options);
+  assert.equal(response.status, 204);
+  assert.notEqual(received.dispatcher, options.dispatcher);
+  assert.equal(Object.keys(options).length, 2);
+  assert.equal(received.dispatcher.close, undefined);
 });
 
 for (const phase of ['headers', 'body']) {

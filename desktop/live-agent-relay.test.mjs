@@ -18,6 +18,48 @@ async function fixture(t, handler, options = {}) {
   return relay;
 }
 
+for (const phase of ['headers', 'body']) {
+  test(`controlled ${phase} stall never contacts upstream and later requests use the real relay`, { timeout: 5000 }, async t => {
+    let calls = 0;
+    const relay = await fixture(t, (_request, response) => {
+      calls++; sse(response, [{ choices: [{ delta: { content: marker } }] }]);
+    }, { initialStall: phase });
+    const controller = new AbortController();
+    const body = JSON.stringify({ model, stream: true, messages: [{ role: 'user', content: 'Read probe.txt' }] });
+    const pending = fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body, signal: controller.signal });
+    const result = pending.then(response => response.text()).catch(error => error);
+    while (!relay.requests.length) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(calls, 0);
+    assert.equal(relay.requests[0].upstreamContacted, false);
+    controller.abort(); await result;
+    while (relay.requests[0].elapsedMs === undefined) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.equal(relay.requests[0].controlledStall, phase);
+    assert.equal(relay.requests[0].httpStatus, undefined, 'No fixture status may be attributed to the provider');
+    assert.equal(relay.requests[0].productionDeadlineMs, phase === 'headers' ? 300000 : 600000);
+    const next = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body });
+    assert.equal(next.status, 200); await next.text();
+    assert.equal(calls, 1);
+    assert.equal(relay.requests[1].assistantReturnedMarker, true);
+  });
+}
+
+test('invalid or overlapping timeout scenarios fail before starting the relay', async () => {
+  await assert.rejects(createLiveAgentRelay({ initialStall: 'invalid' }), /Timeout phase/);
+  await assert.rejects(createLiveAgentRelay({ initialStall: 'body', expectInitialUnauthorized: true }), /separate probes/);
+});
+
+test('relay cleanup releases a controlled stall without waiting for its production deadline', { timeout: 5000 }, async t => {
+  let calls = 0;
+  const relay = await fixture(t, () => { calls++; }, { initialStall: 'headers' });
+  const pending = fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) })
+    .catch(error => error);
+  while (!relay.requests.length) await new Promise(resolve => setTimeout(resolve, 10));
+  await relay.close();
+  assert.ok((await pending) instanceof Error);
+  assert.equal(calls, 0);
+  assert.ok(relay.requests[0].elapsedMs < 2000);
+});
+
 test('expected native cancellation records partial stream evidence and permits a later live request', { timeout: 5000 }, async t => {
   const closed = Promise.withResolvers(); let count = 0;
   const relay = await fixture(t, (_request, response) => {
@@ -176,6 +218,25 @@ test('allowing initial authentication failure does not hide a repeated upstream 
   assert.equal(await relay.failure, 'Live provider returned HTTP 401');
   assert.equal(relay.requests.length, 2);
   assert.equal(relay.requests[1].expectedAuthenticationFailure, undefined);
+});
+
+test('a fork probe can arm exactly one real unauthorized response after successful inference', async t => {
+  const relay = await fixture(t, (request, response) => {
+    if (request.headers.authorization === 'Bearer invalid-fork') {
+      response.writeHead(401); response.end('Unauthorized'); return;
+    }
+    sse(response, [{ choices: [{ delta: { content: marker } }] }]);
+  });
+  const submit = () => fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) });
+  const first = await submit(); assert.equal(first.status, 200); await first.text();
+  relay.expectUnauthorizedOnNextRequest(); relay.setKey('invalid-fork');
+  const failed = await submit(); assert.equal(failed.status, 401); await failed.text();
+  assert.equal(relay.requests[1].expectedAuthenticationFailure, true);
+  assert.throws(() => relay.expectUnauthorizedOnNextRequest(), /single authentication failure/);
+  relay.setKey(key);
+  const recovered = await submit(); assert.equal(recovered.status, 200); await recovered.text();
+  assert.equal(relay.requests.length, 3);
+  assert.equal(relay.requests[2].assistantReturnedMarker, true);
 });
 
 test('unexpected acceptance of the invalid credential stops the probe before forwarding model output', async t => {
