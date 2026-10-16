@@ -40,6 +40,12 @@ transport tests and post-fix full-duration native header/body checks pass.
 Each native controlled stall is followed by explicit retry into real saved-provider
 Read/answer. Remaining failure/history cases keep OV-102 and OV-204 Partial.
 
+The 16 October [transactional review-storage follow-up](rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
+adds producer coverage for failed snapshot writes: the in-memory cache rolls
+back to its prior value, and an initial write is retried before Undo restores a
+review. The source build and focused Agent suite pass; this narrows the
+implementation gap without changing the acceptance score.
+
 Execution planning now lives in the [completion sprint ledger](../planning/completion-sprints.md).
 The [autocomplete follow-up](rea-autocomplete-contract.md) documents the next REA
 scope and guarded request/response cancellation boundaries. These changes do not
@@ -89,10 +95,12 @@ The module index is generated from the versioned publication manifest and links
 its integrity authority and this source-to-gap map. The latest publication
 verification passed after restoring a stale working-tree mutation: **30,111**
 published files and **670,747,317** bytes matched their recorded SHA-256 values.
-This refresh changes navigation and the gap description; it does not change the
-42-story denominator or award partial credit. The linked Undo/Redo, timeout and
-live-edit reports identify implementation and native verification evidence
-separately.
+The latest source follow-up also passes **58/58** focused Agent recovery tests,
+`npm run build:desktop`, `npm run test:build-integrity` (**26/26**) and desktop
+syntax checks. This refresh changes navigation and the gap description; it does
+not change the 42-story denominator or award partial credit. The linked
+Undo/Redo, timeout and live-edit reports identify implementation and native
+verification evidence separately.
 
 | Recent work | Gap now closed within its stated scope | What remains open |
 | --- | --- | --- |
@@ -102,6 +110,7 @@ separately.
 | [Storage ownership](../engineering/storage-write-ownership.md) | The newer reference's pending/in-flight invariant is ported into the prepared runtime; scoped native discovery and Quick Edit regressions pass. | Cross-window configuration races, close during IPC, physical faults and complete Undo-stack failure behavior. |
 | [Created-review recovery](rea-agent-review-recovery.md#created-review-snapshot-ownership) and [final-build regression](rea-agent-undo-retry.md#native-and-integration-verification) | Snapshot-service failure recovery and normal-restart review workflows pass their controlled native checks; failed reference release has producer coverage. | Remaining menu/group failures, physical faults, active-write/tool interruption and broader live editing. Older abrupt-exit checks retain their original runtime scope. |
 | [Native keyboard Undo/Redo](rea-agent-undo-retry.md) | Failed snapshot write/read operations preserve the correct history position and show retry guidance; keyboard retries pass on the rebuilt source. | Remaining menu/group and partial-removal failures, physical faults, active-write/tool interruption and broader live editing. Consolidated failure progress has producer coverage. |
+| [Transactional snapshot cache and initial-write retry](rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry) | Failed writes restore the previous in-memory cache value; the first failed snapshot write is retried before Undo restores a review. The source build and **58/58** focused Agent tests pass. | Physical disk/full-volume faults, termination during an outstanding write or tool operation, remaining menu/group and partial-removal combinations, and broader provider/platform coverage. |
 | [Live-provider multi-file editing](rea-agent-live-edit.md) | Saved Codex Easy `gpt-6.1-sol` drives native two-file review, rejection/retry, acceptance, Undo/Redo and restart persistence in a disposable project; both hosts exit 0. | One provider's Windows success path only; physical faults, active-write/tool interruption, remaining failure combinations, other providers and platforms remain. |
 | [Timeout transport correction](rea-agent-timeout-recovery.md#full-duration-native-follow-up) | Focused real-socket and unchanged-duration native header/body checks pass; explicit retries complete real GPT/DeepSeek Read/answer. | Other interruption/history/error cases, certificate/input rejection and malformed streams; OV-102/204 remain Partial. |
 | [Repository organization](../engineering/repository-layout.md) and [recovery tools](../../scripts/recovery/README.md) | Maintained code, reference code, guides and recovery tooling have documented locations. | Generated `source/` and reference `curs_source/` are not the durable customization entry points; clean independent assembly remains a product gate. |
@@ -191,7 +200,7 @@ configuration story OV-201 already has Verified evidence.
 | --- | --- | --- | --- |
 | Chat, Stop and retries · OV-102/204 | [AI service][source-ai] · [Agent host entry][source-agent-host] | [Retry history customization](../../desktop/agent-retry-history-customization.mjs), [request deadlines](../../desktop/provider-request-deadlines.cjs), [proxy boundary](../../desktop/provider-proxy-deadlines.mjs) | [Live provider matrix](../verification/live-provider-compatibility.md), [retry history](rea-agent-retry-history.md), [native timeout/retry](rea-agent-timeout-recovery.md#full-duration-native-follow-up). Full-duration header/body checks pass; remaining interruption/history, certificate/input and malformed-stream cases stay open. |
 | Model/configuration storage · OV-201/302 | [Storage cache][source-storage] · [IPC writer entry][source-storage-ipc] | [Write ownership customization](../../desktop/storage-write-ownership.mjs), [build integration](../../desktop/custom-models.mjs) | [Scoped native regressions](../engineering/storage-write-ownership.md). Cross-window concurrent configuration, close during IPC and physical-failure gates remain; acknowledgment is not a durability claim. |
-| Agent editing and recovery · OV-103 | [Inline-diff service][source-inline-diff] · [Undo service entry][source-undo-stack] · [Agent execution entry][source-agent-exec] | [Edit review](../../desktop/agent-review-customization.mjs), [snapshot recovery](../../desktop/agent-review-recovery-customization.mjs), [retryable history](../../desktop/agent-review-undo-customization.mjs) | [Edit ownership](rea-agent-edit-history.md), [live-provider edit](rea-agent-live-edit.md), [snapshot recovery](rea-agent-review-recovery.md), [native keyboard retry](rea-agent-undo-retry.md). Menu/group and partial-removal failures, physical faults, active-write/tool interruption and broader provider/platform coverage remain. Failed-reference release has producer coverage. |
+| Agent editing and recovery · OV-103 | [Inline-diff service][source-inline-diff] · [Undo service entry][source-undo-stack] · [Agent execution entry][source-agent-exec] | [Edit review](../../desktop/agent-review-customization.mjs), [snapshot recovery](../../desktop/agent-review-recovery-customization.mjs), [retryable history](../../desktop/agent-review-undo-customization.mjs) | [Edit ownership](rea-agent-edit-history.md), [live-provider edit](rea-agent-live-edit.md), [snapshot recovery](rea-agent-review-recovery.md), [native keyboard retry](rea-agent-undo-retry.md). Transactional cache rollback and initial-write retry are covered by source tests; menu/group and partial-removal failures, physical faults, active-write/tool interruption and broader provider/platform coverage remain. Failed-reference release has producer coverage. |
 | MCP lifecycle · OV-303/304 | [MCP service][source-mcp] | [Desktop cleanup](../../desktop/mcp-lifecycle-cleanup-customization.mjs), [control-plane owner](../../src/mcp.mjs) | [Native ownership](rea-mcp-ownership.md), [failed-close recovery](rea-mcp-cleanup.md), [control-plane lifecycle](../performance/control-plane-mcp-lifecycle.md). Named profiles, simultaneous changes, cross-window failed cleanup and authenticated MCP remain. |
 | Retrieval and indexing · OV-501–504 | [Retrieval entry][source-retrieval] · [retrieval worker][source-retrieval-worker] | [Search lifecycle guard](../../desktop/retrieval-lifecycle-customization.mjs) | [Partial data-flow map](rea-retrieval-ownership.md). Actual processing destinations, native/server contracts, retrieval quality and incremental index counters remain unverified. |
 | Context and RAM · OV-1001–1003 | [Request-context executor][source-context] | [Context customization](../../desktop/context-customization.mjs), [catalog/stream runtime](../../desktop/agent-runtime.cjs) | [Measurements](../performance/performance.md), [native baseline](../performance/native-performance-baseline.md). Equivalent token/request workloads, long sessions, idle release and UI/filesystem budgets remain. |

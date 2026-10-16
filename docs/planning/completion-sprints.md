@@ -41,6 +41,15 @@ live-provider gates remain distinct. The [storage report](../engineering/storage
 records the model-discovery fix and scoped native regressions.
 OV-103 stays Partial; the fixed ledger remains **6/42 Verified (14.29%)**.
 
+16 October transactional snapshot follow-up: [cache rollback and initial-write retry](../recovery/rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
+restores the prior in-memory snapshot value after a failed write and retries the
+initial snapshot before Undo restores a review. The source build passes, the
+focused Agent suite is **58/58**, and build-integrity checks are **26/26**.
+This is producer/source-build evidence; physical I/O, termination during
+outstanding writes/tools, remaining menu/group combinations and broader
+provider/platform coverage remain open. OV-103 stays Partial and the ledger is
+unchanged at **6/42 Verified (14.29%)**.
+
 The [final source-build regression](../recovery/rea-agent-review-recovery.md#final-source-build-regression)
 passes native reads/search, multi-file review, repeated-edit Undo/Redo,
 normal-restart acceptance/rejection, command approval/cancellation and resume.

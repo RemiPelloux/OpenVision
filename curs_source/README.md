@@ -49,6 +49,10 @@ or that the original feature set has been recovered.
 The publication manifest was generated on **16 October 2026**. The latest
 checkout verification passed for **30,111** published files and
 **670,747,317** bytes; run the commands below to repeat that check.
+The current source-to-gap reconciliation also records the transactional review
+storage follow-up: [cache rollback and initial-write retry](../docs/recovery/rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
+is implemented in the maintained OpenVision customization and is not claimed as
+behavior of every published reference module.
 
 ## Current Windows snapshot: 3.24.18
 

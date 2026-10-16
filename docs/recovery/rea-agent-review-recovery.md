@@ -1,6 +1,6 @@
 # Agent review recovery and repeated edits
 
-15 October 2026. This follow-up keeps Agent editing reliability ahead of
+15 October 2026; updated 16 October 2026. This follow-up keeps Agent editing reliability ahead of
 retrieval/indexing work. It extends [edit-history ownership](rea-agent-edit-history.md)
 without changing OV-103's original acceptance gates or the 42-story denominator.
 
@@ -37,6 +37,23 @@ Focused coverage includes model acquisition, storage read, missing snapshot,
 handler construction, delayed writes/cleanup, Redo persistence, failed reference
 release, retry, hidden decorations and installer drift. Original backups remain
 immutable and changed producer contracts fail the build.
+
+## Transactional snapshot cache and initial-write retry
+
+The latest producer fix covers the remaining in-memory transaction boundary for
+review snapshots. A failed write now restores the cache entry that existed
+before the attempt, so a rejected update cannot leave a newer value visible to a
+later Undo or Redo. When the first snapshot write fails, the recovery path retries
+that write before restoring the review; a successful retry proceeds normally and
+an exhausted retry retains the review state for the existing recovery path.
+
+`desktop/agent-review-recovery.test.mjs` executes the recovered callbacks with
+controlled storage failures and passes **58/58** checks across the Agent review,
+Undo, created-review and retry suites. The source build also passes
+`npm run build:desktop`, `npm run test:build-integrity` (**26/26**) and desktop
+syntax checks. These are producer and source-build results; they do not simulate
+a full disk, power loss, process termination during an outstanding write or tool,
+or a native failure in every menu/group combination.
 
 ## Native scenario
 
@@ -95,9 +112,10 @@ those checks after the fix. The final run additionally proves restored rejection
 
 OV-103 remains Partial. The [native keyboard Undo/Redo follow-up](rea-agent-undo-retry.md)
 passes injected snapshot-write/read failures, retry guidance and history position
-recovery. Remaining menu/group combinations, physical
-storage faults, termination during an outstanding write/tool operation,
-additional edit types and the OV-102 live-provider dependency remain open.
+recovery, while the transactional source follow-up covers cache rollback and
+initial-write retry. Remaining menu/group combinations, physical storage faults,
+termination during an outstanding write/tool operation, additional edit types and
+the OV-102 live-provider dependency remain open.
 Mounted snapshot-service failures are checked below. Abrupt exit after visible pending review
 and acceptance is now checked below; this does not prove arbitrary crash safety.
 The recovery fix retains necessary state on failure; no reduced RAM, CPU, token

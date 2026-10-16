@@ -24,7 +24,7 @@ function fixture(source = patched, options = {}) {
   const undoEnd = source.indexOf('\n      };', undoStart) + '\n      }'.length;
   const undoClass = source.slice(undoStart + 'pK = '.length, undoEnd);
   const state = { disk: new Map(), reads: 0, clears: 0, writes: 0, refs: [], errors: [], added: 0, removed: 0,
-    failModel: false, failRead: false, failConstruct: false, failWrite: false, failClear: false, failDispose: false,
+    failModel: false, failRead: false, failConstruct: false, failWrite: false, failWriteCount: 0, failClear: false, failDispose: false,
     writeWait: options.writeWait };
   const uri = { toString: () => 'file:///project/file.js' };
   const originalDiff = { id: 'diff', uri, originalTextLines: ['before'], newTextLines: ['after'],
@@ -43,7 +43,10 @@ function fixture(source = patched, options = {}) {
       async cursorDiskKVGet(key) { state.reads++; if (state.failRead) throw new Error('read failed'); return state.disk.get(key); },
       async cursorDiskKVSet(key, value) {
         state.writes++; await state.writeWait?.promise;
-        if (state.failWrite) throw new Error('write failed'); state.disk.set(key, value);
+        if (state.failWrite || state.failWriteCount > 0) {
+          state.failWriteCount--; throw new Error('write failed');
+        }
+        state.disk.set(key, value);
       },
       async cursorDiskKVClearPrefix(key) {
         state.clears++; await state.clearWait?.promise;
@@ -118,6 +121,25 @@ test('undo joins its initial snapshot write before reading or deleting recovery 
   assert.equal(done, false); assert.equal(f.state.refs.length, 0); assert.equal(f.state.clears, 0);
   writeWait.resolve(); await undo;
   assert.equal(f.service.diffHandlers.size, 1); assert.equal(f.state.disk.has('undo-key'), false);
+});
+
+test('failed snapshot writes roll back the in-memory cache and preserve the prior value', async () => {
+  const f = fixture(); await drain();
+  const previous = f.service._inlineDiffCache.get('undo-key');
+  f.state.failWrite = true;
+  await assert.rejects(f.service.setStoredInlineDiff('undo-key', { ...f.originalDiff }), /write failed/);
+  assert.deepEqual(f.service._inlineDiffCache.get('undo-key'), previous);
+  f.state.failWrite = false; f.state.failClear = true;
+  await assert.rejects(f.service.setStoredInlineDiff('undo-key', undefined), /clear failed/);
+  assert.deepEqual(f.service._inlineDiffCache.get('undo-key'), previous);
+});
+
+test('an initial snapshot write failure is retried before Undo restores the review', async () => {
+  const writeWait = Promise.withResolvers(), f = fixture(patched, { writeWait });
+  const undo = f.state.element.undo(); await drain();
+  f.state.failWriteCount = 1; writeWait.resolve(); await undo;
+  assert.equal(f.service.diffHandlers.size, 1);
+  assert.equal(f.state.disk.has('undo-key'), false);
 });
 
 test('failed redo persistence keeps the live review and retries without replacing its handler', async () => {

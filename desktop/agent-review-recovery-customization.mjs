@@ -4,6 +4,7 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { preserveReviewUndoRetry } from './agent-review-undo-customization.mjs';
 
 const marker = '/* OpenVision review recovery ownership v1 */';
+const storageMarker = '/* OpenVision review storage transaction v1 */';
 export const agentReviewRecoveryEntry = 'out/vs/workbench/workbench.desktop.main.js';
 
 export function agentReviewRecoveryOwner(text) {
@@ -30,7 +31,39 @@ export function preserveAgentReviewRecovery(text) {
 }
 
 export function preserveAgentReviewSnapshotOwnership(text) {
-  return ownFailedReviewReferences(preserveCreatedReviewRecovery(preserveRemovedReviewRecovery(text)));
+  return ownFailedReviewReferences(preserveCreatedReviewRecovery(
+    preserveRemovedReviewRecovery(preserveReviewStorageTransaction(text))));
+}
+
+function preserveReviewStorageTransaction(text) {
+  const owner = agentReviewRecoveryOwner(text), source = text.slice(owner.start, owner.end);
+  if (source.includes(storageMarker)) return text;
+  const method = owner.body.body.find(node => node.key?.name === 'setStoredInlineDiff');
+  if (!method) throw new Error('Agent review storage owner missing');
+  const original = text.slice(method.start, method.end);
+  if (!original.includes('this._inlineDiffCache.set(e, fie(t))') ||
+      !original.includes('this.storageService.cursorDiskKVSet(e, JSON.stringify(t))') ||
+      !original.includes('this.storageService.cursorDiskKVClearPrefix(e)'))
+    throw new Error('Agent review storage contract changed');
+  const replacement = `setStoredInlineDiff(e, t) {
+            ${storageMarker}
+            const hadPrevious = this._inlineDiffCache.has(e);
+            const previous = hadPrevious ? this._inlineDiffCache.get(e) : void 0;
+            if (t) {
+              this._inlineDiffCache.set(e, fie(t));
+              return this.storageService.cursorDiskKVSet(e, JSON.stringify(t)).catch(error => {
+                if (hadPrevious) this._inlineDiffCache.set(e, previous);
+                else this._inlineDiffCache.delete(e);
+                throw error;
+              });
+            }
+            this._inlineDiffCache.delete(e);
+            return this.storageService.cursorDiskKVClearPrefix(e).catch(error => {
+              if (hadPrevious) this._inlineDiffCache.set(e, previous);
+              throw error;
+            });
+          }`;
+  return text.slice(0, method.start) + replacement + text.slice(method.end);
 }
 
 function preserveRemovedReviewRecovery(text) {
@@ -38,13 +71,24 @@ function preserveRemovedReviewRecovery(text) {
   const method = owner.body.body.find(node => node.key?.name === 'remove');
   let source = text.slice(method.start, method.end);
   if (source.includes(marker)) return text;
-  source = replaceOnce(source, 'let i;', `let i;\n${marker}\nlet openvisionPendingModelReference, openvisionSnapshotWrite;`);
+  source = replaceOnce(source, 'let i;', `let i;\n${marker}\nlet openvisionPendingModelReference, openvisionSnapshotWrite;\nlet openvisionSnapshotError;`);
   source = replaceOnce(source, 'this.setStoredInlineDiff(s, n.inlineDiff).catch((m) => {',
     'openvisionSnapshotWrite = this.setStoredInlineDiff(s, n.inlineDiff).catch((m) => {');
+  source = replaceOnce(source, 'console.error("[inlineDiff] Error storing undo data:", m);',
+    'openvisionSnapshotError = m;\n                console.error("[inlineDiff] Error storing undo data:", m);');
   source = replaceOnce(source, 'let m;\n                  try {\n                    let g;',
     `let m, openvisionRestored = false;
                   try {
                     await openvisionSnapshotWrite;
+                    if (openvisionSnapshotError) {
+                      try {
+                        await this.setStoredInlineDiff(s, n.inlineDiff);
+                        openvisionSnapshotError = undefined;
+                      } catch (error) {
+                        openvisionSnapshotError = error;
+                      }
+                      if (openvisionSnapshotError) throw openvisionSnapshotError;
+                    }
                     if (openvisionPendingModelReference) {
                       openvisionPendingModelReference.dispose();
                       openvisionPendingModelReference = undefined;

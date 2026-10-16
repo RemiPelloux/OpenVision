@@ -73,6 +73,13 @@ Undo. The [published recovered owner](../../curs_source/modules/3.24.18/ed6922a7
 links the static contract to that investigation. This is part of OV-103's existing
 **8 points**, not an added story, completed-point claim or higher parity score.
 
+The subsequent [transactional snapshot follow-up](../recovery/rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
+adds cache rollback after failed writes and retries an initial snapshot before
+Undo restores a review. The source build and **58/58** focused Agent tests pass;
+physical I/O, active-write/tool interruption, remaining menu/group combinations
+and broader provider/platform coverage remain the highest-priority gaps. No story
+or point total changes.
+
 The [refreshed gap audit](../recovery/feature-gap-audit.md#source-index-to-implementation-gaps)
 maps the 3.24.18 source index to implementation reports and remaining gates.
 Its [storage follow-up](../engineering/storage-write-ownership.md) ports the newer
@@ -121,7 +128,7 @@ and detailed evidence links.
 
 | Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
 | ---: | --- | --- | --- | ---: |
-| 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Storage-failure retry, interruption during active writes/tools, remaining edit/undo combinations and live-provider editing | 8 |
+| 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Physical I/O and interruption during active writes/tools, remaining edit/undo combinations and live-provider editing; source-level cache rollback and initial-write retry are covered | 8 |
 | 2 | OV-102 · Chat, Stop and retry | Remaining error-to-history ownership across both Agent paths | Complete interruption/history matrix after passing full-duration native header/body release and explicit live retries | 8 |
 | 3 | OV-204 · Provider failures | Capability rejection and stream-error propagation beyond established cases | Certificate expiry/hostname, unsupported actual inputs, remaining malformed streams and secret-safe recovery | 5 |
 | 4 | OV-302 · Local configuration isolation | Remaining global path producers, classifiers, watchers and consumers | Complete additive migration with backups; two profiles and another installation; preserve explicit project compatibility | 8 |

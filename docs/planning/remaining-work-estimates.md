@@ -11,6 +11,13 @@ menu/group failures, physical faults and active-write/tool interruption remain.
 The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
+The 16 October transactional review-storage follow-up now covers source-level
+cache rollback and initial snapshot-write retry. Its **58/58** Agent tests,
+production build and **26/26** build-integrity checks pass. The remaining storage
+gates are physical I/O/full-volume behavior, termination during outstanding
+writes/tools and the broader OV-103 failure matrix; these do not change the
+ledger or points below.
+
 | Order | Remaining work | Stories | Complexity points |
 | --- | --- | ---: | ---: |
 | P0 | Data safety, tool authority, isolation, privacy and failure checks | 10 | 81 |
@@ -39,7 +46,7 @@ bounded-resource evidence.
 **Next: finish Agent editing/recovery and its chat transport dependency.** Close
 the [remaining review gates](../recovery/rea-agent-review-recovery.md#remaining-acceptance),
 other chat interruption/history and provider-error cases, and the remaining
-[storage-failure matrix](../engineering/storage-write-ownership.md#verification).
+[physical storage-failure matrix](../engineering/storage-write-ownership.md#verification).
 [Full-duration native header/body timeout and explicit live retry](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
 now pass; those subcases no longer await verification.
 Then follow P0/P1 in the roadmap, including configuration durability, MCP

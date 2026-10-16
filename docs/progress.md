@@ -55,6 +55,12 @@ Physical storage faults, remaining menu/group failure combinations and platform
 checks remain. This is progress within existing stories, with
 no change to the acceptance percentage or backlog points.
 
+The latest [transactional review-storage follow-up](recovery/rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
+also restores the previous in-memory snapshot value after a failed write and
+retries the initial snapshot before Undo restores a review. Its **58/58** focused
+Agent checks and **26/26** build-integrity checks pass; physical I/O, outstanding
+write/tool termination and the remaining OV-103 combinations remain open.
+
 ## Recovery coverage by version
 
 The [recovery archive](../curs_source/README.md) links the actual published code,
