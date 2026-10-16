@@ -168,7 +168,7 @@ durability suite), `test:build-integrity` **26/26**, `check:desktop` and
 - `review-storage-verification-U0MDtU`: Edit-menubar removal/snapshot failures.
 - `agent-verification-zWuWkY` (`verify:agent -- --review-recovery`): the full
   Agent regression, 29 authenticated controlled requests, no renderer errors,
-  five host exits 0 — the first Linux pass of this regression recorded here.
+  five host exits 0.
 
 ## Unverified and remaining
 
