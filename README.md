@@ -248,6 +248,7 @@ npm run verify:completion -- --editing --portable ./OpenVision-portable
 npm run verify:welcome -- --portable ./OpenVision-portable
 npm run verify:mcp-session
 npm run verify:mcp-ownership
+npm run verify:mcp-config-ownership
 npm run test:agent-review
 npm run verify:agent
 npm run status:features
