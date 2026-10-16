@@ -1,12 +1,13 @@
 # Recovery investigations
 
-Shipped-artifact observations, recovered contracts, provenance and unknowns. Start with [recovery status](recovery-status.md) and the [published code archive](../../curs_source/README.md). Coverage is version-specific; extracted code is not proof of original-source recovery, a complete rebuild or feature parity.
+Shipped-artifact observations, recovered contracts, provenance and unknowns. Start with [recovery status](recovery-status.md), the [current gap and source reconciliation](feature-gap-audit.md#latest-documentation-and-source-reconciliation), and the [published code archive](../../curs_source/README.md). Coverage is version-specific; extracted code is not proof of original-source recovery, a complete rebuild or feature parity.
 
 ## Documents
 
 - [Selected JavaScript bundles: final extraction, provenance and limitations](javascript-bundles.md)
 
 - [OpenVision: recovery gaps and remaining product work](feature-gap-audit.md)
+- [Current evidence register and source-to-gap map](feature-gap-audit.md#current-evidence-register)
 - [Storage notification ownership and native model-discovery failure](../engineering/storage-write-ownership.md)
 - [Native recovery checklist](native-recovery-inventory.md)
 - [Agent review and editor undo ownership](rea-agent-edit-history.md)

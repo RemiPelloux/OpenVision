@@ -90,10 +90,11 @@ introducing another completion score.
 ## Latest documentation and source reconciliation
 
 Reconciled against source parent `37f159e4`, source-index commit `b578b768`,
-and the latest live-provider edit evidence in `ac527049` on **16 October 2026**.
-The module index is generated from the versioned publication manifest and links
-its integrity authority and this source-to-gap map. The latest publication
-verification passed after restoring a stale working-tree mutation: **30,111**
+live-provider edit evidence in `ac527049`, and the current transactional review
+fix in `d3df7cb4` on **16 October 2026**. The module index is generated from
+the versioned publication manifest and links its integrity authority and this
+source-to-gap map. The latest publication verification passed after restoring a
+stale working-tree mutation: **30,111**
 published files and **670,747,317** bytes matched their recorded SHA-256 values.
 The latest source follow-up also passes **58/58** focused Agent recovery tests,
 `npm run build:desktop`, `npm run test:build-integrity` (**26/26**) and desktop
@@ -113,6 +114,8 @@ verification evidence separately.
 | [Transactional snapshot cache and initial-write retry](rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry) | Failed writes restore the previous in-memory cache value; the first failed snapshot write is retried before Undo restores a review. The source build and **58/58** focused Agent tests pass. | Physical disk/full-volume faults, termination during an outstanding write or tool operation, remaining menu/group and partial-removal combinations, and broader provider/platform coverage. |
 | [Live-provider multi-file editing](rea-agent-live-edit.md) | Saved Codex Easy `gpt-6.1-sol` drives native two-file review, rejection/retry, acceptance, Undo/Redo and restart persistence in a disposable project; both hosts exit 0. | One provider's Windows success path only; physical faults, active-write/tool interruption, remaining failure combinations, other providers and platforms remain. |
 | [Timeout transport correction](rea-agent-timeout-recovery.md#full-duration-native-follow-up) | Focused real-socket and unchanged-duration native header/body checks pass; explicit retries complete real GPT/DeepSeek Read/answer. | Other interruption/history/error cases, certificate/input rejection and malformed streams; OV-102/204 remain Partial. |
+| [Model-discovery resource ownership](../performance/model-discovery-resources.md) | Renderer-owned discovery I/O now cancels on deadline, reload, close and renderer loss; strict UTF-8 and decoded-byte bounds are covered by **34/34** focused checks and **12/12** native integration checks. | Full-workbench startup, live-provider behavior, long-session resource use and the remaining OV-201/204 acceptance clauses. |
+| [Retrieval ownership and data boundaries](rea-retrieval-ownership.md) | Stale initialization cannot replace a newer project client; controlled owner tests pass and the final project-scale watcher regression passes at 100 and 10,000 files. | Actual processing destinations, semantic-search callers, incremental index invalidation, interrupted-index recovery and resource budgets. |
 | [Repository organization](../engineering/repository-layout.md) and [recovery tools](../../scripts/recovery/README.md) | Maintained code, reference code, guides and recovery tooling have documented locations. | Generated `source/` and reference `curs_source/` are not the durable customization entry points; clean independent assembly remains a product gate. |
 
 ### Which document owns each answer
@@ -126,6 +129,22 @@ verification evidence separately.
 | How do the percentages relate? | [Progress dashboard](../progress.md) separates feature acceptance, version-specific recovery and the Rust plan. |
 | Which behavior was actually tested or released? | Linked investigation reports and [release claims](../verification/release-claims.md#source-additions-after-preview6); source additions do not update the portable download. |
 | What will move to Rust? | [Component audit](../planning/rust/rust-component-audit.md) and [acceptance map](../planning/rust/rust-acceptance-map.md); the overlapping migration points are separate from this backlog. |
+
+### Current evidence register
+
+The following reports are the newest implementation and verification records
+behind the source-to-gap table. Each report keeps its own provider, platform,
+fixture and failure limitations; the source links identify recovered reference
+owners only and do not imply that the newer snapshot was ported wholesale.
+
+| Report | Acceptance stories | Source-index owner | Current boundary |
+| --- | --- | --- | --- |
+| [Transactional Agent review recovery](rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry) | OV-103 Partial | [Inline-diff service][source-inline-diff] · [Undo entry][source-undo-stack] | Cache rollback and initial-write retry are covered by source tests; physical I/O and in-flight termination remain open. |
+| [Native Agent timeout and retry](rea-agent-timeout-recovery.md#full-duration-native-follow-up) | OV-102/204 Partial | [AI service][source-ai] · [Agent host][source-agent-host] | Real saved-provider retry and full-duration header/body checks pass on Windows; malformed streams and broader providers remain open. |
+| [Live-provider multi-file editing](rea-agent-live-edit.md) | OV-103 Partial | [Agent execution entry][source-agent-exec] · [Inline-diff service][source-inline-diff] | Codex Easy Windows success path is verified; other providers, platforms and physical faults remain open. |
+| [Model-discovery resource ownership](../performance/model-discovery-resources.md) | OV-201/204 Partial | [AI service][source-ai] | Renderer-owned cancellation and bounded response handling pass; full-workbench and live-provider acceptance remain open. |
+| [Retrieval ownership and data boundaries](rea-retrieval-ownership.md) | OV-501 Unknown; OV-503/504 Planned | [Retrieval entry][source-retrieval] · [Retrieval worker][source-retrieval-worker] | Initialization ownership is corrected; actual destinations, indexing semantics and recovery are still unknown. |
+| [Control-plane HTTP](../performance/control-plane-http-resources.md), [STDIO](../performance/control-plane-stdio-resources.md) and [MCP lifecycle](../performance/control-plane-mcp-lifecycle.md) | OV-303 Partial; OV-1001/1003 Partial | [MCP service][source-mcp] · [Main entry][source-main] | Request/response bounds and cancellation are covered by loopback fixtures; OAuth, reconnect, multi-window and platform gates remain open. |
 
 ## Measured recovery coverage
 
