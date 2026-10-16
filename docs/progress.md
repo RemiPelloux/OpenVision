@@ -28,6 +28,8 @@ accounts, billing and cloud agents are excluded from this ledger.
 
 ## Critical-first delivery plan
 
+The Linux [provider failure matrix](recovery/rea-provider-failure-matrix.md) verifies certificate expiry/hostname, mid-stream, capability and restart cells, and fixes unfinished-stream automatic repeats. OV-102/204 stay Partial.
+
 The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and
 resumes cleanup without repeating completed steps. It advances P0 OV-103 within

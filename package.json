@@ -73,6 +73,7 @@
     "test:agent-relay": "node --test desktop/live-agent-relay.test.mjs",
     "test:provider-errors": "node --test desktop/provider-error-policy.test.mjs desktop/provider-error-body.test.mjs desktop/provider-error-ui.test.mjs desktop/provider-request-deadlines.test.mjs desktop/live-provider-probe.test.mjs",
     "verify:provider-errors": "node desktop/verify-provider-errors.mjs",
+    "verify:provider-matrix": "node desktop/verify-provider-failure-matrix.mjs",
     "verify:project": "node desktop/verify-project.mjs",
     "verify:agent": "node desktop/verify-agent.mjs",
     "verify:review-storage": "node desktop/verify-review-storage.mjs",

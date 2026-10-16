@@ -75,3 +75,20 @@ test('recovered desktop retry classifier never automatically repeats a manual-re
     assert.equal(decision.action, 'throw'); assert.equal(decision.error, error);
   }
 });
+
+// Two Agent producers exist: cursor-agent-exec (legacy topology) and
+// cursor-agent-host (gated). Only the exec bundle carries the provider error
+// boundary, so the host topology must stay unreachable in local mode.
+test('local mode keeps the Agent host topology off unless its bundle carries the provider error boundary', async () => {
+  const host = await readFile(new URL('../source/app/extensions/cursor-agent-host/dist/main.js', import.meta.url), 'utf8');
+  const exec = await readFile(new URL('../source/app/extensions/cursor-agent-exec/dist/main.js', import.meta.url), 'utf8');
+  assert.match(exec, /require\("\.\/openvision-provider-errors\.cjs"\)/);
+  const hostProtected = host.includes('require("./openvision-provider-errors.cjs")');
+  for (const variant of ['desktop', 'glass']) {
+    const text = await readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const gate = text.indexOf('checkFeatureGate("cursor_agent_host"');
+    assert.ok(gate > 0 && text.indexOf('checkFeatureGate("cursor_agent_host"', gate + 1) === -1, `${variant}: gate owner drifted`);
+    const guarded = /let n = !1;\s*if \(![\w$]+\.localMode\)\s*try \{\s*n = [\w$]+\.checkFeatureGate\("cursor_agent_host"/.test(text.slice(gate - 200, gate + 40));
+    assert.ok(guarded || hostProtected, `${variant}: Agent host topology reachable without the provider error boundary`);
+  }
+});
