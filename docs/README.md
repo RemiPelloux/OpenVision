@@ -46,6 +46,7 @@ filename-label input and the verification limits.
 | Check STDIO response bounds and measured overflow recovery | [Control-plane STDIO resource evidence](performance/control-plane-stdio-resources.md) |
 | Check discovery cancellation and the latest Windows startup gate | [Native discovery evidence and limits](performance/model-discovery-resources.md) |
 | Review what has actually passed | [Release claims and verification matrix](verification/release-claims.md) |
+| Check review cancellation, cleanup ownership and retry | [Resumable review removal and native evidence](recovery/rea-agent-review-removal.md) |
 | Compare current source changes with the portable download | [Source additions and remaining verification](verification/release-claims.md#source-additions-after-preview6) |
 | Understand the acceptance percentage | [42-story sprint ledger](planning/completion-sprints.md) |
 | Use C/C++ | [Pinned clangd setup](guides/cpp-support.md) |

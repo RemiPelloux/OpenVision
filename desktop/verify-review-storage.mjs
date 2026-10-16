@@ -11,6 +11,7 @@ import { fileHash } from './import-files.mjs';
 import { readableApp } from './recovered-source.mjs';
 import { agentReviewRecoveryOwner, agentReviewRecoveryEntry, preserveAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
 import { checkNativeReviewUndoFailure } from './verify-review-undo-stack.mjs';
+import { checkNativeReviewRemovalFailures } from './verify-review-removal.mjs';
 
 assert.equal(process.platform, 'win32', 'This overlay verifier currently covers Windows x64');
 const root = resolve(import.meta.dirname, '..');
@@ -18,6 +19,8 @@ const directory = await mkdtemp(join(root, 'logs/review-storage-verification-'))
 const originalOwner = process.argv.includes('--original-owner');
 const updatedOwner = process.argv.includes('--updated-owner');
 const undoStack = process.argv.includes('--undo-stack');
+const removalFailures = process.argv.includes('--removal-failures');
+assert.ok(!removalFailures || undoStack, 'Removal verification requires --undo-stack');
 assert.ok(!undoStack || !originalOwner, 'Undo-stack verification uses the prepared recovery owner');
 assert.ok(!updatedOwner || !originalOwner, 'Select either the original owner or the updated owner');
 const profile = join(directory, 'profile'), project = join(directory, 'project'), file = join(project, 'edit.js');
@@ -44,7 +47,7 @@ assert.equal(body.split(capture).length, 2, 'Expected one recovered creation und
 body = body.replace(capture, `globalThis.__openvisionCreatedReviewProbe = { service: this, element: u, id: r, key: l, initial: i };
             ${capture}`);
 source = source.slice(0, method.start) + body + source.slice(method.end);
-const settingsBridge = '  bridge.request = async (url, key) => {';
+const settingsBridge = '  bridge.request = ';
 assert.equal(source.split(settingsBridge).length, 2, 'Expected one provider-settings bridge');
 source = source.replace(settingsBridge, `  globalThis.__openvisionReviewModelBridge = bridge;\n${settingsBridge}`);
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, source]]));
@@ -58,6 +61,8 @@ if (undoStack) {
   result.scope = 'Native keyboard Undo/Redo through the real history service with an injected snapshot-service failure; controlled inference, not physical I/O or live inference.';
   result.identity.undoStackVerifierHash = await fileHash(join(root, 'desktop/verify-review-undo-stack.mjs'));
 }
+if (removalFailures) result.identity.removalVerifierHash = await fileHash(join(root, 'desktop/verify-review-removal.mjs'));
+if (removalFailures) result.scope = 'Native keyboard Undo/Redo with injected snapshot, cancellation and handler-disposal failures, including model-overlap cleanup before the review callback. Real filesystem/SQLite and controlled HTTP inference; not physical I/O or live inference.';
 result.identity.recoveryCustomizationHash = await fileHash(join(root, 'desktop/agent-review-recovery-customization.mjs'));
 result.identity.undoCustomizationHash = await fileHash(join(root, 'desktop/agent-review-undo-customization.mjs'));
 const requests = [];
@@ -203,6 +208,7 @@ try {
   assert.deepEqual(requests, [{ model: 'fixture-review', authorized: true }]);
   if (undoStack) await checkNativeReviewUndoFailure({ page, result });
   else await checkFailedWrite();
+  if (removalFailures) await checkNativeReviewRemovalFailures({ page, result });
   if (!originalOwner && !undoStack) {
     await checkRestoreFailures(); await checkCleanupFailure();
     await page.getByText('Reject', { exact: true }).filter({ visible: true }).click();
@@ -216,7 +222,8 @@ try {
   assert.equal(requests.length, 1, 'Review recovery must not request more inference');
   assert.deepEqual(result.errors, []);
   const expectedFailures = ['snapshot write failure', ...(undoStack ? ['snapshot read failure'] :
-    !originalOwner ? ['snapshot read failure', 'cleanup failure'] : [])];
+    !originalOwner ? ['snapshot read failure', 'cleanup failure'] : []),
+    ...(removalFailures ? ['cancellation failure', 'handler disposal failure'] : [])];
   assert.equal(result.reviewErrors.length, expectedFailures.length);
   for (const failure of expectedFailures)
     assert.equal(result.reviewErrors.filter(message => message.includes(`OpenVision injected review ${failure}`)).length, 1);

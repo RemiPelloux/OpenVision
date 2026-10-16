@@ -33,16 +33,9 @@ function markReviewFailures(source, name) {
                     if (!openvisionRestored) { ${retry} }`);
   const removalError = name === 'remove' ? 'm' : 'h';
   const removalMessage = name === 'remove' ? 'Error in redo operation:' : 'Error retrieving undo data:';
-  const removalStart = name === 'remove' ? 'const m = this.diffHandlers.get(e);' : 'const h = this.diffHandlers.get(r);';
-  source = replaceOnce(source, `try {\n                    ${removalStart}`,
-    `let openvisionRemovalStarted = false;
-                  try {
-                    ${removalStart}`);
-  source = replaceOnce(source, `this.cancelInUndo(${id}),`,
-    `(openvisionRemovalStarted = true), this.cancelInUndo(${id}),`);
   source = replaceOnce(source, `console.error("[inlineDiff] ${removalMessage}", ${removalError});`,
     `console.error("[inlineDiff] ${removalMessage}", ${removalError});
-                    if (!openvisionRemovalStarted) { ${retry} }`);
+                    if (this.diffHandlers.has(${id})) { ${retry} }`);
   if (name === 'addDiff') source = replaceOnce(source,
     ': console.error("[inlineDiff] No stored data found for create diff redo");',
     ': (() => { throw new Error("[inlineDiff] No stored data found for create diff redo"); })();');

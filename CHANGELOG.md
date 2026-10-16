@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Keep edit-review Undo/Redo retryable when cancellation or handler cleanup
+  fails. Retain the handler until cleanup finishes and resume incomplete cleanup
+  without repeating completed partial-history/decorations work. See
+  [recovered ownership, native controls and remaining gates](docs/recovery/rea-agent-review-removal.md).
+  This source follow-up is not included in the preview.7 portable download.
+
 ## 0.2.0-preview.7 - 2026-10-16
 
 - Consolidate the recent local AI, account, project and recovery changes into a

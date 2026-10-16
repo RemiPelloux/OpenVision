@@ -47,6 +47,13 @@ failure/history cases still prevent story promotion; **6/42 (14.29%)** is unchan
 
 ## Critical-first backlog and ETA
 
+The [review-removal follow-up](../recovery/rea-agent-review-removal.md) fixes
+cancellation failure advancing history and handler cleanup losing its owner.
+Cleanup resumes at its failed step across model-overlap and review callbacks;
+71 focused checks pass. This remains within OV-103's existing 8 points. Physical
+I/O, outstanding write/tool interruption and remaining menu/group/post-commit
+failure combinations retain priority. The preview.7 payload is unchanged.
+
 The [native review Undo/Redo follow-up](../recovery/rea-agent-undo-retry.md) closes
 the reproduced snapshot-failure history-position and missing-guidance case.
 Keyboard write/read failure-and-retry checks pass on the rebuilt source;
@@ -136,7 +143,7 @@ and detailed evidence links.
 
 | Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
 | ---: | --- | --- | --- | ---: |
-| 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Physical I/O and interruption during active writes/tools, remaining edit/undo combinations and live-provider editing; source-level cache rollback and initial-write retry are covered | 8 |
+| 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Physical I/O and interruption during active writes/tools, remaining menu/group/post-commit and live-provider cases; [cancellation and resumable cleanup](../recovery/rea-agent-review-removal.md), cache rollback and initial-write retry have scoped coverage | 8 |
 | 2 | OV-102 · Chat, Stop and retry | Remaining error-to-history ownership across both Agent paths | Complete interruption/history matrix after passing full-duration native header/body release and explicit live retries | 8 |
 | 3 | OV-204 · Provider failures | Capability rejection and stream-error propagation beyond established cases | Certificate expiry/hostname, unsupported actual inputs, remaining malformed streams and secret-safe recovery | 5 |
 | 4 | OV-302 · Local configuration isolation | Remaining global path producers, classifiers, watchers and consumers | Complete additive migration with backups; two profiles and another installation; preserve explicit project compatibility | 8 |

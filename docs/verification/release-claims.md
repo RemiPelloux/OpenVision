@@ -39,6 +39,16 @@ the current payload and repeated native checks are covered in
 [preview.5 evidence](portable-preview5.md).
 No independent rebuild of every native component is claimed.
 
+## Source additions after preview.7
+
+[Resumable review removal](../recovery/rea-agent-review-removal.md) fixes
+cancellation failures advancing Undo/Redo history and handler cleanup losing
+its service owner. Source tests and scoped native keyboard failure/retry checks
+pass. Model-overlap and review callbacks share cleanup progress. This change
+requires a source rebuild and is not in the preview.7 release ZIP or tracked
+portable payload. Physical I/O, outstanding write/tool interruption and remaining
+menu/group/post-commit failure combinations remain unverified. OV-103 stays Partial.
+
 ## Source additions after preview.6
 
 Preview.7 now packages the runtime additions described below. The original

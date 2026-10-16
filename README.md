@@ -61,6 +61,10 @@ that count is separate from verified feature coverage.
 | MCP tools | Connect HTTP/STDIO servers, approve tool calls, cancel and reconnect | [Cleanup/session recovery](docs/recovery/rea-mcp-cleanup.md) and [window/user-data ownership](docs/recovery/rea-mcp-ownership.md) checks; broader profile/configuration ownership remains open |
 | Approved memories | Review AI suggestions and legacy memories before saving project rules | [Memory guide](docs/guides/project-memories.md) |
 
+The latest [source follow-up](docs/recovery/rea-agent-review-removal.md) keeps edit
+review retryable after cancellation or cleanup failure. It requires a source
+rebuild; the preview.7 portable download retains its published contents.
+
 ## Get started
 
 **Download:** get **OpenVision-0.2.0-preview.7-win32-x64.zip** from

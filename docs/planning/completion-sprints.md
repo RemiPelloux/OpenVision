@@ -12,6 +12,14 @@ The [feature gap audit](../recovery/feature-gap-audit.md) is the recovery baseli
 
 ## Current baseline
 
+16 October source follow-up: [resumable review removal](../recovery/rea-agent-review-removal.md)
+fixes premature history advancement after cancellation failure and retains
+handlers through failed cleanup. The model-overlap and review callback share
+cleanup progress, avoiding replay of completed steps. The focused suite passes
+71 checks. This is post-preview.7 source work; physical faults, active writes/tools
+and remaining menu/group/post-commit failures remain gates. OV-103 stays Partial;
+the ledger and provisional points are unchanged.
+
 16 October native Undo/Redo follow-up: [retryable history ownership](../recovery/rea-agent-undo-retry.md)
 reproduces an injected write failure advancing the editor's history without
 guidance. The correction preserves the failed entry's position, resumes

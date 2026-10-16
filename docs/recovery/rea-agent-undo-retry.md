@@ -109,9 +109,13 @@ These suites overlap and are not added into the acceptance percentage.
 
 OV-103 remains **Partial**, at its existing **8 provisional points** and P0 rank.
 The [ledger](../planning/completion-sprints.md) remains **6/42 Verified (14.29%)**.
+The [resumable-removal follow-up](rea-agent-review-removal.md) now covers
+cancellation and handler-disposal failures, including the earlier model-overlap
+cleanup path, retained ownership and native keyboard retry. It is source work
+after preview.7; the portable payload is unchanged.
 Next gates include physical I/O failures, interruption during active writes/tools,
-broader live editing, menu/group failure combinations and partially completed
-removal failures. Consolidated failure progress and failed model-reference
+broader live editing and remaining menu/group/post-commit cleanup failures.
+Consolidated failure progress and failed model-reference
 release have producer coverage; this native check does not establish them.
 The [chat timeout dependency](rea-agent-timeout-recovery.md) has separate live
 and controlled evidence. No portable download or platform claim is updated.
