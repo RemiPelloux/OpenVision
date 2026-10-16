@@ -93,7 +93,9 @@ those checks after the fix. The final run additionally proves restored rejection
 
 ## Remaining acceptance
 
-OV-103 remains Partial. Full user-facing Undo-stack failure handling, physical
+OV-103 remains Partial. The [native keyboard Undo/Redo follow-up](rea-agent-undo-retry.md)
+passes injected snapshot-write/read failures, retry guidance and history position
+recovery. Remaining menu/group combinations, physical
 storage faults, termination during an outstanding write/tool operation,
 additional edit types and the OV-102 live-provider dependency remain open.
 Mounted snapshot-service failures are checked below. Abrupt exit after visible pending review
@@ -162,11 +164,14 @@ requires the original bytes in both cases; review retention is checked
 independently. Intermediate `BKztcB` and `S7pdhi` results precede the service
 reference correction; they are not credited as final-build checks.
 
-These checks invoke the mounted review element directly. Production
+These historical checks invoke the mounted review element directly. Production
 `UndoRedoService` moves history position before invoking its callback, and the
 recovered callback catches storage errors. The complete keyboard/menu failure
 path, guidance and subsequent stack behavior remain a gate; preserved recovery
-data alone does not prove that workflow. Failed model-reference disposal is
+data alone does not prove that workflow. The subsequent
+[native keyboard follow-up](rea-agent-undo-retry.md) reproduces and fixes the
+snapshot-failure stack/guidance case without claiming the complete failure matrix.
+Failed model-reference disposal is
 injected only in producer tests, not in these native runs. OV-103 stays Partial
 and the accepted **6/42 Verified (14.29%)** score is unchanged.
 

@@ -9,12 +9,17 @@ import { verificationSettings } from './verification-profile.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
 import { readableApp } from './recovered-source.mjs';
-import { agentReviewRecoveryOwner, agentReviewRecoveryEntry } from './agent-review-recovery-customization.mjs';
+import { agentReviewRecoveryOwner, agentReviewRecoveryEntry, preserveAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
+import { checkNativeReviewUndoFailure } from './verify-review-undo-stack.mjs';
 
 assert.equal(process.platform, 'win32', 'This overlay verifier currently covers Windows x64');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/review-storage-verification-'));
 const originalOwner = process.argv.includes('--original-owner');
+const updatedOwner = process.argv.includes('--updated-owner');
+const undoStack = process.argv.includes('--undo-stack');
+assert.ok(!undoStack || !originalOwner, 'Undo-stack verification uses the prepared recovery owner');
+assert.ok(!updatedOwner || !originalOwner, 'Select either the original owner or the updated owner');
 const profile = join(directory, 'profile'), project = join(directory, 'project'), file = join(project, 'edit.js');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
@@ -24,6 +29,7 @@ await writeFile(file, before);
 const relative = 'resources/app/' + agentReviewRecoveryEntry;
 const runtimePath = join(root, 'electron-host', relative), runtimeHash = await fileHash(runtimePath);
 let source = await readFile(runtimePath, 'utf8');
+if (updatedOwner) source = preserveAgentReviewRecovery(source);
 let method = agentReviewRecoveryOwner(source).body.body.find(node => node.key?.name === 'addDiff');
 assert.ok(source.slice(method.start, method.end).includes('OpenVision created review recovery ownership v1'), 'Build the corrected runtime first');
 if (originalOwner) {
@@ -43,11 +49,17 @@ assert.equal(source.split(settingsBridge).length, 2, 'Expected one provider-sett
 source = source.replace(settingsBridge, `  globalThis.__openvisionReviewModelBridge = bridge;\n${settingsBridge}`);
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, source]]));
 await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
-const result = { directory, originalOwner, success: false, checks: {}, errors: [], hostExits: [],
+const result = { directory, originalOwner, updatedOwner, success: false, checks: {}, errors: [], hostExits: [],
   scope: 'Real Windows Quick Edit, mounted review callbacks, model service and SQLite storage in an owned overlay. Snapshot write/read/cleanup failures are injected at service calls; this is not physical I/O failure, live inference or the full undo-service error path.',
   identity: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     platform: process.platform, arch: process.arch, node: process.version, runtimeHash, overlay: overlay.records,
     verifierHash: await fileHash(join(root, 'desktop/verify-review-storage.mjs')) } };
+if (undoStack) {
+  result.scope = 'Native keyboard Undo/Redo through the real history service with an injected snapshot-service failure; controlled inference, not physical I/O or live inference.';
+  result.identity.undoStackVerifierHash = await fileHash(join(root, 'desktop/verify-review-undo-stack.mjs'));
+}
+result.identity.recoveryCustomizationHash = await fileHash(join(root, 'desktop/agent-review-recovery-customization.mjs'));
+result.identity.undoCustomizationHash = await fileHash(join(root, 'desktop/agent-review-undo-customization.mjs'));
 const requests = [];
 const server = createServer(async (request, response) => {
   response.setHeader('content-type', 'application/json');
@@ -189,11 +201,13 @@ try {
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
   await enterWorkspace(page); await page.waitForTimeout(8000); await openEdit();
   assert.deepEqual(requests, [{ model: 'fixture-review', authorized: true }]);
-  await checkFailedWrite();
-  if (!originalOwner) {
+  if (undoStack) await checkNativeReviewUndoFailure({ page, result });
+  else await checkFailedWrite();
+  if (!originalOwner && !undoStack) {
     await checkRestoreFailures(); await checkCleanupFailure();
     await page.getByText('Reject', { exact: true }).filter({ visible: true }).click();
   }
+  if (undoStack) await page.getByText('Reject', { exact: true }).filter({ visible: true }).click();
   await page.locator('.editor-instance .monaco-editor .inputarea').filter({ visible: true }).first().focus();
   await page.keyboard.press('ControlOrMeta+s'); await page.waitForTimeout(1000);
   // Undo restores the original text even when the original owner loses review.
@@ -201,7 +215,8 @@ try {
   result.checks.originalTextSaved = true;
   assert.equal(requests.length, 1, 'Review recovery must not request more inference');
   assert.deepEqual(result.errors, []);
-  const expectedFailures = ['snapshot write failure', ...(!originalOwner ? ['snapshot read failure', 'cleanup failure'] : [])];
+  const expectedFailures = ['snapshot write failure', ...(undoStack ? ['snapshot read failure'] :
+    !originalOwner ? ['snapshot read failure', 'cleanup failure'] : [])];
   assert.equal(result.reviewErrors.length, expectedFailures.length);
   for (const failure of expectedFailures)
     assert.equal(result.reviewErrors.filter(message => message.includes(`OpenVision injected review ${failure}`)).length, 1);

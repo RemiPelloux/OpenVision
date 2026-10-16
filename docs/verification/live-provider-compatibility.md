@@ -316,6 +316,14 @@ are redacted. No reasoning text or full request transcripts are persisted.
 
 ## Evidence and limitations
 
+16 October [full-duration native timeout follow-up](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up):
+`live-agent-verification-f9YLJ1` passes body inactivity then real GPT-6.1 Sol
+Read/answer, and `live-agent-verification-uWlyQu` passes header timeout then real
+DeepSeek V4 Flash Read/answer (reported model `deepseek-flash`). Each initial
+stall is controlled locally, each explicit native retry makes two successful
+HTTP 200 inference requests, and both hosts exit 0. No upstream timeout is
+simulated or claimed. These scoped results do not promote a whole story.
+
 Local records under ignored `logs/`:
 
 | Run suffix | Evidence |

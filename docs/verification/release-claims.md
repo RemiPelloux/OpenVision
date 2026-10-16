@@ -118,6 +118,22 @@ passes on the rebuilt source with 29 authenticated fixture requests and five
 clean application exits. It verifies the listed edit/restart/command workflows,
 not live inference or physical storage-fault recovery.
 
+The subsequent [review Undo/Redo correction](../recovery/rea-agent-undo-retry.md)
+passes native editor shortcuts under injected snapshot-write/read failures,
+preserves retryable history and shows recovery guidance. Its 56-check suite
+includes consolidated-operation progress and the recovered resource-history
+boundary. Final Windows keyboard verification uses one authenticated controlled
+inference and exits 0; physical faults, active-write interruption, menu/group
+combinations and broader live editing remain open. Source only; preview.6 and
+the 6/42 acceptance count are unchanged.
+
+The [full-duration native timeout follow-up](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
+passes the unchanged header/body deadlines and explicit retry into real saved
+GPT/DeepSeek Read/answer. Each initial stall is local and never sent upstream;
+each retry uses two successful HTTP 200 inference requests. Runtime identities
+differ only as documented, and both hosts exit 0. This is scoped transport and
+live-continuation evidence, not a complete Agent/provider failure matrix.
+
 ## Feature and fixture matrix
 
 | Accepted stories | Current observed scope | Required evidence still missing |

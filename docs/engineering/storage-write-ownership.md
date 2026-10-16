@@ -106,6 +106,10 @@ npm run verify:agent -- --review-recovery
 The review verifier uses a controlled local model and injected snapshot-service
 failures. Its native SQLite/model/handler execution is distinct from physical
 I/O failures, user-facing Undo-stack error handling and live provider inference.
+The subsequent [native keyboard follow-up](../recovery/rea-agent-undo-retry.md)
+adds failed write/read history-position checks and retry guidance on a newer
+source build; it does not replace these historical run identities or establish
+the full storage-failure matrix.
 The [review report](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
 records that scope and the separate Agent restart regression.
 

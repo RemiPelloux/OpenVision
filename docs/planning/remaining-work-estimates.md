@@ -5,6 +5,9 @@ Updated 16 October 2026 against the acceptance ledger,
 [source-to-gap map](../recovery/feature-gap-audit.md#source-index-to-implementation-gaps),
 [build-integrity correction](../engineering/runtime-build-integrity.md) and
 [Agent recovery evidence](../recovery/rea-agent-review-recovery.md).
+The [native keyboard follow-up](../recovery/rea-agent-undo-retry.md) closes the
+scoped snapshot-failure history/guidance defect within OV-103's existing points;
+menu/group failures, physical faults and active-write/tool interruption remain.
 The [critical-first roadmap](roadmap.md#critical-first-backlog-and-eta) owns the
 ordered story list, estimates, dependencies and acceptance gates.
 
@@ -35,8 +38,10 @@ bounded-resource evidence.
 
 **Next: finish Agent editing/recovery and its chat transport dependency.** Close
 the [remaining review gates](../recovery/rea-agent-review-recovery.md#remaining-acceptance),
-[full-duration native timeout checks](../recovery/rea-agent-timeout-recovery.md)
-and the remaining [storage-failure matrix](../engineering/storage-write-ownership.md#verification).
+other chat interruption/history and provider-error cases, and the remaining
+[storage-failure matrix](../engineering/storage-write-ownership.md#verification).
+[Full-duration native header/body timeout and explicit live retry](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
+now pass; those subcases no longer await verification.
 Then follow P0/P1 in the roadmap, including configuration durability, MCP
 ownership and measured long-session resources. The Windows payload needs a
 refresh after its declared packaging checks pass.

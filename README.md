@@ -208,6 +208,8 @@ distribution/platform completion, then broader modes. Estimates describe scope;
 release readiness requires the named checks. Latest source work includes
 [edit-review recovery](docs/recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
 and [storage ownership for discovered models](docs/engineering/storage-write-ownership.md).
+[Native Undo/Redo failure recovery](docs/recovery/rea-agent-undo-retry.md) now
+retains retryable history entries and shows guidance after snapshot-service failures.
 These fixes and the latest performance changes have not updated the preview.6
 download; the reports distinguish executed checks from remaining gates.
 

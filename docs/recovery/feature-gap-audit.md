@@ -36,8 +36,9 @@ The new [native Agent timeout report](rea-agent-timeout-recovery.md) covers the
 OV-102 transport boundary: unchanged five-minute header and ten-minute body
 inactivity policies, selected-proxy dispatcher ownership, controlled local
 stall cleanup and explicit retry into real saved-provider inference. Focused
-transport tests pass; post-fix full-duration native runs remain pending, so OV-102
-and OV-204 stay Partial.
+transport tests and post-fix full-duration native header/body checks pass.
+Each native controlled stall is followed by explicit retry into real saved-provider
+Read/answer. Remaining failure/history cases keep OV-102 and OV-204 Partial.
 
 Execution planning now lives in the [completion sprint ledger](../planning/completion-sprints.md).
 The [autocomplete follow-up](rea-autocomplete-contract.md) documents the next REA
@@ -82,16 +83,18 @@ introducing another completion score.
 
 ## Latest documentation and source reconciliation
 
-Reconciled against source commit `23683191` and the versioned publication
+Reconciled against source parent `37f159e4`, the linked follow-up changes and the versioned publication
 manifest on **16 October 2026**. This refresh changes navigation and the gap
-description; it adds no implementation or native verification evidence.
+description. The linked Undo/Redo and timeout reports identify the subsequent
+implementation and native verification evidence separately.
 
 | Recent work | Gap now closed within its stated scope | What remains open |
 | --- | --- | --- |
 | [Selected-bundle recovery](javascript-bundles.md) and [source index](../../curs_source/modules/3.24.18/README.md) | Every selected input has a structural result: **237/237**, including the documented derived-input retry. | Original types/build inputs, executable module equivalence and independent builds; selected extraction coverage is not product completion. |
 | [Storage ownership](../engineering/storage-write-ownership.md) | The newer reference's pending/in-flight invariant is ported into the prepared runtime; scoped native discovery and Quick Edit regressions pass. | Cross-window configuration races, close during IPC, physical faults and complete Undo-stack failure behavior. |
-| [Created-review recovery](rea-agent-review-recovery.md#created-review-snapshot-ownership) and [final-build regression](rea-agent-review-recovery.md#final-source-build-regression) | Snapshot-service failure recovery and normal-restart review workflows pass their controlled native checks; failed reference release has producer coverage. | Keyboard/menu Undo failure, physical faults, active-write/tool interruption and broader live editing. Older abrupt-exit checks retain their original runtime scope. |
-| [Timeout transport correction](rea-agent-timeout-recovery.md) | Focused real-socket tests verify deadline ownership through the selected proxy/certificate dispatcher. | Post-fix full-duration native header/body timeout and saved-provider retry checks; OV-102/204 remain Partial. |
+| [Created-review recovery](rea-agent-review-recovery.md#created-review-snapshot-ownership) and [final-build regression](rea-agent-undo-retry.md#native-and-integration-verification) | Snapshot-service failure recovery and normal-restart review workflows pass their controlled native checks; failed reference release has producer coverage. | Remaining menu/group failures, physical faults, active-write/tool interruption and broader live editing. Older abrupt-exit checks retain their original runtime scope. |
+| [Native keyboard Undo/Redo](rea-agent-undo-retry.md) | Failed snapshot write/read operations preserve the correct history position and show retry guidance; keyboard retries pass on the rebuilt source. | Remaining menu/group and partial-removal failures, physical faults, active-write/tool interruption and broader live editing. Consolidated failure progress has producer coverage. |
+| [Timeout transport correction](rea-agent-timeout-recovery.md#full-duration-native-follow-up) | Focused real-socket and unchanged-duration native header/body checks pass; explicit retries complete real GPT/DeepSeek Read/answer. | Other interruption/history/error cases, certificate/input rejection and malformed streams; OV-102/204 remain Partial. |
 | [Repository organization](../engineering/repository-layout.md) and [recovery tools](../../scripts/recovery/README.md) | Maintained code, reference code, guides and recovery tooling have documented locations. | Generated `source/` and reference `curs_source/` are not the durable customization entry points; clean independent assembly remains a product gate. |
 
 ### Which document owns each answer
@@ -169,15 +172,17 @@ unmapped feature is not evidence of a missing bundle; all selected inputs are
 already indexed. Storage is a concrete example: the newer recovered owner
 supplies a pending/in-flight write invariant now ported to the older runtime,
 and [scoped native regressions](../engineering/storage-write-ownership.md#verification)
-now pass; physical faults and full Undo-stack failure handling remain open.
+now pass. [Native keyboard Undo/Redo](rea-agent-undo-retry.md) also passes scoped
+snapshot failures and retry guidance; physical faults and remaining menu/group
+failure combinations stay open.
 That distinction applies even though the narrower provider
 configuration story OV-201 already has Verified evidence.
 
 | Gap / story | Published reference owner | Maintained OpenVision implementation | Evidence and remaining gate |
 | --- | --- | --- | --- |
-| Chat, Stop and retries · OV-102/204 | [AI service][source-ai] · [Agent host entry][source-agent-host] | [Retry history customization](../../desktop/agent-retry-history-customization.mjs), [request deadlines](../../desktop/provider-request-deadlines.cjs), [proxy boundary](../../desktop/provider-proxy-deadlines.mjs) | [Live provider matrix](../verification/live-provider-compatibility.md), [retry history](rea-agent-retry-history.md), [timeout report](rea-agent-timeout-recovery.md). Post-fix full-duration native timeout recovery and remaining failure classes stay open. |
+| Chat, Stop and retries · OV-102/204 | [AI service][source-ai] · [Agent host entry][source-agent-host] | [Retry history customization](../../desktop/agent-retry-history-customization.mjs), [request deadlines](../../desktop/provider-request-deadlines.cjs), [proxy boundary](../../desktop/provider-proxy-deadlines.mjs) | [Live provider matrix](../verification/live-provider-compatibility.md), [retry history](rea-agent-retry-history.md), [native timeout/retry](rea-agent-timeout-recovery.md#full-duration-native-follow-up). Full-duration header/body checks pass; remaining interruption/history, certificate/input and malformed-stream cases stay open. |
 | Model/configuration storage · OV-201/302 | [Storage cache][source-storage] · [IPC writer entry][source-storage-ipc] | [Write ownership customization](../../desktop/storage-write-ownership.mjs), [build integration](../../desktop/custom-models.mjs) | [Scoped native regressions](../engineering/storage-write-ownership.md). Cross-window concurrent configuration, close during IPC and physical-failure gates remain; acknowledgment is not a durability claim. |
-| Agent editing and recovery · OV-103 | [Inline-diff service][source-inline-diff] · [Agent execution entry][source-agent-exec] | [Edit review](../../desktop/agent-review-customization.mjs), [review recovery](../../desktop/agent-review-recovery-customization.mjs) | [Edit/undo ownership](rea-agent-edit-history.md), [snapshot recovery/control](rea-agent-review-recovery.md). User-facing Undo-stack failures, physical faults, active-write/tool interruption and broader live editing remain. Failed-reference release has producer-test coverage. |
+| Agent editing and recovery · OV-103 | [Inline-diff service][source-inline-diff] · [Undo service entry][source-undo-stack] · [Agent execution entry][source-agent-exec] | [Edit review](../../desktop/agent-review-customization.mjs), [snapshot recovery](../../desktop/agent-review-recovery-customization.mjs), [retryable history](../../desktop/agent-review-undo-customization.mjs) | [Edit ownership](rea-agent-edit-history.md), [snapshot recovery](rea-agent-review-recovery.md), [native keyboard retry](rea-agent-undo-retry.md). Menu/group and partial-removal failures, physical faults, active-write/tool interruption and broader live editing remain. Failed-reference release has producer coverage. |
 | MCP lifecycle · OV-303/304 | [MCP service][source-mcp] | [Desktop cleanup](../../desktop/mcp-lifecycle-cleanup-customization.mjs), [control-plane owner](../../src/mcp.mjs) | [Native ownership](rea-mcp-ownership.md), [failed-close recovery](rea-mcp-cleanup.md), [control-plane lifecycle](../performance/control-plane-mcp-lifecycle.md). Named profiles, simultaneous changes, cross-window failed cleanup and authenticated MCP remain. |
 | Retrieval and indexing · OV-501–504 | [Retrieval entry][source-retrieval] · [retrieval worker][source-retrieval-worker] | [Search lifecycle guard](../../desktop/retrieval-lifecycle-customization.mjs) | [Partial data-flow map](rea-retrieval-ownership.md). Actual processing destinations, native/server contracts, retrieval quality and incremental index counters remain unverified. |
 | Context and RAM · OV-1001–1003 | [Request-context executor][source-context] | [Context customization](../../desktop/context-customization.mjs), [catalog/stream runtime](../../desktop/agent-runtime.cjs) | [Measurements](../performance/performance.md), [native baseline](../performance/native-performance-baseline.md). Equivalent token/request workloads, long sessions, idle release and UI/filesystem budgets remain. |
@@ -196,6 +201,7 @@ configuration story OV-201 already has Verified evidence.
 [source-main]: ../../curs_source/modules/3.24.18/208e7b1ba65e410e50a6ddc167ffe358b469aa6079c2b6a7eb6937682771871d-768b05080f06/entry.js
 [source-storage]: ../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/storage.js
 [source-storage-ipc]: ../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/entry.js
+[source-undo-stack]: ../../curs_source/modules/3.24.18/ed6922a7a86c8c448a46aa39af0c931580da162770fe406a0d41737290e637d9-e9acad71989a/entry.js
 
 ## Feature-by-feature gaps
 
@@ -215,8 +221,8 @@ separate source additions from the preview.6 portable download.
 | Custom URL/key/model discovery · OV-201 Verified | [Native provider lifecycle](../engineering/provider-selection-lifecycle.md) covers duplicate wire IDs, manual names, key replacement, restart and zero silent fallback against loopback fixtures. | Live capability support belongs to the [provider matrix](../verification/live-provider-compatibility.md), OV-203/204 and workflow stories; discovery is not inference. |
 | Combined model selector · OV-202 Verified | [Native scale and interaction evidence](../performance/model-picker-scale.md) covers grouping, search, keyboard/focus/accessibility and 10,000 entries with separate Agent/settings bounds. | Continued UI performance belongs to OV-1002; new provider/account rows require their own integration checks. |
 | Per-model/subagent reasoning · OV-203/104 Partial | [Live provider report](../verification/live-provider-compatibility.md) separates accepted GPT/DeepSeek/Grok requests and scoped subagent evidence from controlled capability tests. | Every advertised effort must pass or be labeled unverified; alternate Task, child retry/resume and capability propagation remain. |
-| AI chat · OV-102 Partial | [Real GPT/DeepSeek/Grok Stop, restart and fork history](../verification/live-provider-compatibility.md), [DeepSeek authentication retry](rea-agent-retry-history.md) and [timeout ownership tests](rea-agent-timeout-recovery.md) have distinct evidence scopes. | Post-fix full-duration native header/body timeout recovery and remaining interruption/error/history cases. Stop proves client transport cancellation, not stopped upstream billing. |
-| Agent/edit/Quick Edit · OV-103 Partial | [Native edit/review/undo](rea-agent-edit-history.md), [restart and abrupt-exit recovery](rea-agent-review-recovery.md) and [Quick Edit](rea-inline-edit.md) pass scoped controlled-provider workflows. Mounted created-review callbacks preserve recovery across injected snapshot-service failures; the original-owner control reproduces review loss. | Complete keyboard/menu Undo-stack failure behavior, physical I/O faults, active-write/tool interruption, remaining edit/undo combinations and broad live editing stay open. |
+| AI chat · OV-102 Partial | [Real GPT/DeepSeek/Grok Stop, restart and fork history](../verification/live-provider-compatibility.md), [DeepSeek authentication retry](rea-agent-retry-history.md) and [post-fix native header/body timeout recovery](rea-agent-timeout-recovery.md#full-duration-native-follow-up) have distinct evidence scopes. Controlled timeout followed by real GPT/DeepSeek Read/answer passes. | Remaining interruption/error/history cases and the provider-failure matrix. Stop proves client transport cancellation, not stopped upstream billing. |
+| Agent/edit/Quick Edit · OV-103 Partial | [Native edit/review/undo](rea-agent-edit-history.md), [restart/abrupt-exit recovery](rea-agent-review-recovery.md), [Quick Edit](rea-inline-edit.md) and [keyboard failure/retry](rea-agent-undo-retry.md) have scoped controlled-provider evidence. Keyboard snapshot-write/read failures now preserve history position and show guidance. | Remaining menu/group and partially completed removal failures, physical I/O faults, active-write/tool interruption, other edit/undo combinations and broad live editing stay open. |
 | AI Tab autocomplete · OV-105/601 Verified; OV-602/603 Partial | [Recovered contract](rea-autocomplete-contract.md) and [custom Chat Completions adapter](rea-custom-autocomplete.md) cover native accept/partial accept/undo, stale cancellation and a 13-case failure matrix. Separate live GPT/DeepSeek/Grok probes complete one expression each. | Representative native live-provider, multi-language/project quality, broader editing and latency/platform budgets. |
 | Next-edit prediction · OV-604 Planned | [Autocomplete implementation](rea-custom-autocomplete.md) supplies insertions; recovered prediction messages do not establish a working predictive backend. | Explicit supported prediction contract/backend, navigation/range freshness and measured quality/latency. |
 | Codebase retrieval/indexing · OV-501 Unknown; OV-502–504 Planned | [Retrieval ownership report](rea-retrieval-ownership.md) fixes stale initialization and maps JS/native/server boundaries with partial static evidence. | Establish actual data destinations before owned retrieval; implement/validate ranking, incremental invalidation, ignores, pause/cancel, recovery and resource bounds. |
@@ -349,7 +355,7 @@ inference, prove extracted modules runnable, or promote any acceptance story.
 
 Refresh verification on **16 October 2026** passed: **30,111** current published
 text files and **9,354** historical native export files matched their manifests;
-all **12** source references in the map above matched recorded output hashes.
+all **13** source references in the map above matched recorded output hashes.
 The feature-status command confirmed **6 Verified / 22 Partial / 12 Planned /
 2 Unknown**, and the documentation check reported no missing paths or anchors.
 

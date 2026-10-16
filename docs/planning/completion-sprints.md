@@ -12,6 +12,15 @@ The [feature gap audit](../recovery/feature-gap-audit.md) is the recovery baseli
 
 ## Current baseline
 
+16 October native Undo/Redo follow-up: [retryable history ownership](../recovery/rea-agent-undo-retry.md)
+reproduces an injected write failure advancing the editor's history without
+guidance. The correction preserves the failed entry's position, resumes
+consolidated callbacks and shows retry guidance. Final Windows keyboard
+write/read failure-and-retry checks pass with one controlled inference and a
+clean host exit; 56 focused checks pass. Physical faults, active-write/tool
+interruption, menu/group combinations and broader live editing remain gates.
+OV-103 retains its existing status/points; **6/42 Verified (14.29%)** is unchanged.
+
 16 October created-review follow-up: [snapshot ownership](../recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
 corrects Undo Create Diff removing the live review after a failed snapshot write
 and Redo deleting recovery after a failed restore. Producer regressions execute
@@ -51,9 +60,10 @@ This is continued P0 OV-103 work; the acceptance count remains **6/42 Verified**
 16 October timeout follow-up: [native Agent timeout and retry recovery](../recovery/rea-agent-timeout-recovery.md)
 fixes the producing transport boundary where proxy/certificate selection replaced
 the application's inactivity policy. The source tests pass with real sockets and
-the native verifier now distinguishes a controlled local stall from a real
-saved-provider retry. Full-duration post-fix native runs and the remaining Agent
-failure matrix are still open; OV-102 and OV-204 remain Partial and the ledger
+the native verifier distinguishes a controlled local stall from a real
+saved-provider retry. The [full-duration post-fix native runs](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
+now pass for header/body deadlines with live GPT/DeepSeek Read/answer continuations.
+The remaining Agent failure matrix is still open; OV-102 and OV-204 remain Partial and the ledger
 stays **6/42 Verified (14.29%)**.
 
 15 October Agent review follow-up: [edit-history ownership](../recovery/rea-agent-edit-history.md)

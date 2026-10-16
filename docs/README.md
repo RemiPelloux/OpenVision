@@ -62,6 +62,7 @@ filename-label input and the verification limits.
 | Inspect large-project watcher behavior | [100-file and 10,000-file native verification](verification/project-scale-verification.md) |
 | Understand provider errors and manual retries | [Provider failure handling](engineering/provider-failure-handling.md) |
 | Understand models disappearing after discovery | [Pending/in-flight storage ownership and source parity](engineering/storage-write-ownership.md) |
+| Understand failed Undo/Redo recovery and retry guidance | [Review callback and native history ownership](recovery/rea-agent-undo-retry.md) |
 | Understand recovery limitations | [Recovery status](recovery/recovery-status.md) · [Native inventory](recovery/native-recovery-inventory.md) |
 | See which gaps the new source/docs close and which remain | [Latest reconciliation and documentation owners](recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation) |
 | Connect recovered source to current missing features | [Updated gap audit and source-to-implementation map](recovery/feature-gap-audit.md#source-index-to-implementation-gaps) |

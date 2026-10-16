@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { readableApp } from './recovered-source.mjs';
-import { agentReviewRecoveryEntry, agentReviewRecoveryOwner, preserveAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
+import { agentReviewRecoveryEntry, agentReviewRecoveryOwner, preserveAgentReviewRecovery, preserveAgentReviewSnapshotOwnership } from './agent-review-recovery-customization.mjs';
 
 const original = await readFile(new URL(agentReviewRecoveryEntry, readableApp), 'utf8');
 const patched = preserveAgentReviewRecovery(original);
 const drain = () => new Promise(resolve => setImmediate(resolve));
 
 function legacyRecoveryFixture(includeCreation) {
+  const patched = preserveAgentReviewSnapshotOwnership(original);
   const owner = agentReviewRecoveryOwner(patched), oldOwner = agentReviewRecoveryOwner(original);
   const replacements = [];
   for (const [name, reference, diffId, operation] of [
@@ -112,10 +113,12 @@ function fixture(source = patched) {
 test('original creation Undo removes review after failed snapshot; corrected owner keeps it for retry', async () => {
   for (const [source, preserved] of [[original, false], [patched, true]]) {
     const { service, state, initial } = fixture(source); state.failWrite = true;
-    await state.element.undo();
+    const outcome = await state.element.undo();
     assert.equal(service.diffHandlers.get('diff') === initial, preserved);
     assert.equal(initial.reference.disposed, !preserved);
     if (preserved) {
+      assert.equal(outcome.openvisionReviewRetry, state.element);
+      assert.equal(outcome.direction, 'undo');
       await state.element.redo();
       assert.equal(state.handlers.length, 1, 'Redo after failed Undo must keep the live handler');
       state.failWrite = false; await state.element.undo();

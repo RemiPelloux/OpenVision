@@ -1,6 +1,7 @@
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { preserveReviewUndoRetry } from './agent-review-undo-customization.mjs';
 
 const marker = '/* OpenVision review recovery ownership v1 */';
 export const agentReviewRecoveryEntry = 'out/vs/workbench/workbench.desktop.main.js';
@@ -24,6 +25,11 @@ function replaceOnce(text, before, after) {
 }
 
 export function preserveAgentReviewRecovery(text) {
+  const recovered = preserveAgentReviewSnapshotOwnership(text);
+  return preserveReviewUndoRetry(recovered, agentReviewRecoveryOwner(recovered));
+}
+
+export function preserveAgentReviewSnapshotOwnership(text) {
   return ownFailedReviewReferences(preserveCreatedReviewRecovery(preserveRemovedReviewRecovery(text)));
 }
 

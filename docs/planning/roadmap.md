@@ -33,16 +33,24 @@ The [native Agent timeout report](../recovery/rea-agent-timeout-recovery.md)
 now covers the selected-proxy transport owner for OV-102: application-owned
 header/body inactivity deadlines survive proxy and certificate selection, stalled
 sockets close, and retry remains explicit. Focused real-socket checks pass. The
-full-duration native post-fix run is still a gate, so this evidence does not add
-Verified credit or change the **6/42 (14.29%)** denominator.
+[full-duration native post-fix header/body checks](../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
+now pass, including explicit retry into real GPT/DeepSeek Read/answer. Remaining
+failure/history cases still prevent story promotion; **6/42 (14.29%)** is unchanged.
 
 ## Critical-first backlog and ETA
+
+The [native review Undo/Redo follow-up](../recovery/rea-agent-undo-retry.md) closes
+the reproduced snapshot-failure history-position and missing-guidance case.
+Keyboard write/read failure-and-retry checks pass on the rebuilt source;
+consolidated callback progress has producer coverage. Physical faults,
+active-write/tool interruption, remaining menu/group combinations and broader
+live editing retain OV-103's P0 priority and existing 8 points. No story is promoted.
 
 The latest [live retry investigation](../recovery/rea-agent-retry-history.md) fixes empty
 failed-response history at both Agent producers. DeepSeek authentication retry
 now passes on the rebuilt app after two pre-fix HTTP 400 failures. This advances
-OV-102, a dependency of OV-103; native timeout recovery and the remaining editing
-failure cases retain their priority and provisional points.
+OV-102, a dependency of OV-103. Native header/body timeout recovery now passes;
+remaining history/error cases and editing failures retain priority and points.
 
 Agent reliability remains first: the [review-recovery follow-up](../recovery/rea-agent-review-recovery.md)
 retains recovery data on failed restoration and adds repeated-edit/pending-review
@@ -63,13 +71,15 @@ maps the 3.24.18 source index to implementation reports and remaining gates.
 Its [storage follow-up](../engineering/storage-write-ownership.md) ports the newer
 pending/in-flight ownership invariant into the prepared 3.21.13 runtime after a
 native model-discovery failure. Scoped Windows Quick Edit snapshot-failure and
-provider regressions pass; physical faults and complete Undo-stack failure
-handling remain. This adds no story or points and does not upgrade the whole
+provider regressions pass. The subsequent keyboard follow-up covers scoped
+Undo/Redo failures; physical faults and remaining menu/group combinations stay
+open. This adds no story or points and does not upgrade the whole
 runtime to 3.24.18.
 The [final source-build Agent regression](../recovery/rea-agent-review-recovery.md#final-source-build-regression)
 passes repeated edits, review acceptance/rejection across normal restarts and
 command lifecycle on that build. Active-write interruption, full Undo error
-handling and the OV-102 timeout dependency retain their existing gates.
+handling retain their existing gates; the later timeout report records the
+now-passing header/body subcases of the OV-102 dependency.
 
 15 October Agent review follow-up: the [edit-history audit](../recovery/rea-agent-edit-history.md)
 records native filename/text search and fixes acceptance returning before
@@ -105,7 +115,7 @@ and detailed evidence links.
 | Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
 | ---: | --- | --- | --- | ---: |
 | 1 | OV-103 · Agent editing and recovery | Outstanding tool/write ownership, review persistence and remaining undo contracts | Storage-failure retry, interruption during active writes/tools, remaining edit/undo combinations and live-provider editing | 8 |
-| 2 | OV-102 · Chat, Stop and retry | Timeout-to-error-to-history ownership across both Agent paths | Native inference timeout, transport release, explicit retry without duplicate inference and remaining interruption/history cases | 8 |
+| 2 | OV-102 · Chat, Stop and retry | Remaining error-to-history ownership across both Agent paths | Complete interruption/history matrix after passing full-duration native header/body release and explicit live retries | 8 |
 | 3 | OV-204 · Provider failures | Capability rejection and stream-error propagation beyond established cases | Certificate expiry/hostname, unsupported actual inputs, remaining malformed streams and secret-safe recovery | 5 |
 | 4 | OV-302 · Local configuration isolation | Remaining global path producers, classifiers, watchers and consumers | Complete additive migration with backups; two profiles and another installation; preserve explicit project compatibility | 8 |
 | 5 | OV-303 · MCP tool ownership | Named-profile/configuration ownership and failed-close consumers | Same-name overrides, simultaneous config changes and cross-window failed-cleanup recovery without replay | 5 |

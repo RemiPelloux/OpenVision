@@ -39,16 +39,19 @@ that queue; detailed acceptance clauses remain in the
 
 Points measure provisional complexity, not completion or time. Do not calculate
 progress from completed points: no equivalent completed-point baseline exists.
-The next listed gate is native Agent timeout recovery, followed by outstanding
-editing/storage-failure checks. See the
+Native Agent header/body timeout recovery and explicit live retry now pass.
+Next are outstanding editing/storage-failure checks and other chat/provider
+failure classes. See the
 [delivery gates and dependencies](planning/roadmap.md#critical-first-backlog-and-eta) and
 [release claims](verification/release-claims.md) before treating source work as a shipped app.
 
 The latest [storage ownership report](engineering/storage-write-ownership.md)
 connects a native model-discovery failure to the newer recovered storage owner.
 Its pending/in-flight correction passes focused tests and scoped Windows Quick
-Edit/provider regressions. Physical storage faults, complete Undo-stack failure
-handling and platform checks remain. This is progress within existing stories, with
+Edit/provider regressions. The [native Undo/Redo follow-up](recovery/rea-agent-undo-retry.md)
+passes keyboard snapshot failures and retry guidance on the rebuilt source.
+Physical storage faults, remaining menu/group failure combinations and platform
+checks remain. This is progress within existing stories, with
 no change to the acceptance percentage or backlog points.
 
 ## Recovery coverage by version
