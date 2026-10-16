@@ -1,0 +1,1 @@
+function mk(e,t){const r=gr(Xr(e));return e instanceof r.KeyboardEvent?"keyboard":e instanceof r.FocusEvent?t||"keyboard":"pointerType"in e?e.pointerType||"keyboard":"touches"in e?"touch":e instanceof r.MouseEvent?t||(e.detail===0?"keyboard":"mouse"):""}

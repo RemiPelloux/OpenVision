@@ -1,0 +1,41 @@
+
+/* Address: 0x180007040; Evidence: ev_6cb2ce9695de97e8c7d9367e3781c7bcdc006dbc0facd3694a0e94931d61807c */
+
+/* Library Function - Single Match
+    abort
+   
+   Libraries: Visual Studio 2017 Release, Visual Studio 2019 Release */
+
+void __cdecl abort(void)
+
+{
+  code *pcVar1;
+  BOOL BVar2;
+  longlong lVar3;
+  undefined1 *puVar4;
+  undefined1 auStack_28 [8];
+  undefined1 auStack_20 [32];
+  
+  puVar4 = auStack_28;
+  lVar3 = __acrt_get_sigabrt_handler();
+  if (lVar3 != 0) {
+    FUN_18000a204(0x16);
+  }
+  if ((DAT_18001b080 & 2) != 0) {
+    BVar2 = IsProcessorFeaturePresent(0x17);
+    puVar4 = auStack_28;
+    if (BVar2 != 0) {
+      pcVar1 = (code *)swi(0x29);
+      (*pcVar1)(7);
+      puVar4 = auStack_20;
+    }
+    *(undefined8 *)(puVar4 + -8) = 0x18000708b;
+    FUN_180005d20(3,0x40000015,1);
+  }
+  *(undefined8 *)(puVar4 + -8) = 0x180007095;
+  FUN_1800065f4(3);
+  pcVar1 = (code *)swi(3);
+  (*pcVar1)();
+  return;
+}
+

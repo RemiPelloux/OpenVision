@@ -1,0 +1,1 @@
+function kE(e){const{focusableWhenDisabled:t,disabled:r,composite:n=!1,tabIndex:o=0,isNativeButton:i}=e,s=n&&t!==!1,c=n&&t===!1;return{props:e4.useMemo(()=>{const m={onKeyDown(u){r&&t&&u.key!=="Tab"&&u.preventDefault()}};return n||(m.tabIndex=o,!i&&r&&(m.tabIndex=t?o:-1)),(i&&(t||s)||!i&&r)&&(m["aria-disabled"]=r),i&&(!t||c)&&(m.disabled=r),m},[n,r,t,s,c,i,o])}}

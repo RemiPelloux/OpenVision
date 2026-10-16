@@ -1,0 +1,6 @@
+var __wakaru_Jqd_initialized = false;
+export function Jqd() {
+if (__wakaru_Jqd_initialized) return;
+__wakaru_Jqd_initialized = true;
+
+}

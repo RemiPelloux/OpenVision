@@ -1,0 +1,14 @@
+{
+  "format": "webpack5",
+  "strategy": "structural",
+  "modules": {
+    "module-18750.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[83,5830]], "extraction": "structural"},
+    "module-29428.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[5848,6662]], "extraction": "structural"},
+    "module-41741.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[6680,12266]], "extraction": "structural"},
+    "module-50333.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[12284,13174]], "extraction": "structural"},
+    "module-55936.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[13192,13539]], "extraction": "structural"},
+    "module-70904.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[13557,13649]], "extraction": "structural"},
+    "module-86639.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[13667,13829]], "extraction": "structural"},
+    "module-94804.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\750.js", "ranges": [[13847,14166]], "extraction": "structural"}
+  }
+}

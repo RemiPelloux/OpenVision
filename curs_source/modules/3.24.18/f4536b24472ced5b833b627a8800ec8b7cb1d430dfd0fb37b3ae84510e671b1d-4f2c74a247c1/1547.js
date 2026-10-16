@@ -1,0 +1,1 @@
+var J5=a((e,t)=>t?e===t?!0:J5(e,t.parentElement):!1,"isNodeOrChild"),Yx=a(e=>e.pointerType==="mouse"?typeof e.button!="number"||e.button<=0:e.isPrimary!==!1,"isPrimaryPointer"),dj=new Set(["BUTTON","INPUT","SELECT","TEXTAREA","A"]);

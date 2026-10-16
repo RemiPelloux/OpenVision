@@ -1,0 +1,1 @@
+var Ri=0,Ni=class nD{static{a(this,"Timeout")}static create(){return new nD}currentId=Ri;start(t,r){this.clear(),this.currentId=setTimeout(()=>{this.currentId=Ri,r()},t)}isStarted(){return this.currentId!==Ri}clear=a(()=>{this.currentId!==Ri&&(clearTimeout(this.currentId),this.currentId=Ri)},"clear");disposeEffect=a(()=>this.clear,"disposeEffect")};

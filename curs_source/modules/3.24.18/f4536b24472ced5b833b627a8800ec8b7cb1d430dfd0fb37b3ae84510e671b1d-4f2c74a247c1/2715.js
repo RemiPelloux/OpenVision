@@ -1,0 +1,1 @@
+function H3(e,t){if(e.typeUrl==="")return{};const{registry:r}=t;let n,o;if(r&&(n=w3(e,r),n&&(o=r.getMessage(n.$typeName))),!o||!n)throw new Error(`cannot encode message ${e.$typeName} to JSON: "${e.typeUrl}" is not in the type registry`);const i=sv(o)?{value:Es(o)(t,n)}:Es(o)(t,n);return i["@type"]=e.typeUrl,i}

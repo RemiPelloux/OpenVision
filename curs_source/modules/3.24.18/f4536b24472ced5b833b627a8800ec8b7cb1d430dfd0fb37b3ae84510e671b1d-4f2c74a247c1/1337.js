@@ -1,0 +1,1 @@
+var Gn=["transformPerspective","x","y","z","translateX","translateY","translateZ","scale","scaleX","scaleY","rotate","rotateX","rotateY","rotateZ","skew","skewX","skewY"],yn=new Set([...Gn,"pathRotation"]),JI=a(e=>e===Ta||e===se,"isNumOrPxType"),E8=new Set(["x","y","z"]),k8=Gn.filter(e=>!E8.has(e));

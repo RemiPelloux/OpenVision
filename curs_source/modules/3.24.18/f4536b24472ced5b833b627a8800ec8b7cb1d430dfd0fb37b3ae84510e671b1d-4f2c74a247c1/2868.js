@@ -1,0 +1,1 @@
+function bb(e){const{signal:t,cleanup:r}=CO(e.timeoutMs),n=TO(e.signal,t);return[n.signal,a(function(i){const s=n.signal.aborted?vt.from(lu(n.signal),Fe.Canceled):vt.from(i);return n.abort(s),r(),Promise.reject(s)},"abort"),a(function(){r(),n.abort()},"done")]}

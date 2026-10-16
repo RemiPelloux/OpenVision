@@ -1,0 +1,1 @@
+function fl(e,t){const r=ga(t),{decimal:n,group:o}=r,i=e.trim(),{integer:s,rest:c}=dl(i,r),l=ul(s,r);if(l!==null&&ba(s,r)>0&&va(l,r)===s)return va(pl(l,r),OU)+RC(c,r);let m=pl(i.replace(MU,ch),r);return o!==""&&o!==n&&(m=m.replaceAll(o,ch)),n!=="."&&(m=m.replaceAll(n,".")),m.replaceAll(ch,",")}

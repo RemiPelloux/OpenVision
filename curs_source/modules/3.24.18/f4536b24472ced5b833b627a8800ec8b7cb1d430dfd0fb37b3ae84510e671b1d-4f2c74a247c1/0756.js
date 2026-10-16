@@ -1,0 +1,1 @@
+function tl(e,t={}){const{preventScroll:r=!1,sync:n=!1,shouldFocus:o}=t;cancelAnimationFrame(el);function i(){o&&!o()||e?.focus({preventScroll:r})}if(a(i,"exec"),n)return i(),yt;const s=requestAnimationFrame(i);return el=s,()=>{el===s&&(cancelAnimationFrame(s),el=0)}}

@@ -1,0 +1,9 @@
+{
+  "format": "esbuild",
+  "strategy": "structural",
+  "modules": {
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-MBS4DSQP.js", "ranges": [[1,265],[266,21396]], "extraction": "structural"},
+    "index.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-MBS4DSQP.js", "ranges": [[21312,21351]], "extraction": "structural"},
+    "react.development.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-MBS4DSQP.js", "ranges": [[385,21311]], "extraction": "structural"}
+  }
+}

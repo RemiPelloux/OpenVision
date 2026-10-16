@@ -1,0 +1,6 @@
+var __wakaru_Ic__initialized = false;
+export function Ic_() {
+if (__wakaru_Ic__initialized) return;
+__wakaru_Ic__initialized = true;
+
+}

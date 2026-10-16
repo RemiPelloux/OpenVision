@@ -1,5 +1,9 @@
 # OpenVision completion sprints and user stories
 
+[Progress, percentages and gate-based ETA](progress.md) ·
+[Prioritized backlog and points](roadmap.md#ranked-rea-implementation-and-verification-work) ·
+[Recovery archive and version-specific coverage](../curs_source/README.md)
+
 Planning baseline: **12 October 2026**, Windows desktop input **3.21.13**.
 OpenVision runs editable recovered JavaScript through a compiled Electron host.
 It is not yet independently buildable or verified across all requested features.
@@ -179,12 +183,12 @@ complexity points and the usability release gate.
 | Local user rules | Native Windows create/edit/delete and persistence across process restart verified | Live Agent consumption and comprehensive profile isolation |
 | Subagent reasoning | Recovered selection callback now retains explicit/saved parameters in both workbench variants; boundary tests pass | Live subagent request and provider acceptance |
 | Last local validation | Desktop, completion/profile and telemetry checks pass; syntax/build, bounded 10,000-model UI and native autocomplete/project/Agent fixtures pass | [Agent evidence](rea-agent-runtime.md), [project evidence](rea-project-workflows.md), [autocomplete evidence](rea-custom-autocomplete.md); these do not cover every story below |
-| Native recovery | PE metadata for 52/52 files; pseudocode for 1/52 files and its 626 identified procedures | 51/52 files lack pseudocode; native source rebuild unproven |
+| Native recovery · updated 16 October | Historical 3.21.13: metadata for 52/52 files; pseudocode for 9/52 files and 4,647 identified procedures | Historical 43/52 files lack pseudocode; current 3.24.18 has 53 native paths with no matching historical pseudocode; independent native rebuild unproven ([coverage](recovery-status.md)) |
 | WASM recovery | 15/15 distinct payloads decoded to WAT; complete REA records for 14/15 | One complete record and independently buildable source/binding verification |
 | Platform coverage | Windows native checks; Linux x64 native build, keyring, sandbox and most native verifiers ([evidence](linux-verification.md)) | Real macOS launch and workflows; remaining Linux verifiers, distributions and ARM64 |
 
 **There is no defensible overall percentage of the original product recovered.**
-The 98.08% native-file pseudocode gap is not a missing-feature percentage.
+The historical 82.69% native-file pseudocode gap is not a missing-feature percentage.
 Readable text, working behavior, reconstructed source and reproducible builds
 are separate outcomes. A client installation cannot reveal unshipped server code.
 

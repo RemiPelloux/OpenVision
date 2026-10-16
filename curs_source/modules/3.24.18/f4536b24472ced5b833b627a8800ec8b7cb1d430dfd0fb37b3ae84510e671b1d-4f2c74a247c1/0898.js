@@ -1,0 +1,1 @@
+function Kf(e,t,r,n=!1){return{...jk(t,r,n),modal:!0,disablePointerDismissal:!1,viewportElement:null,descriptionElementId:void 0,titleElementId:void 0,openMethod:null,nested:!1,nestedOpenDialogCount:0,nestedOpenDrawerCount:0,role:"dialog",...e}}

@@ -1,0 +1,1 @@
+function yO(e,t){return fO(e,r=>{switch(r.methodKind){case"unary":return wO(t,r);case"server_streaming":return SO(t,r);case"client_streaming":return EO(t,r);case"bidi_streaming":return kO(t,r);default:return null}})}

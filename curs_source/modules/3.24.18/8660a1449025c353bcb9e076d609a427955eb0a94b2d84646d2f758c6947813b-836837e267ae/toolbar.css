@@ -1,0 +1,6 @@
+var __wakaru_vLy_initialized = false;
+export function vLy() {
+if (__wakaru_vLy_initialized) return;
+__wakaru_vLy_initialized = true;
+
+}

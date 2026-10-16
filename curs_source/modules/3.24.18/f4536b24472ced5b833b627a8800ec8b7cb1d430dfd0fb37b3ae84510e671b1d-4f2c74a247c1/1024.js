@@ -1,0 +1,1 @@
+function nC(e){const{size:t}=no(go),r=mt(oh,{outerClassName:"grow",children:mt("div",{...e,children:e.children})});return t==="custom"?r:mt(ZT,{className:"-mx-(--x-modal-pad) -my-4 grow scroll-py-8 overscroll-none px-(--x-modal-pad) py-4",children:r})}

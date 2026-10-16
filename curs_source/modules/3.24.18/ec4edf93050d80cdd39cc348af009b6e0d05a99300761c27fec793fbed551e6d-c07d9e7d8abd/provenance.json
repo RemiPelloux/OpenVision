@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "languageDetectionWebWorkerMain.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\services\\languageDetection\\browser\\languageDetectionWebWorkerMain.js", "ranges": [[0,159868]], "extraction": "structural"}
+  }
+}

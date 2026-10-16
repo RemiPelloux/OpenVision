@@ -1,0 +1,6 @@
+var __wakaru_pOk_initialized = false;
+export function pOk() {
+if (__wakaru_pOk_initialized) return;
+__wakaru_pOk_initialized = true;
+
+}

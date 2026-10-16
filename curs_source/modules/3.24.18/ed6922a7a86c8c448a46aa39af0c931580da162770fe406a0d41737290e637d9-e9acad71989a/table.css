@@ -1,0 +1,6 @@
+var __wakaru_fkg_initialized = false;
+export function fkg() {
+if (__wakaru_fkg_initialized) return;
+__wakaru_fkg_initialized = true;
+
+}

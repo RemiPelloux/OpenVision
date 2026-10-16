@@ -1,0 +1,6 @@
+var __wakaru_gbg_initialized = false;
+export function gbg() {
+if (__wakaru_gbg_initialized) return;
+__wakaru_gbg_initialized = true;
+
+}

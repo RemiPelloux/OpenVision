@@ -1,0 +1,6 @@
+var __wakaru_skg_initialized = false;
+export function skg() {
+if (__wakaru_skg_initialized) return;
+__wakaru_skg_initialized = true;
+
+}

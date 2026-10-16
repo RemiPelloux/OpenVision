@@ -1,0 +1,6 @@
+var __wakaru_ENy_initialized = false;
+export function ENy() {
+if (__wakaru_ENy_initialized) return;
+__wakaru_ENy_initialized = true;
+
+}

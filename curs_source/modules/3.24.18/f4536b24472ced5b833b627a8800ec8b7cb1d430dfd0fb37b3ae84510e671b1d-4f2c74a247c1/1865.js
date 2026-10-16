@@ -1,0 +1,1 @@
+function jR(e,t){if(e.length<2)return{x:0,y:0};let r=e.length-1,n=null;const o=Yg(e);for(;r>=0&&(n=e[r],!(o.timestamp-n.timestamp>er(t)));)r--;if(!n)return{x:0,y:0};n===e[0]&&e.length>2&&o.timestamp-n.timestamp>er(t)*2&&(n=e[1]);const i=yr(o.timestamp-n.timestamp);if(i===0)return{x:0,y:0};const s={x:(o.x-n.x)/i,y:(o.y-n.y)/i};return s.x===1/0&&(s.x=0),s.y===1/0&&(s.y=0),s}

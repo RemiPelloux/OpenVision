@@ -1,0 +1,1 @@
+function mf(e){return vr.env.jsdom?!1:!vr.os.android&&e.width===0&&e.height===0||vr.os.android&&e.width===1&&e.height===1&&e.pressure===0&&e.detail===0&&e.pointerType==="mouse"||e.width<1&&e.height<1&&e.pressure===0&&e.detail===0&&e.pointerType==="touch"}

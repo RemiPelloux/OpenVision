@@ -1,0 +1,1 @@
+function ws(e){switch(e){case N.BYTES:case N.STRING:return gt.LengthDelimited;case N.DOUBLE:case N.FIXED64:case N.SFIXED64:return gt.Bit64;case N.FIXED32:case N.SFIXED32:case N.FLOAT:return gt.Bit32;default:return gt.Varint}}

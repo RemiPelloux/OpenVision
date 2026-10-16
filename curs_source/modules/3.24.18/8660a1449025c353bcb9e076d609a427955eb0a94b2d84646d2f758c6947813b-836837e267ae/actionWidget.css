@@ -1,0 +1,6 @@
+var __wakaru_Gzd_initialized = false;
+export function Gzd() {
+if (__wakaru_Gzd_initialized) return;
+__wakaru_Gzd_initialized = true;
+
+}

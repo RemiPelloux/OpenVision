@@ -1,0 +1,28 @@
+module.exports = function(METHOD_NAME) {
+    try {
+        var baseSet = new Set();
+        var setLike = {
+            size: 0,
+            has: function() {
+                return true;
+            },
+            keys: function() {
+                return Object.defineProperty({}, "next", {
+                    get: function() {
+                        baseSet.clear();
+                        baseSet.add(4);
+                        return function() {
+                            return {
+                                done: true
+                            };
+                        };
+                    }
+                });
+            }
+        };
+        var result = baseSet[METHOD_NAME](setLike);
+        return result.size === 1 && result.values().next().value === 4;
+    } catch (error) {
+        return false;
+    }
+};

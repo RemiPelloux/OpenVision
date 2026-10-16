@@ -1,0 +1,1 @@
+function nb(e,t,r){if(typeof t!="object"||t==null||Array.isArray(t))throw new Error(`cannot decode message ${e.$typeName} from JSON ${St(t)}`);const n=Object.keys(t);for(let o=0;o<n.length;o++){const i=n[o],s=At(E3);cu(s,t[i],r),e.fields[i]=s}}

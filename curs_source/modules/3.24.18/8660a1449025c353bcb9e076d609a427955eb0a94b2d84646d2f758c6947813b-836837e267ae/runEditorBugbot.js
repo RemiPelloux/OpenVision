@@ -1,0 +1,47 @@
+import { Gt } from "./Iwo.js";
+import { sme } from "./Ycg.js";
+import { Dc } from "./aiService.js";
+import { eze } from "./aiserver_connectweb.js";
+import { n2 } from "./aiserver_pb.js";
+import { c_ } from "./async.cursor.js";
+import { sC } from "./backendClient.js";
+import { wIt } from "./bugbotResultsService.js";
+import { g4t } from "./bugbot_pb.js";
+import { wm } from "./buildFlags.js";
+import { rs } from "./commands.js";
+import { Pl } from "./composerDataServiceTypes.js";
+import { dp } from "./connect.js";
+import { pa } from "./constants_8.js";
+import { XXg } from "./editorBugbotViewPaneId.js";
+import { Xse } from "./exec_pb.js";
+import { _s } from "./experimentService.js";
+import { sEi } from "./inAppAdTrigger.js";
+import { nl } from "./index.ts";
+import { uie } from "./index_11.ts";
+import { hX } from "./index_12.ts";
+import { Ng } from "./index_3.ts";
+import { Ks } from "./notification.js";
+import { XKt } from "./notifications.js";
+import { qc } from "./opener.js";
+import { MB } from "./pathUtils.js";
+import { EE } from "./privateInferenceEnablementService.js";
+import { PB } from "./privateInferenceFeatures.js";
+import { Um } from "./reactiveStorageTypes_2.js";
+import { lat } from "./reviewChangesService.js";
+import { qwl } from "./reviewCtaTarget.js";
+import { dN } from "./settingsScrollIds.js";
+import { E } from "./tslib.es6.js";
+import { fn } from "./uri.js";
+import { wu } from "./utilities_3.js";
+import { gT } from "./utils_24.js";
+import { Hu } from "./utils_pb.js";
+var iZg, nBe, iBe;
+export { iBe, iZg, nBe };
+var __wakaru_wPn_initialized = false;
+export function wPn() {
+if (__wakaru_wPn_initialized) return;
+__wakaru_wPn_initialized = true;
+"use strict";
+E(), wm(), nl(), EE(), PB(), Ks(), Um(), Pl(), lat(), sEi(), qwl(), fn(), dp(), Hu(), Hu(), sC(), eze(), g4t(), n2(), XXg(), wIt(), _s(), Gt(), wu(), Dc(), gT(), MB(), Xse(), c_(), Ng(), sme(), uie(), hX(), qc(), rs(), pa(), dN(), XKt(), pa(), iZg = 10, nBe = new Set, iBe = new Map;
+
+}

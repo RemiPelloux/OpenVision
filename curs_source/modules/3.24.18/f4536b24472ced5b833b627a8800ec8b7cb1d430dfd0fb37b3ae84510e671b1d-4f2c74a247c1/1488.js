@@ -1,0 +1,1 @@
+var j5=a((e,t,r,n,o=r)=>{const i=U5(e,o);!i&&(o.startsWith("data")||o.startsWith("aria"))&&(o=Na(o));const s=rn[r]||rn[o],c=i?()=>{e[o]=wn(n.get(),rn[r])}:()=>{const l=wn(n.get(),s);l==null?e.removeAttribute(o):e.setAttribute(o,String(l))};return t.set(r,n,c)},"addAttrValue");

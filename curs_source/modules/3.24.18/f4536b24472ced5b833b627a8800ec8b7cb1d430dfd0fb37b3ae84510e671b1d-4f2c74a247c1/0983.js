@@ -1,0 +1,1 @@
+function ml(e,{onResize:t,onMutate:r}){const n=new ResizeObserver(t);n.observe(e);for(const i of e.children)n.observe(i);const o=new MutationObserver(i=>{for(const s of i){for(const c of s.addedNodes)c instanceof Element&&n.observe(c);for(const c of s.removedNodes)c instanceof Element&&n.unobserve(c)}r()});return o.observe(e,{childList:!0}),()=>{n.disconnect(),o.disconnect()}}

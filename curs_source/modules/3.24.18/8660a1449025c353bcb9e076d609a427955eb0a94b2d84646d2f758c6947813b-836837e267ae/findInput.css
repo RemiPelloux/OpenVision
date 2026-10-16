@@ -1,0 +1,6 @@
+var __wakaru_RKd_initialized = false;
+export function RKd() {
+if (__wakaru_RKd_initialized) return;
+__wakaru_RKd_initialized = true;
+
+}

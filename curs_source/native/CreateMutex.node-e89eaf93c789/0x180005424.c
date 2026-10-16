@@ -1,0 +1,28 @@
+
+/* Address: 0x180005424; Evidence: ev_f1507de63e14a7a55a0839eb81f795b347bae3720db400d2e01fe65c4d15d282 */
+
+void FUN_180005424(PCONTEXT param_1)
+
+{
+  DWORD64 ControlPc;
+  PRUNTIME_FUNCTION FunctionEntry;
+  int iVar1;
+  DWORD64 local_res8;
+  ulonglong local_res10;
+  PVOID local_res18 [2];
+  
+  RtlCaptureContext();
+  ControlPc = param_1->Rip;
+  iVar1 = 0;
+  do {
+    FunctionEntry = RtlLookupFunctionEntry(ControlPc,&local_res8,(PUNWIND_HISTORY_TABLE)0x0);
+    if (FunctionEntry == (PRUNTIME_FUNCTION)0x0) {
+      return;
+    }
+    RtlVirtualUnwind(0,local_res8,ControlPc,FunctionEntry,param_1,local_res18,&local_res10,
+                     (PKNONVOLATILE_CONTEXT_POINTERS)0x0);
+    iVar1 = iVar1 + 1;
+  } while (iVar1 < 2);
+  return;
+}
+

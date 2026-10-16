@@ -1,0 +1,1 @@
+var Kz=hn("inline-flex h-5 shrink-0 items-center gap-1 rounded-sm px-2 text-subtext3 font-medium [&_svg]:size-[1em]",{variants:{variant:{overlay:"bg-black-80 text-on-color",neutral:"bg-secondary text-primary"}},defaultVariants:{variant:"overlay"}});

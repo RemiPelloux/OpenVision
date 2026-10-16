@@ -1,0 +1,6 @@
+var __wakaru_VDy_initialized = false;
+export function VDy() {
+if (__wakaru_VDy_initialized) return;
+__wakaru_VDy_initialized = true;
+
+}

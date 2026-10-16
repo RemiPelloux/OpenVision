@@ -1,0 +1,1 @@
+function op(e){const t=Ec.get(e);if(t)return t;const{promise:r,resolve:n}=Promise.withResolvers(),o=S2(e,C2,s=>{Ec.delete(e),n(),console.error("[commerce-ui] i18n init failed",s)});o.on("initialized",a(function(){n()},"markReady"));const i={instance:o,ready:r};return Ec.set(e,i),i}

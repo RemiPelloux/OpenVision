@@ -1,0 +1,1 @@
+function gh({field:e,className:t}){const{state:r,meta:n}=nr(),{locale:o}=xt(),{t:i}=Be(),s=r.issues[e];return s===void 0?null:Wo("p",{id:`${n.fieldId(e)}-issue`,className:t,role:"alert",children:YC(s,i,o,n.currencyCode)})}

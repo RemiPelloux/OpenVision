@@ -1,0 +1,6 @@
+var __wakaru_AKg_initialized = false;
+export function AKg() {
+if (__wakaru_AKg_initialized) return;
+__wakaru_AKg_initialized = true;
+
+}

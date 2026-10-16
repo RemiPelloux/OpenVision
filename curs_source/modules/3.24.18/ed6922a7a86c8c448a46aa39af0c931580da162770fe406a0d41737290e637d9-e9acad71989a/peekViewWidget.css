@@ -1,0 +1,6 @@
+var __wakaru_rkg_initialized = false;
+export function rkg() {
+if (__wakaru_rkg_initialized) return;
+__wakaru_rkg_initialized = true;
+
+}

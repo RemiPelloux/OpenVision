@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "provenance": {
+      "untrusted_content": true,
+      "source": "analysis_target"
+    }
+  },
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"result\":{\"path\":\"C:\\\\Users\\\\User\\\\Documents\\\\ChatGPT\\\\REA\\\\cursor\\\\artifacts\\\\installation\\\\resources\\\\app\\\\node_modules\\\\@vscode\\\\windows-registry\\\\build\\\\Release\\\\winregistry.node\",\"format\":\"pe\",\"kind\":\"executable\",\"sha256\":\"1a70cd058d4d36b410c53bb83b55c21e07ee225e530b2ab84ddd14141eed6f9f\",\"architecture\":\"x86_64\"}}"
+    }
+  ],
+  "structuredContent": {
+    "result": {
+      "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\@vscode\\windows-registry\\build\\Release\\winregistry.node",
+      "format": "pe",
+      "kind": "executable",
+      "sha256": "1a70cd058d4d36b410c53bb83b55c21e07ee225e530b2ab84ddd14141eed6f9f",
+      "architecture": "x86_64"
+    }
+  }
+}

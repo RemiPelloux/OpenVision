@@ -1,0 +1,6 @@
+var __wakaru_WMy_initialized = false;
+export function WMy() {
+if (__wakaru_WMy_initialized) return;
+__wakaru_WMy_initialized = true;
+
+}

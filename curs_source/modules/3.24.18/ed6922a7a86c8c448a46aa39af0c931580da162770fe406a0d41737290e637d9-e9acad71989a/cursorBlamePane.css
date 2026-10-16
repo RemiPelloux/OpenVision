@@ -1,0 +1,6 @@
+var __wakaru_Qb__initialized = false;
+export function Qb_() {
+if (__wakaru_Qb__initialized) return;
+__wakaru_Qb__initialized = true;
+
+}

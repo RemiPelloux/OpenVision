@@ -1,0 +1,6 @@
+var __wakaru_hDy_initialized = false;
+export function hDy() {
+if (__wakaru_hDy_initialized) return;
+__wakaru_hDy_initialized = true;
+
+}

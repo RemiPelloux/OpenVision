@@ -1,0 +1,1 @@
+function TC(e,t,r){const n=ga(r);if(n.grouping===null)return e;const{integer:o,rest:i}=dl(e,n),s=ul(o,n);if(s===null)return e;const c=dl(t,n).integer,l=ul(c,n);return l===null||va(l,n)!==c||ba(o,n)>ba(c,n)||ba(o,n)>0&&!CC(l,s)?e:va(s,n)+i}

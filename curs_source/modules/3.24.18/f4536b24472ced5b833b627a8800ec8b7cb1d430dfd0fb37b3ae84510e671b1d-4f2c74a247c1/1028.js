@@ -1,0 +1,1 @@
+function aC(e){return mt("p",{"data-slot":"xds-modal-footer-note",...e,className:_e("text-subtext3 text-secondary w-full px-4 text-center first:mb-1 narrow:px-0 narrow:first:text-start narrow:last:text-end [&_a]:text-inherit [&_a]:underline",e.className),children:e.children})}

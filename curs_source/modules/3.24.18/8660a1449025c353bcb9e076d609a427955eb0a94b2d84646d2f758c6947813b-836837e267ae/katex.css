@@ -1,0 +1,6 @@
+var __wakaru_wEk_initialized = false;
+export function wEk() {
+if (__wakaru_wEk_initialized) return;
+__wakaru_wEk_initialized = true;
+
+}

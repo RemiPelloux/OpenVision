@@ -1,0 +1,6 @@
+var __wakaru_XUc_initialized = false;
+export function XUc() {
+if (__wakaru_XUc_initialized) return;
+__wakaru_XUc_initialized = true;
+
+}

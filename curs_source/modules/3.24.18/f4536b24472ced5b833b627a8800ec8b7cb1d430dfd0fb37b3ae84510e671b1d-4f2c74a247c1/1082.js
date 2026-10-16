@@ -1,0 +1,1 @@
+function va(e,t){const{grouping:r,group:n}=t;if(r===null)return e;const o=Array.from(e);if(o.length<r.minDigits)return e;const i=[o.splice(-r.primary).join("")];for(;o.length>r.secondary;)i.unshift(o.splice(-r.secondary).join(""));return o.length>0&&i.unshift(o.join("")),i.join(n)}

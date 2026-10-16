@@ -1,0 +1,1 @@
+function Ao(e){let t=!1;const r=[];for(let n=0;n<e.length;n++){let o=e.charAt(n);switch(o){case"_":t=!0;break;case"0":case"1":case"2":case"3":case"4":case"5":case"6":case"7":case"8":case"9":r.push(o),t=!1;break;default:t&&(t=!1,o=o.toUpperCase()),r.push(o);break}}return r.join("")}

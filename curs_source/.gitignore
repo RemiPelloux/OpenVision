@@ -1,0 +1,12 @@
+# Local snapshots retain binaries, dependencies, duplicate representations and large Evidence.
+# Verified application text and extracted modules are published separately.
+/snapshots/
+/wasm/
+/evidence/
+# These are verified recovered text, including source paths named build/source/data.
+!/javascript/
+!/javascript/**
+!/modules/
+!/modules/**
+# Earlier publication attempts containing unrenamed dependency paths remain local.
+/modules/**/node_modules/

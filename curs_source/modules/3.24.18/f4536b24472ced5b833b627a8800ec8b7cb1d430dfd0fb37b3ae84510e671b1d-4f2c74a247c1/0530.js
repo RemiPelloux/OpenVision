@@ -1,0 +1,1 @@
+function eE(e,t){const r={};for(const n in e){const o=e[n];if(t?.hasOwnProperty(n)){const i=t[n](o);i!=null&&Object.assign(r,i);continue}o===!0?r[`data-${n.toLowerCase()}`]="":o&&(r[`data-${n.toLowerCase()}`]=o.toString())}return r}

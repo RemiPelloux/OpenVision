@@ -1,0 +1,6 @@
+var __wakaru_dNo_initialized = false;
+export function dNo() {
+if (__wakaru_dNo_initialized) return;
+__wakaru_dNo_initialized = true;
+
+}

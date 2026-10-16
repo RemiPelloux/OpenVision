@@ -1,0 +1,1 @@
+function su(e){const t=e.fieldKind!=="map"&&e.longAsString;switch(e.scalar){case N.INT64:case N.SFIXED64:case N.SINT64:return t?r=>String(r):r=>typeof r=="string"||typeof r=="number"?st.parse(r):r;case N.FIXED64:case N.UINT64:return t?r=>String(r):r=>typeof r=="string"||typeof r=="number"?st.uParse(r):r;default:return r=>r}}

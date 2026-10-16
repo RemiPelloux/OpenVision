@@ -1,0 +1,6 @@
+var __wakaru_fU1_initialized = false;
+export function fU1() {
+if (__wakaru_fU1_initialized) return;
+__wakaru_fU1_initialized = true;
+
+}

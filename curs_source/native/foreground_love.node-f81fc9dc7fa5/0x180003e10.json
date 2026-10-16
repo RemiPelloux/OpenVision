@@ -1,0 +1,95 @@
+{
+  "evidence_id": "ev_cff7f4b1fa75b198a969438e3807c6812894daf7d56ccc74aba3fd36bfc2f782",
+  "subject": {
+    "name": "foreground_love.node",
+    "digest": {
+      "sha256": "f81fc9dc7fa541ede844ef7accda98c2d7db95abf47fbecddc4271aa919d4f12"
+    },
+    "local_path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\windows-foreground-love\\build\\Release\\foreground_love.node",
+    "format": "pe",
+    "architecture": "x86_64"
+  },
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile": {
+    "provider": {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "version": "12.1.4"
+    },
+    "parameters": {
+      "target_kind": "executable",
+      "target_format": "pe",
+      "executable_role": "shared-library",
+      "managed": false,
+      "native_aot_metadata": {
+        "contract_revision": "rtr-9.1-x64-pe-read-only-v3",
+        "source_bytes": 134217728,
+        "work_units": 67108864,
+        "working_memory_bytes": 67108864,
+        "report_bytes": 4194304
+      },
+      "architecture": "x86_64",
+      "available_architectures": [
+        "x86_64"
+      ],
+      "import_mode": "ephemeral-source-immutable",
+      "pdb_observations": "program-info-v1",
+      "annotation_policy": "atomic-function-entry-metadata-v1",
+      "load_image_observations": "source-mappings-entry-context-v2",
+      "function_body_evidence": "complete-inclusive-ranges-v1",
+      "function_references": "complete-body-and-entry-reference-manager-v2",
+      "call_relationship_coverage": "function-body-call-coverage-v5",
+      "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+      "string_inventory_evidence": "defined-data-coverage-v1",
+      "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+      "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+      "instruction_flow_evidence": "decoded-return-pcode-v1",
+      "instruction_references": "exact-address-incoming-v1",
+      "function_boundary_observations": "ghidra-function-boundary-limitations-v3",
+      "no_return_repair": "disabled-windows-p0",
+      "process_launch": "official-headless-script-v1",
+      "jump_table_evidence": "typed-case-default-blocks-v1",
+      "decompiler_jump_loads": true,
+      "loader": "auto-from-header",
+      "language_id": "auto-from-header",
+      "compiler_spec_id": "auto-default",
+      "analyzer_preset": "ghidra-default"
+    },
+    "digest": "dcc676845881c04a2d22833fb35d26569462e033daee5e99a95edac5aa61ac05"
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "procedure_pseudo_code",
+  "parameters": {
+    "procedure": "0x180003e10"
+  },
+  "raw_result": {
+    "value": "\r\n/* WARNING: Function: _guard_dispatch_icall replaced with injection: guard_dispatch_icall */\r\n\r\nundefined8\r\nFUN_180003e10(int *param_1,__uint64 *param_2,ULONG_PTR param_3,_xDISPATCHER_CONTEXT *param_4,\r\n             _s_FuncInfo *param_5,int param_6,longlong param_7,byte param_8)\r\n\r\n{\r\n  int iVar1;\r\n  longlong lVar2;\r\n  undefined8 uVar3;\r\n  code *pcVar4;\r\n  bool bVar5;\r\n  undefined8 in_stack_ffffffffffffffc8;\r\n  undefined4 uVar6;\r\n  undefined8 in_stack_ffffffffffffffd0;\r\n  undefined4 uVar7;\r\n  \r\n  uVar6 = (undefined4)((ulonglong)in_stack_ffffffffffffffc8 >> 0x20);\r\n  uVar7 = (undefined4)((ulonglong)in_stack_ffffffffffffffd0 >> 0x20);\r\n  __except_validate_context_record(param_3);\r\n  lVar2 = FUN_180002658();\r\n  if ((*(int *)(lVar2 + 0x40) == 0) && (*param_1 != -0x1f928c9d)) {\r\n    if (*param_1 == -0x7fffffd7) {\r\n      if (param_1[6] == 0xf) {\r\n        bVar5 = *(longlong *)(param_1 + 0x18) == 0x19930520;\r\n        goto LAB_180003e7e;\r\n      }\r\n    }\r\n    else {\r\n      bVar5 = *param_1 == -0x7fffffda;\r\nLAB_180003e7e:\r\n      if (bVar5) goto LAB_180003e95;\r\n    }\r\n    if ((0x19930521 < (param_5->magicNumber_and_bbtFlags & 0x1fffffff)) &&\r\n       ((param_5->EHFlags & 1) != 0)) {\r\n      return 1;\r\n    }\r\n  }\r\nLAB_180003e95:\r\n  if ((*(byte *)(param_1 + 1) & 0x66) == 0) {\r\n    if ((param_5->nTryBlocks == 0) &&\r\n       ((((param_5->magicNumber_and_bbtFlags & 0x1fffffff) < 0x19930521 ||\r\n         (iVar1 = param_5->dispESTypeList, iVar1 == 0)) ||\r\n        (lVar2 = FUN_180002d30(), lVar2 + iVar1 == 0)))) {\r\n      if ((param_5->magicNumber_and_bbtFlags & 0x1fffffff) < 0x19930522) {\r\n        return 1;\r\n      }\r\n      if ((param_5->EHFlags & 4) == 0) {\r\n        return 1;\r\n      }\r\n    }\r\n    if (((*param_1 == -0x1f928c9d) && (2 < (uint)param_1[6])) &&\r\n       ((0x19930522 < (uint)param_1[8] &&\r\n        (iVar1 = *(int *)(*(longlong *)(param_1 + 0xc) + 8), iVar1 != 0)))) {\r\n      lVar2 = FUN_180002d44();\r\n      pcVar4 = (code *)(lVar2 + iVar1);\r\n      if (pcVar4 != (code *)0x0) {\r\n        uVar3 = (*pcVar4)(param_1,param_2,param_3,param_4,param_5,param_6,param_7,\r\n                          CONCAT44(uVar7,(uint)param_8));\r\n        return uVar3;\r\n      }\r\n    }\r\n    FUN_180003588(param_1,(longlong *)param_2,param_3,(ulonglong *)param_4,\r\n                  &param_5->magicNumber_and_bbtFlags,param_8,CONCAT44(uVar6,param_6),param_7);\r\n    return 1;\r\n  }\r\n  if (param_5->maxState == 0) {\r\n    return 1;\r\n  }\r\n  if (param_6 != 0) {\r\n    return 1;\r\n  }\r\n  if ((*(byte *)(param_1 + 1) & 0x20) == 0) {\r\nLAB_180003f21:\r\n    __FrameHandler3::FrameUnwindToEmptyState(param_2,param_4,param_5);\r\n  }\r\n  else {\r\n    if (*param_1 == -0x7fffffda) {\r\n      iVar1 = FUN_180003194((longlong)param_5,(longlong)param_4,*(ulonglong *)(param_4 + 0x20));\r\n      if ((iVar1 < -1) || (param_5->maxState <= iVar1)) {\r\nLAB_18000403d:\r\n                    /* WARNING: Subroutine does not return */\r\n        abort();\r\n      }\r\n    }\r\n    else {\r\n      if (*param_1 != -0x7fffffd7) goto LAB_180003f21;\r\n      iVar1 = param_1[0xe];\r\n      if ((iVar1 < -1) || (param_5->maxState <= iVar1)) goto LAB_18000403d;\r\n      param_2 = *(__uint64 **)(param_1 + 10);\r\n    }\r\n    FUN_1800043d4((longlong *)param_2,(ulonglong *)param_4,(longlong)param_5,iVar1);\r\n  }\r\n  return 1;\r\n}\r\n\r\n",
+    "limitations": [
+      "Ghidra Listing reports a terminal call at 0x18000403d to 0x180005ae0 abort (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+    ]
+  },
+  "normalized_result": "\r\n/* WARNING: Function: _guard_dispatch_icall replaced with injection: guard_dispatch_icall */\r\n\r\nundefined8\r\nFUN_180003e10(int *param_1,__uint64 *param_2,ULONG_PTR param_3,_xDISPATCHER_CONTEXT *param_4,\r\n             _s_FuncInfo *param_5,int param_6,longlong param_7,byte param_8)\r\n\r\n{\r\n  int iVar1;\r\n  longlong lVar2;\r\n  undefined8 uVar3;\r\n  code *pcVar4;\r\n  bool bVar5;\r\n  undefined8 in_stack_ffffffffffffffc8;\r\n  undefined4 uVar6;\r\n  undefined8 in_stack_ffffffffffffffd0;\r\n  undefined4 uVar7;\r\n  \r\n  uVar6 = (undefined4)((ulonglong)in_stack_ffffffffffffffc8 >> 0x20);\r\n  uVar7 = (undefined4)((ulonglong)in_stack_ffffffffffffffd0 >> 0x20);\r\n  __except_validate_context_record(param_3);\r\n  lVar2 = FUN_180002658();\r\n  if ((*(int *)(lVar2 + 0x40) == 0) && (*param_1 != -0x1f928c9d)) {\r\n    if (*param_1 == -0x7fffffd7) {\r\n      if (param_1[6] == 0xf) {\r\n        bVar5 = *(longlong *)(param_1 + 0x18) == 0x19930520;\r\n        goto LAB_180003e7e;\r\n      }\r\n    }\r\n    else {\r\n      bVar5 = *param_1 == -0x7fffffda;\r\nLAB_180003e7e:\r\n      if (bVar5) goto LAB_180003e95;\r\n    }\r\n    if ((0x19930521 < (param_5->magicNumber_and_bbtFlags & 0x1fffffff)) &&\r\n       ((param_5->EHFlags & 1) != 0)) {\r\n      return 1;\r\n    }\r\n  }\r\nLAB_180003e95:\r\n  if ((*(byte *)(param_1 + 1) & 0x66) == 0) {\r\n    if ((param_5->nTryBlocks == 0) &&\r\n       ((((param_5->magicNumber_and_bbtFlags & 0x1fffffff) < 0x19930521 ||\r\n         (iVar1 = param_5->dispESTypeList, iVar1 == 0)) ||\r\n        (lVar2 = FUN_180002d30(), lVar2 + iVar1 == 0)))) {\r\n      if ((param_5->magicNumber_and_bbtFlags & 0x1fffffff) < 0x19930522) {\r\n        return 1;\r\n      }\r\n      if ((param_5->EHFlags & 4) == 0) {\r\n        return 1;\r\n      }\r\n    }\r\n    if (((*param_1 == -0x1f928c9d) && (2 < (uint)param_1[6])) &&\r\n       ((0x19930522 < (uint)param_1[8] &&\r\n        (iVar1 = *(int *)(*(longlong *)(param_1 + 0xc) + 8), iVar1 != 0)))) {\r\n      lVar2 = FUN_180002d44();\r\n      pcVar4 = (code *)(lVar2 + iVar1);\r\n      if (pcVar4 != (code *)0x0) {\r\n        uVar3 = (*pcVar4)(param_1,param_2,param_3,param_4,param_5,param_6,param_7,\r\n                          CONCAT44(uVar7,(uint)param_8));\r\n        return uVar3;\r\n      }\r\n    }\r\n    FUN_180003588(param_1,(longlong *)param_2,param_3,(ulonglong *)param_4,\r\n                  &param_5->magicNumber_and_bbtFlags,param_8,CONCAT44(uVar6,param_6),param_7);\r\n    return 1;\r\n  }\r\n  if (param_5->maxState == 0) {\r\n    return 1;\r\n  }\r\n  if (param_6 != 0) {\r\n    return 1;\r\n  }\r\n  if ((*(byte *)(param_1 + 1) & 0x20) == 0) {\r\nLAB_180003f21:\r\n    __FrameHandler3::FrameUnwindToEmptyState(param_2,param_4,param_5);\r\n  }\r\n  else {\r\n    if (*param_1 == -0x7fffffda) {\r\n      iVar1 = FUN_180003194((longlong)param_5,(longlong)param_4,*(ulonglong *)(param_4 + 0x20));\r\n      if ((iVar1 < -1) || (param_5->maxState <= iVar1)) {\r\nLAB_18000403d:\r\n                    /* WARNING: Subroutine does not return */\r\n        abort();\r\n      }\r\n    }\r\n    else {\r\n      if (*param_1 != -0x7fffffd7) goto LAB_180003f21;\r\n      iVar1 = param_1[0xe];\r\n      if ((iVar1 < -1) || (param_5->maxState <= iVar1)) goto LAB_18000403d;\r\n      param_2 = *(__uint64 **)(param_1 + 10);\r\n    }\r\n    FUN_1800043d4((longlong *)param_2,(ulonglong *)param_4,(longlong)param_5,iVar1);\r\n  }\r\n  return 1;\r\n}\r\n\r\n",
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+    "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+    "Ghidra Listing reports a terminal call at 0x18000403d to 0x180005ae0 abort (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+    "Windows Ghidra P0 accepts native x86 and x86-64 PE applications and DLLs, and explicitly selected raw 6502 images; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically.",
+    "The target references PDB foreground_love.pdb (GUID e4730b8f-1a96-4eb9-be86-d26f7f9994b8, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+  ],
+  "relationship_coverage": null,
+  "locations": [],
+  "evidence_links": []
+}

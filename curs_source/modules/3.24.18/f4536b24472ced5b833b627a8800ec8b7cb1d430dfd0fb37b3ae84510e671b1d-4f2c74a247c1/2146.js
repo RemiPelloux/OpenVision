@@ -1,0 +1,1 @@
+async function bP(e,t){const{instance:r,ready:n}=op(e);if(await n,!r.isInitialized)return;const o={};for(const[c,l]of Object.entries(t))vP(c)&&typeof l=="string"&&l.length>0&&(o[c]=l);if(Object.keys(o).length===0)return;const i=r.resolvedLanguage??r.language;r.addResourceBundle(i,aH,o,!0,!0),r.services.i18nFormat?.clearCache?.()}

@@ -1,0 +1,6 @@
+var __wakaru_xx1_initialized = false;
+export function xx1() {
+if (__wakaru_xx1_initialized) return;
+__wakaru_xx1_initialized = true;
+
+}

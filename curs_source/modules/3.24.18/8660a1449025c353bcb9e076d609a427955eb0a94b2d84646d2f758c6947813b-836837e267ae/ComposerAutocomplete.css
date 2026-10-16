@@ -1,0 +1,6 @@
+var __wakaru_yaf_initialized = false;
+export function yaf() {
+if (__wakaru_yaf_initialized) return;
+__wakaru_yaf_initialized = true;
+
+}

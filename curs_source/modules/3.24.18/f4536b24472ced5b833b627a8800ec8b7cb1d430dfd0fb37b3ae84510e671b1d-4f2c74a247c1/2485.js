@@ -1,0 +1,1 @@
+function dM(e,t,r){var n,o;const i={kind:"service",proto:e,deprecated:(o=(n=e.options)===null||n===void 0?void 0:n.deprecated)!==null&&o!==void 0?o:!1,file:t,name:e.name,typeName:vs(e,void 0,t),methods:[],method:{},toString(){return`service ${this.typeName}`}};t.services.push(i),r.add(i);for(const s of e.method){const c=pM(s,i,r);i.methods.push(c),i.method[c.localName]=c}}

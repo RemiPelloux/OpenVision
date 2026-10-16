@@ -1,0 +1,30 @@
+import { CLOUD_AGENT_INJECTED_SECRET_NAMES_ENV_VAR, init_cloud_agent } from "./cloud-agent.js";
+var ENV_NAME_PATTERN, CURSOR_SANDBOX_ENV_NAME_PATTERN, WORKLOAD_CGROUP_ENV_VAR, BOX_SECRET_RESERVED_EXACT_NAMES, BOX_SECRET_RESERVED_NAME_PREFIXES, SPAWN_CWD_HOP_ENV_VAR;
+export { BOX_SECRET_RESERVED_EXACT_NAMES, BOX_SECRET_RESERVED_NAME_PREFIXES, CURSOR_SANDBOX_ENV_NAME_PATTERN, ENV_NAME_PATTERN, SPAWN_CWD_HOP_ENV_VAR, WORKLOAD_CGROUP_ENV_VAR };
+var __wakaru_init_env_var_names_initialized = false;
+export function init_env_var_names() {
+if (__wakaru_init_env_var_names_initialized) return;
+__wakaru_init_env_var_names_initialized = true;
+"use strict";
+init_cloud_agent();
+ENV_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+CURSOR_SANDBOX_ENV_NAME_PATTERN = /CURSOR_SANDBOX/i;
+WORKLOAD_CGROUP_ENV_VAR = "CURSOR_WORKLOAD_CGROUP";
+BOX_SECRET_RESERVED_EXACT_NAMES = new Set([
+    "PATH",
+    "HOME",
+    "USER",
+    "SHELL",
+    "TERM",
+    "PWD",
+    "DISPLAY",
+    CLOUD_AGENT_INJECTED_SECRET_NAMES_ENV_VAR
+]);
+BOX_SECRET_RESERVED_NAME_PREFIXES = [
+    "SAND_",
+    "__CURSOR",
+    "LD_"
+];
+SPAWN_CWD_HOP_ENV_VAR = "CURSOR_SPAWN_CWD_HOP";
+
+}

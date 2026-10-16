@@ -1,0 +1,1 @@
+function VN(e){return My("svg",{fill:"none",height:"1em",viewBox:"0 0 24 24",width:"1em",xmlns:"http://www.w3.org/2000/svg",...e,children:My("path",{d:"M6.5 12.5L10.5 16.5L17.5 8",pathLength:FN,stroke:"currentColor",strokeDasharray:FN,strokeLinecap:"round",strokeLinejoin:"round",strokeWidth:3})})}

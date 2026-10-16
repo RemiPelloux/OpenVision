@@ -1,0 +1,1 @@
+a(hN,"isObjectRecord");

@@ -1,0 +1,14 @@
+import { KM } from "./any-client.js";
+import { $c } from "./async-iterable.js";
+import { Lt } from "./code.js";
+import { Kt } from "./connect-error.js";
+import { F } from "./protobuf.js";
+import { h } from "./tslib.es6.js";
+var __wakaru_LHe_initialized = false;
+export function LHe() {
+if (__wakaru_LHe_initialized) return;
+__wakaru_LHe_initialized = true;
+"use strict";
+h(), F(), Kt(), Lt(), KM(), $c();
+
+}

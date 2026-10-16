@@ -1,0 +1,1 @@
+function Kr({children:e,className:t,disabled:r,onClick:n,render:o}){return o!==void 0?o({children:e,disabled:r,onClick:n,type:"button"}):qt("button",{type:"button",className:t,disabled:r,onClick:n,children:e})}

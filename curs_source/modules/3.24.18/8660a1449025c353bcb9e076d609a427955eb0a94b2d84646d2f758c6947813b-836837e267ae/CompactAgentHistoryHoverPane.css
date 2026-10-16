@@ -1,0 +1,6 @@
+var __wakaru__Pw_initialized = false;
+export function _Pw() {
+if (__wakaru__Pw_initialized) return;
+__wakaru__Pw_initialized = true;
+
+}

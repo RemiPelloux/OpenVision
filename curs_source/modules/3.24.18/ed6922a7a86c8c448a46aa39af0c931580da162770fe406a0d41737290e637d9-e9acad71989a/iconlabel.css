@@ -1,0 +1,6 @@
+var __wakaru_Ukg_initialized = false;
+export function Ukg() {
+if (__wakaru_Ukg_initialized) return;
+__wakaru_Ukg_initialized = true;
+
+}

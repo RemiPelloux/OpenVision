@@ -1,0 +1,6 @@
+var __wakaru_XaC_initialized = false;
+export function XaC() {
+if (__wakaru_XaC_initialized) return;
+__wakaru_XaC_initialized = true;
+
+}

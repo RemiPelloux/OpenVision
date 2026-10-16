@@ -1,0 +1,6 @@
+var __wakaru_FLy_initialized = false;
+export function FLy() {
+if (__wakaru_FLy_initialized) return;
+__wakaru_FLy_initialized = true;
+
+}

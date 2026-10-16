@@ -1,0 +1,1 @@
+function uO(e,t){if(typeof t!="string")throw new Error(`cannot decode message ${e.$typeName} from JSON: ${St(t)}`);t!==""&&(e.paths=t.split(",").map(r=>{if(r.includes("_"))throw new Error(`cannot decode message ${e.$typeName} from JSON: path names must be lowerCamelCase`);return Tv(r)}))}

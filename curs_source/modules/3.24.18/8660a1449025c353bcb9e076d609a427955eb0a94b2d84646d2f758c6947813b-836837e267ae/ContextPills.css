@@ -1,0 +1,6 @@
+var __wakaru_yIg_initialized = false;
+export function yIg() {
+if (__wakaru_yIg_initialized) return;
+__wakaru_yIg_initialized = true;
+
+}

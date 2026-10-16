@@ -1,0 +1,6 @@
+var __wakaru_PaC_initialized = false;
+export function PaC() {
+if (__wakaru_PaC_initialized) return;
+__wakaru_PaC_initialized = true;
+
+}

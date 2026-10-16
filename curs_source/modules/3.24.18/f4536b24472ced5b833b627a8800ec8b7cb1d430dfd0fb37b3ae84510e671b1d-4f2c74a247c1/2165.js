@@ -1,0 +1,1 @@
+function CP(e){return $y("svg",{xmlns:"http://www.w3.org/2000/svg",fill:"currentColor","data-icon":"icon-chevron-right-sm",viewBox:"0 0 24 24",display:"flex",role:"img",width:"1em",height:"1em",...e,children:$y("path",{d:"M15.91 12 10 17.91 8.59 16.5l4.5-4.5-4.5-4.5L10 6.09z"})})}

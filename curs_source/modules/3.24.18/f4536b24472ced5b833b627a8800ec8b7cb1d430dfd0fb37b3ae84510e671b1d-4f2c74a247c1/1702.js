@@ -1,0 +1,1 @@
+var Oj=a((e,t)=>e.depth-t.depth,"compareByDepth"),Dj=class{static{a(this,"FlatTree")}constructor(){this.children=[],this.isDirty=!1}add(e){wl(this.children,e),this.isDirty=!0}remove(e){Hn(this.children,e),this.isDirty=!0}forEach(e){this.isDirty&&this.children.sort(Oj),this.isDirty=!1,this.children.forEach(e)}};

@@ -1,0 +1,6 @@
+var __wakaru_ZMy_initialized = false;
+export function ZMy() {
+if (__wakaru_ZMy_initialized) return;
+__wakaru_ZMy_initialized = true;
+
+}

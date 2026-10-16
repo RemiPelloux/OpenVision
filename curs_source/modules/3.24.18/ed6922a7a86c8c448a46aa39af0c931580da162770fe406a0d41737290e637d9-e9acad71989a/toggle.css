@@ -1,0 +1,6 @@
+var __wakaru__kg_initialized = false;
+export function _kg() {
+if (__wakaru__kg_initialized) return;
+__wakaru__kg_initialized = true;
+
+}

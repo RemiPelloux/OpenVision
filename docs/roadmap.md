@@ -1,5 +1,8 @@
 # OpenVision feature roadmap
 
+[Progress, percentages and gate-based ETA](progress.md) ·
+[Recovery archive](../curs_source/README.md) · [Recovery limits](recovery-status.md)
+
 Updated 15 October 2026; latest portable release **0.2.0-preview.6**, with Linux x64 source support. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
 Verified**. Current ledger: **6 Verified, 22 Partial, 12 Planned, 2 Unknown**,
@@ -106,7 +109,7 @@ and detailed evidence links.
 
 | Rank | Story / feature | REA still needed | Implementation / verification still needed | Points |
 | ---: | --- | --- | --- | ---: |
-| 23 | OV-801 · Native/WASM inventory | Loaded roles for 52 PE paths and 15 WASM payloads; one complete WASM record remains | Source/license/version/ABI and rebuild-or-replace disposition for every dependency | 13 |
+| 23 | OV-801 · Native/WASM inventory | Loaded roles and dependency contracts: historical 52 PE paths / 15 WASM payloads; current 53 native paths / 15 WASM payloads | Source/license/version/ABI and rebuild-or-replace disposition for every dependency; complete version-specific REA coverage ([recovery status](recovery-status.md)) | 13 |
 | 24 | OV-802 · Buildable host and addons | Resolve inventory gaps affecting required upstream bindings | Pin sources/toolchains/lockfiles, rebuild storage/watchers/terminal/OS bindings and verify ABI | 13 |
 | 25 | OV-803 · Owned helper replacements | Required file-service/parser/Agent/sandbox interfaces and hosted contracts | Implement required replacements with malformed-input, authority and cleanup checks | 13 |
 | 26 | OV-804 · Clean independent build | No new broad decompilation; resolve specific missing build inputs | Build twice from a clean machine/checkout, launch and pass core checks without ignored recovery inputs | 8 |

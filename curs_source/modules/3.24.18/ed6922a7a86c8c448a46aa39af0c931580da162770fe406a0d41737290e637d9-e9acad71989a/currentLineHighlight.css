@@ -1,0 +1,6 @@
+var __wakaru_Wvg_initialized = false;
+export function Wvg() {
+if (__wakaru_Wvg_initialized) return;
+__wakaru_Wvg_initialized = true;
+
+}

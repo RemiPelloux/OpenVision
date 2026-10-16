@@ -1,0 +1,6 @@
+var __wakaru_yOk_initialized = false;
+export function yOk() {
+if (__wakaru_yOk_initialized) return;
+__wakaru_yOk_initialized = true;
+
+}

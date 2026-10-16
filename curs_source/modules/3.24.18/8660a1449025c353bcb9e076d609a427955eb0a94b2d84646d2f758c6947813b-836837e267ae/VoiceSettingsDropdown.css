@@ -1,0 +1,6 @@
+var __wakaru_N4k_initialized = false;
+export function N4k() {
+if (__wakaru_N4k_initialized) return;
+__wakaru_N4k_initialized = true;
+
+}

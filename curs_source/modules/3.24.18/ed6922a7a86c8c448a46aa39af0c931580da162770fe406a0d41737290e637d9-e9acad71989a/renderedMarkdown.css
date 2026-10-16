@@ -1,0 +1,6 @@
+var __wakaru_BSg_initialized = false;
+export function BSg() {
+if (__wakaru_BSg_initialized) return;
+__wakaru_BSg_initialized = true;
+
+}

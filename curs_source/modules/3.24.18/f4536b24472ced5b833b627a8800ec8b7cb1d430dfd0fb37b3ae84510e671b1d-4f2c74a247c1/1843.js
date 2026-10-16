@@ -1,0 +1,1 @@
+function OR(e,t){if(typeof Proxy>"u")return pm;const r=new Map,n=a((i,s)=>pm(i,s,e,t),"factory"),o=a((i,s)=>n(i,s),"deprecatedFactoryFunction");return new Proxy(o,{get:a((i,s)=>s==="create"?n:(r.has(s)||r.set(s,pm(s,void 0,e,t)),r.get(s)),"get")})}

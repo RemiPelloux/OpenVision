@@ -1,0 +1,1 @@
+function wT(e){return{kind:"validation",type:"safe_integer",reference:wT,async:!1,expects:null,requirement:Number.isSafeInteger,message:e,"~run"(t,r){return t.typed&&!this.requirement(t.value)&&Nr(this,"safe integer",t,r),t}}}

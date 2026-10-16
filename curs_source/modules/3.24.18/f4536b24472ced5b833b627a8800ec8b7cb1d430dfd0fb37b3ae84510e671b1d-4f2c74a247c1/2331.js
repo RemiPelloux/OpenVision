@@ -1,0 +1,1 @@
+function sv(e){switch(e.typeName){case"google.protobuf.Any":case"google.protobuf.Timestamp":case"google.protobuf.Duration":case"google.protobuf.FieldMask":case"google.protobuf.Struct":case"google.protobuf.Value":case"google.protobuf.ListValue":return!0;default:return Xn(e)}}

@@ -1,0 +1,6 @@
+var __wakaru_RYw_initialized = false;
+export function RYw() {
+if (__wakaru_RYw_initialized) return;
+__wakaru_RYw_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_hFh_initialized = false;
+export function hFh() {
+if (__wakaru_hFh_initialized) return;
+__wakaru_hFh_initialized = true;
+
+}

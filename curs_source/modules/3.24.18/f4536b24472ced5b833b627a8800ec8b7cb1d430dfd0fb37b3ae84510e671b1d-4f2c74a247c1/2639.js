@@ -1,0 +1,1 @@
+function x3(e){switch(e){case N.STRING:return t=>t;case N.BOOL:return t=>t==="true"?!0:t==="false"?!1:t;case N.UINT64:case N.FIXED64:return t=>{try{return st.uParse(t)}catch{return t}};case N.INT64:case N.SFIXED64:case N.SINT64:return t=>{try{return st.parse(t)}catch{return t}};default:return t=>{const r=Number.parseInt(t);return Number.isFinite(r)?r:t}}}

@@ -1,0 +1,6 @@
+var __wakaru_Hxk_initialized = false;
+export function Hxk() {
+if (__wakaru_Hxk_initialized) return;
+__wakaru_Hxk_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function Gl(e,t,r){if(e==null)return[];if(e instanceof EventTarget)return[e];if(typeof e=="string"){let n=document;t&&(n=t.current);const o=r?.[e]??n.querySelectorAll(e);return o?Array.from(o):[]}return Array.from(e).filter(n=>n!=null)}

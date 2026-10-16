@@ -1,0 +1,6 @@
+var __wakaru_Pyg_initialized = false;
+export function Pyg() {
+if (__wakaru_Pyg_initialized) return;
+__wakaru_Pyg_initialized = true;
+
+}

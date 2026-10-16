@@ -1,0 +1,6 @@
+var __wakaru_uAy_initialized = false;
+export function uAy() {
+if (__wakaru_uAy_initialized) return;
+__wakaru_uAy_initialized = true;
+
+}

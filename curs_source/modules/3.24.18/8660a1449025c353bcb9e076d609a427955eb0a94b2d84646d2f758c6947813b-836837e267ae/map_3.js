@@ -1,0 +1,9 @@
+import { K7 } from "./Observable_3.js";
+import { E } from "./tslib.es6.js";
+var __wakaru_GM1_initialized = false;
+export function GM1() {
+if (__wakaru_GM1_initialized) return;
+__wakaru_GM1_initialized = true;
+E(), K7();
+
+}

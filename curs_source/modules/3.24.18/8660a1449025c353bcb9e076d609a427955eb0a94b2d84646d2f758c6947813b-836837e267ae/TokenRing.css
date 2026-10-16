@@ -1,0 +1,6 @@
+var __wakaru_M6k_initialized = false;
+export function M6k() {
+if (__wakaru_M6k_initialized) return;
+__wakaru_M6k_initialized = true;
+
+}

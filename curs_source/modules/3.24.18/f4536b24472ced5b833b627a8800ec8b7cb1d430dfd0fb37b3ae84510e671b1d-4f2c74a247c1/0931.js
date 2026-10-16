@@ -1,0 +1,1 @@
+a(ha,"_stringify");

@@ -1,0 +1,1 @@
+function HP({className:e,color:t="brand",render:r,size:n="inherit",underline:o,weight:i="inherit",ref:s,...c}){const l=KF(uH);return bl({defaultTagName:"a",props:{className:_e(dH({underline:o}),pC({color:t,size:n,weight:i}),e),...c},ref:s,render:r??l??void 0})}

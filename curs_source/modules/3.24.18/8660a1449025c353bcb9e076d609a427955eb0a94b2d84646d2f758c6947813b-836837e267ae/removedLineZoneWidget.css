@@ -1,0 +1,6 @@
+var __wakaru_VIk_initialized = false;
+export function VIk() {
+if (__wakaru_VIk_initialized) return;
+__wakaru_VIk_initialized = true;
+
+}

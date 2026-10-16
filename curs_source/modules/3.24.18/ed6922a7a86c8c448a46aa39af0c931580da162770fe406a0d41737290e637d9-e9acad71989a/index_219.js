@@ -1,0 +1,45 @@
+import { Zjh } from "./breadcrumbs_2.js";
+import { b0_ } from "./browserTracingIntegration.js";
+import { iqh } from "./browsersession.js";
+import { Cjh } from "./client_2.js";
+import { ik_ } from "./contextlines.js";
+import { c1_ } from "./diagnose-sdk.js";
+import { M9n } from "./eventbuilder_2.js";
+import { tS_ } from "./feedbackAsync.js";
+import { nS_ } from "./feedbackSync.js";
+import { b2o } from "./fetch_3.js";
+import { A2o } from "./globalhandlers.js";
+import { ak_ } from "./graphqlClient.js";
+import { Q$, nqh } from "./helpers.js";
+import { ek_ } from "./httpclient.js";
+import { uqh } from "./httpcontext.js";
+import { $u } from "./index_10.js";
+import { u2o } from "./index_216.js";
+import { n0_, qC_ } from "./index_217.js";
+import { J0_ } from "./integration_2.js";
+import { t1_ } from "./integration_3.js";
+import { n1_ } from "./integration_4.js";
+import { r1_ } from "./integration_5.js";
+import { s1_ } from "./integration_6.js";
+import { o1_ } from "./integration_7.js";
+import { _jh } from "./lazyLoadIntegration.js";
+import { gqh } from "./linkederrors_2.js";
+import { D0_ } from "./offline_2.js";
+import { WS_ } from "./report-dialog.js";
+import { S0_ } from "./reportPageLoaded.js";
+import { GS_ } from "./reportingobserver.js";
+import { JKh } from "./request_2.js";
+import { $S_ } from "./sdk_2.js";
+import { w0_ } from "./setActiveSpan.js";
+import { PS_ } from "./spotlight.js";
+import { Kjh } from "./stack-parsers.js";
+import { x } from "./tslib.es6.js";
+import { mS_ } from "./userfeedback.js";
+import { h1_ } from "./webWorker_2.js";
+var __wakaru_p1__initialized = false;
+export function p1_() {
+if (__wakaru_p1__initialized) return;
+__wakaru_p1__initialized = true;
+x(), tS_(), nS_(), $u(), Q$(), Cjh(), b2o(), Kjh(), M9n(), mS_(), $S_(), WS_(), Zjh(), A2o(), uqh(), gqh(), nqh(), _jh(), GS_(), ek_(), ik_(), ak_(), qC_(), n0_(), u2o(), JKh(), b0_(), S0_(), w0_(), D0_(), J0_(), PS_(), iqh(), t1_(), n1_(), r1_(), s1_(), o1_(), c1_(), h1_();
+
+}

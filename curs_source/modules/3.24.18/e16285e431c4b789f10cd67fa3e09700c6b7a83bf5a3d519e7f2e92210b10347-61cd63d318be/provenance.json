@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "storageSizeScanMain.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\base\\parts\\storage\\node\\storageSizeScanMain.js", "ranges": [[0,6251]], "extraction": "structural"}
+  }
+}

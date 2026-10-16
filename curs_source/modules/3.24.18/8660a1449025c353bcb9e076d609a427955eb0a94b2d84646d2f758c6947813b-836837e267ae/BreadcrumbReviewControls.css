@@ -1,0 +1,6 @@
+var __wakaru_JIk_initialized = false;
+export function JIk() {
+if (__wakaru_JIk_initialized) return;
+__wakaru_JIk_initialized = true;
+
+}

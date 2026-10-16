@@ -1,0 +1,1 @@
+function eb(e){const t=e.localName;if(e.presence!=JH)return o=>{delete o[t]};if(e.fieldKind=="enum"){const o=e.enum.values[0].number;return i=>{i[t]=o}}const r=e.scalar,n=e.longAsString;return o=>{o[t]=on(r,n)}}

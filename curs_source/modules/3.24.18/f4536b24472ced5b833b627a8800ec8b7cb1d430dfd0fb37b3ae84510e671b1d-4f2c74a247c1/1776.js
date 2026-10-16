@@ -1,0 +1,1 @@
+function Ug(e=!0){const t=EL(yl);if(t===null)return[!0,null];const{isPresent:r,onExitComplete:n,register:o}=t,i=kL();TL(()=>{if(e)return o(i)},[e]);const s=CL(()=>e&&n&&n(i),[i,n,e]);return!r&&n?[!1,s]:[!0]}

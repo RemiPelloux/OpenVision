@@ -1,0 +1,6 @@
+var __wakaru_X4w_initialized = false;
+export function X4w() {
+if (__wakaru_X4w_initialized) return;
+__wakaru_X4w_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function r3(e){const t=e.localName,{toMessage:r,toLocal:n}=Fr(e),o=Fv(e);if(e.oneof){const i=e.oneof.localName;return(s,c,l)=>{const m=s[i],u=r(m.case===t?m.value:void 0);o(u,c,l),s[i]={case:t,value:n(u)}}}return(i,s,c)=>{const l=r(i[t]);o(l,s,c),i[t]=n(l)}}

@@ -1,0 +1,6 @@
+var __wakaru_KLy_initialized = false;
+export function KLy() {
+if (__wakaru_KLy_initialized) return;
+__wakaru_KLy_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_mSg_initialized = false;
+export function mSg() {
+if (__wakaru_mSg_initialized) return;
+__wakaru_mSg_initialized = true;
+
+}

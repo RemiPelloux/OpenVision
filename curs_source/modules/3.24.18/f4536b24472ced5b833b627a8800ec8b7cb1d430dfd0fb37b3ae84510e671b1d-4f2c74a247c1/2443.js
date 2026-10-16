@@ -1,0 +1,2 @@
+function J_(e,t){const r=nM();let n=0,o=0,i,s=0;for(let c=0;c<t.length;c++){if(i=r[t.charCodeAt(c)],i===void 0)switch(t[c]){case"=":o=0;case`
+`:case"\r":case"	":case" ":continue;default:throw Error("invalid base64 string")}switch(o){case 0:s=i,o=1;break;case 1:e[n++]=s<<2|(i&48)>>4,s=i,o=2;break;case 2:e[n++]=(s&15)<<4|(i&60)>>2,s=i,o=3;break;case 3:e[n++]=(s&3)<<6|i,o=0;break}}if(o==1)throw Error("invalid base64 string");return n}

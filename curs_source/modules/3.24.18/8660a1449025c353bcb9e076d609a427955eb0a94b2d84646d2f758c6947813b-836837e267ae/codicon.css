@@ -1,0 +1,6 @@
+var __wakaru_zLy_initialized = false;
+export function zLy() {
+if (__wakaru_zLy_initialized) return;
+__wakaru_zLy_initialized = true;
+
+}

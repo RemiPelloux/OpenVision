@@ -1,0 +1,9 @@
+{
+  "format": "esbuild",
+  "strategy": "structural",
+  "modules": {
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\code\\node\\cliProcessMain.js", "ranges": [[182,446],[447,1415],[4793,699143]], "extraction": "structural"},
+    "index.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\code\\node\\cliProcessMain.js", "ranges": [[1446,4792]], "extraction": "structural"},
+    "tslib.es6.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\code\\node\\cliProcessMain.js", "ranges": [[1419,1445]], "extraction": "structural"}
+  }
+}

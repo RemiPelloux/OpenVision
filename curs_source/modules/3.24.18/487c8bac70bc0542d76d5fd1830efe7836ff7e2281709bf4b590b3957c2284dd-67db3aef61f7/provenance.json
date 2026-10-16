@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "unified-diff-worker.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-local-agent-runtime\\dist\\unified-diff-worker.js", "ranges": [[0,6774]], "extraction": "structural"}
+  }
+}

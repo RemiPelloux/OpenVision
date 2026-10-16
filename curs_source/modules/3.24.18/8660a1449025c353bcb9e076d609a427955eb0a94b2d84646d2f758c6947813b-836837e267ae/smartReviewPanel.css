@@ -1,0 +1,6 @@
+var __wakaru_BFl_initialized = false;
+export function BFl() {
+if (__wakaru_BFl_initialized) return;
+__wakaru_BFl_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_XIk_initialized = false;
+export function XIk() {
+if (__wakaru_XIk_initialized) return;
+__wakaru_XIk_initialized = true;
+
+}

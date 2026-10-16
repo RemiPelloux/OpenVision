@@ -1,0 +1,6 @@
+var __wakaru_KPw_initialized = false;
+export function KPw() {
+if (__wakaru_KPw_initialized) return;
+__wakaru_KPw_initialized = true;
+
+}

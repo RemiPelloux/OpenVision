@@ -1,0 +1,6 @@
+var __wakaru_s5y_initialized = false;
+export function s5y() {
+if (__wakaru_s5y_initialized) return;
+__wakaru_s5y_initialized = true;
+
+}

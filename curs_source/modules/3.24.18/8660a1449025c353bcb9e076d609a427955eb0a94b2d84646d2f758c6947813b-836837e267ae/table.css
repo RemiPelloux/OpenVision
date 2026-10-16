@@ -1,0 +1,6 @@
+var __wakaru_ZOy_initialized = false;
+export function ZOy() {
+if (__wakaru_ZOy_initialized) return;
+__wakaru_ZOy_initialized = true;
+
+}

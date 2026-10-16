@@ -1,0 +1,6 @@
+var __wakaru_T3k_initialized = false;
+export function T3k() {
+if (__wakaru_T3k_initialized) return;
+__wakaru_T3k_initialized = true;
+
+}

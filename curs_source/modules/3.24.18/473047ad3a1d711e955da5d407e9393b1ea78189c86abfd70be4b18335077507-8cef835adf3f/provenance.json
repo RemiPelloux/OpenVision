@@ -1,0 +1,12 @@
+{
+  "format": "esbuild",
+  "strategy": "structural",
+  "modules": {
+    "abort-reason.ts": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js", "ranges": [[5933,5979]], "extraction": "structural"},
+    "core.ts": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js", "ranges": [[10363,11632],[9660,9892],[10356,11633]], "extraction": "structural"},
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js", "ranges": [[182,446],[447,2277],[5674,5929],[5980,10356],[11633,22613],[22617,22668],[27181,4876372]], "extraction": "structural"},
+    "index.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js", "ranges": [[2308,5673]], "extraction": "structural"},
+    "index_2.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js", "ranges": [[22669,27180]], "extraction": "structural"},
+    "tslib.es6.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\api\\node\\extensionHostProcess.js", "ranges": [[2281,2307]], "extraction": "structural"}
+  }
+}

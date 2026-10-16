@@ -1,0 +1,6 @@
+var __wakaru_XMy_initialized = false;
+export function XMy() {
+if (__wakaru_XMy_initialized) return;
+__wakaru_XMy_initialized = true;
+
+}

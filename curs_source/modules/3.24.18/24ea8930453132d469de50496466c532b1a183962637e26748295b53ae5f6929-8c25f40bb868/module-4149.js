@@ -1,0 +1,5 @@
+var $RangeError = RangeError;
+module.exports = function(it) {
+    if (it === it) return it;
+    throw new $RangeError("NaN is not allowed");
+};

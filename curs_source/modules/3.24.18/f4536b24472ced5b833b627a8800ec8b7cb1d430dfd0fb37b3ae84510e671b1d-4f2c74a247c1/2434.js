@@ -1,0 +1,1 @@
+function Ev(e,t){switch(t){case N.STRING:return e;case N.INT32:case N.FIXED32:case N.UINT32:case N.SFIXED32:case N.SINT32:{const r=Number.parseInt(e);if(Number.isFinite(r))return r;break}case N.BOOL:switch(e){case"true":return!0;case"false":return!1}break;case N.UINT64:case N.FIXED64:try{return st.uParse(e)}catch{}break;default:try{return st.parse(e)}catch{}break}return e}

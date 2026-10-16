@@ -1,5 +1,9 @@
 # Recovery and product control
 
+[Progress, percentages and gate-based ETA](progress.md) ·
+[Prioritized implementation roadmap](roadmap.md#ranked-rea-implementation-and-verification-work) ·
+[Acceptance ledger](completion-sprints.md)
+
 OpenVision runs editable recovered application JavaScript with a compiled native
 Electron host and native addons. It is not a complete original-source rebuild.
 This distinction also applies to the Agent and editor: local JavaScript behavior
@@ -7,31 +11,35 @@ can be changed, but a remote model's speed, implementation and capabilities
 remain controlled by its provider.
 
 The full original source is not tracked in Git or available locally. The
-[`curs_source` index](../curs_source/README.md) identifies what the repository
-does contain and where to inspect the editable bundled JavaScript.
+[`curs_source` archive](../curs_source/README.md) now contains actual readable
+application code, extracted modules, provenance and native pseudocode. Its
+manifest identifies each representation and input version.
 
 ## Observed recovery coverage
 
-The local recovery reports describe the Windows input snapshot reviewed on
-2026-10-12. Counts describe different representations, so they must not be added
-or presented as a percentage of original source recovered.
+The current Windows snapshot is **3.24.18**, captured on 2026-10-16. The separate
+historical snapshot is **3.21.13**, captured on 2026-10-12. Counts describe
+different representations; they cannot be added or presented as a percentage
+of original source recovered.
 
 | Layer | Evidence | Remaining limitation |
 | --- | --- | --- |
-| Installation snapshot | 17,092 files captured; source hashes retained | Captured files include compiled artifacts |
-| Readable files | 15,799 formatted; six unchanged fallback files | Formatting does not recover original variable names or TypeScript |
-| JavaScript bundles | 224 selected; six large bundles retried successfully from raw inputs | Module recovery is an analysis representation, not original source |
+| Current installation | 15,161 files captured; source hashes retained | Includes compiled artifacts and dependencies |
+| Current readable files | 13,925 formatted; 916 application files published in Git | Installed dependencies remain local; formatting does not recover original names or TypeScript |
+| Current JavaScript | 237 inputs; 236 structurally extracted after retries; one separately split into top-level statements | Derived files and provenance are published; module graphs are not independently runnable |
 | Original source maps | Zero present; zero embedded original sources recovered | Original comments, types and build inputs are missing |
-| WebAssembly | All 15 distinct payloads validated and decoded to WAT | WAT is a derived low-level representation |
-| Windows native payloads | All 52 have PE metadata; one addon has pseudocode for 626 identified procedures | 51 payloads have no pseudocode coverage; complete function discovery is not established |
+| Current WebAssembly | 23 paths; all 15 distinct payloads validated and decoded to local WAT | Supplemental WABT decoding; not original source or complete REA WASM Evidence |
+| Historical Windows native payloads | All 52 hashes checked; nine modules have pseudocode for 4,647 identified internal procedures | 43 images have metadata only; pseudocode cannot rebuild the native host |
+| Current Windows native payloads | 53 paths inventoried by hash | No matching pseudocode in the historical export; versions must not be combined |
 | Hosted services | Client request code is available | Server source is absent from the installation |
 
-Local evidence lives in the recovery directory: `reports/summary.json`,
-`reports/installation-manifest.json`, `reports/rea-coverage.json`,
-`reports/rea-ledger.json`, `native/summary.json`, `native/inventory.json`, and
-`native/cursor-proclist/coverage.json`. This machine's recovery directory is the
-sibling `cursor` directory. Generated code, binaries and evidence remain outside
-Git. Preparation of another input version requires its own matching analysis.
+Published code and native Evidence live under `curs_source/javascript`,
+`curs_source/modules`, and `curs_source/native`. Complete local captures,
+dependency text, JavaScript Evidence and decoded WAT live in
+`curs_source/snapshots/<version>` and remain ignored. The historical inputs also
+remain in the sibling recovery directory. `curs_source/manifest.json` records
+publication hashes, exact input identities and scoped REA results. No raw
+binaries or installed dependency trees are added by this recovery publication.
 
 Native overview evidence for the recovered addon:
 `ev_18bcd712c61a4015319c4e46c63b1b742d8d0dfffb521ca60ead4ddbd68e8125`.

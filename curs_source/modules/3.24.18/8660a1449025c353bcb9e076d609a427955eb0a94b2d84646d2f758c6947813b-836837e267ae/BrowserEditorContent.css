@@ -1,0 +1,6 @@
+var __wakaru__Ik_initialized = false;
+export function _Ik() {
+if (__wakaru__Ik_initialized) return;
+__wakaru__Ik_initialized = true;
+
+}

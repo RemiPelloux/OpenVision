@@ -1,0 +1,1 @@
+function Kw(e){let t=e.hourCycle;if(t===void 0&&e.hourCycles&&e.hourCycles.length&&(t=e.hourCycles[0]),t)switch(t){case"h24":return"k";case"h23":return"H";case"h12":return"h";case"h11":return"K";default:throw new Error("Invalid hourCycle")}const r=e.language;let n;return r!=="root"&&(n=e.maximize().region),(ui[n||""]||ui[r||""]||ui[`${r}-001`]||ui["001"])[0]}

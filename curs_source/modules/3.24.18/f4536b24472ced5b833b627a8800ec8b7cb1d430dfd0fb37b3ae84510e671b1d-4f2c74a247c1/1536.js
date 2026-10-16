@@ -1,0 +1,1 @@
+var uj=$l((e,t,r,n)=>t.set(r,n,()=>{e[r]=n.get()}),{test:a(e=>kh(e),"test"),read:a((e,t)=>{const r=e[t];return typeof r=="string"||typeof r=="number"?r:void 0},"read")}),{schedule:$x,cancel:EK}=_h(queueMicrotask,!1),Or={x:!1,y:!1};

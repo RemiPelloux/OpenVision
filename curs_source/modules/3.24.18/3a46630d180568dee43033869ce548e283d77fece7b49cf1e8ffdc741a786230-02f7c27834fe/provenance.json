@@ -1,0 +1,7 @@
+{
+  "format": "webpack5",
+  "strategy": "structural",
+  "modules": {
+    "module-88957.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-local-agent-runtime\\dist\\957.js", "ranges": [[79,119]], "extraction": "structural"}
+  }
+}

@@ -1,0 +1,1 @@
+function rS({className:e,render:t,children:r}){const{t:n}=Be(),o=Nt(),{add:i}=o;return i.status==="idle"||i.status==="added"?null:qt(Kr,{className:e,disabled:i.status==="submitting"||i.status==="requires-action",onClick:o.actions.cancelAdd,render:t,children:r??n("Cancel")})}

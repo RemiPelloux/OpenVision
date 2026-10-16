@@ -1,0 +1,1 @@
+function d1(e={number:{},dateTime:{},pluralRules:{}}){return{getNumberFormat:mc((...t)=>new Intl.NumberFormat(...t),{cache:xc(e.number),strategy:dc.variadic}),getDateTimeFormat:mc((...t)=>new Intl.DateTimeFormat(...t),{cache:xc(e.dateTime),strategy:dc.variadic}),getPluralRules:mc((...t)=>new Intl.PluralRules(...t),{cache:xc(e.pluralRules),strategy:dc.variadic})}}

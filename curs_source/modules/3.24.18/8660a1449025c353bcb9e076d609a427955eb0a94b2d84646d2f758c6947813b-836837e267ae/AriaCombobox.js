@@ -1,0 +1,46 @@
+import { Y_e } from "./ComboboxRootContext.js";
+import { Wj } from "./DirectionContext.js";
+import { N7 } from "./FieldRootContext.js";
+import { C_e } from "./FormContext.js";
+import { sQo } from "./Store_2.js";
+import { b2r } from "./areArraysEqual.js";
+import { oZS } from "./constants_16.js";
+import { VS } from "./createBaseUIEventDetails.js";
+import { vA } from "./empty.js";
+import { nZS } from "./gridNavigation.js";
+import { q8r } from "./index_176.js";
+import { s7t } from "./itemEquality.js";
+import { mne } from "./mergeProps.js";
+import { FY } from "./popupStoreUtils.js";
+import { Zb } from "./reason-parts.js";
+import { o7t } from "./resolveValueLabel.js";
+import { $D } from "./shadowDom.js";
+import { yGe } from "./store_5.js";
+import { E } from "./tslib.es6.js";
+import { Z8t } from "./useClick.js";
+import { __e } from "./useControlled.js";
+import { J8t } from "./useDismiss.js";
+import { fcp } from "./useFilter.js";
+import { cJo } from "./useFloatingRootContext.js";
+import { jv } from "./useIsoLayoutEffect.js";
+import { nit } from "./useLabelableId.js";
+import { vJo } from "./useListNavigation.js";
+import { m_e } from "./useMergedRefs.js";
+import { QAr } from "./useOnFirstRender.js";
+import { qQ } from "./useOpenChangeComplete.js";
+import { nci } from "./useOpenInteractionType.js";
+import { jQ } from "./useRefWithInit.js";
+import { eit } from "./useRegisterFieldControl.js";
+import { Jy } from "./useStableCallback.js";
+import { TW } from "./useStore.js";
+import { LRe } from "./useTransitionStatus.js";
+import { Fwe } from "./useValueAsRef.js";
+import { rit } from "./useValueChanged.js";
+import { WHe } from "./visuallyHidden.js";
+var __wakaru_cZS_initialized = false;
+export function cZS() {
+if (__wakaru_cZS_initialized) return;
+__wakaru_cZS_initialized = true;
+E(), __e(), jv(), QAr(), Jy(), m_e(), Fwe(), WHe(), jQ(), vA(), nZS(), VS(), Y_e(), yGe(), qQ(), N7(), eit(), C_e(), nit(), q8r(), fcp(), LRe(), nci(), rit(), o7t(), s7t(), b2r(), oZS(), Wj(), sQo(), TW(), Zb(), $D(), cJo(), Z8t(), J8t(), vJo(), mne(), FY();
+
+}

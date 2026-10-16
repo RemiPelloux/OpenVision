@@ -1,0 +1,92 @@
+{
+  "evidence_id": "ev_22a3e7da678535309237def2c89f2b5c87b3fbc34bff6dc465cc039d392f5a0b",
+  "subject": {
+    "name": "windows_process_tree.node",
+    "digest": {
+      "sha256": "905bb7296a46984e1511ac70081d266db7b4bdf11a25da84d53d77af848881b1"
+    },
+    "local_path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\@vscode\\windows-process-tree\\build\\Release\\windows_process_tree.node",
+    "format": "pe",
+    "architecture": "x86_64"
+  },
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile": {
+    "provider": {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "version": "12.1.4"
+    },
+    "parameters": {
+      "target_kind": "executable",
+      "target_format": "pe",
+      "executable_role": "shared-library",
+      "managed": false,
+      "native_aot_metadata": {
+        "contract_revision": "rtr-9.1-x64-pe-read-only-v3",
+        "source_bytes": 134217728,
+        "work_units": 67108864,
+        "working_memory_bytes": 67108864,
+        "report_bytes": 4194304
+      },
+      "architecture": "x86_64",
+      "available_architectures": [
+        "x86_64"
+      ],
+      "import_mode": "ephemeral-source-immutable",
+      "pdb_observations": "program-info-v1",
+      "annotation_policy": "atomic-function-entry-metadata-v1",
+      "load_image_observations": "source-mappings-entry-context-v2",
+      "function_body_evidence": "complete-inclusive-ranges-v1",
+      "function_references": "complete-body-and-entry-reference-manager-v2",
+      "call_relationship_coverage": "function-body-call-coverage-v5",
+      "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+      "string_inventory_evidence": "defined-data-coverage-v1",
+      "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+      "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+      "instruction_flow_evidence": "decoded-return-pcode-v1",
+      "instruction_references": "exact-address-incoming-v1",
+      "function_boundary_observations": "ghidra-function-boundary-limitations-v3",
+      "no_return_repair": "disabled-windows-p0",
+      "process_launch": "official-headless-script-v1",
+      "jump_table_evidence": "typed-case-default-blocks-v1",
+      "decompiler_jump_loads": true,
+      "loader": "auto-from-header",
+      "language_id": "auto-from-header",
+      "compiler_spec_id": "auto-default",
+      "analyzer_preset": "ghidra-default"
+    },
+    "digest": "dcc676845881c04a2d22833fb35d26569462e033daee5e99a95edac5aa61ac05"
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "procedure_pseudo_code",
+  "parameters": {
+    "procedure": "0x180013824"
+  },
+  "raw_result": {
+    "value": "\r\nint FUN_180013824(uint param_1,undefined1 (*param_2) [32],uint param_3,longlong *param_4)\r\n\r\n{\r\n  char cVar1;\r\n  int iVar2;\r\n  undefined8 uVar3;\r\n  byte bVar4;\r\n  short sVar5;\r\n  short sVar6;\r\n  BOOL BVar7;\r\n  DWORD DVar8;\r\n  int iVar9;\r\n  ulonglong uVar10;\r\n  undefined7 extraout_var;\r\n  DWORD *pDVar11;\r\n  DWORD DVar12;\r\n  longlong lVar13;\r\n  ulonglong uVar14;\r\n  undefined1 (*pauVar15) [32];\r\n  undefined8 local_70;\r\n  DWORD local_68;\r\n  undefined8 local_60;\r\n  DWORD local_50 [4];\r\n  \r\n  DVar12 = 0;\r\n  uVar14 = (ulonglong)param_3;\r\n  if (param_3 == 0) {\r\n    return 0;\r\n  }\r\n  if (param_2 == (undefined1 (*) [32])0x0) {\r\nLAB_180013854:\r\n    *(undefined1 *)(param_4 + 7) = 1;\r\n    *(undefined4 *)((longlong)param_4 + 0x34) = 0;\r\n    *(undefined1 *)(param_4 + 6) = 1;\r\n    *(undefined4 *)((longlong)param_4 + 0x2c) = 0x16;\r\n    FUN_18000c334((wchar_t *)0x0,(wchar_t *)0x0,(wchar_t *)0x0,0,0,param_4);\r\n    return -1;\r\n  }\r\n  uVar10 = (ulonglong)(param_1 & 0x3f);\r\n  lVar13 = (longlong)(int)param_1 >> 6;\r\n  cVar1 = *(char *)((&DAT_1800247f0)[lVar13] + 0x39 + uVar10 * 0x48);\r\n  if (((byte)(cVar1 - 1U) < 2) && ((~param_3 & 1) == 0)) goto LAB_180013854;\r\n  if ((*(byte *)((&DAT_1800247f0)[lVar13] + 0x38 + uVar10 * 0x48) & 0x20) != 0) {\r\n    thunk_FUN_180013d70(param_1,(LARGE_INTEGER)0x0,2,(longlong)param_4);\r\n  }\r\n  local_60 = 0;\r\n  bVar4 = FUN_180013c4c(param_1);\r\n  if (((int)CONCAT71(extraout_var,bVar4) == 0) ||\r\n     (-1 < *(char *)((&DAT_1800247f0)[lVar13] + 0x38 + uVar10 * 0x48))) {\r\nLAB_180013a0c:\r\n    if (-1 < *(char *)((&DAT_1800247f0)[lVar13] + 0x38 + (ulonglong)(param_1 & 0x3f) * 0x48)) {\r\n      local_70 = 0;\r\n      local_68 = 0;\r\n      BVar7 = WriteFile(*(HANDLE *)\r\n                         ((&DAT_1800247f0)[lVar13] + 0x28 + (ulonglong)(param_1 & 0x3f) * 0x48),\r\n                        param_2,param_3,(LPDWORD)((longlong)&local_70 + 4),(LPOVERLAPPED)0x0);\r\n      DVar12 = local_68;\r\n      uVar3 = local_70;\r\n      if (BVar7 == 0) {\r\n        DVar12 = GetLastError();\r\n        local_70 = CONCAT44(local_70._4_4_,DVar12);\r\n        DVar12 = local_68;\r\n        uVar3 = local_70;\r\n      }\r\n      goto LAB_180013ac1;\r\n    }\r\n    if (cVar1 == '\\0') {\r\n      pDVar11 = FUN_18001336c((DWORD *)&local_70,param_1,(char *)param_2,uVar14);\r\n    }\r\n    else if (cVar1 == '\\x01') {\r\n      pDVar11 = FUN_180013590((DWORD *)&local_70,param_1,(WCHAR *)param_2,param_3);\r\n    }\r\n    else {\r\n      DVar12 = 0;\r\n      uVar3 = local_60;\r\n      if (cVar1 != '\\x02') goto LAB_180013ac1;\r\n      pDVar11 = FUN_180013474((DWORD *)&local_70,param_1,(short *)param_2,uVar14);\r\n    }\r\n  }\r\n  else {\r\n    if ((char)param_4[5] == '\\0') {\r\n      FUN_18000d4b0(param_4);\r\n    }\r\n    if ((*(longlong *)(param_4[3] + 0x138) == 0) &&\r\n       (*(char *)((&DAT_1800247f0)[lVar13] + 0x39 + uVar10 * 0x48) == '\\0')) goto LAB_180013a0c;\r\n    local_50[0] = 0;\r\n    BVar7 = GetConsoleMode(*(HANDLE *)((&DAT_1800247f0)[lVar13] + 0x28 + uVar10 * 0x48),local_50);\r\n    if (BVar7 == 0) goto LAB_180013a0c;\r\n    if (cVar1 != '\\0') {\r\n      if ((cVar1 == '\\x01') || (uVar3 = local_60, cVar1 == '\\x02')) {\r\n        local_70 = 0;\r\n        uVar3 = local_70;\r\n        if (param_2 < (undefined1 (*) [32])(*param_2 + uVar14)) {\r\n          local_70._4_4_ = 0;\r\n          pauVar15 = param_2;\r\n          iVar9 = local_70._4_4_;\r\n          do {\r\n            sVar6 = *(short *)*pauVar15;\r\n            sVar5 = FUN_180013e28(sVar6);\r\n            if (sVar5 != sVar6) {\r\nLAB_1800139d4:\r\n              DVar8 = GetLastError();\r\n              local_70 = CONCAT44(local_70._4_4_,DVar8);\r\n              uVar3 = local_70;\r\n              break;\r\n            }\r\n            local_70 = CONCAT44(iVar9 + 2,(DWORD)local_70);\r\n            iVar2 = iVar9 + 2;\r\n            if (sVar6 == 10) {\r\n              sVar6 = FUN_180013e28(0xd);\r\n              if (sVar6 != 0xd) goto LAB_1800139d4;\r\n              local_70 = CONCAT44(iVar9 + 3,(DWORD)local_70);\r\n              DVar12 = DVar12 + 1;\r\n              iVar2 = iVar9 + 3;\r\n            }\r\n            iVar9 = iVar2;\r\n            pauVar15 = (undefined1 (*) [32])(*pauVar15 + 2);\r\n            uVar3 = local_70;\r\n          } while (pauVar15 < (undefined1 (*) [32])(*param_2 + uVar14));\r\n        }\r\n      }\r\n      goto LAB_180013ac1;\r\n    }\r\n    pDVar11 = FUN_180012ed8((DWORD *)&local_70,param_1,param_2,uVar14,param_4);\r\n  }\r\n  DVar12 = pDVar11[2];\r\n  uVar3 = *(undefined8 *)pDVar11;\r\nLAB_180013ac1:\r\n  local_60 = uVar3;\r\n  iVar9 = (int)((ulonglong)local_60 >> 0x20);\r\n  if (iVar9 != 0) {\r\n    return iVar9 - DVar12;\r\n  }\r\n  if ((uint)local_60 != 0) {\r\n    if ((uint)local_60 == 5) {\r\n      *(undefined1 *)(param_4 + 6) = 1;\r\n      *(undefined4 *)((longlong)param_4 + 0x2c) = 9;\r\n      *(undefined1 *)(param_4 + 7) = 1;\r\n      *(undefined4 *)((longlong)param_4 + 0x34) = 5;\r\n      return -1;\r\n    }\r\n    FUN_18000d65c((uint)local_60,(longlong)param_4);\r\n    return -1;\r\n  }\r\n  if (((*(byte *)((&DAT_1800247f0)[lVar13] + 0x38 + (ulonglong)(param_1 & 0x3f) * 0x48) & 0x40) != 0\r\n      ) && ((*param_2)[0] == '\\x1a')) {\r\n    return 0;\r\n  }\r\n  *(undefined4 *)((longlong)param_4 + 0x34) = 0;\r\n  *(undefined1 *)(param_4 + 6) = 1;\r\n  *(undefined4 *)((longlong)param_4 + 0x2c) = 0x1c;\r\n  *(undefined1 *)(param_4 + 7) = 1;\r\n  return -1;\r\n}\r\n\r\n",
+    "limitations": []
+  },
+  "normalized_result": "\r\nint FUN_180013824(uint param_1,undefined1 (*param_2) [32],uint param_3,longlong *param_4)\r\n\r\n{\r\n  char cVar1;\r\n  int iVar2;\r\n  undefined8 uVar3;\r\n  byte bVar4;\r\n  short sVar5;\r\n  short sVar6;\r\n  BOOL BVar7;\r\n  DWORD DVar8;\r\n  int iVar9;\r\n  ulonglong uVar10;\r\n  undefined7 extraout_var;\r\n  DWORD *pDVar11;\r\n  DWORD DVar12;\r\n  longlong lVar13;\r\n  ulonglong uVar14;\r\n  undefined1 (*pauVar15) [32];\r\n  undefined8 local_70;\r\n  DWORD local_68;\r\n  undefined8 local_60;\r\n  DWORD local_50 [4];\r\n  \r\n  DVar12 = 0;\r\n  uVar14 = (ulonglong)param_3;\r\n  if (param_3 == 0) {\r\n    return 0;\r\n  }\r\n  if (param_2 == (undefined1 (*) [32])0x0) {\r\nLAB_180013854:\r\n    *(undefined1 *)(param_4 + 7) = 1;\r\n    *(undefined4 *)((longlong)param_4 + 0x34) = 0;\r\n    *(undefined1 *)(param_4 + 6) = 1;\r\n    *(undefined4 *)((longlong)param_4 + 0x2c) = 0x16;\r\n    FUN_18000c334((wchar_t *)0x0,(wchar_t *)0x0,(wchar_t *)0x0,0,0,param_4);\r\n    return -1;\r\n  }\r\n  uVar10 = (ulonglong)(param_1 & 0x3f);\r\n  lVar13 = (longlong)(int)param_1 >> 6;\r\n  cVar1 = *(char *)((&DAT_1800247f0)[lVar13] + 0x39 + uVar10 * 0x48);\r\n  if (((byte)(cVar1 - 1U) < 2) && ((~param_3 & 1) == 0)) goto LAB_180013854;\r\n  if ((*(byte *)((&DAT_1800247f0)[lVar13] + 0x38 + uVar10 * 0x48) & 0x20) != 0) {\r\n    thunk_FUN_180013d70(param_1,(LARGE_INTEGER)0x0,2,(longlong)param_4);\r\n  }\r\n  local_60 = 0;\r\n  bVar4 = FUN_180013c4c(param_1);\r\n  if (((int)CONCAT71(extraout_var,bVar4) == 0) ||\r\n     (-1 < *(char *)((&DAT_1800247f0)[lVar13] + 0x38 + uVar10 * 0x48))) {\r\nLAB_180013a0c:\r\n    if (-1 < *(char *)((&DAT_1800247f0)[lVar13] + 0x38 + (ulonglong)(param_1 & 0x3f) * 0x48)) {\r\n      local_70 = 0;\r\n      local_68 = 0;\r\n      BVar7 = WriteFile(*(HANDLE *)\r\n                         ((&DAT_1800247f0)[lVar13] + 0x28 + (ulonglong)(param_1 & 0x3f) * 0x48),\r\n                        param_2,param_3,(LPDWORD)((longlong)&local_70 + 4),(LPOVERLAPPED)0x0);\r\n      DVar12 = local_68;\r\n      uVar3 = local_70;\r\n      if (BVar7 == 0) {\r\n        DVar12 = GetLastError();\r\n        local_70 = CONCAT44(local_70._4_4_,DVar12);\r\n        DVar12 = local_68;\r\n        uVar3 = local_70;\r\n      }\r\n      goto LAB_180013ac1;\r\n    }\r\n    if (cVar1 == '\\0') {\r\n      pDVar11 = FUN_18001336c((DWORD *)&local_70,param_1,(char *)param_2,uVar14);\r\n    }\r\n    else if (cVar1 == '\\x01') {\r\n      pDVar11 = FUN_180013590((DWORD *)&local_70,param_1,(WCHAR *)param_2,param_3);\r\n    }\r\n    else {\r\n      DVar12 = 0;\r\n      uVar3 = local_60;\r\n      if (cVar1 != '\\x02') goto LAB_180013ac1;\r\n      pDVar11 = FUN_180013474((DWORD *)&local_70,param_1,(short *)param_2,uVar14);\r\n    }\r\n  }\r\n  else {\r\n    if ((char)param_4[5] == '\\0') {\r\n      FUN_18000d4b0(param_4);\r\n    }\r\n    if ((*(longlong *)(param_4[3] + 0x138) == 0) &&\r\n       (*(char *)((&DAT_1800247f0)[lVar13] + 0x39 + uVar10 * 0x48) == '\\0')) goto LAB_180013a0c;\r\n    local_50[0] = 0;\r\n    BVar7 = GetConsoleMode(*(HANDLE *)((&DAT_1800247f0)[lVar13] + 0x28 + uVar10 * 0x48),local_50);\r\n    if (BVar7 == 0) goto LAB_180013a0c;\r\n    if (cVar1 != '\\0') {\r\n      if ((cVar1 == '\\x01') || (uVar3 = local_60, cVar1 == '\\x02')) {\r\n        local_70 = 0;\r\n        uVar3 = local_70;\r\n        if (param_2 < (undefined1 (*) [32])(*param_2 + uVar14)) {\r\n          local_70._4_4_ = 0;\r\n          pauVar15 = param_2;\r\n          iVar9 = local_70._4_4_;\r\n          do {\r\n            sVar6 = *(short *)*pauVar15;\r\n            sVar5 = FUN_180013e28(sVar6);\r\n            if (sVar5 != sVar6) {\r\nLAB_1800139d4:\r\n              DVar8 = GetLastError();\r\n              local_70 = CONCAT44(local_70._4_4_,DVar8);\r\n              uVar3 = local_70;\r\n              break;\r\n            }\r\n            local_70 = CONCAT44(iVar9 + 2,(DWORD)local_70);\r\n            iVar2 = iVar9 + 2;\r\n            if (sVar6 == 10) {\r\n              sVar6 = FUN_180013e28(0xd);\r\n              if (sVar6 != 0xd) goto LAB_1800139d4;\r\n              local_70 = CONCAT44(iVar9 + 3,(DWORD)local_70);\r\n              DVar12 = DVar12 + 1;\r\n              iVar2 = iVar9 + 3;\r\n            }\r\n            iVar9 = iVar2;\r\n            pauVar15 = (undefined1 (*) [32])(*pauVar15 + 2);\r\n            uVar3 = local_70;\r\n          } while (pauVar15 < (undefined1 (*) [32])(*param_2 + uVar14));\r\n        }\r\n      }\r\n      goto LAB_180013ac1;\r\n    }\r\n    pDVar11 = FUN_180012ed8((DWORD *)&local_70,param_1,param_2,uVar14,param_4);\r\n  }\r\n  DVar12 = pDVar11[2];\r\n  uVar3 = *(undefined8 *)pDVar11;\r\nLAB_180013ac1:\r\n  local_60 = uVar3;\r\n  iVar9 = (int)((ulonglong)local_60 >> 0x20);\r\n  if (iVar9 != 0) {\r\n    return iVar9 - DVar12;\r\n  }\r\n  if ((uint)local_60 != 0) {\r\n    if ((uint)local_60 == 5) {\r\n      *(undefined1 *)(param_4 + 6) = 1;\r\n      *(undefined4 *)((longlong)param_4 + 0x2c) = 9;\r\n      *(undefined1 *)(param_4 + 7) = 1;\r\n      *(undefined4 *)((longlong)param_4 + 0x34) = 5;\r\n      return -1;\r\n    }\r\n    FUN_18000d65c((uint)local_60,(longlong)param_4);\r\n    return -1;\r\n  }\r\n  if (((*(byte *)((&DAT_1800247f0)[lVar13] + 0x38 + (ulonglong)(param_1 & 0x3f) * 0x48) & 0x40) != 0\r\n      ) && ((*param_2)[0] == '\\x1a')) {\r\n    return 0;\r\n  }\r\n  *(undefined4 *)((longlong)param_4 + 0x34) = 0;\r\n  *(undefined1 *)(param_4 + 6) = 1;\r\n  *(undefined4 *)((longlong)param_4 + 0x2c) = 0x1c;\r\n  *(undefined1 *)(param_4 + 7) = 1;\r\n  return -1;\r\n}\r\n\r\n",
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+    "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+    "Windows Ghidra P0 accepts native x86 and x86-64 PE applications and DLLs, and explicitly selected raw 6502 images; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically.",
+    "The target references PDB windows_process_tree.pdb (GUID f390e326-776a-4fef-a383-4c02d1cc6ddc, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+  ],
+  "relationship_coverage": null,
+  "locations": [],
+  "evidence_links": []
+}

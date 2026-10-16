@@ -1,0 +1,1 @@
+function*Wm(e){switch(e.kind){case"file":for(const t of e.messages)yield t,yield*Wm(t);yield*e.enums,yield*e.services,yield*e.extensions;break;case"message":for(const t of e.nestedMessages)yield t,yield*Wm(t);yield*e.nestedEnums,yield*e.nestedExtensions;break}}

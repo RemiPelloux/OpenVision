@@ -1,0 +1,43 @@
+import { Qe } from "./Iwo.js";
+import { Ss } from "./aiMiscServices.js";
+import { vS } from "./composer.js";
+import { Pl } from "./composerDataServiceTypes.js";
+import { x_c } from "./fsd-autofix-preference.js";
+import { fre } from "./fsd-finding-utils.js";
+import { $_c } from "./fsd-parent-detach.js";
+import { Bh_ } from "./fsd-tray-read-policy.js";
+import { dX } from "./full_self_driving_pb.js";
+import { Z5s } from "./glass-fsd-analytics.js";
+import { H_c } from "./glass-fsd-auto-apply-store.js";
+import { Xh_ } from "./glass-fsd-controller-registry.js";
+import { PEe } from "./glass-fsd-pr-url.js";
+import { xc } from "./glass-storage-service.js";
+import { vT } from "./glass-tab-persistence-service.contract.js";
+import { Mt } from "./index_197.js";
+import { fFs } from "./launch-local-fsd-subagent.js";
+import { hBe } from "./local-fsd-session.js";
+import { TNC } from "./open-fsd-finding-in-editor.js";
+import { Nze } from "./pendingApprovalRegistry.js";
+import { dv } from "./storage-keys.js";
+import { Y4e } from "./subagentComposerServiceInterface.js";
+import { E } from "./tslib.es6.js";
+import { BNC } from "./use-fsd-agent-live-status.react.js";
+import { mp_ } from "./use-fsd-agentic-apply.react.js";
+import { TLC } from "./use-fsd-auto-apply-findings.react.js";
+import { OLC } from "./use-fsd-finding-diff-stats.react.js";
+import { HLC } from "./use-fsd-tray-data.react.js";
+import { ZLC } from "./use-fsd-tray-pr-binding.react.js";
+import { A8i } from "./use-full-self-driving-client.react.js";
+import { nOC } from "./use-glass-fsd-controller-registry.react.js";
+import { Ph_ } from "./use-glass-fsd-launch-session.react.js";
+import { MEe } from "./use-glass-fsd-queries.react.js";
+import { In } from "./use-service.react_2.js";
+import { qM } from "./worktree.js";
+var __wakaru_Np__initialized = false;
+export function Np_() {
+if (__wakaru_Np__initialized) return;
+__wakaru_Np__initialized = true;
+"use strict";
+E(), Mt(), dX(), Qe(), vS(), Pl(), Nze(), Y4e(), Ss(), qM(), dv(), In(), xc(), vT(), x_c(), fre(), $_c(), Bh_(), H_c(), Xh_(), hBe(), Z5s(), PEe(), fFs(), TNC(), BNC(), mp_(), TLC(), OLC(), HLC(), ZLC(), A8i(), nOC(), Ph_(), MEe();
+
+}

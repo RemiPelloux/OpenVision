@@ -1,0 +1,1 @@
+var Bi="32px",kU=150,BT="linear-gradient(to bottom, transparent 0, black var(--x-fade-top), black calc(100% - var(--x-fade-bottom)), transparent 100%)",TU={both:{bottom:!0,top:!0},bottom:{bottom:!0,top:!1},top:{bottom:!1,top:!0}};

@@ -1,0 +1,1 @@
+function Z2({paymentMethodId:e,className:t,render:r,children:n}){const{t:o}=Be(),i=Nt(),s=i.attempts[e];return s?.kind!=="remove"||s.status==="failed"?null:qt(Kr,{className:t,disabled:i.busy,onClick:a(()=>void i.actions.confirmRemove(e),"onClick"),render:r,children:n??o("Confirm removal")})}

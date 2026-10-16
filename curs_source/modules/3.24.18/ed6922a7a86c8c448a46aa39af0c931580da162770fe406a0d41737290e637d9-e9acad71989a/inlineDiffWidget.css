@@ -1,0 +1,6 @@
+var __wakaru_anr_initialized = false;
+export function anr() {
+if (__wakaru_anr_initialized) return;
+__wakaru_anr_initialized = true;
+
+}

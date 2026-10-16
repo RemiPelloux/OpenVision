@@ -1,0 +1,6 @@
+var __wakaru_sMg_initialized = false;
+export function sMg() {
+if (__wakaru_sMg_initialized) return;
+__wakaru_sMg_initialized = true;
+
+}

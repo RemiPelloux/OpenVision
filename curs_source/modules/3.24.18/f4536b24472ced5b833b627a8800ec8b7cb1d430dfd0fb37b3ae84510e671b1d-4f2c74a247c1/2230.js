@@ -1,0 +1,1 @@
+var qP=ye("span",{className:"text-destructive flex shrink-0",children:ye(zP,{"aria-hidden":!0,className:"size-3.5"})}),fH="text-secondary group-hover:text-primary group-active:text-primary",hH="text-tertiary group-hover:text-primary group-active:text-primary";

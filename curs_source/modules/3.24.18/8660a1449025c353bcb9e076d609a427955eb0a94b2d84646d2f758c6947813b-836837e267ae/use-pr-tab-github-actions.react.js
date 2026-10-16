@@ -1,0 +1,42 @@
+import { mce } from "./PullRequestRepositoryService.js";
+import { wl } from "./agentRepositoryServiceTypes.js";
+import { ju } from "./agent_pb.js";
+import { Ss } from "./aiMiscServices.js";
+import { mv } from "./editor-panel-context.react.js";
+import { hy } from "./gitContextService.js";
+import { QQt } from "./github-header-action.js";
+import { XS } from "./githubUtils.js";
+import { qV } from "./glass-diff-hooks.js";
+import { $G } from "./glass-diff-service.js";
+import { bOs } from "./glass-diff-tab-visibility.js";
+import { I8e } from "./glass-editor-panel-analytics.js";
+import { SOs } from "./glass-git-action-visibility.js";
+import { Zu } from "./glass-log-service.js";
+import { zc } from "./glass-notification-service.js";
+import { Xf } from "./glass-opener-service.js";
+import { xc } from "./glass-storage-service.js";
+import { BS } from "./glass-toast.js";
+import { of } from "./modelConfigServiceTypes.js";
+import { tZ } from "./per-branch-pr-tabs.js";
+import { j5s } from "./pr-lifecycle-cache.js";
+import { lMC } from "./pr-tab-action-runner.js";
+import { f8i } from "./pr-tab-context.react.js";
+import { sMe } from "./prLifecycleStore.js";
+import { oI } from "./prettyDialog.js";
+import { uMC } from "./remove-from-merge-queue-flow.js";
+import { J0v } from "./trigger-fix-merge-conflicts.js";
+import { E } from "./tslib.es6.js";
+import { YBi } from "./use-editor-panel-message-target.react.js";
+import { IG } from "./use-header-tracked-git-derived.react.js";
+import { c2s } from "./use-ongoing-git-action.react.js";
+import { iMC } from "./use-origin-repo-merge-methods.react.js";
+import { $h } from "./use-reactive.react_2.js";
+import { In } from "./use-service.react_2.js";
+var __wakaru_mMC_initialized = false;
+export function mMC() {
+if (__wakaru_mMC_initialized) return;
+__wakaru_mMC_initialized = true;
+"use strict";
+E(), ju(), oI(), wl(), XS(), mce(), sMe(), Ss(), hy(), of(), IG(), c2s(), $h(), In(), qV(), $G(), bOs(), SOs(), Zu(), zc(), BS(), Xf(), j5s(), xc(), J0v(), QQt(), iMC(), mv(), I8e(), YBi(), tZ(), lMC(), f8i(), uMC();
+
+}

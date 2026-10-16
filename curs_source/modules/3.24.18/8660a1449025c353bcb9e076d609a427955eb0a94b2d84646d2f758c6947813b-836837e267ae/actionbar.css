@@ -1,0 +1,6 @@
+var __wakaru_qGd_initialized = false;
+export function qGd() {
+if (__wakaru_qGd_initialized) return;
+__wakaru_qGd_initialized = true;
+
+}

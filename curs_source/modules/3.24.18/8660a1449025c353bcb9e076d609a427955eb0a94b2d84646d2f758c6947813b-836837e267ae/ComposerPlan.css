@@ -1,0 +1,6 @@
+var __wakaru_x2w_initialized = false;
+export function x2w() {
+if (__wakaru_x2w_initialized) return;
+__wakaru_x2w_initialized = true;
+
+}

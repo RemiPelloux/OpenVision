@@ -1,0 +1,6 @@
+var __wakaru_CNo_initialized = false;
+export function CNo() {
+if (__wakaru_CNo_initialized) return;
+__wakaru_CNo_initialized = true;
+
+}

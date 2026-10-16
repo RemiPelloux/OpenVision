@@ -1,0 +1,6 @@
+var __wakaru_qMy_initialized = false;
+export function qMy() {
+if (__wakaru_qMy_initialized) return;
+__wakaru_qMy_initialized = true;
+
+}

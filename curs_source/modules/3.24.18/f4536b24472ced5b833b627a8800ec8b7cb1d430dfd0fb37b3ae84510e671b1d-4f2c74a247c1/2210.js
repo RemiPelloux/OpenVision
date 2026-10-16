@@ -1,0 +1,1 @@
+var uH=$F(null),dH=hn("rounded-xs x-link focus-visible:outline-ring disabled:cursor-not-allowed disabled:opacity-70",{variants:{underline:{true:"hover:underline",false:"",always:"underline"}},defaultVariants:{underline:!0}});

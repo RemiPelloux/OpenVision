@@ -1,0 +1,6 @@
+var __wakaru_A3k_initialized = false;
+export function A3k() {
+if (__wakaru_A3k_initialized) return;
+__wakaru_A3k_initialized = true;
+
+}

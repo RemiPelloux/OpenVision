@@ -1,0 +1,6 @@
+var __wakaru_zFl_initialized = false;
+export function zFl() {
+if (__wakaru_zFl_initialized) return;
+__wakaru_zFl_initialized = true;
+
+}

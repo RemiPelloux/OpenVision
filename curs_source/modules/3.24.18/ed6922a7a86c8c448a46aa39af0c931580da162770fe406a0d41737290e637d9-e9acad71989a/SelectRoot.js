@@ -1,0 +1,44 @@
+import { mj } from "./FieldRootContext.js";
+import { mCe } from "./FormContext.js";
+import { VRe } from "./SelectRootContext.js";
+import { ads } from "./Store_2.js";
+import { ysl } from "./areArraysEqual.js";
+import { Ty } from "./createBaseUIEventDetails.js";
+import { LE } from "./empty.js";
+import { rds } from "./isElementDisabled.js";
+import { Ygt } from "./itemEquality.js";
+import { QK } from "./mergeProps.js";
+import { s$ } from "./popupStoreUtils.js";
+import { g_ } from "./reason-parts.js";
+import { Xgt } from "./resolveValueLabel.js";
+import { ksl } from "./scrollEdges.js";
+import { J5e } from "./store_4.js";
+import { x } from "./tslib.es6.js";
+import { Ugt } from "./useClick.js";
+import { sCe } from "./useControlled.js";
+import { Hgt } from "./useDismiss.js";
+import { lhs } from "./useFloatingRootContext.js";
+import { af } from "./useIsoLayoutEffect.js";
+import { Kgt } from "./useLabelableId.js";
+import { vhs } from "./useListNavigation.js";
+import { _fe } from "./useMergedRefs.js";
+import { ZCi } from "./useOnFirstRender.js";
+import { pj } from "./useOpenChangeComplete.js";
+import { FSn } from "./useOpenInteractionType.js";
+import { bDg } from "./usePreviousValue.js";
+import { xW } from "./useRefWithInit.js";
+import { YBt } from "./useRegisterFieldControl.js";
+import { Cy } from "./useStableCallback.js";
+import { kU } from "./useStore.js";
+import { hCe } from "./useTransitionStatus.js";
+import { bhs } from "./useTypeahead.js";
+import { oCe } from "./useValueAsRef.js";
+import { XBt } from "./useValueChanged.js";
+import { oYe } from "./visuallyHidden.js";
+var __wakaru_fPg_initialized = false;
+export function fPg() {
+if (__wakaru_fPg_initialized) return;
+__wakaru_fPg_initialized = true;
+x(), oYe(), _fe(), xW(), ZCi(), bDg(), rds(), sCe(), af(), Cy(), oCe(), LE(), VRe(), mj(), YBt(), Kgt(), hCe(), J5e(), Ty(), pj(), mCe(), Xgt(), Ygt(), ysl(), XBt(), FSn(), ksl(), ads(), kU(), g_(), lhs(), Ugt(), Hgt(), vhs(), bhs(), QK(), s$();
+
+}

@@ -1,0 +1,40 @@
+import { Cwf } from "./ComposerAutoRoutingResultDisplayRow.react.js";
+import { qJ } from "./ImageUtil.js";
+import { Gt } from "./Iwo.js";
+import { wl } from "./agentRepositoryServiceTypes.js";
+import { F4e } from "./agentWorkspaceResolutionConstants.js";
+import { Dc } from "./aiService.js";
+import { VPl } from "./chatFileReferenceContextMenu.js";
+import { sd } from "./chat_pb.js";
+import { o1w } from "./composerHumanMessageContextMenu.js";
+import { pys } from "./composerHumanRowSlackMentions.js";
+import { ckw } from "./composerPlanExecutionCheckpointActions.js";
+import { Ef } from "./constants_18.js";
+import { DJ } from "./cursorCommands.js";
+import { a0 } from "./cursorRules.js";
+import { ACe } from "./mcpWellKnownDetection.js";
+import { mTt } from "./mentionChipActionHandler.js";
+import { L1s } from "./mentionChipMcpIconResolver.js";
+import { PPn } from "./openFullscreenVideoModal.js";
+import { wNf } from "./openMultiImageViewerModal.react.js";
+import { lzt } from "./openUserClickedLink.js";
+import { qc } from "./opener.js";
+import { ih } from "./pathService.js";
+import { gFl } from "./resolveCommandChipClickServices.js";
+import { hkw } from "./submitComposerHumanRowEdit.js";
+import { E } from "./tslib.es6.js";
+import { fn } from "./uri.js";
+import { NMl } from "./useComposerTurnInProgress.js";
+import { rC } from "./utils_23.js";
+import { Sr } from "./workspace.js";
+import { Cu } from "./workspaceCollectionService.js";
+import { OJ } from "./workspaceRefHelpers.js";
+import { pi } from "./ze.js";
+var __wakaru_gkw_initialized = false;
+export function gkw() {
+if (__wakaru_gkw_initialized) return;
+__wakaru_gkw_initialized = true;
+"use strict";
+E(), pi(), sd(), fn(), Gt(), qc(), Sr(), OJ(), F4e(), wl(), ACe(), a0(), DJ(), ih(), VPl(), qJ(), PPn(), wNf(), o1w(), mTt(), gFl(), L1s(), NMl(), rC(), lzt(), Ef(), Dc(), Cwf(), pys(), ckw(), Cu(), hkw();
+
+}

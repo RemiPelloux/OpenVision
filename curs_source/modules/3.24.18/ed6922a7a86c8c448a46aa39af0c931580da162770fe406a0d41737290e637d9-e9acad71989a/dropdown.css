@@ -1,0 +1,6 @@
+var __wakaru_T7c_initialized = false;
+export function T7c() {
+if (__wakaru_T7c_initialized) return;
+__wakaru_T7c_initialized = true;
+
+}

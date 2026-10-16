@@ -1,0 +1,6 @@
+var __wakaru_fDy_initialized = false;
+export function fDy() {
+if (__wakaru_fDy_initialized) return;
+__wakaru_fDy_initialized = true;
+
+}

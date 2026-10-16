@@ -1,0 +1,395 @@
+(() => {
+  "use strict";
+  var e = {
+      d: (t, o) => {
+        for (var s in o)
+          e.o(o, s) && !e.o(t, s) && Object.defineProperty(t, s, { enumerable: !0, get: o[s] });
+      },
+      o: (e, t) => Object.prototype.hasOwnProperty.call(e, t),
+      r: (e) => {
+        ("undefined" != typeof Symbol &&
+          Symbol.toStringTag &&
+          Object.defineProperty(e, Symbol.toStringTag, { value: "Module" }),
+          Object.defineProperty(e, "__esModule", { value: !0 }));
+      },
+    },
+    t = {};
+  (e.r(t), e.d(t, { activate: () => w, deactivate: () => m }));
+  const o = require("net"),
+    s = require("tls"),
+    r = require("vscode"),
+    n = "CursorSocketTransient",
+    i = 3e3,
+    c = "cursorSocket.injectFailure",
+    a = r.window.createOutputChannel("Cursor Socket", { log: !0 });
+  let d = 1,
+    l = 1,
+    h = 1;
+  const u = new Map(),
+    v = new Map(),
+    f = new Set();
+  function $(e) {
+    return Object.assign(new Error(e), { code: n });
+  }
+  function w(e) {
+    (a.info("cursor-socket extension activating"),
+      e.subscriptions.push(
+        a,
+        r.commands.registerCommand(c, () =>
+          (function () {
+            let e = 0;
+            for (const [t, o] of v)
+              (a.warn(`[inject-failure] destroying client socket ${t}`),
+                e++,
+                o.destroy($("Injected cursor-socket failure")));
+            let t = 0;
+            for (const e of f) t += e.injectFailure("developer command");
+            return (
+              a.warn(
+                `[inject-failure] destroyed ${e} client socket(s) and ${t} server connection(s)`,
+              ),
+              { destroyedClientSockets: e, destroyedServerConnections: t }
+            );
+          })(),
+        ),
+        r.cursor.registerSocketConnectionProvider({
+          provideConnection: async (e) =>
+            (function (e) {
+              const t = d++,
+                i = e.tls ? "tls" : "tcp",
+                c = `${e.host}:${e.port}`;
+              return (
+                a.info(`[socket ${t}] opening ${i} connection to ${c}`),
+                new Promise((d, l) => {
+                  const h = new r.EventEmitter(),
+                    u = new r.EventEmitter();
+                  let f,
+                    w,
+                    m = !1;
+                  function p(e) {
+                    (e.on("data", (e) => h.fire(new Uint8Array(e))),
+                      e.on("close", (e) => {
+                        (v.delete(t),
+                          a.info(`[socket ${t}] closed (hadError=${e}) — ${i} ${c}`),
+                          u.fire(e ? (f ?? $(`Socket closed with error: ${i} ${c}`)) : void 0),
+                          h.dispose(),
+                          u.dispose());
+                      }),
+                      e.on("error", (e) => {
+                        ((f = "string" == typeof e.code ? e : Object.assign(e, { code: n })),
+                          a.error(`[socket ${t}] error: ${e.message} — ${i} ${c}`),
+                          m || ((m = !0), l(e)));
+                      }));
+                  }
+                  function g(e) {
+                    return {
+                      onDidReceiveData: h.event,
+                      onDidClose: u.event,
+                      send(t) {
+                        e.write(t);
+                      },
+                      close() {
+                        (a.info(`[socket ${t}] close requested — ${i} ${c}`), e.end());
+                      },
+                    };
+                  }
+                  (e.tls
+                    ? ((w = s.connect(
+                        {
+                          host: e.host,
+                          port: e.port,
+                          rejectUnauthorized: e.tls.rejectUnauthorized ?? !0,
+                          servername: e.tls.servername ?? e.host,
+                          ca: e.tls.ca,
+                          cert: e.tls.cert,
+                          key: e.tls.key,
+                        },
+                        () => {
+                          ((m = !0), a.info(`[socket ${t}] connected (tls) to ${c}`), d(g(w)));
+                        },
+                      )),
+                      p(w))
+                    : ((w = o.createConnection({ host: e.host, port: e.port }, () => {
+                        ((m = !0), a.info(`[socket ${t}] connected (tcp) to ${c}`), d(g(w)));
+                      })),
+                      p(w)),
+                    v.set(t, w));
+                })
+              );
+            })(e),
+        }),
+        r.cursor.registerSocketServerProvider({
+          provideServer: async (e, t) =>
+            (function (e, t) {
+              return p(e, t).then((e) => e.acquireLease());
+            })(e, t),
+        }),
+      ),
+      a.info("cursor-socket extension activated"));
+  }
+  function m() {
+    a.info("cursor-socket extension deactivating");
+  }
+  async function p(e, t) {
+    const o = (function (e, t) {
+      if (0 !== t) return `${e}:${t}`;
+    })(e, t);
+    if (!o)
+      return (
+        a.info(`[server] creating non-reusable server for ${e}:${t}`),
+        g.create({ localHost: e, localPort: t, shutdownGracePeriodMs: 0 })
+      );
+    let s,
+      r = u.get(o);
+    r
+      ? a.info(`[server] reusing managed server for ${o}`)
+      : (a.info(`[server] creating reusable server for ${o}`),
+        (r = g.create({
+          localHost: e,
+          localPort: t,
+          reusableKey: o,
+          shutdownGracePeriodMs: i,
+          onFullyClosed: () => {
+            u.get(o) === r && u.delete(o);
+          },
+        })),
+        u.set(o, r));
+    try {
+      s = await r;
+    } catch (e) {
+      throw (
+        u.get(o) === r &&
+          (a.warn(`[server] failed to create reusable server for ${o}, removing from cache`),
+          u.delete(o)),
+        e
+      );
+    }
+    return s.isClosed()
+      ? (a.warn(`[server] reusable server ${o} is already closed, recreating`),
+        u.get(o) === r && u.delete(o),
+        p(e, t))
+      : s;
+  }
+  class g {
+    constructor(e, t, o, s, r, n, i, c) {
+      ((this.serverId = e),
+        (this.server = t),
+        (this.localHost = o),
+        (this.requestedLocalPort = s),
+        (this.localPort = r),
+        (this.reusableKey = n),
+        (this.shutdownGracePeriodMs = i),
+        (this.onFullyClosed = c),
+        (this.leases = new Map()),
+        (this.connections = new Map()),
+        (this.closed = !1));
+    }
+    static async create(e) {
+      const t = d++,
+        s = o.createServer();
+      try {
+        await (function (e, t, o) {
+          return new Promise((s, r) => {
+            const n = (t) => {
+                (e.off("listening", i), r(t));
+              },
+              i = () => {
+                (e.off("error", n), s());
+              };
+            (e.once("error", n), e.once("listening", i), e.listen(o, t));
+          });
+        })(s, e.localHost, e.localPort);
+      } catch (o) {
+        throw (
+          a.error(`[server ${t}] failed to listen on port ${e.localPort}: ${o.message}`),
+          s.close(),
+          o
+        );
+      }
+      const r = s.address();
+      a.info(`[server ${t}] listening on ${e.localHost}:${r.port} (requested ${e.localPort})`);
+      const n = new g(
+        t,
+        s,
+        e.localHost,
+        e.localPort,
+        r.port,
+        e.reusableKey,
+        e.shutdownGracePeriodMs,
+        e.onFullyClosed,
+      );
+      return (f.add(n), s.on("connection", (e) => n.handleAcceptedSocket(e)), n);
+    }
+    isClosed() {
+      return this.closed;
+    }
+    acquireLease() {
+      if (this.closed) throw new Error(`Managed TCP server ${this.serverId} is closed`);
+      this.cancelShutdownTimer();
+      const e = h++,
+        t = this.createLease(e);
+      this.leases.set(e, t);
+      const o = this.currentOwnerLeaseId;
+      return (
+        (this.currentOwnerLeaseId = e),
+        a.info(`[server ${this.serverId}] lease ${e} acquired (localPort=${this.localPort})`),
+        void 0 !== o &&
+          o !== e &&
+          (a.info(`[server ${this.serverId}] lease handoff ${o} -> ${e}`),
+          this.closeConnectionsForLease(o, "lease handoff")),
+        {
+          localPort: this.localPort,
+          onDidAccept: t.acceptEmitter.event,
+          onDidReceiveData: t.dataEmitter.event,
+          onDidCloseConnection: t.closeConnectionEmitter.event,
+          write: (t, o) => {
+            this.writeFromLease(e, t, o);
+          },
+          closeConnection: (t) => {
+            this.closeConnectionFromLease(e, t);
+          },
+          close: (t) => {
+            this.releaseLease(e, t);
+          },
+        }
+      );
+    }
+    createLease(e) {
+      return {
+        leaseId: e,
+        acceptEmitter: new r.EventEmitter(),
+        dataEmitter: new r.EventEmitter(),
+        closeConnectionEmitter: new r.EventEmitter(),
+        isDisposed: !1,
+      };
+    }
+    releaseLease(e, t) {
+      const o = this.leases.get(e);
+      o &&
+        !o.isDisposed &&
+        (a.info(`[server ${this.serverId}] lease ${e} released`),
+        this.closeConnectionsForLease(e, "lease released"),
+        this.currentOwnerLeaseId === e &&
+          ((this.currentOwnerLeaseId = void 0), this.scheduleShutdownIfUnowned(t)),
+        this.disposeLease(o),
+        this.leases.delete(e));
+    }
+    disposeLease(e) {
+      e.isDisposed ||
+        ((e.isDisposed = !0),
+        e.acceptEmitter.dispose(),
+        e.dataEmitter.dispose(),
+        e.closeConnectionEmitter.dispose());
+    }
+    handleAcceptedSocket(e) {
+      if (this.closed)
+        return (
+          a.warn(`[server ${this.serverId}] dropping incoming connection because server is closed`),
+          void e.destroy()
+        );
+      const t = this.currentOwnerLeaseId;
+      if (void 0 === t)
+        return (
+          a.warn(`[server ${this.serverId}] dropping incoming connection because no active lease`),
+          void e.destroy()
+        );
+      const o = l++;
+      this.connections.set(o, { socket: e, ownerLeaseId: t });
+      const s = `${e.remoteAddress ?? "unknown"}:${e.remotePort ?? 0}`;
+      (a.info(`[server ${this.serverId}] accepted connection ${o} from ${s} on lease ${t}`),
+        e.on("data", (e) => {
+          const s = this.connections.get(o);
+          if (!s || s.ownerLeaseId !== t) return;
+          const r = this.leases.get(t);
+          r && !r.isDisposed && r.dataEmitter.fire({ connectionId: o, data: new Uint8Array(e) });
+        }),
+        e.on("error", (e) => {
+          this.finalizeConnection(o, e.message);
+        }),
+        e.on("close", (e) => {
+          (a.info(`[server ${this.serverId}] connection ${o} terminated (hadError=${e})`),
+            this.finalizeConnection(o, void 0));
+        }),
+        this.leases.get(t)?.acceptEmitter.fire({ connectionId: o }));
+    }
+    finalizeConnection(e, t) {
+      const o = this.connections.get(e);
+      if (!o) return;
+      (this.connections.delete(e),
+        t
+          ? a.warn(`[server ${this.serverId}] connection ${e} closed with error: ${t}`)
+          : a.info(`[server ${this.serverId}] connection ${e} closed`));
+      const s = this.leases.get(o.ownerLeaseId);
+      s && !s.isDisposed && s.closeConnectionEmitter.fire({ connectionId: e, error: t });
+    }
+    writeFromLease(e, t, o) {
+      const s = this.connections.get(t);
+      s && s.ownerLeaseId === e && s.socket.write(o);
+    }
+    closeConnectionFromLease(e, t) {
+      const o = this.connections.get(t);
+      o &&
+        o.ownerLeaseId === e &&
+        (a.info(`[server ${this.serverId}] lease ${e} closing connection ${t}`),
+        this.connections.delete(t),
+        this.leases.get(e)?.closeConnectionEmitter.fire({ connectionId: t, error: void 0 }),
+        o.socket.end());
+    }
+    closeConnectionsForLease(e, t) {
+      for (const [o, s] of this.connections)
+        s.ownerLeaseId === e &&
+          (a.info(`[server ${this.serverId}] closing connection ${o} for lease ${e} (${t})`),
+          this.connections.delete(o),
+          this.leases.get(e)?.closeConnectionEmitter.fire({ connectionId: o, error: void 0 }),
+          s.socket.end());
+    }
+    injectFailure(e) {
+      let t = 0;
+      for (const [o, s] of this.connections)
+        (t++,
+          a.warn(`[server ${this.serverId}] injecting failure into connection ${o} (${e})`),
+          s.socket.destroy($(`Injected cursor-socket failure (${e})`)));
+      return t;
+    }
+    scheduleShutdownIfUnowned(e) {
+      if (this.closed || void 0 !== this.currentOwnerLeaseId) return;
+      const t = void 0 === e ? this.shutdownGracePeriodMs : 1e3 * e;
+      if (t <= 0) return (this.cancelShutdownTimer(), void this.shutdown("last lease released"));
+      this.shutdownTimer ||
+        (a.info(`[server ${this.serverId}] scheduling shutdown in ${t}ms`),
+        (this.shutdownTimer = setTimeout(() => {
+          ((this.shutdownTimer = void 0),
+            void 0 === this.currentOwnerLeaseId && this.shutdown("reuse grace elapsed"));
+        }, t)));
+    }
+    cancelShutdownTimer() {
+      this.shutdownTimer &&
+        (a.info(`[server ${this.serverId}] cancelling scheduled shutdown`),
+        clearTimeout(this.shutdownTimer),
+        (this.shutdownTimer = void 0));
+    }
+    shutdown(e) {
+      if (!this.closed) {
+        (a.info(`[server ${this.serverId}] shutting down (${e})`),
+          (this.closed = !0),
+          f.delete(this),
+          this.cancelShutdownTimer());
+        for (const [e, t] of this.connections) {
+          this.connections.delete(e);
+          const o = this.leases.get(t.ownerLeaseId);
+          (o && !o.isDisposed && o.closeConnectionEmitter.fire({ connectionId: e, error: void 0 }),
+            t.socket.destroy());
+        }
+        for (const e of this.leases.values()) this.disposeLease(e);
+        (this.leases.clear(),
+          this.server.close(() => {
+            this.onFullyClosed?.();
+          }));
+      }
+    }
+  }
+  var I = exports;
+  for (var y in t) I[y] = t[y];
+  t.__esModule && Object.defineProperty(I, "__esModule", { value: !0 });
+})();
+//# sourceMappingURL=http://go/sourcemap/sourcemaps/be4c9e5350d77747b42cd467cbd3370a753d4640/extensions/cursor-socket/dist/main.js.map

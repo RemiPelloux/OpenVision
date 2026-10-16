@@ -1,0 +1,6 @@
+var __wakaru_CUw_initialized = false;
+export function CUw() {
+if (__wakaru_CUw_initialized) return;
+__wakaru_CUw_initialized = true;
+
+}

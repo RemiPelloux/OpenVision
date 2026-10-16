@@ -1,0 +1,6 @@
+var __wakaru_wyg_initialized = false;
+export function wyg() {
+if (__wakaru_wyg_initialized) return;
+__wakaru_wyg_initialized = true;
+
+}

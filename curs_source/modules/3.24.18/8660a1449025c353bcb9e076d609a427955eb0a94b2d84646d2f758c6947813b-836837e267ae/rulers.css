@@ -1,0 +1,6 @@
+var __wakaru_lDy_initialized = false;
+export function lDy() {
+if (__wakaru_lDy_initialized) return;
+__wakaru_lDy_initialized = true;
+
+}

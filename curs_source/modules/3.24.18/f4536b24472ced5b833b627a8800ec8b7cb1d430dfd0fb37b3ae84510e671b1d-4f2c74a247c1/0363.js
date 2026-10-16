@@ -1,0 +1,1 @@
+function wS({className:e,currency:t,onLoadFailed:r}){const n=Nt(),{appearance:o,attachContainer:i}=gS(),{publishableKey:s}=n;return s===void 0?null:$o(ES,{publishableKey:s,currency:t,appearance:o,onLoadFailed:r,children:$o(SS,{className:e,containerRef:i,onLoadFailed:r})},s)}

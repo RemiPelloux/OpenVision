@@ -1,0 +1,1 @@
+function XO(e){switch(e){case 400:return Fe.Internal;case 401:return Fe.Unauthenticated;case 403:return Fe.PermissionDenied;case 404:return Fe.Unimplemented;case 429:return Fe.Unavailable;case 502:return Fe.Unavailable;case 503:return Fe.Unavailable;case 504:return Fe.Unavailable;default:return Fe.Unknown}}

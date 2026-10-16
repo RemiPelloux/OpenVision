@@ -1,0 +1,6 @@
+var __wakaru_$oC_initialized = false;
+export function $oC() {
+if (__wakaru_$oC_initialized) return;
+__wakaru_$oC_initialized = true;
+
+}

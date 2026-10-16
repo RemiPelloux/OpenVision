@@ -1,0 +1,1 @@
+function Ht(e,t,r,n){let o=!1,i=!1;const s=n??zt;return{reason:e,event:t??new Event("base-ui"),cancel(){o=!0},allowPropagation(){i=!0},get isCanceled(){return o},get isPropagationAllowed(){return i},trigger:r,...s}}

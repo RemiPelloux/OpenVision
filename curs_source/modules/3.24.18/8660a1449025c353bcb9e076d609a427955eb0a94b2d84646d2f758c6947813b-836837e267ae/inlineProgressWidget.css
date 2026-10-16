@@ -1,0 +1,6 @@
+var __wakaru_OLy_initialized = false;
+export function OLy() {
+if (__wakaru_OLy_initialized) return;
+__wakaru_OLy_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_wSg_initialized = false;
+export function wSg() {
+if (__wakaru_wSg_initialized) return;
+__wakaru_wSg_initialized = true;
+
+}

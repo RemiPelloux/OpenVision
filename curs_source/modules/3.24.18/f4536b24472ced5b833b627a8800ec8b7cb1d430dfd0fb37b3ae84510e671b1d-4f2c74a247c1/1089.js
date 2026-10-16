@@ -1,0 +1,1 @@
+a(TC,"groupMoneyInput");

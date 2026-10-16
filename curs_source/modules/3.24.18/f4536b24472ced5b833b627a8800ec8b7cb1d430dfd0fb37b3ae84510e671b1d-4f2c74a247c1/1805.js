@@ -1,0 +1,1 @@
+function yR(e,t,r,n){const o=UL(()=>{const i=bR();return Lx(i,t,SA(n),e.transformTemplate,e.style),{...i.attrs,style:{...i.style}}},[t]);if(e.style){const i={};$g(i,e.style,e),o.style={...i,...o.style}}return o}

@@ -1,0 +1,1 @@
+function eD({baseUrl:e,getBearer:t,edge:r,defaultTimeoutMs:n=CG}){if(JO(e),!Number.isFinite(n)||n<=0)throw new Error("xai-commerce-prepaid: defaultTimeoutMs must be a positive number");const o=qO({baseUrl:e,defaultTimeoutMs:n,interceptors:[QO(t)]});return WO(o,{inlineCheckout:"stripe-hosted",...r})}

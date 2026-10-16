@@ -1,0 +1,1 @@
+function _x(e,t,r,n,o){return Px(i=>{let s=e.get(t,i);if(!s){let c;if(!o){const l=r[i];c=O5(l)??e.read(t,i,l),en(c!==void 0,`"${i}" can't be read from the animated subject. Provide [from, to] keyframes.`,"effect-unreadable-value")}s=nn(c,{owner:o}),e(t,{[i]:s})}return s},r,n,o)}

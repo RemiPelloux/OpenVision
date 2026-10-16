@@ -1,0 +1,1 @@
+function UN({mode:e="manage",teamId:t,disabled:r=!1,onFixed:n,onRosterChange:o,onPendingChange:i,addOpen:s,onAddOpenChange:c,trackView:l=!1}){return fe(K2,{mode:e,teamId:t,onFixed:n,onRosterChange:o,children:fe(jN,{disabled:r,onPendingChange:i,addOpen:s,onAddOpenChange:c,trackView:l})})}

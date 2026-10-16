@@ -1,0 +1,6 @@
+var __wakaru_X0g_initialized = false;
+export function X0g() {
+if (__wakaru_X0g_initialized) return;
+__wakaru_X0g_initialized = true;
+
+}

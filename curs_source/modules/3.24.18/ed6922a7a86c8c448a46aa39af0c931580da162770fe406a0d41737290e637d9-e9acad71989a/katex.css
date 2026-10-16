@@ -1,0 +1,6 @@
+var __wakaru_Pa__initialized = false;
+export function Pa_() {
+if (__wakaru_Pa__initialized) return;
+__wakaru_Pa__initialized = true;
+
+}

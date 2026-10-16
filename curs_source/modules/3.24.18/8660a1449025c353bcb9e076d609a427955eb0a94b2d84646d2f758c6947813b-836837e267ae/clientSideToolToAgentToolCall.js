@@ -1,0 +1,46 @@
+import { ju } from "./agent_pb.js";
+import { zei } from "./apply_agent_diff_tool_pb.js";
+import { kmn } from "./ask_question_tool_pb.js";
+import { F_t } from "./background_shell_exec_pb.js";
+import { Jei } from "./computer_use_tool_pb.js";
+import { kSr } from "./connect_scm_tool_pb.js";
+import { ebt } from "./create_plan_tool_pb.js";
+import { lmn } from "./delete_exec_pb.js";
+import { qyr } from "./delete_tool_pb.js";
+import { U4t } from "./edit_tool_pb.js";
+import { U_t } from "./generate_image_tool_pb.js";
+import { N_d } from "./get_mcp_tools_tool_pb.js";
+import { Wti } from "./glob_tool_pb.js";
+import { O4t } from "./grep_exec_pb.js";
+import { F4t } from "./grep_tool_pb.js";
+import { zet } from "./ls_exec_pb.js";
+import { eSr } from "./ls_tool_pb.js";
+import { Cmn } from "./mcp_auth_tool_pb.js";
+import { zke } from "./mcp_exec_pb.js";
+import { Avd } from "./mcp_resource_tool_pb.js";
+import { fmn } from "./mcp_tool_pb.js";
+import { svd } from "./read_lints_tool_pb.js";
+import { X_t } from "./read_tool_pb.js";
+import { y4t } from "./record_screen_exec_pb.js";
+import { Bvd } from "./record_screen_tool_pb.js";
+import { Tvd } from "./semsearch_tool_pb.js";
+import { $te } from "./shell_exec_pb.js";
+import { N4t } from "./shell_tool_pb.js";
+import { Cei } from "./struct_pb.js";
+import { uni } from "./switch_mode_tool_pb.js";
+import { Zet } from "./todo_tool_pb.js";
+import { Pu } from "./tools_pb.js";
+import { E } from "./tslib.es6.js";
+import { gni } from "./web_fetch_tool_pb.js";
+import { ymn } from "./web_search_tool_pb.js";
+import { Uvd } from "./write_shell_stdin_tool_pb.js";
+var y6l, S6l;
+export { S6l, y6l };
+var __wakaru_O0w_initialized = false;
+export function O0w() {
+if (__wakaru_O0w_initialized) return;
+__wakaru_O0w_initialized = true;
+"use strict";
+E(), Cei(), ju(), zei(), kmn(), F_t(), Uvd(), Jei(), kSr(), ebt(), lmn(), qyr(), U4t(), U_t(), N_d(), Wti(), O4t(), F4t(), zet(), eSr(), zke(), Cmn(), fmn(), Avd(), svd(), X_t(), y4t(), Bvd(), Tvd(), $te(), N4t(), uni(), Zet(), gni(), ymn(), Pu(), y6l = "Skipped: ", S6l = "Error: ";
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_K4v_initialized = false;
+export function K4v() {
+if (__wakaru_K4v_initialized) return;
+__wakaru_K4v_initialized = true;
+
+}

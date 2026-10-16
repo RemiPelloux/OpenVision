@@ -1,0 +1,1 @@
+function dh(e,t){return e===null?{code:"AMOUNT_FORMAT"}:e.unitMicros<t.minimum.unitMicros?{code:"BELOW_MINIMUM",limit:t.minimum}:e.unitMicros>t.maximum.unitMicros?{code:"ABOVE_MAXIMUM",limit:t.maximum}:null}

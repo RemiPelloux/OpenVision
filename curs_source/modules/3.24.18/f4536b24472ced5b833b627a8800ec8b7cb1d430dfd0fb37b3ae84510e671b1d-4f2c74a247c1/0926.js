@@ -1,0 +1,1 @@
+a(xT,"getSchemaMessage");

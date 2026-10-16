@@ -1,0 +1,6 @@
+var __wakaru_FSg_initialized = false;
+export function FSg() {
+if (__wakaru_FSg_initialized) return;
+__wakaru_FSg_initialized = true;
+
+}

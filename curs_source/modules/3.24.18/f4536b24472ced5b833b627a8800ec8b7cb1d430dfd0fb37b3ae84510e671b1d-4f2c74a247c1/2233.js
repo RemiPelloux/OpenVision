@@ -1,0 +1,1 @@
+function W0({rule:e}){const{t}=Be(),{locale:r}=xt();function n(o){return Yt(o,r,{trailingZeroDisplay:"stripIfInteger"})}return a(n,"money"),ye(tc,{children:t("{topUpAmount} when below {thresholdAmount}",{topUpAmount:n(e.amount),thresholdAmount:n(e.threshold)})})}

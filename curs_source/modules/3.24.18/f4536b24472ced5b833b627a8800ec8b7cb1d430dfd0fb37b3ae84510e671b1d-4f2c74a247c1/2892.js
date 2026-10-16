@@ -1,0 +1,1 @@
+function BO(e,t){return t==="stripe-hosted"?e.url!==void 0&&e.url!==""?{kind:"redirect",url:e.url}:void 0:e.clientSecret!==void 0&&e.clientSecret!==""?{kind:"embedded",clientSecret:e.clientSecret}:void 0}

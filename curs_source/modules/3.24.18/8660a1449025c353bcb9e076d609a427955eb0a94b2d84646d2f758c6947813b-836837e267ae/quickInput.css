@@ -1,0 +1,6 @@
+var __wakaru_H1l_initialized = false;
+export function H1l() {
+if (__wakaru_H1l_initialized) return;
+__wakaru_H1l_initialized = true;
+
+}

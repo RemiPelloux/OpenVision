@@ -1,0 +1,6 @@
+var __wakaru_fjk_initialized = false;
+export function fjk() {
+if (__wakaru_fjk_initialized) return;
+__wakaru_fjk_initialized = true;
+
+}

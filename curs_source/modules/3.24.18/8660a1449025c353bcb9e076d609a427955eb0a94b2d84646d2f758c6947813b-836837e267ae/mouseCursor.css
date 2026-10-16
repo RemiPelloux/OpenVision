@@ -1,0 +1,6 @@
+var __wakaru_GMy_initialized = false;
+export function GMy() {
+if (__wakaru_GMy_initialized) return;
+__wakaru_GMy_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_Sxw_initialized = false;
+export function Sxw() {
+if (__wakaru_Sxw_initialized) return;
+__wakaru_Sxw_initialized = true;
+
+}

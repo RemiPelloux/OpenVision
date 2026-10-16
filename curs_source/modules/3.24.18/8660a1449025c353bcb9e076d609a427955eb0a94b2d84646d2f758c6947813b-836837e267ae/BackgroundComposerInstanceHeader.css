@@ -1,0 +1,6 @@
+var __wakaru_l8f_initialized = false;
+export function l8f() {
+if (__wakaru_l8f_initialized) return;
+__wakaru_l8f_initialized = true;
+
+}

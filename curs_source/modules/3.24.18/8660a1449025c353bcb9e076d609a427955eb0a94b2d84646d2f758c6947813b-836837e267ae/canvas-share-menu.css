@@ -1,0 +1,6 @@
+var __wakaru_E8w_initialized = false;
+export function E8w() {
+if (__wakaru_E8w_initialized) return;
+__wakaru_E8w_initialized = true;
+
+}

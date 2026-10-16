@@ -1,0 +1,1 @@
+function aE(e,t){if(!t)return e;for(const r in t){const n=t[r];switch(r){case"style":{e[r]=Lc(e.style,n);break}case"className":{e[r]=Jp(e.className,n);break}default:Zp(r,n)?e[r]=iE(e[r],n):e[r]=n}}return e}

@@ -1,0 +1,1 @@
+function tC({weight:e="medium",...t}){const{titleId:r,setTitleMounted:n}=no(go),o=t.id===void 0;return Ko(()=>{if(o)return n(!0),()=>n(!1)},[o,n]),mt(Ar.Title,{...t,id:t.id??(r||void 0),className:_e("text-headline2 text-primary",e==="regular"?"font-normal":"font-medium",t.className),children:t.children})}

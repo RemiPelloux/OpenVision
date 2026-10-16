@@ -1,0 +1,12 @@
+{
+  "relative_path": "resources/app/node_modules/cursor-proclist/build/Release/cursor_proclist.node",
+  "sha256": "928fbd09405cba7a73916b1941fe0016aadc551f42ffb2c42b42a99c2fbbb379",
+  "bytes": 183080,
+  "provider": {
+    "id": "ghidra",
+    "version": "12.1.4"
+  },
+  "origin": "Existing REA pseudocode exported after captured installation digest recheck",
+  "representation": "decompiler-generated-non-source",
+  "compilable": false
+}

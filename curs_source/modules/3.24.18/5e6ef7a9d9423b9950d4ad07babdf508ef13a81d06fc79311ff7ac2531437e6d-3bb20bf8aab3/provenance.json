@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "esm-compiler-runtime-production.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\react\\esm-compiler-runtime-production.js", "ranges": [[0,670]], "extraction": "structural"}
+  }
+}

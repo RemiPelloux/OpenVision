@@ -1,0 +1,1 @@
+var KB=t4.forwardRef(a(function(t,r){const{render:n,className:o,style:i,id:s,...c}=t,l=Wr(),m=po(s);return l.useSyncedValueWithCleanup("descriptionElementId",m),xr("p",t,{ref:r,props:[{id:m},c]})},"DialogDescription"));

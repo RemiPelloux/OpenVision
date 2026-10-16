@@ -1,0 +1,1 @@
+var fj=a((e,t)=>{const r=e.currentTarget;if(!r)return;const n=Xx(()=>{if(ql.has(r))return;Ql(r,"down");const o=Xx(()=>{Ql(r,"up")}),i=a(()=>Ql(r,"cancel"),"handleBlur");r.addEventListener("keyup",o,t),r.addEventListener("blur",i,t)});r.addEventListener("keydown",n,t),r.addEventListener("blur",()=>r.removeEventListener("keydown",n),t)},"enableKeyboardPress");

@@ -1,0 +1,1 @@
+function Mk(e,t){const r=Xb.useRef(null);return pt(n=>{const o=r.current;if(o!==null){if(o.element===n&&o.store===t&&o.id===e)return;r.current=null;const i=o.store;i.context.triggerElements.getById(o.id)===o.element&&(i.context.triggerElements.delete(o.id),jf(i))}n!==null&&e!==void 0&&(r.current={store:t,id:e,element:n},t.context.triggerElements.add(e,n),jf(t))})}

@@ -1,0 +1,1 @@
+function ms({title:e,description:t,children:r}){const n=Uy(br);return ii(jy,{children:[kt(n.Header,{children:kt(n.Title,{children:e})}),kt(n.Body,{className:"x-commerce pt-2",children:kt(n.Description,{children:t})}),kt(n.Footer,{className:"justify-end pt-2",children:r})]})}

@@ -1,0 +1,1 @@
+function k0(e){return Oy("svg",{xmlns:"http://www.w3.org/2000/svg",fill:"currentColor","data-icon":"icon-checkmark-circle-fill",viewBox:"0 0 24 24",display:"flex",role:"img",width:"1em",height:"1em",...e,children:Oy("path",{fillRule:"evenodd",d:"M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20m-1.37 11.54-1.96-1.78-1.34 1.48 3.54 3.22 5.41-6.84-1.56-1.24z",clipRule:"evenodd"})})}

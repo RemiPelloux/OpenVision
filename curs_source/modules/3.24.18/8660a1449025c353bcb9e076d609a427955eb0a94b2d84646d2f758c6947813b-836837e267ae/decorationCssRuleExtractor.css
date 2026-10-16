@@ -1,0 +1,6 @@
+var __wakaru_NDy_initialized = false;
+export function NDy() {
+if (__wakaru_NDy_initialized) return;
+__wakaru_NDy_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_V2w_initialized = false;
+export function V2w() {
+if (__wakaru_V2w_initialized) return;
+__wakaru_V2w_initialized = true;
+
+}

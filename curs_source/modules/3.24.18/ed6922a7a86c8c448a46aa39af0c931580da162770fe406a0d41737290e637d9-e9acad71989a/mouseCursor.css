@@ -1,0 +1,6 @@
+var __wakaru_Zvg_initialized = false;
+export function Zvg() {
+if (__wakaru_Zvg_initialized) return;
+__wakaru_Zvg_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function gb(e,t){return{parse(r){try{return $a(e,r,t)}catch(n){const o=n instanceof Error?n.message:String(n);throw new vt(`parse binary: ${o}`,Fe.Internal)}},serialize(r){try{return Vv(e,r,t)}catch(n){const o=n instanceof Error?n.message:String(n);throw new vt(`serialize binary: ${o}`,Fe.Internal)}}}}

@@ -1,0 +1,6 @@
+var __wakaru_Bl__initialized = false;
+export function Bl_() {
+if (__wakaru_Bl__initialized) return;
+__wakaru_Bl__initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function d3(e){switch(e.fieldKind){case"message":{const{toMessage:t}=Fr(e),r=Uv(e);return(n,o,i)=>{r(n,o,t(i))}}case"scalar":case"enum":{const t=e.fieldKind=="enum"?N.INT32:e.scalar,r=e.number,n=ws(t),o=ys(t,e.parent.typeName,e.name);return(i,s,c)=>{i.tag(r,n),o(i,c)}}}}

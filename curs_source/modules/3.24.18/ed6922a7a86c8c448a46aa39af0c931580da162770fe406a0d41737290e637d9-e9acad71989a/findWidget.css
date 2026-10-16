@@ -1,0 +1,6 @@
+var __wakaru_bcv_initialized = false;
+export function bcv() {
+if (__wakaru_bcv_initialized) return;
+__wakaru_bcv_initialized = true;
+
+}

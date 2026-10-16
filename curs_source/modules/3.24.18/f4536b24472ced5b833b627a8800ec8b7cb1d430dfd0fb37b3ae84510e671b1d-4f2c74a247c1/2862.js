@@ -1,0 +1,1 @@
+function vb(e,t){var r,n;const o=(r=t?.textEncoder)!==null&&r!==void 0?r:new TextEncoder,i=(n=t?.textDecoder)!==null&&n!==void 0?n:new TextDecoder,s=_O(t);return{parse(c){try{const l=i.decode(c);return Y3(e,l,s)}catch(l){throw vt.from(l,Fe.InvalidArgument)}},serialize(c){try{const l=O3(e,c,s);return o.encode(l)}catch(l){throw vt.from(l,Fe.Internal)}}}}

@@ -1,0 +1,1 @@
+function Ss(e,t){const r=e.typeName,n=Object.assign(Object.assign({},e),{kind:"field",parent:e.extendee,localName:r}),o=Object.assign(Object.assign({},e.extendee),{fields:[n],members:[n],oneofs:[]}),i=At(o,t!==void 0?{[r]:t}:void 0);return[Y_(o,i),n,()=>{const s=i[r];if(s===void 0){const c=e.message;return Xn(c)?on(c.fields[0].scalar,c.fields[0].longAsString):At(c)}return s}]}

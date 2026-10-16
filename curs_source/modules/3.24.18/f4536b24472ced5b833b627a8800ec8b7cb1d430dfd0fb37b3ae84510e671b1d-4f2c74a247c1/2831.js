@@ -1,0 +1,1 @@
+function TO(...e){const t=new AbortController,r=e.filter(o=>o!==void 0).concat(t.signal);for(const o of r){if(o.aborted){n.apply(o);break}o.addEventListener("abort",n)}function n(){t.signal.aborted||t.abort(lu(this));for(const o of r)o.removeEventListener("abort",n)}return a(n,"onAbort"),t}

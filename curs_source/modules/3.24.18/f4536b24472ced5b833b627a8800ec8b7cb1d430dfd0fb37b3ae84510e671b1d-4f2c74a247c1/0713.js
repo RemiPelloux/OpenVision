@@ -1,0 +1,1 @@
+function hf(e){const t=e?Jt(e):"";return e!=null&&e.matches(i9)&&(t!=="summary"||e.parentElement!=null&&Jt(e.parentElement)==="details"&&qc(e.parentElement)===e)&&(t!=="details"||qc(e)==null)&&(t!=="input"||e.type!=="hidden")}

@@ -1,0 +1,1 @@
+function Ok(e,t,r,n=!1){let o=e.preventUnmountingOnClose;t?o=!1:n&&(o=!0);const i=r?.id??null;let s=e.activeTriggerId,c=e.activeTriggerElement;return(i||t)&&(s=i,c=r??null),{open:t,preventUnmountingOnClose:o,activeTriggerId:s,activeTriggerElement:c}}

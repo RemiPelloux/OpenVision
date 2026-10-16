@@ -1,0 +1,6 @@
+var __wakaru_mHk_initialized = false;
+export function mHk() {
+if (__wakaru_mHk_initialized) return;
+__wakaru_mHk_initialized = true;
+
+}

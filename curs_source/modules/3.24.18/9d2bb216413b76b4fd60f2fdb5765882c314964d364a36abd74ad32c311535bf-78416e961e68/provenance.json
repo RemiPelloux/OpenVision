@@ -1,0 +1,9 @@
+{
+  "format": "esbuild",
+  "strategy": "structural",
+  "modules": {
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\react\\esm-jsx-runtime-production.js", "ranges": [[1,265],[266,909]], "extraction": "structural"},
+    "jsx-runtime.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\react\\esm-jsx-runtime-production.js", "ranges": [[765,808]], "extraction": "structural"},
+    "react-jsx-runtime.production.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\react\\esm-jsx-runtime-production.js", "ranges": [[383,764]], "extraction": "structural"}
+  }
+}

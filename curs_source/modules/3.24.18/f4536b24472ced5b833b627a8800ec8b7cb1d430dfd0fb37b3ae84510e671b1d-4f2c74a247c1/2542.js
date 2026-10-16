@@ -1,0 +1,1 @@
+(function(e){e[e.DECLARATION=0]="DECLARATION",e[e.UNVERIFIED=1]="UNVERIFIED"})(RM||(RM={}));

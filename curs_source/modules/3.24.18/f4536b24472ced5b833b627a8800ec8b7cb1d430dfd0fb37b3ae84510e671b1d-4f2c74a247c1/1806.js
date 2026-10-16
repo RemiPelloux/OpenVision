@@ -1,0 +1,1 @@
+a(yR,"useSVGProps");

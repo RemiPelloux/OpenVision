@@ -1,0 +1,6 @@
+var __wakaru_B2k_initialized = false;
+export function B2k() {
+if (__wakaru_B2k_initialized) return;
+__wakaru_B2k_initialized = true;
+
+}

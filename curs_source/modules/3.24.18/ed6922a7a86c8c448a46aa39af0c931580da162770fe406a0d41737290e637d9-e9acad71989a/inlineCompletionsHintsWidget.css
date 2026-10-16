@@ -1,0 +1,6 @@
+var __wakaru_HSg_initialized = false;
+export function HSg() {
+if (__wakaru_HSg_initialized) return;
+__wakaru_HSg_initialized = true;
+
+}

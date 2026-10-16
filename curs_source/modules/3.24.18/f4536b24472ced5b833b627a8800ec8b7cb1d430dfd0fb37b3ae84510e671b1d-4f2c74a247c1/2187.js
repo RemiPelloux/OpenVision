@@ -1,0 +1,1 @@
+a(Io,"getStripOffset");

@@ -1,0 +1,1 @@
+function z0({hideClose:e}){const t=qs(br),{t:r}=Be();return dr(t.Header,{hideClose:e,children:[Ne(t.Title,{children:r("Buy credits")}),Ne(t.Description,{className:"mt-1",children:r("Top up your balance to avoid interruptions.")})]})}

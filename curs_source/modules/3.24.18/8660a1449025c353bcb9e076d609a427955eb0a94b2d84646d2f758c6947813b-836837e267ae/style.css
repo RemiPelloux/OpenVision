@@ -1,0 +1,6 @@
+var __wakaru_RLy_initialized = false;
+export function RLy() {
+if (__wakaru_RLy_initialized) return;
+__wakaru_RLy_initialized = true;
+
+}

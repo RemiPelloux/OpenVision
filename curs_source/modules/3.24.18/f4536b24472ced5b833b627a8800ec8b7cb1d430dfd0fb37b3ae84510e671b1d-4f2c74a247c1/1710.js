@@ -1,0 +1,1 @@
+function Rg(e){if(e.hasCheckedOptimisedAppear=!0,e.root===e)return;const{visualElement:t}=e.options;if(!t)return;const r=Cx(t);if(window.MotionHasOptimisedAnimation(r,"transform")){const{layout:o,layoutId:i}=e.options;window.MotionCancelOptimisedAnimation(r,"transform",Ze,!(o||i))}const{parent:n}=e;n&&!n.hasCheckedOptimisedAppear&&Rg(n)}

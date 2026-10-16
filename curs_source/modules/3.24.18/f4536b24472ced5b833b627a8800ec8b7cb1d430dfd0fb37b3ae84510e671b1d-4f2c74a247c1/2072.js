@@ -1,0 +1,1 @@
+function A0({hideClose:e,titleRef:t}){const r=zu(br),{t:n}=Be();return pn(r.Header,{hideClose:e,children:[ze(r.Title,{ref:t,tabIndex:t===void 0?void 0:-1,children:n("Automatic top-ups")}),ze(r.Description,{className:"mt-1",children:n("Add credits when your balance is low.")})]})}

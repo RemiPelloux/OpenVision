@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "provenance": {
+      "untrusted_content": true,
+      "source": "analysis_target"
+    }
+  },
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"result\":{\"path\":\"C:\\\\Users\\\\User\\\\Documents\\\\ChatGPT\\\\REA\\\\cursor\\\\artifacts\\\\installation\\\\resources\\\\app\\\\node_modules\\\\@vscode\\\\windows-process-tree\\\\build\\\\Release\\\\windows_process_tree.node\",\"format\":\"pe\",\"kind\":\"executable\",\"sha256\":\"905bb7296a46984e1511ac70081d266db7b4bdf11a25da84d53d77af848881b1\",\"architecture\":\"x86_64\"}}"
+    }
+  ],
+  "structuredContent": {
+    "result": {
+      "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\@vscode\\windows-process-tree\\build\\Release\\windows_process_tree.node",
+      "format": "pe",
+      "kind": "executable",
+      "sha256": "905bb7296a46984e1511ac70081d266db7b4bdf11a25da84d53d77af848881b1",
+      "architecture": "x86_64"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+function Uv(e){const t=e.number,r=eu(e.message);return e.delimitedEncoding?(n,o,i)=>{n.tag(t,gt.StartGroup),r(n,o,i),n.tag(t,gt.EndGroup)}:(n,o,i)=>{n.tag(t,gt.LengthDelimited).fork(),r(n,o,i),n.join()}}

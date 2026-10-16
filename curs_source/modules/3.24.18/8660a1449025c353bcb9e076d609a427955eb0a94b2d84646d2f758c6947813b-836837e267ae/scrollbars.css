@@ -1,0 +1,6 @@
+var __wakaru_EMy_initialized = false;
+export function EMy() {
+if (__wakaru_EMy_initialized) return;
+__wakaru_EMy_initialized = true;
+
+}

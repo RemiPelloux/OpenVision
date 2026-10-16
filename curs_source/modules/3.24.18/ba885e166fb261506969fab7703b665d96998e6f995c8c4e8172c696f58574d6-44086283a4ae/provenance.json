@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "a22718674812ee697cf3.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\dist\\a22718674812ee697cf3.js", "ranges": [[0,2821]], "extraction": "structural"}
+  }
+}

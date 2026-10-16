@@ -1,0 +1,6 @@
+var __wakaru_fGh_initialized = false;
+export function fGh() {
+if (__wakaru_fGh_initialized) return;
+__wakaru_fGh_initialized = true;
+
+}

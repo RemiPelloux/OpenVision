@@ -1,0 +1,1 @@
+var go=ny({descriptionId:"",descriptionMounted:!1,dismissOnBackdropPress:!0,mobileSize:"md",open:void 0,portal:!0,requestClose:a(()=>{},"requestClose"),setDescriptionMounted:a(()=>{},"setDescriptionMounted"),setTitleMounted:a(()=>{},"setTitleMounted"),size:"md",titleId:"",titleMounted:!1}),IU={...Ht(_t.none),preventUnmountOnClose(){}};

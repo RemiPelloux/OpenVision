@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "fake-sidecar.cjs": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\src\\backends\\windows\\__fixtures__\\fake-sidecar.cjs", "ranges": [[0,8985]], "extraction": "structural"}
+  }
+}

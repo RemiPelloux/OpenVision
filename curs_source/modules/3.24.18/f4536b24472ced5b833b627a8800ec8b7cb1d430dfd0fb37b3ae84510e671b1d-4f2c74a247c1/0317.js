@@ -1,0 +1,1 @@
+function F2(){const{client:e}=xt(),t=ID(()=>e.servesStripePublishableKey?e.observeStripePublishableKey():null,[e]);CD(()=>()=>t?.dispose(),[t]);const r=t??B2,n=AD(r.subscribe,r.getSnapshot,r.getSnapshot);return{status:n.status,publishableKey:n.data,error:n.error,refresh:r.refresh}}

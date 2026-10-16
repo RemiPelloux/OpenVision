@@ -1,0 +1,6 @@
+var __wakaru_DUw_initialized = false;
+export function DUw() {
+if (__wakaru_DUw_initialized) return;
+__wakaru_DUw_initialized = true;
+
+}

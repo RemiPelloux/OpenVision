@@ -1,0 +1,6 @@
+var __wakaru_SDy_initialized = false;
+export function SDy() {
+if (__wakaru_SDy_initialized) return;
+__wakaru_SDy_initialized = true;
+
+}

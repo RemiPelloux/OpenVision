@@ -1,0 +1,1 @@
+function c0(e,t){const r=hm(t()),n=a(()=>r.set(t()),"updateValue");return n(),wa(()=>{const o=a(()=>Ze.preRender(n,!1,!0),"scheduleUpdate"),i=e.map(s=>s.on("change",o));return()=>{i.forEach(s=>s()),vn(n)}}),r}

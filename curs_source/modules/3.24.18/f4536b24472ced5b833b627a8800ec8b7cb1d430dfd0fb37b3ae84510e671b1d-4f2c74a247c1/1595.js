@@ -1,0 +1,1 @@
+function xA(e,t,r){for(const n in t){const o=t[n],i=r[n];if(Ct(o))e.addValue(n,o);else if(Ct(i))e.addValue(n,nn(o,{owner:e}));else if(i!==o)if(e.hasValue(n)){const s=e.getValue(n);s.liveStyle===!0?s.jump(o):s.hasAnimated||s.set(o)}else{const s=e.getStaticValue(n);e.addValue(n,nn(s!==void 0?s:o,{owner:e}))}}for(const n in r)t[n]===void 0&&e.removeValue(n);return t}

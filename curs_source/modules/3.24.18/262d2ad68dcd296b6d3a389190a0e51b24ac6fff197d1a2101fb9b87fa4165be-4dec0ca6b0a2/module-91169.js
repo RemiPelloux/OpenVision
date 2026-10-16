@@ -1,0 +1,36 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", {
+    value: !0
+}), exports.BaggageImpl = void 0;
+class r {
+    constructor(e){
+        this._entries = e ? new Map(e) : new Map;
+    }
+    getEntry(e) {
+        const t = this._entries.get(e);
+        if (t) return Object.assign({}, t);
+    }
+    getAllEntries() {
+        return Array.from(this._entries.entries()).map(([e, t])=>[
+                e,
+                t
+            ]);
+    }
+    setEntry(e, t) {
+        const n = new r(this._entries);
+        return n._entries.set(e, t), n;
+    }
+    removeEntry(e) {
+        const t = new r(this._entries);
+        return t._entries.delete(e), t;
+    }
+    removeEntries(...e) {
+        const t = new r(this._entries);
+        for (const r of e)t._entries.delete(r);
+        return t;
+    }
+    clear() {
+        return new r;
+    }
+}
+exports.BaggageImpl = r;

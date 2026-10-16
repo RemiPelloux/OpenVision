@@ -1,0 +1,15 @@
+{
+  "format": "webpack5",
+  "strategy": "structural",
+  "modules": {
+    "module-2104.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[1148,1514]], "extraction": "structural"},
+    "module-3046.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[1531,1936]], "extraction": "structural"},
+    "module-3058.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[1951,8331]], "extraction": "structural"},
+    "module-3424.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[8348,12742]], "extraction": "structural"},
+    "module-6267.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[12759,58917]], "extraction": "structural"},
+    "module-6274.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[58934,59102]], "extraction": "structural"},
+    "module-6950.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[59113,61845]], "extraction": "structural"},
+    "module-727.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[135,1133]], "extraction": "structural"},
+    "module-7884.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-computer-use\\dist\\46.js", "ranges": [[61862,65014]], "extraction": "structural"}
+  }
+}

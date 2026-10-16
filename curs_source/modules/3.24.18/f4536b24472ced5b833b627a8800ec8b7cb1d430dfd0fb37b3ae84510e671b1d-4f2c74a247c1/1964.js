@@ -1,0 +1,1 @@
+a(uN,"isSequence");

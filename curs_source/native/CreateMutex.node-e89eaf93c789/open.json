@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "provenance": {
+      "untrusted_content": true,
+      "source": "analysis_target"
+    }
+  },
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"result\":{\"path\":\"C:\\\\Users\\\\User\\\\Documents\\\\ChatGPT\\\\REA\\\\cursor\\\\artifacts\\\\installation\\\\resources\\\\app\\\\node_modules\\\\@vscode\\\\windows-mutex\\\\build\\\\Release\\\\CreateMutex.node\",\"format\":\"pe\",\"kind\":\"executable\",\"sha256\":\"e89eaf93c7895fdc44066525394c286e62aff6d4c17441fafa0926004f3be98b\",\"architecture\":\"x86_64\"}}"
+    }
+  ],
+  "structuredContent": {
+    "result": {
+      "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\@vscode\\windows-mutex\\build\\Release\\CreateMutex.node",
+      "format": "pe",
+      "kind": "executable",
+      "sha256": "e89eaf93c7895fdc44066525394c286e62aff6d4c17441fafa0926004f3be98b",
+      "architecture": "x86_64"
+    }
+  }
+}

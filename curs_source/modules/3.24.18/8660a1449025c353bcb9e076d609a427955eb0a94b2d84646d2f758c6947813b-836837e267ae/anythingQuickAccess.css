@@ -1,0 +1,6 @@
+var __wakaru_osk_initialized = false;
+export function osk() {
+if (__wakaru_osk_initialized) return;
+__wakaru_osk_initialized = true;
+
+}

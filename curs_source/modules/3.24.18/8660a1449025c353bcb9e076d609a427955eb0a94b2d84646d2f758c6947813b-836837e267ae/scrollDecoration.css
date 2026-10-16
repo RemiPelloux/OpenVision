@@ -1,0 +1,6 @@
+var __wakaru_uDy_initialized = false;
+export function uDy() {
+if (__wakaru_uDy_initialized) return;
+__wakaru_uDy_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_u$k_initialized = false;
+export function u$k() {
+if (__wakaru_u$k_initialized) return;
+__wakaru_u$k_initialized = true;
+
+}

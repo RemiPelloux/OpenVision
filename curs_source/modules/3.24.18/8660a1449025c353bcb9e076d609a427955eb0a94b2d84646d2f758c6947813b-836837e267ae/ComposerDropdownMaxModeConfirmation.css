@@ -1,0 +1,6 @@
+var __wakaru_z6k_initialized = false;
+export function z6k() {
+if (__wakaru_z6k_initialized) return;
+__wakaru_z6k_initialized = true;
+
+}

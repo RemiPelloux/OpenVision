@@ -1,0 +1,6 @@
+var __wakaru_QEk_initialized = false;
+export function QEk() {
+if (__wakaru_QEk_initialized) return;
+__wakaru_QEk_initialized = true;
+
+}

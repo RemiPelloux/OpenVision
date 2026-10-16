@@ -1,0 +1,6 @@
+var __wakaru_Qyt_initialized = false;
+export function Qyt() {
+if (__wakaru_Qyt_initialized) return;
+__wakaru_Qyt_initialized = true;
+
+}

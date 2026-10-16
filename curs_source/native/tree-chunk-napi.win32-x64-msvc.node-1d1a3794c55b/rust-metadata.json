@@ -1,0 +1,70 @@
+{
+  "evidence_id": "ev_535ba18dc8211654e4841b6df1d75d8c661dd00c30f71b2408c5d051cca5ecec",
+  "subject": {
+    "name": "tree-chunk-napi.win32-x64-msvc.node",
+    "digest": {
+      "sha256": "1d1a3794c55bd2248a46f023cbfacabe3cb8f11eeaba98e65b81a85bf8c3c80e"
+    },
+    "local_path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\node_modules\\@anysphere\\tree-chunk-napi\\tree-chunk-napi.win32-x64-msvc.node",
+    "format": "pe",
+    "architecture": "x86_64"
+  },
+  "provider": {
+    "id": "rust-auditable",
+    "name": "REA Rust dependency reader",
+    "version": "1"
+  },
+  "analysis_profile": null,
+  "predicate_type": "rea.analysis",
+  "operation": "inspect_rust_binary",
+  "parameters": {
+    "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\node_modules\\@anysphere\\tree-chunk-napi\\tree-chunk-napi.win32-x64-msvc.node"
+  },
+  "raw_result": null,
+  "normalized_result": {
+    "artifact": {
+      "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\node_modules\\@anysphere\\tree-chunk-napi\\tree-chunk-napi.win32-x64-msvc.node",
+      "sha256": "1d1a3794c55bd2248a46f023cbfacabe3cb8f11eeaba98e65b81a85bf8c3c80e",
+      "bytes": 10688808
+    },
+    "format": "pe",
+    "architecture": "amd64",
+    "bits": 64,
+    "byte_order": "little",
+    "auditable_metadata": null,
+    "rustc_commit": {
+      "evidence_kind": "inferred",
+      "hashes": [
+        {
+          "hash": "48a229ceaefd4985c50990b14116b6d856af0985",
+          "file_offset": 1222543
+        }
+      ]
+    },
+    "limitations": [
+      "Embedded dependency metadata is file content. It does not authenticate package names, versions, sources, or the compiler that produced the binary.",
+      "Only the .dep-v0 dependency section and read-only compiler path strings are inspected. Functions, types, and runtime behavior are not recovered.",
+      "Resource guards bound the selected file to 256 MiB, a dependency section to 1 MiB, inflated JSON to the smaller of 8 MiB and 64 times the section size, and the complete report to 8 MiB. Package and dependency counts are admitted against that output budget before schema cloning, graph objects, or reverse-edge allocation.",
+      "No .dep-v0 section was found. Absence of .dep-v0 does not mean the binary has no dependencies.",
+      "The rustc commit hash is inferred from a /rustc/<40-hex>/ path in read-only data. It does not by itself prove which compiler produced the binary."
+    ]
+  },
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "Embedded dependency metadata is file content. It does not authenticate package names, versions, sources, or the compiler that produced the binary.",
+    "Only the .dep-v0 dependency section and read-only compiler path strings are inspected. Functions, types, and runtime behavior are not recovered.",
+    "Resource guards bound the selected file to 256 MiB, a dependency section to 1 MiB, inflated JSON to the smaller of 8 MiB and 64 times the section size, and the complete report to 8 MiB. Package and dependency counts are admitted against that output budget before schema cloning, graph objects, or reverse-edge allocation.",
+    "No .dep-v0 section was found. Absence of .dep-v0 does not mean the binary has no dependencies.",
+    "The rustc commit hash is inferred from a /rustc/<40-hex>/ path in read-only data. It does not by itself prove which compiler produced the binary."
+  ],
+  "relationship_coverage": null,
+  "locations": [
+    {
+      "kind": "artifact-path",
+      "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-exec\\dist\\node_modules\\@anysphere\\tree-chunk-napi\\tree-chunk-napi.win32-x64-msvc.node"
+    }
+  ],
+  "evidence_links": []
+}

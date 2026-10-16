@@ -1,0 +1,1 @@
+function JO(e){let t;try{t=new URL(e)}catch{throw new Error("xai-commerce-prepaid: baseUrl is not a URL")}if(t.protocol!=="https:"||t.pathname!=="/"||t.search!==""||t.hash!==""||t.username!==""||t.password!=="")throw new Error("xai-commerce-prepaid: baseUrl must be a bare https origin")}

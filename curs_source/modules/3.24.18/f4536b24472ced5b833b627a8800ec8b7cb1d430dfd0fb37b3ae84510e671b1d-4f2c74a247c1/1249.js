@@ -1,0 +1,1 @@
+var II=a((e,t)=>{const r=zh(e),n=zh(t);if(!r||!n)return $i(e,t);const o={...r};return i=>(o.red=jh(r.red,n.red,i),o.green=jh(r.green,n.green,i),o.blue=jh(r.blue,n.blue,i),o.alpha=nt(r.alpha,n.alpha,i),bo.transform(o))},"mixColor"),Hh=new Set(["none","hidden"]);

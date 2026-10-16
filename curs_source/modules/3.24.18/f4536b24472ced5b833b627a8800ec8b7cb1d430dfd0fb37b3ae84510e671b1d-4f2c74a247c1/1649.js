@@ -1,0 +1,1 @@
+function dg(e,t,r,n=.5){e.origin=n,e.originPoint=nt(t.min,t.max,e.origin),e.scale=Gt(r)/Gt(t),e.translate=nt(r.min,r.max,e.origin)-e.originPoint,(e.scale>=Tj&&e.scale<=Cj||isNaN(e.scale))&&(e.scale=1),(e.translate>=Ij&&e.translate<=Aj||isNaN(e.translate))&&(e.translate=0)}

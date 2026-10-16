@@ -1,0 +1,6 @@
+var __wakaru_fl__initialized = false;
+export function fl_() {
+if (__wakaru_fl__initialized) return;
+__wakaru_fl__initialized = true;
+
+}

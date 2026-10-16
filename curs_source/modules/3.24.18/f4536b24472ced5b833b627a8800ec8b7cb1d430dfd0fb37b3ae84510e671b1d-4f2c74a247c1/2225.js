@@ -1,0 +1,1 @@
+var XP={autoTopUpOff:{header:"@max-[401px]:contents",buttons:"@max-[401px]:order-last",share:"@max-[401px]:flex-1"},autoTopUpOn:{header:"@max-[200px]:contents",buttons:"@max-[200px]:order-last",share:"@max-[200px]:flex-1"}},pH="@max-[200px]:flex-col @max-[200px]:items-start @max-[200px]:gap-0.5";

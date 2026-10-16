@@ -1,0 +1,6 @@
+var __wakaru_w_g_initialized = false;
+export function w_g() {
+if (__wakaru_w_g_initialized) return;
+__wakaru_w_g_initialized = true;
+
+}

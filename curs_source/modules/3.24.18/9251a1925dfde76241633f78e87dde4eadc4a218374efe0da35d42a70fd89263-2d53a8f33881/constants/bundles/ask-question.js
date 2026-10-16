@@ -1,0 +1,19 @@
+import { formatAskQuestionAutoAnswerReason } from "../../utils_pb_exports.js";
+var ASK_QUESTION_AUTO_ANSWER_MARKER, ASK_QUESTION_AUTO_ANSWER_REASON_PREFIX, ASK_QUESTION_AUTO_ANSWER_REASON_BODY, ASK_QUESTION_AUTO_ANSWER_REASON, PLACEMENT_CONSENT_QUESTION_ID, PLACEMENT_CONSENT_ALLOW_OPTION_ID, PLACEMENT_CONSENT_DENY_OPTION_ID, PLACEMENT_CONSENT_TITLE_PREFIX, PLACEMENT_CONSENT_TITLE_SUFFIX;
+export { ASK_QUESTION_AUTO_ANSWER_MARKER, ASK_QUESTION_AUTO_ANSWER_REASON, ASK_QUESTION_AUTO_ANSWER_REASON_BODY, ASK_QUESTION_AUTO_ANSWER_REASON_PREFIX, PLACEMENT_CONSENT_ALLOW_OPTION_ID, PLACEMENT_CONSENT_DENY_OPTION_ID, PLACEMENT_CONSENT_QUESTION_ID, PLACEMENT_CONSENT_TITLE_PREFIX, PLACEMENT_CONSENT_TITLE_SUFFIX };
+var __wakaru_init_ask_question_initialized = false;
+export function init_ask_question() {
+if (__wakaru_init_ask_question_initialized) return;
+__wakaru_init_ask_question_initialized = true;
+"use strict";
+ASK_QUESTION_AUTO_ANSWER_MARKER = "ask_question_auto_answer";
+ASK_QUESTION_AUTO_ANSWER_REASON_PREFIX = "No response was received within the time limit";
+ASK_QUESTION_AUTO_ANSWER_REASON_BODY = `${ASK_QUESTION_AUTO_ANSWER_REASON_PREFIX}. Proceed with the recommended option(s) you offered for each question, or your best judgment based on the information already available.`;
+ASK_QUESTION_AUTO_ANSWER_REASON = formatAskQuestionAutoAnswerReason();
+PLACEMENT_CONSENT_QUESTION_ID = "decision";
+PLACEMENT_CONSENT_ALLOW_OPTION_ID = "allow";
+PLACEMENT_CONSENT_DENY_OPTION_ID = "deny";
+PLACEMENT_CONSENT_TITLE_PREFIX = "Allow this agent to run workers on ";
+PLACEMENT_CONSENT_TITLE_SUFFIX = "?";
+
+}

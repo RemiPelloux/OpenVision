@@ -1,0 +1,12 @@
+import { init_errorMessages } from "../errorMessages.js";
+import { init_parseDef } from "../parseDef.js";
+import { init_zod } from "../../../../../../zod@3.25.76/node_modules/zod/index.js";
+var __wakaru_init_array_initialized = false;
+export function init_array() {
+if (__wakaru_init_array_initialized) return;
+__wakaru_init_array_initialized = true;
+init_zod();
+init_errorMessages();
+init_parseDef();
+
+}

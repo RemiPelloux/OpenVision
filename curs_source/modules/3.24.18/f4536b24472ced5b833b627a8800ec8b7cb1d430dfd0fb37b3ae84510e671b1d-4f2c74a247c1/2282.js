@@ -1,0 +1,1 @@
+function nv(e,t){if({lo:e,hi:t}=u_(e,t),t<=2097151)return String(Im*t+e);const r=e&16777215,n=(e>>>24|t<<8)&16777215,o=t>>16&65535;let i=r+n*6777216+o*6710656,s=n+o*8147497,c=o*2;const l=1e7;return i>=l&&(s+=Math.floor(i/l),i%=l),s>=l&&(c+=Math.floor(s/l),s%=l),c.toString()+d_(s)+d_(i)}

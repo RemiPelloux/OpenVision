@@ -1,0 +1,6 @@
+var __wakaru_$Sg_initialized = false;
+export function $Sg() {
+if (__wakaru_$Sg_initialized) return;
+__wakaru_$Sg_initialized = true;
+
+}

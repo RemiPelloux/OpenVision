@@ -1,0 +1,6 @@
+var __wakaru_jLy_initialized = false;
+export function jLy() {
+if (__wakaru_jLy_initialized) return;
+__wakaru_jLy_initialized = true;
+
+}

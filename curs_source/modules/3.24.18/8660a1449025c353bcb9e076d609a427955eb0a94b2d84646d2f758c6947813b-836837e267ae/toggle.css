@@ -1,0 +1,6 @@
+var __wakaru_JOy_initialized = false;
+export function JOy() {
+if (__wakaru_JOy_initialized) return;
+__wakaru_JOy_initialized = true;
+
+}

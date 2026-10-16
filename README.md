@@ -19,10 +19,15 @@ options without an OpenVision account.
 [Releases](https://github.com/RemiPelloux/OpenVision/releases) ·
 [Documentation](docs/README.md)
 
+[Progress, percentages and gate-based ETA](docs/progress.md) ·
+[Recovery coverage and missing layers](docs/recovery-status.md) ·
+[Rust rewrite plan](docs/rust-roadmap.md)
+
 **Source availability:** The full original source has not been recovered.
-The Git payload includes editable bundled JavaScript and this repository includes
-OpenVision's own customization source. [See `curs_source` for the exact scope and
-missing layers](curs_source/README.md).
+[`curs_source`](curs_source/README.md) contains actual readable application code,
+extracted modules, native pseudocode and provenance, alongside OpenVision's own
+customization source. Recovery versions and missing layers are documented there;
+the archive is not an independently buildable original-source checkout.
 
 > **Ready to run on Windows x64.** Download the complete portable app from
 > [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.6),

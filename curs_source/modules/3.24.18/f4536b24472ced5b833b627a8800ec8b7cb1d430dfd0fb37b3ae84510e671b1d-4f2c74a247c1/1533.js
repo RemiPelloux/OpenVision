@@ -1,0 +1,1 @@
+var cj={},lj=a(e=>ko(e)?sj:ej,"getElementEffect"),mj=class{static{a(this,"EffectSubject")}constructor(e,t){this.effect=e,this.current=t,this.KeyframeResolver=P5}getValue(e){return this.effect.get(this.current,e)}readValue(e,t){return this.effect.read(this.current,e,t)}render(){this.effect.flush(this.current)}measureViewportBox(){return Zl(this.current)}getProps(){return cj}};

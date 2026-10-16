@@ -1,0 +1,6 @@
+var __wakaru_Maw_initialized = false;
+export function Maw() {
+if (__wakaru_Maw_initialized) return;
+__wakaru_Maw_initialized = true;
+
+}

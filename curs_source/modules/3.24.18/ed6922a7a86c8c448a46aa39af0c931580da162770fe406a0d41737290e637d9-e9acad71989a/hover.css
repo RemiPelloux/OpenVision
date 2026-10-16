@@ -1,0 +1,6 @@
+var __wakaru_j9i_initialized = false;
+export function j9i() {
+if (__wakaru_j9i_initialized) return;
+__wakaru_j9i_initialized = true;
+
+}

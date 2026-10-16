@@ -1,0 +1,1 @@
+function cb(e,t){const r=(function(){return aG(this,arguments,function*(){var n,o;const i=yield Wa(e);(n=t?.onHeader)===null||n===void 0||n.call(t,i.header),yield Wa(yield*oG(bO(i.message))),(o=t?.onTrailer)===null||o===void 0||o.call(t,i.trailer)})})()[Symbol.asyncIterator]();return{[Symbol.asyncIterator]:()=>({next:a(()=>r.next(),"next")})}}

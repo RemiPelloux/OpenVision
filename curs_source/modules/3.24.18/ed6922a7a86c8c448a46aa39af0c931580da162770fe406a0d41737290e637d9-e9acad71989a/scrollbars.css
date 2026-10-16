@@ -1,0 +1,6 @@
+var __wakaru_Pvg_initialized = false;
+export function Pvg() {
+if (__wakaru_Pvg_initialized) return;
+__wakaru_Pvg_initialized = true;
+
+}

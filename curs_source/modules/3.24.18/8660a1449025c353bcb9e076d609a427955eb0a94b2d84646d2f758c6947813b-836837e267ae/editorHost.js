@@ -1,0 +1,47 @@
+import { Uj } from "./bulkEditService.js";
+import { og } from "./codeEditorService.js";
+import { boe } from "./codeEditorWidget.js";
+import { Hi } from "./contextkey.js";
+import { nGl } from "./contextmenuCommandTarget.js";
+import { hPe } from "./diffDecorationVisibilityService.js";
+import { oRe } from "./diffEditorWidget.js";
+import { xw } from "./editorBrowser.js";
+import { Ybt } from "./editorCommon.js";
+import { cg } from "./editorContextKeys.js";
+import { Ud } from "./editorExtensions.js";
+import { nri } from "./editorHistoryOwner.js";
+import { L9t } from "./editorHostPolicy.js";
+import { s2 } from "./editorOptions.js";
+import { BEt } from "./editorOptions_2.js";
+import { od } from "./editor_2.js";
+import { K0r } from "./elementSizeObserver.js";
+import { YI } from "./filesConfigurationService.js";
+import { HHt } from "./findController.js";
+import { Zwt } from "./findModel.js";
+import { c3a } from "./findState.js";
+import { WHt } from "./format.js";
+import { Kwt } from "./goToSymbol.js";
+import { Kp } from "./language.js";
+import { Dg } from "./languageFeatures.js";
+import { Coe } from "./markdownRenderer_2.js";
+import { xp } from "./model.js";
+import { jc } from "./position.js";
+import { Qs } from "./range.js";
+import { iSt } from "./referencesModel.js";
+import { Em } from "./resolverService.js";
+import { Cy } from "./selection.js";
+import { cus } from "./selectionHoverActions.js";
+import { vW } from "./serviceCollection.js";
+import { aBt } from "./tabFocus.js";
+import { u_ } from "./textfiles.js";
+import { E } from "./tslib.es6.js";
+import { M9e } from "./untitledTextEditorService.js";
+import { Fle } from "./workingCopyFileService.js";
+var __wakaru_lZl_initialized = false;
+export function lZl() {
+if (__wakaru_lZl_initialized) return;
+__wakaru_lZl_initialized = true;
+"use strict";
+E(), boe(), oRe(), Hi(), vW(), xw(), s2(), Ybt(), K0r(), og(), Em(), xp(), Kp(), Dg(), Qs(), jc(), Cy(), cg(), L9t(), hPe(), cus(), Coe(), HHt(), Zwt(), c3a(), WHt(), iSt(), Kwt(), Uj(), nGl(), aBt(), nri(), Ud(), u_(), YI(), M9e(), Fle(), od(), BEt();
+
+}

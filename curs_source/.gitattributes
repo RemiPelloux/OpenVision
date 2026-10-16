@@ -1,0 +1,5 @@
+# Recovery digests describe exact producer bytes, including line endings.
+/javascript/** -text
+/modules/** -text
+/native/** -text
+/manifest.json -text

@@ -1,0 +1,30 @@
+import { E } from "./tslib.es6.js";
+var G$d;
+export { G$d };
+var __wakaru_ADy_initialized = false;
+export function ADy() {
+if (__wakaru_ADy_initialized) return;
+__wakaru_ADy_initialized = true;
+"use strict";
+E(), G$d = class {
+    get dataOffset() {
+        return this._startIndex;
+    }
+    get dirtySize() {
+        if (!(this._startIndex === void 0 || this._endIndex === void 0)) return this._endIndex - this._startIndex + 1;
+    }
+    get isDirty() {
+        return this._startIndex !== void 0;
+    }
+    flag(t, e = 1) {
+        return this._flag(t), e > 1 && this._flag(t + e - 1), t;
+    }
+    _flag(t) {
+        (this._startIndex === void 0 || t < this._startIndex) && (this._startIndex = t), (this._endIndex === void 0 || t > this._endIndex) && (this._endIndex = t);
+    }
+    clear() {
+        this._startIndex = void 0, this._endIndex = void 0;
+    }
+};
+
+}

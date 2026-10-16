@@ -1,0 +1,1 @@
+function uh(e){const t=[];for(const r of FU){const n=Math.min(e.minimum.unitMicros*r,e.maximum.unitMicros);t.at(-1)?.unitMicros!==n&&t.push({currencyCode:e.minimum.currencyCode,unitMicros:n})}return t}

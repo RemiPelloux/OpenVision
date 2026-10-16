@@ -1,0 +1,1 @@
+function CO(e){const t=new AbortController,r=a(()=>{t.abort(new vt("the operation timed out",Fe.DeadlineExceeded))},"listener");let n;return e!==void 0&&(e<=0?r():n=setTimeout(r,e)),{signal:t.signal,cleanup:a(()=>clearTimeout(n),"cleanup")}}

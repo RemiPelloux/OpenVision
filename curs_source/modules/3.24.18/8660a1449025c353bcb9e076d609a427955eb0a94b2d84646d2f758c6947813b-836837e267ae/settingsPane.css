@@ -1,0 +1,6 @@
+var __wakaru_lYw_initialized = false;
+export function lYw() {
+if (__wakaru_lYw_initialized) return;
+__wakaru_lYw_initialized = true;
+
+}

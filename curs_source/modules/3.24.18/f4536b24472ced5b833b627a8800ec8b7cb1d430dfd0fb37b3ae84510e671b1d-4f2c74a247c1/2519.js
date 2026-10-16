@@ -1,0 +1,1 @@
+function Zn(e,t){var r,n;const o=(r=t.proto.options)===null||r===void 0?void 0:r.features;if(o){const i=o[e];if(i!=0)return i}if("kind"in t){if(t.kind=="message")return Zn(e,(n=t.parent)!==null&&n!==void 0?n:t.file);const i=uM[t.edition];if(!i)throw new Error(`feature default for edition ${t.edition} not found`);return i[e]}return Zn(e,t.parent)}

@@ -1,0 +1,2 @@
+"use strict";
+module.exports = require("node:worker_threads");

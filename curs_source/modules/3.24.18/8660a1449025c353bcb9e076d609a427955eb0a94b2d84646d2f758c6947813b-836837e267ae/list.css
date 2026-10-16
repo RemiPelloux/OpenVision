@@ -1,0 +1,6 @@
+var __wakaru__Gd_initialized = false;
+export function _Gd() {
+if (__wakaru__Gd_initialized) return;
+__wakaru__Gd_initialized = true;
+
+}

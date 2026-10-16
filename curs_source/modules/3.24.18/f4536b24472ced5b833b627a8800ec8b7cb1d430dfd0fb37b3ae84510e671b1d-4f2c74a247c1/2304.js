@@ -1,0 +1,1 @@
+function x_(e,t){switch(e){case N.BOOL:return t===!1;case N.STRING:return t==="";case N.BYTES:return t instanceof Uint8Array&&!t.byteLength;case N.DOUBLE:case N.FLOAT:return Object.is(t,0);default:return t==0}}

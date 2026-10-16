@@ -1,0 +1,1 @@
+function Gm(e){const t=e.length;let r=t-(t+3>>2);(t&3)==0&&e[t-1]=="="&&(r-=e[t-2]=="="?2:1);const n=new Uint8Array(r);let o=-1;if(Q_)try{const i=Q_.call(n,e);i.read==t&&(o=i.written)}catch{}return o<0&&(o=J_(n,e)),o==r?n:n.subarray(0,o)}

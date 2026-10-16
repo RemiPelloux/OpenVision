@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "chunk-Z5VXL55R.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-Z5VXL55R.js", "ranges": [[0,10163]], "extraction": "structural"}
+  }
+}

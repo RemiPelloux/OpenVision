@@ -1,0 +1,1 @@
+function rC(e){const{descriptionId:t,setDescriptionMounted:r}=no(go),n=e.id===void 0;return Ko(()=>{if(n)return r(!0),()=>r(!1)},[n,r]),mt(Ar.Description,{...e,id:e.id??(t||void 0),className:_e("text-body text-secondary",e.className),children:e.children})}

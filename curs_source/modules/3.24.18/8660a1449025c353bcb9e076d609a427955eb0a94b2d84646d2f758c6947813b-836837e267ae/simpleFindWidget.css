@@ -1,0 +1,6 @@
+var __wakaru_nkw_initialized = false;
+export function nkw() {
+if (__wakaru_nkw_initialized) return;
+__wakaru_nkw_initialized = true;
+
+}

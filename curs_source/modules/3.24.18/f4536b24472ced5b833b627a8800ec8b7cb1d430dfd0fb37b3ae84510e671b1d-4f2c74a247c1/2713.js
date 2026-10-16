@@ -1,0 +1,1 @@
+function z3(e,t,r,n,o){const i=n.$unknown;if(i===void 0)return;const s=new Set;for(let c=0;c<i.length;c++){const{no:l}=i[c];if(!s.has(l)){s.add(l);const m=r.getExtensionFor(o,l);if(!m)continue;const u=k3(n,m),[d,p]=Ss(m,u),h=d[ar],f=B3(p)(t,h[p.localName]);f!==void 0&&(e[m.jsonName]=f)}}}

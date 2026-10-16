@@ -1,0 +1,1 @@
+var aj=a((e,t,r,n)=>r.startsWith("path")?z5(e,t,r,n):r.startsWith("attr")?j5(e,t,r,n,Fx(r)):(Wi(r)||r in e.style?Ox:j5)(e,t,r,n),"addSVGValue"),ij=a((e,t)=>yn.has(t)?rn[t]?.default||0:Wi(t)||Dx.includes(t)?F5(e,t):(t=Fx(t),e.getAttribute(Na(t))??e.getAttribute(t)??void 0),"readSVGValue"),sj=$l(aj,{test:ko,read:ij});

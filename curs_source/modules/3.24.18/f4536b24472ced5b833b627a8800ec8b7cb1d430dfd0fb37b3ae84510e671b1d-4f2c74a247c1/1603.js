@@ -1,0 +1,1 @@
+function vA(){return om}

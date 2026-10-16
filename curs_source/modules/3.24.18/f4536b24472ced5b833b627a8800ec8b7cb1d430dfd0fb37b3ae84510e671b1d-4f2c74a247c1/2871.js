@@ -1,0 +1,1 @@
+function mu(e,t){const r=e?.val??0n;if(r>BigInt(Number.MAX_SAFE_INTEGER)||r<-BigInt(Number.MAX_SAFE_INTEGER))throw new RangeError(`Cent value ${r} exceeds the safe integer range`);return Cc(Number(r),t)}

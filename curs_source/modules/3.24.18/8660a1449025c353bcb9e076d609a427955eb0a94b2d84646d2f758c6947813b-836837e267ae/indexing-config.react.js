@@ -1,0 +1,41 @@
+import { oVe } from "./aiConfigHelper.js";
+import { Ss } from "./aiMiscServices.js";
+import { Rs } from "./authenticationService.js";
+import { rs } from "./commands.js";
+import { or } from "./configuration.js";
+import { pa } from "./constants_8.js";
+import { Tzw } from "./cursor-tab-config.react.js";
+import { bd } from "./dialogs.js";
+import { fo } from "./environmentService.js";
+import { ms } from "./files.js";
+import { Od } from "./host.js";
+import { Mt } from "./index_197.js";
+import { Izw } from "./indexing-config.helpers.js";
+import { XBm } from "./indexingGrepConfiguration.js";
+import { Bt } from "./nls.js";
+import { Ks } from "./notification.js";
+import { qc } from "./opener.js";
+import { el } from "./reactiveStorageServiceTypes.js";
+import { Ope } from "./repositoryService.js";
+import { wDe } from "./settingsPaneShared.js";
+import { dN } from "./settingsScrollIds.js";
+import { $ye } from "./settingsTabContainer.react.js";
+import { Zi } from "./storage_2.js";
+import { E } from "./tslib.es6.js";
+import { tee } from "./use-application-property.react.js";
+import { EDe } from "./use-config-value-read-write.react.js";
+import { D$ } from "./use-feature-gate.react.js";
+import { YTe } from "./use-reactive-storage.react.js";
+import { Lg } from "./use-service.react.js";
+import { wu } from "./utilities_3.js";
+import { Sr } from "./workspace.js";
+var rEs;
+export { rEs };
+var __wakaru_nnv_initialized = false;
+export function nnv() {
+if (__wakaru_nnv_initialized) return;
+__wakaru_nnv_initialized = true;
+"use strict";
+E(), Mt(), pa(), Bt(), tee(), el(), wu(), oVe(), wDe(), dN(), Ss(), Ope(), XBm(), Rs(), Tzw(), Izw(), $ye(), bd(), Od(), fo(), EDe(), D$(), YTe(), Lg(), rs(), or(), ms(), Ks(), qc(), Zi(), Sr(), rEs = 0;
+
+}

@@ -1,0 +1,45 @@
+import { F8l, eZ, w5w } from "./BA.js";
+import { uHf } from "./breadcrumbs_2.js";
+import { X5w } from "./browserTracingIntegration.js";
+import { gHf } from "./browserapierrors.js";
+import { fHf } from "./browsersession.js";
+import { F$f } from "./client_2.js";
+import { NNw } from "./contextlines.js";
+import { UFw } from "./diagnose-sdk.js";
+import { ZNi } from "./eventbuilder_2.js";
+import { M3w } from "./feedbackAsync.js";
+import { D3w } from "./feedbackSync.js";
+import { z8l } from "./fetch_3.js";
+import { n7l } from "./globalhandlers.js";
+import { BNw } from "./graphqlClient.js";
+import { PNw } from "./httpclient.js";
+import { wHf } from "./httpcontext.js";
+import { fh } from "./index_10.js";
+import { D5w } from "./index_224.js";
+import { RFw } from "./integration_2.js";
+import { MFw } from "./integration_3.js";
+import { DFw } from "./integration_4.js";
+import { LFw } from "./integration_5.js";
+import { OFw } from "./integration_6.js";
+import { FFw } from "./integration_7.js";
+import { P$f } from "./lazyLoadIntegration.js";
+import { xHf } from "./linkederrors_2.js";
+import { lFw } from "./offline_2.js";
+import { bNw } from "./report-dialog.js";
+import { Q5w } from "./reportPageLoaded.js";
+import { yNw } from "./reportingobserver.js";
+import { hqf } from "./request_2.js";
+import { vNw } from "./sdk_2.js";
+import { eFw } from "./setActiveSpan.js";
+import { uNw } from "./spotlight.js";
+import { aHf } from "./stack-parsers.js";
+import { E } from "./tslib.es6.js";
+import { q3w } from "./userfeedback.js";
+import { WFw } from "./webWorker_2.js";
+var __wakaru_GFw_initialized = false;
+export function GFw() {
+if (__wakaru_GFw_initialized) return;
+__wakaru_GFw_initialized = true;
+E(), M3w(), D3w(), fh(), eZ(), F$f(), z8l(), aHf(), ZNi(), q3w(), vNw(), bNw(), uHf(), n7l(), wHf(), xHf(), gHf(), P$f(), yNw(), PNw(), NNw(), BNw(), w5w(), D5w(), F8l(), hqf(), X5w(), Q5w(), eFw(), lFw(), RFw(), uNw(), fHf(), MFw(), DFw(), LFw(), OFw(), FFw(), UFw(), WFw();
+
+}

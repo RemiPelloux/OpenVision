@@ -1,0 +1,1 @@
+function W2({paymentMethodId:e,className:t,render:r,children:n}){const{t:o}=Be(),i=Nt(),s=i.paymentMethods.find(l=>l.paymentMethodId===e),c=i.attempts[e];return!i.canSetDefault||i.mode==="fix"||s===void 0||s.isDefault||c?.kind==="remove"?null:qt(Kr,{className:t,disabled:i.busy,onClick:a(()=>void i.actions.setDefault(e),"onClick"),render:r,children:n??o("Set as default")})}

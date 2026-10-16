@@ -1,0 +1,6 @@
+var __wakaru_LNy_initialized = false;
+export function LNy() {
+if (__wakaru_LNy_initialized) return;
+__wakaru_LNy_initialized = true;
+
+}

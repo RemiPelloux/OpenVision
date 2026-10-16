@@ -1,0 +1,1 @@
+a(Zp,"isEventHandler");

@@ -1,0 +1,1 @@
+function bv(e){switch(e.mapKind){case"message":return`ReflectMap (${N[e.mapKey]}, ${e.message.toString()})`;case"enum":return`ReflectMap (${N[e.mapKey]}, ${e.enum.toString()})`;case"scalar":return`ReflectMap (${N[e.mapKey]}, ${N[e.scalar]})`}}

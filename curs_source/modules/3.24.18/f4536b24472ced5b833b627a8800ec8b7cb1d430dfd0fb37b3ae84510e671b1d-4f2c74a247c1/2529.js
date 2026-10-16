@@ -1,0 +1,1 @@
+function IM(e){return Object.assign(Object.create({label:1,typeName:"",extendee:"",defaultValue:"",oneofIndex:0,jsonName:"",proto3Optional:!1}),Object.assign(Object.assign({$typeName:"google.protobuf.FieldDescriptorProto"},e),{options:e.options?AM(e.options):void 0}))}

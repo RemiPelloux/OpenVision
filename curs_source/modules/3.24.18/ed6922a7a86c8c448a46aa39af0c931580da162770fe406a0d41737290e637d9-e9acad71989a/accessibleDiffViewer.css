@@ -1,0 +1,6 @@
+var __wakaru_Hyg_initialized = false;
+export function Hyg() {
+if (__wakaru_Hyg_initialized) return;
+__wakaru_Hyg_initialized = true;
+
+}

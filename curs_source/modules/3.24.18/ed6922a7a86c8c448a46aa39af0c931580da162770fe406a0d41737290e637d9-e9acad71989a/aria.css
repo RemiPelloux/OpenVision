@@ -1,0 +1,6 @@
+var __wakaru_Yhg_initialized = false;
+export function Yhg() {
+if (__wakaru_Yhg_initialized) return;
+__wakaru_Yhg_initialized = true;
+
+}

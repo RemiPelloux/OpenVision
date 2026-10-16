@@ -1,0 +1,93 @@
+{
+  "evidence_id": "ev_ca017c8ffe6e3876dbe52f6b40fff5bb1e4fb687566c8652ba4c363c11152652",
+  "subject": {
+    "name": "cursor_proclist.node",
+    "digest": {
+      "sha256": "928fbd09405cba7a73916b1941fe0016aadc551f42ffb2c42b42a99c2fbbb379"
+    },
+    "format": "pe",
+    "architecture": "x86_64",
+    "local_path": "C:\\Users\\User\\AppData\\Local\\Programs\\cursor\\resources\\app\\node_modules\\cursor-proclist\\build\\Release\\cursor_proclist.node"
+  },
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile": {
+    "provider": {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "version": "12.1.4"
+    },
+    "parameters": {
+      "target_kind": "executable",
+      "target_format": "pe",
+      "executable_role": "shared-library",
+      "managed": false,
+      "native_aot_metadata": {
+        "contract_revision": "rtr-9.1-x64-pe-read-only-v3",
+        "source_bytes": 134217728,
+        "work_units": 67108864,
+        "working_memory_bytes": 67108864,
+        "report_bytes": 4194304
+      },
+      "architecture": "x86_64",
+      "available_architectures": [
+        "x86_64"
+      ],
+      "import_mode": "ephemeral-source-immutable",
+      "annotation_policy": "atomic-function-entry-metadata-v1",
+      "load_image_observations": "source-mappings-entry-context-v2",
+      "function_body_evidence": "complete-inclusive-ranges-v1",
+      "function_references": "complete-body-and-entry-reference-manager-v2",
+      "call_relationship_coverage": "resolved-call-reference-diagnostics-v1",
+      "string_inventory_evidence": "defined-data-coverage-v1",
+      "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+      "instruction_flow_evidence": "decoded-return-pcode-v1",
+      "instruction_references": "exact-address-incoming-v1",
+      "function_boundary_observations": "ghidra-terminal-call-limitations-v1",
+      "no_return_repair": "disabled-windows-p0",
+      "process_launch": "official-headless-script-v1",
+      "jump_table_evidence": "typed-case-default-blocks-v1",
+      "decompiler_jump_loads": true,
+      "loader": "auto-from-header",
+      "language_id": "auto-from-header",
+      "compiler_spec_id": "auto-default",
+      "analyzer_preset": "ghidra-default"
+    },
+    "digest": "10aea50bbbd2fa717ea0655ae615adceaca59e622e9295a1da4fb8f99143c4fd"
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "procedure_pseudo_code",
+  "parameters": {
+    "procedure": "0x180006e90"
+  },
+  "raw_result": {
+    "value": "\r\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\r\n/* WARNING: Type propagation algorithm not settling */\r\n\r\nulonglong FUN_180006e90(float *param_1)\r\n\r\n{\r\n  longlong lVar1;\r\n  int *piVar2;\r\n  int iVar3;\r\n  BOOL BVar4;\r\n  int cbMultiByte;\r\n  HANDLE hObject;\r\n  undefined4 extraout_var;\r\n  LPSTR ******pppppppCVar5;\r\n  longlong *plVar6;\r\n  undefined4 extraout_var_00;\r\n  ulonglong uVar7;\r\n  LPCWSTR lpWideCharStr;\r\n  undefined1 auStackY_328 [32];\r\n  int local_2e8;\r\n  undefined4 local_2e4;\r\n  undefined8 local_2e0 [2];\r\n  undefined8 local_2d0;\r\n  CHAR CStack_2c1;\r\n  LPSTR ******local_2c0;\r\n  undefined8 uStack_2b8;\r\n  ulonglong local_2b0;\r\n  ulonglong uStack_2a8;\r\n  int local_2a0;\r\n  undefined4 uStack_29c;\r\n  LPSTR ******local_298;\r\n  undefined8 uStack_290;\r\n  ulonglong local_288;\r\n  ulonglong uStack_280;\r\n  undefined4 local_278;\r\n  int local_270;\r\n  undefined4 local_258;\r\n  WCHAR local_24c [266];\r\n  ulonglong local_38;\r\n  \r\n  local_38 = DAT_180028040 ^ (ulonglong)auStackY_328;\r\n  hObject = (HANDLE)CreateToolhelp32Snapshot(2,0);\r\n  if (hObject != (HANDLE)0xffffffffffffffff) {\r\n    local_278 = 0x238;\r\n    iVar3 = Process32FirstW(hObject);\r\n    if (iVar3 != 0) {\r\n      do {\r\n        iVar3 = local_270;\r\n        if (local_270 != 0) {\r\n          local_2e8 = local_270;\r\n          local_2e4 = local_258;\r\n          lpWideCharStr = local_24c;\r\n          cbMultiByte = WideCharToMultiByte(0xfde9,0,lpWideCharStr,-1,(LPSTR)0x0,0,(LPCSTR)0x0,\r\n                                            (LPBOOL)0x0);\r\n          uStack_2b8 = 0;\r\n          local_2b0 = 0;\r\n          uStack_2a8 = 0xf;\r\n          local_2c0 = (LPSTR ******)0x0;\r\n          if (1 < cbMultiByte) {\r\n            uVar7 = (longlong)cbMultiByte - 1;\r\n            if (uVar7 == 0) {\r\n                    /* WARNING: Ignoring partial resolution of indirect */\r\n              local_2c0._0_1_ = 0;\r\n              local_2b0 = uVar7;\r\n            }\r\n            else if (uVar7 < 0x10) {\r\n              local_2b0 = uVar7;\r\n              FUN_1800188a0((undefined1 (*) [32])&local_2c0,0,uVar7);\r\n              (&CStack_2c1)[cbMultiByte] = '\\0';\r\n            }\r\n            else {\r\n              FUN_1800066d0((undefined8 *)&local_2c0,uVar7,lpWideCharStr,uVar7);\r\n            }\r\n            pppppppCVar5 = (LPSTR ******)&local_2c0;\r\n            if (0xf < uStack_2a8) {\r\n              pppppppCVar5 = local_2c0;\r\n            }\r\n            WideCharToMultiByte(0xfde9,0,local_24c,-1,(LPSTR)pppppppCVar5,cbMultiByte,(LPCSTR)0x0,\r\n                                (LPBOOL)0x0);\r\n          }\r\n          _local_2a0 = CONCAT44(local_2e4,iVar3);\r\n          local_298 = local_2c0;\r\n          uStack_290 = uStack_2b8;\r\n          local_288 = local_2b0;\r\n          uStack_280 = uStack_2a8;\r\n          local_2b0 = 0;\r\n          uStack_2a8 = 0xf;\r\n          local_2c0 = (LPSTR ******)((ulonglong)local_2c0 & 0xffffffffffffff00);\r\n          FUN_180007dc0(param_1,local_2e0,(byte *)&local_2e8,&local_2a0);\r\n          plVar6 = FUN_1800083c0(param_1 + 0x10,&local_2d0,(byte *)&local_2e4);\r\n          lVar1 = *plVar6;\r\n          piVar2 = *(int **)(lVar1 + 0x20);\r\n          if (piVar2 == *(int **)(lVar1 + 0x28)) {\r\n            FUN_180006470((longlong *)(lVar1 + 0x18),(undefined8 *)piVar2,&local_2e8);\r\n          }\r\n          else {\r\n            *piVar2 = local_2e8;\r\n            *(longlong *)(lVar1 + 0x20) = *(longlong *)(lVar1 + 0x20) + 4;\r\n          }\r\n          if (0xf < uStack_280) {\r\n            pppppppCVar5 = local_298;\r\n            if ((0xfff < uStack_280 + 1) &&\r\n               (pppppppCVar5 = (LPSTR ******)local_298[-1],\r\n               (LPSTR)0x1f < (LPSTR)((longlong)local_298 + (-8 - (longlong)pppppppCVar5)))) {\r\n                    /* WARNING: Subroutine does not return */\r\n              _invoke_watson((wchar_t *)0x0,(wchar_t *)0x0,(wchar_t *)0x0,0,0);\r\n            }\r\n            thunk_FUN_1800116e0(pppppppCVar5);\r\n          }\r\n          if (0xf < uStack_2a8) {\r\n            pppppppCVar5 = local_2c0;\r\n            if ((0xfff < uStack_2a8 + 1) &&\r\n               (pppppppCVar5 = (LPSTR ******)local_2c0[-1],\r\n               0x1f < (ulonglong)((longlong)local_2c0 + (-8 - (longlong)pppppppCVar5)))) {\r\n                    /* WARNING: Subroutine does not return */\r\n              _invoke_watson((wchar_t *)0x0,(wchar_t *)0x0,(wchar_t *)0x0,0,0);\r\n            }\r\n            thunk_FUN_1800116e0(pppppppCVar5);\r\n          }\r\n        }\r\n        iVar3 = Process32NextW(hObject);\r\n        if (iVar3 == 0) {\r\n          BVar4 = CloseHandle(hObject);\r\n          return CONCAT71((int7)(CONCAT44(extraout_var_00,BVar4) >> 8),1);\r\n        }\r\n      } while( true );\r\n    }\r\n    BVar4 = CloseHandle(hObject);\r\n    hObject = (HANDLE)CONCAT44(extraout_var,BVar4);\r\n  }\r\n  return (ulonglong)hObject & 0xffffffffffffff00;\r\n}\r\n\r\n",
+    "limitations": [
+      "Ghidra Listing reports a terminal call at 0x180007141 to 0x18000f93c _invoke_watson (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+      "Ghidra Listing reports a terminal call at 0x180007156 to 0x18000f93c _invoke_watson (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return."
+    ]
+  },
+  "normalized_result": "\r\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\r\n/* WARNING: Type propagation algorithm not settling */\r\n\r\nulonglong FUN_180006e90(float *param_1)\r\n\r\n{\r\n  longlong lVar1;\r\n  int *piVar2;\r\n  int iVar3;\r\n  BOOL BVar4;\r\n  int cbMultiByte;\r\n  HANDLE hObject;\r\n  undefined4 extraout_var;\r\n  LPSTR ******pppppppCVar5;\r\n  longlong *plVar6;\r\n  undefined4 extraout_var_00;\r\n  ulonglong uVar7;\r\n  LPCWSTR lpWideCharStr;\r\n  undefined1 auStackY_328 [32];\r\n  int local_2e8;\r\n  undefined4 local_2e4;\r\n  undefined8 local_2e0 [2];\r\n  undefined8 local_2d0;\r\n  CHAR CStack_2c1;\r\n  LPSTR ******local_2c0;\r\n  undefined8 uStack_2b8;\r\n  ulonglong local_2b0;\r\n  ulonglong uStack_2a8;\r\n  int local_2a0;\r\n  undefined4 uStack_29c;\r\n  LPSTR ******local_298;\r\n  undefined8 uStack_290;\r\n  ulonglong local_288;\r\n  ulonglong uStack_280;\r\n  undefined4 local_278;\r\n  int local_270;\r\n  undefined4 local_258;\r\n  WCHAR local_24c [266];\r\n  ulonglong local_38;\r\n  \r\n  local_38 = DAT_180028040 ^ (ulonglong)auStackY_328;\r\n  hObject = (HANDLE)CreateToolhelp32Snapshot(2,0);\r\n  if (hObject != (HANDLE)0xffffffffffffffff) {\r\n    local_278 = 0x238;\r\n    iVar3 = Process32FirstW(hObject);\r\n    if (iVar3 != 0) {\r\n      do {\r\n        iVar3 = local_270;\r\n        if (local_270 != 0) {\r\n          local_2e8 = local_270;\r\n          local_2e4 = local_258;\r\n          lpWideCharStr = local_24c;\r\n          cbMultiByte = WideCharToMultiByte(0xfde9,0,lpWideCharStr,-1,(LPSTR)0x0,0,(LPCSTR)0x0,\r\n                                            (LPBOOL)0x0);\r\n          uStack_2b8 = 0;\r\n          local_2b0 = 0;\r\n          uStack_2a8 = 0xf;\r\n          local_2c0 = (LPSTR ******)0x0;\r\n          if (1 < cbMultiByte) {\r\n            uVar7 = (longlong)cbMultiByte - 1;\r\n            if (uVar7 == 0) {\r\n                    /* WARNING: Ignoring partial resolution of indirect */\r\n              local_2c0._0_1_ = 0;\r\n              local_2b0 = uVar7;\r\n            }\r\n            else if (uVar7 < 0x10) {\r\n              local_2b0 = uVar7;\r\n              FUN_1800188a0((undefined1 (*) [32])&local_2c0,0,uVar7);\r\n              (&CStack_2c1)[cbMultiByte] = '\\0';\r\n            }\r\n            else {\r\n              FUN_1800066d0((undefined8 *)&local_2c0,uVar7,lpWideCharStr,uVar7);\r\n            }\r\n            pppppppCVar5 = (LPSTR ******)&local_2c0;\r\n            if (0xf < uStack_2a8) {\r\n              pppppppCVar5 = local_2c0;\r\n            }\r\n            WideCharToMultiByte(0xfde9,0,local_24c,-1,(LPSTR)pppppppCVar5,cbMultiByte,(LPCSTR)0x0,\r\n                                (LPBOOL)0x0);\r\n          }\r\n          _local_2a0 = CONCAT44(local_2e4,iVar3);\r\n          local_298 = local_2c0;\r\n          uStack_290 = uStack_2b8;\r\n          local_288 = local_2b0;\r\n          uStack_280 = uStack_2a8;\r\n          local_2b0 = 0;\r\n          uStack_2a8 = 0xf;\r\n          local_2c0 = (LPSTR ******)((ulonglong)local_2c0 & 0xffffffffffffff00);\r\n          FUN_180007dc0(param_1,local_2e0,(byte *)&local_2e8,&local_2a0);\r\n          plVar6 = FUN_1800083c0(param_1 + 0x10,&local_2d0,(byte *)&local_2e4);\r\n          lVar1 = *plVar6;\r\n          piVar2 = *(int **)(lVar1 + 0x20);\r\n          if (piVar2 == *(int **)(lVar1 + 0x28)) {\r\n            FUN_180006470((longlong *)(lVar1 + 0x18),(undefined8 *)piVar2,&local_2e8);\r\n          }\r\n          else {\r\n            *piVar2 = local_2e8;\r\n            *(longlong *)(lVar1 + 0x20) = *(longlong *)(lVar1 + 0x20) + 4;\r\n          }\r\n          if (0xf < uStack_280) {\r\n            pppppppCVar5 = local_298;\r\n            if ((0xfff < uStack_280 + 1) &&\r\n               (pppppppCVar5 = (LPSTR ******)local_298[-1],\r\n               (LPSTR)0x1f < (LPSTR)((longlong)local_298 + (-8 - (longlong)pppppppCVar5)))) {\r\n                    /* WARNING: Subroutine does not return */\r\n              _invoke_watson((wchar_t *)0x0,(wchar_t *)0x0,(wchar_t *)0x0,0,0);\r\n            }\r\n            thunk_FUN_1800116e0(pppppppCVar5);\r\n          }\r\n          if (0xf < uStack_2a8) {\r\n            pppppppCVar5 = local_2c0;\r\n            if ((0xfff < uStack_2a8 + 1) &&\r\n               (pppppppCVar5 = (LPSTR ******)local_2c0[-1],\r\n               0x1f < (ulonglong)((longlong)local_2c0 + (-8 - (longlong)pppppppCVar5)))) {\r\n                    /* WARNING: Subroutine does not return */\r\n              _invoke_watson((wchar_t *)0x0,(wchar_t *)0x0,(wchar_t *)0x0,0,0);\r\n            }\r\n            thunk_FUN_1800116e0(pppppppCVar5);\r\n          }\r\n        }\r\n        iVar3 = Process32NextW(hObject);\r\n        if (iVar3 == 0) {\r\n          BVar4 = CloseHandle(hObject);\r\n          return CONCAT71((int7)(CONCAT44(extraout_var_00,BVar4) >> 8),1);\r\n        }\r\n      } while( true );\r\n    }\r\n    BVar4 = CloseHandle(hObject);\r\n    hObject = (HANDLE)CONCAT44(extraout_var,BVar4);\r\n  }\r\n  return (ulonglong)hObject & 0xffffffffffffff00;\r\n}\r\n\r\n",
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+    "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+    "Ghidra Listing reports a terminal call at 0x180007141 to 0x18000f93c _invoke_watson (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+    "Ghidra Listing reports a terminal call at 0x180007156 to 0x18000f93c _invoke_watson (external=false, thunk=false, hasNoReturn=true); fallthrough is excluded by Ghidra's flow model. This records Ghidra's FunctionManager flag, not an independent verification that the callee cannot return.",
+    "Windows Ghidra P0 accepts approved native x86 and x86-64 PE applications and DLLs; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically."
+  ],
+  "relationship_coverage": null,
+  "locations": [],
+  "evidence_links": []
+}

@@ -1,0 +1,1 @@
+a(Ph,"getEasingForSegment");

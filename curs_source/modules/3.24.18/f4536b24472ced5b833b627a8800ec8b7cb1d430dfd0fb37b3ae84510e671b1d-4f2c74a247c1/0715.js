@@ -1,0 +1,1 @@
+function xf(e){if(!hf(e)||!e.isConnected||e.matches(":disabled"))return!1;for(let t=e;t;t=WE(t)){const r=t!==e,n=Jt(t)==="slot";if(t.hasAttribute("inert")||r&&Jt(t)==="details"&&!t.open&&!YE(e,t)||t.hasAttribute("hidden")||!n&&!XE(t,r))return!1}return!0}

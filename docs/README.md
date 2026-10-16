@@ -4,6 +4,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 
 | I want to… | Read |
 | --- | --- |
+| See linked percentages, remaining points and delivery gates | [Progress dashboard and gate-based ETA](progress.md) |
 | Download and launch OpenVision | [Portable installation, editable code and updates](native-runtime.md) |
 | Build and run OpenVision on Linux | [Linux guide](linux.md) · [Linux verification](linux-verification.md) |
 | Configure models, import settings or customize the UI | [User guide](user-guide.md) |
@@ -40,7 +41,7 @@ Start with the [project overview](../README.md), then choose the guide for your 
 | Inspect large-project watcher behavior | [100-file and 10,000-file native verification](project-scale-verification.md) |
 | Understand provider errors and manual retries | [Provider failure handling](provider-failure-handling.md) |
 | Understand recovery limitations | [Recovery status](recovery-status.md) · [Native inventory](native-recovery-inventory.md) |
-| Find recovered code and check what is in Git | [`curs_source` source-status index](../curs_source/README.md) |
+| Browse recovered application code, extracted modules and native pseudocode | [`curs_source` recovery archive](../curs_source/README.md) |
 | Read this release's scope | [0.2.0-preview.6 projects in one window](releases/0.2.0-preview.6.md) |
 | Review the packaged-app tests | [Portable verification](portable-preview6.md) |
 | Check WebAssembly recovery | [14/15 complete REA records and remaining limits](rea-wasm-inventory.md) |

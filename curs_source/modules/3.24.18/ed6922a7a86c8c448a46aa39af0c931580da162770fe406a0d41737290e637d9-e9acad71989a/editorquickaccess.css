@@ -1,0 +1,6 @@
+var __wakaru_fEv_initialized = false;
+export function fEv() {
+if (__wakaru_fEv_initialized) return;
+__wakaru_fEv_initialized = true;
+
+}

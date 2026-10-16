@@ -1,0 +1,1 @@
+function Y0({limit:e}){const{t}=Be(),{locale:r}=xt();return e===null?ye("span",{className:"text-tertiary group-hover:text-primary group-active:text-primary",children:t("Not set")}):ye(tc,{children:Yt(e,r,{trailingZeroDisplay:"stripIfInteger"})})}

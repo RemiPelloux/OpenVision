@@ -1,0 +1,1 @@
+function Em({label:e,danger:t=!1,children:r}){return Qt("div",{className:_e("flex items-center justify-between gap-3",pH),children:[ye(it,{as:"dt",size:"body",color:t?"destructive":"secondary",className:"shrink-0",children:e}),ye("dd",{className:"m-0 flex min-w-0 items-center gap-1",children:r})]})}

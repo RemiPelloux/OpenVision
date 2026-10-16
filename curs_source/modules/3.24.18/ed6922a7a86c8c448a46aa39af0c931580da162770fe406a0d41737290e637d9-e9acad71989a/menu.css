@@ -1,0 +1,6 @@
+var __wakaru_cc__initialized = false;
+export function cc_() {
+if (__wakaru_cc__initialized) return;
+__wakaru_cc__initialized = true;
+
+}

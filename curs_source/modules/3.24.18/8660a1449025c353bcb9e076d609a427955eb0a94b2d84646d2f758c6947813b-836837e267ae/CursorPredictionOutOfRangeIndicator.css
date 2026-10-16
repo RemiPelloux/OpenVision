@@ -1,0 +1,6 @@
+var __wakaru_EaC_initialized = false;
+export function EaC() {
+if (__wakaru_EaC_initialized) return;
+__wakaru_EaC_initialized = true;
+
+}

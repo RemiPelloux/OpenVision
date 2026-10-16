@@ -1,0 +1,6 @@
+var __wakaru_o_g_initialized = false;
+export function o_g() {
+if (__wakaru_o_g_initialized) return;
+__wakaru_o_g_initialized = true;
+
+}

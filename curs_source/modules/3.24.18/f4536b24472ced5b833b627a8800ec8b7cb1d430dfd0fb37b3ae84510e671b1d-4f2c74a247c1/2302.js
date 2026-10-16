@@ -1,0 +1,1 @@
+function on(e,t){switch(e){case N.STRING:return"";case N.BOOL:return!1;case N.DOUBLE:case N.FLOAT:return 0;case N.INT64:case N.UINT64:case N.SFIXED64:case N.FIXED64:case N.SINT64:return t?"0":st.zero;case N.BYTES:return new Uint8Array(0);default:return 0}}

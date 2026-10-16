@@ -1,0 +1,6 @@
+var __wakaru_pl__initialized = false;
+export function pl_() {
+if (__wakaru_pl__initialized) return;
+__wakaru_pl__initialized = true;
+
+}

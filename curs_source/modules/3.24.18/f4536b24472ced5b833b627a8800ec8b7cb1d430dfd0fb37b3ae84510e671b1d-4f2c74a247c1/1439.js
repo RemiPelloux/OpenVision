@@ -1,0 +1,1 @@
+function C5(e,t,r=0,n=0,o=0,i=1,s){const c=[];for(const l of e.variantChildren)l.notify("AnimationStart",t),c.push(Hl(l,t,{...s,delay:r+(typeof n=="function"?0:n)+yx(e.variantChildren,l,n,o,i)}).then(()=>l.notify("AnimationComplete",t)));return Promise.all(c)}

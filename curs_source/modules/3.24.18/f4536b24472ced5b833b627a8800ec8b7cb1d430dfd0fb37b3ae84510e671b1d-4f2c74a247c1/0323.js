@@ -1,0 +1,1 @@
+function j2(e,t){if(e.expMonth===void 0||e.expYear===void 0)return;const r=`${String(e.expMonth).padStart(2,"0")}/${e.expYear}`;return up(e)?t("Expired {expiry}",{expiry:r}):t("Expires {expiry}",{expiry:r})}

@@ -1,0 +1,1 @@
+function Ai(e,t,{detail:r=0}={}){e.dispatchEvent(new(gr(e)).PointerEvent("click",{bubbles:!0,cancelable:!0,composed:!0,detail:r,shiftKey:t.shiftKey,ctrlKey:t.ctrlKey,altKey:t.altKey,metaKey:t.metaKey}))}

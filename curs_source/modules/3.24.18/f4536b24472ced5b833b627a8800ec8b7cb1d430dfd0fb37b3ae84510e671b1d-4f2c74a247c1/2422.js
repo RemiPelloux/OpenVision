@@ -1,0 +1,1 @@
+function Bm(e,t,r){return t!==void 0&&(Xn(e.message)&&!e.oneof&&e.fieldKind=="message"?t={$typeName:e.message.typeName,value:zm(e.message.fields[0],t)}:e.message.typeName=="google.protobuf.Struct"&&e.parent.typeName!="google.protobuf.Value"&&Sn(t)&&(t=Lm(t))),new Z_(e.message,t,r)}

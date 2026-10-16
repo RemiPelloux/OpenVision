@@ -1,0 +1,1 @@
+a(JO,"assertBareHttpsOrigin");

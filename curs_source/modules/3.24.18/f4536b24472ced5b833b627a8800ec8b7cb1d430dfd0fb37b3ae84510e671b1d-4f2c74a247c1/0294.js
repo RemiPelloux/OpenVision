@@ -1,0 +1,1 @@
+function x2({i18nKey:e,defaultTranslation:t,content:r,ns:n,values:o={},i18n:i,t:s}){const{i18n:c,defaultNS:l}=dD(vi)||{},m=i||c||ta(),u=s||m?.t.bind(m);return ep({i18nKey:e,defaultTranslation:t,content:r,ns:n||u?.ns||l||m?.options?.defaultNS,values:o,i18n:m,t:s})}

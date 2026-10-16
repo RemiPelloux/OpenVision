@@ -1,0 +1,1 @@
+function Sx(e,t,r=1){en(r<=H8,`Max CSS variable fallback depth detected in property "${e}". This may indicate a circular fallback dependency.`,"max-css-var-depth");const[n,o]=b5(e);if(!n)return;const i=window.getComputedStyle(t).getPropertyValue(n);if(i){const s=i.trim();return Eh(s)?parseFloat(s):s}return Oh(o)?Sx(o,t,r+1):o}

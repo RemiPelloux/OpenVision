@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "ensure-agent-host-daemon-dist.cjs": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\scripts\\ensure-agent-host-daemon-dist.cjs", "ranges": [[0,6982]], "extraction": "structural"}
+  }
+}

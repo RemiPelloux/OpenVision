@@ -1,0 +1,1 @@
+function LC(e,t,r){const n=t===null?"":vo(t);return e===null?{amount:n,autoTopUpEnabled:!1,threshold:"",autoTopUpAmount:"",hasMonthlyCap:!1,monthlyCap:""}:{amount:n,autoTopUpEnabled:e.enabled,threshold:vo(e.threshold),autoTopUpAmount:vo(e.amount),hasMonthlyCap:e.monthlyCap!==null,monthlyCap:e.monthlyCap===null?"":vo(e.monthlyCap)}}

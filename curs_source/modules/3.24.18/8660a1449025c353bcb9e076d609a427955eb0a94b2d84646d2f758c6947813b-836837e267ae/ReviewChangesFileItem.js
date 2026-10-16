@@ -1,0 +1,45 @@
+import { q1w } from "./AgentContextTabDirtyIndicator.js";
+import { Qe } from "./Iwo.js";
+import { vu } from "./actions.js";
+import { bCg } from "./aiFullFilePromptBarContribution.js";
+import { SR } from "./async_3.js";
+import { boe } from "./codeEditorWidget.js";
+import { gs } from "./codicons.js";
+import { pa } from "./constants_8.js";
+import { oRe } from "./diffEditorWidget.js";
+import { Q1w } from "./diffMentionUtils.js";
+import { eLf } from "./discussionUtils.js";
+import { Ud } from "./editorExtensions.js";
+import { Wo } from "./editorService.js";
+import { Efg } from "./generatedFilesConstants.js";
+import { Gie } from "./glassAddToChat.js";
+import { Iw } from "./hoverWidget.js";
+import { F6 } from "./iconButton_2.js";
+import { nT } from "./keyboardEvent.js";
+import { MB } from "./pathUtils.js";
+import { cVe } from "./pureIcon.js";
+import { LFl } from "./reviewChangesEditorLifetime.js";
+import { vo } from "./solidContext.js";
+import { sk } from "./solidEventsWrapper.js";
+import { ta } from "./themables.js";
+import { E } from "./tslib.es6.js";
+import { fn } from "./uri.js";
+import { V1w } from "./useFileDirtiness.js";
+import { X1w } from "./useFileMarkers.js";
+import { ZRn } from "./useIsUsingFileIconTheme.js";
+import { fLf } from "./useResourceLineCounts.js";
+import { O6 } from "./useVSHoverTooltip.js";
+import { oT } from "./utils_16.js";
+import { at } from "./web.js";
+import { wt } from "./yBp.js";
+import { pi } from "./ze.js";
+var WFl, bLf, yLf, SLf, kLf, wLf, CLf, TLf, ELf, ILf, xLf, ALf, RLf;
+export { ALf, CLf, ELf, ILf, RLf, SLf, TLf, WFl, bLf, kLf, wLf, xLf, yLf };
+var __wakaru_ekw_initialized = false;
+export function ekw() {
+if (__wakaru_ekw_initialized) return;
+__wakaru_ekw_initialized = true;
+"use strict";
+E(), at(), at(), at(), at(), at(), at(), at(), at(), at(), pi(), nT(), Iw(), vu(), SR(), gs(), Qe(), pa(), ta(), fn(), Ud(), boe(), oRe(), bCg(), sk(), Wo(), oT(), MB(), q1w(), Gie(), V1w(), X1w(), vo(), cVe(), F6(), ZRn(), O6(), fLf(), LFl(), Q1w(), eLf(), Efg(), WFl = wt("<span><span class=icon-container><span>"), bLf = wt("<span class=app-layout-multi-diff-file-added>(New)"), yLf = wt("<span class=app-layout-multi-diff-file-deleted>(Deleted)"), SLf = wt("<span class=app-layout-multi-diff-count-added>+"), kLf = wt("<span class=app-layout-multi-diff-count-deleted>-"), wLf = wt("<div>"), CLf = wt("<div><div>"), TLf = wt("<span>"), ELf = wt("<div>Renamed"), ILf = wt("<div><div class=app-layout-multi-diff-item-header><div class=app-layout-multi-diff-item-header-content><div class=app-layout-multi-diff-file-info><div class=app-layout-multi-diff-file-dot><span class=app-layout-multi-diff-filename><span></span></span><span class=app-layout-multi-diff-counts-left aria-hidden=true></span></div></div><div class=app-layout-multi-diff-trailing-actions>"), xLf = wt("<span class=icon-container>"), ALf = wt("<span class=app-layout-multi-diff-path-filename>"), RLf = wt("<span class=app-layout-multi-diff-path-prefix><span>/");
+
+}

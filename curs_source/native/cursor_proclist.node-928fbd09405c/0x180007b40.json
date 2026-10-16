@@ -1,0 +1,88 @@
+{
+  "evidence_id": "ev_b30902d3d5cb7994103507811391c8dbea3155f8c984ea677278db302a9bf4b8",
+  "subject": {
+    "name": "cursor_proclist.node",
+    "digest": {
+      "sha256": "928fbd09405cba7a73916b1941fe0016aadc551f42ffb2c42b42a99c2fbbb379"
+    },
+    "format": "pe",
+    "architecture": "x86_64",
+    "local_path": "C:\\Users\\User\\AppData\\Local\\Programs\\cursor\\resources\\app\\node_modules\\cursor-proclist\\build\\Release\\cursor_proclist.node"
+  },
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile": {
+    "provider": {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "version": "12.1.4"
+    },
+    "parameters": {
+      "target_kind": "executable",
+      "target_format": "pe",
+      "executable_role": "shared-library",
+      "managed": false,
+      "native_aot_metadata": {
+        "contract_revision": "rtr-9.1-x64-pe-read-only-v3",
+        "source_bytes": 134217728,
+        "work_units": 67108864,
+        "working_memory_bytes": 67108864,
+        "report_bytes": 4194304
+      },
+      "architecture": "x86_64",
+      "available_architectures": [
+        "x86_64"
+      ],
+      "import_mode": "ephemeral-source-immutable",
+      "annotation_policy": "atomic-function-entry-metadata-v1",
+      "load_image_observations": "source-mappings-entry-context-v2",
+      "function_body_evidence": "complete-inclusive-ranges-v1",
+      "function_references": "complete-body-and-entry-reference-manager-v2",
+      "call_relationship_coverage": "resolved-call-reference-diagnostics-v1",
+      "string_inventory_evidence": "defined-data-coverage-v1",
+      "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+      "instruction_flow_evidence": "decoded-return-pcode-v1",
+      "instruction_references": "exact-address-incoming-v1",
+      "function_boundary_observations": "ghidra-terminal-call-limitations-v1",
+      "no_return_repair": "disabled-windows-p0",
+      "process_launch": "official-headless-script-v1",
+      "jump_table_evidence": "typed-case-default-blocks-v1",
+      "decompiler_jump_loads": true,
+      "loader": "auto-from-header",
+      "language_id": "auto-from-header",
+      "compiler_spec_id": "auto-default",
+      "analyzer_preset": "ghidra-default"
+    },
+    "digest": "10aea50bbbd2fa717ea0655ae615adceaca59e622e9295a1da4fb8f99143c4fd"
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "procedure_pseudo_code",
+  "parameters": {
+    "procedure": "0x180007b40"
+  },
+  "raw_result": {
+    "value": "\r\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\r\n/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */\r\n\r\nundefined8 FUN_180007b40(uint param_1,uint *param_2)\r\n\r\n{\r\n  uint *puVar1;\r\n  uint uVar2;\r\n  BOOL BVar3;\r\n  int iVar4;\r\n  uint *puVar5;\r\n  HANDLE hProcess;\r\n  undefined4 extraout_var;\r\n  undefined8 uVar6;\r\n  longlong *plVar7;\r\n  longlong lVar8;\r\n  longlong lVar9;\r\n  undefined1 auStackY_d8 [32];\r\n  byte bStack_a7;\r\n  byte bStack_a6;\r\n  byte bStack_a5;\r\n  _FILETIME local_a0;\r\n  _FILETIME local_98;\r\n  _FILETIME local_90;\r\n  _FILETIME local_88 [2];\r\n  undefined8 local_78;\r\n  undefined8 uStack_70;\r\n  ulonglong local_68;\r\n  undefined8 uStack_60;\r\n  undefined8 local_58;\r\n  undefined8 uStack_50;\r\n  undefined8 local_48;\r\n  undefined8 uStack_40;\r\n  undefined8 local_38;\r\n  undefined8 uStack_30;\r\n  ulonglong local_28;\r\n  \r\n  local_28 = DAT_180028040 ^ (ulonglong)auStackY_d8;\r\n  if (DAT_180029dd0 == '\\0') {\r\n    FUN_180007400();\r\n  }\r\n  puVar1 = param_2 + 2;\r\n  *param_2 = param_1;\r\n  param_2[1] = 0;\r\n  FUN_1800060c0((longlong *)puVar1,(undefined8 *)\"<unknown>\",9);\r\n  puVar5 = param_2 + 0x14;\r\n  param_2[0x10] = 0;\r\n  param_2[0x11] = 0;\r\n  param_2[0x12] = 0;\r\n  param_2[0x13] = 0;\r\n  param_2[0x18] = 0;\r\n  param_2[0x19] = 0;\r\n  if (0xf < *(ulonglong *)(param_2 + 0x1a)) {\r\n    puVar5 = *(uint **)puVar5;\r\n  }\r\n  *(undefined1 *)puVar5 = 0;\r\n  puVar5 = param_2 + 0x1c;\r\n  param_2[0x20] = 0;\r\n  param_2[0x21] = 0;\r\n  if (0xf < *(ulonglong *)(param_2 + 0x22)) {\r\n    puVar5 = *(uint **)puVar5;\r\n  }\r\n  *(undefined1 *)puVar5 = 0;\r\n  puVar5 = param_2 + 0x24;\r\n  param_2[0x28] = 0;\r\n  param_2[0x29] = 0;\r\n  if (0xf < *(ulonglong *)(param_2 + 0x2a)) {\r\n    puVar5 = *(uint **)puVar5;\r\n  }\r\n  *(undefined1 *)puVar5 = 0;\r\n  if (*(longlong **)(param_2 + 10) != *(longlong **)(param_2 + 0xc)) {\r\n    FUN_180006630(*(longlong **)(param_2 + 10),*(longlong **)(param_2 + 0xc));\r\n    *(undefined8 *)(param_2 + 0xc) = *(undefined8 *)(param_2 + 10);\r\n  }\r\n  bStack_a7 = (byte)(param_1 >> 8);\r\n  bStack_a6 = (byte)(param_1 >> 0x10);\r\n  bStack_a5 = (byte)(param_1 >> 0x18);\r\n  plVar7 = (longlong *)\r\n           (((((((ulonglong)(param_1 & 0xff) ^ 0xcbf29ce484222325) * 0x100000001b3 ^\r\n               (ulonglong)bStack_a7) * 0x100000001b3 ^ (ulonglong)bStack_a6) * 0x100000001b3 ^\r\n             (ulonglong)bStack_a5) * 0x100000001b3 & _DAT_180029e10) * 0x10 + DAT_180029df8);\r\n  lVar8 = plVar7[1];\r\n  lVar9 = 0;\r\n  if (lVar8 != DAT_180029de8) {\r\n    uVar2 = *(uint *)(lVar8 + 0x10);\r\n    while ((lVar9 = lVar8, param_1 != uVar2 && (lVar9 = 0, lVar8 != *plVar7))) {\r\n      lVar8 = *(longlong *)(lVar8 + 8);\r\n      uVar2 = *(uint *)(lVar8 + 0x10);\r\n    }\r\n  }\r\n  lVar8 = DAT_180029de8;\r\n  if (lVar9 != 0) {\r\n    lVar8 = lVar9;\r\n  }\r\n  if (lVar8 != DAT_180029de8) {\r\n    param_2[1] = *(uint *)(lVar8 + 0x1c);\r\n    if ((*(ulonglong *)(lVar8 + 0x30) != 0) && (puVar5 = (uint *)(lVar8 + 0x20), puVar1 != puVar5))\r\n    {\r\n      if (0xf < *(ulonglong *)(lVar8 + 0x38)) {\r\n        puVar5 = *(uint **)puVar5;\r\n      }\r\n      FUN_1800060c0((longlong *)puVar1,(undefined8 *)puVar5,*(ulonglong *)(lVar8 + 0x30));\r\n    }\r\n  }\r\n  hProcess = OpenProcess(0x1000,0,param_1);\r\n  uVar6 = 0;\r\n  if (hProcess != (HANDLE)0x0) {\r\n    BVar3 = GetProcessTimes(hProcess,local_88,&local_90,&local_a0,&local_98);\r\n    if (BVar3 != 0) {\r\n      *(ulonglong *)(param_2 + 0x10) = (ulonglong)((longlong)local_a0 + (longlong)local_98) / 10000;\r\n    }\r\n    uStack_70 = 0;\r\n    local_78 = 0x50;\r\n    local_68 = 0;\r\n    uStack_60 = 0;\r\n    local_58 = 0;\r\n    uStack_50 = 0;\r\n    local_48 = 0;\r\n    uStack_40 = 0;\r\n    local_38 = 0;\r\n    uStack_30 = 0;\r\n    iVar4 = K32GetProcessMemoryInfo(hProcess,&local_78,0x50);\r\n    if (iVar4 != 0) {\r\n      *(ulonglong *)(param_2 + 0x12) = local_68 >> 0x14;\r\n    }\r\n    BVar3 = CloseHandle(hProcess);\r\n    uVar6 = CONCAT71((int7)(CONCAT44(extraout_var,BVar3) >> 8),1);\r\n  }\r\n  return uVar6;\r\n}\r\n\r\n",
+    "limitations": []
+  },
+  "normalized_result": "\r\n/* WARNING: Function: __security_check_cookie replaced with injection: security_check_cookie */\r\n/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */\r\n\r\nundefined8 FUN_180007b40(uint param_1,uint *param_2)\r\n\r\n{\r\n  uint *puVar1;\r\n  uint uVar2;\r\n  BOOL BVar3;\r\n  int iVar4;\r\n  uint *puVar5;\r\n  HANDLE hProcess;\r\n  undefined4 extraout_var;\r\n  undefined8 uVar6;\r\n  longlong *plVar7;\r\n  longlong lVar8;\r\n  longlong lVar9;\r\n  undefined1 auStackY_d8 [32];\r\n  byte bStack_a7;\r\n  byte bStack_a6;\r\n  byte bStack_a5;\r\n  _FILETIME local_a0;\r\n  _FILETIME local_98;\r\n  _FILETIME local_90;\r\n  _FILETIME local_88 [2];\r\n  undefined8 local_78;\r\n  undefined8 uStack_70;\r\n  ulonglong local_68;\r\n  undefined8 uStack_60;\r\n  undefined8 local_58;\r\n  undefined8 uStack_50;\r\n  undefined8 local_48;\r\n  undefined8 uStack_40;\r\n  undefined8 local_38;\r\n  undefined8 uStack_30;\r\n  ulonglong local_28;\r\n  \r\n  local_28 = DAT_180028040 ^ (ulonglong)auStackY_d8;\r\n  if (DAT_180029dd0 == '\\0') {\r\n    FUN_180007400();\r\n  }\r\n  puVar1 = param_2 + 2;\r\n  *param_2 = param_1;\r\n  param_2[1] = 0;\r\n  FUN_1800060c0((longlong *)puVar1,(undefined8 *)\"<unknown>\",9);\r\n  puVar5 = param_2 + 0x14;\r\n  param_2[0x10] = 0;\r\n  param_2[0x11] = 0;\r\n  param_2[0x12] = 0;\r\n  param_2[0x13] = 0;\r\n  param_2[0x18] = 0;\r\n  param_2[0x19] = 0;\r\n  if (0xf < *(ulonglong *)(param_2 + 0x1a)) {\r\n    puVar5 = *(uint **)puVar5;\r\n  }\r\n  *(undefined1 *)puVar5 = 0;\r\n  puVar5 = param_2 + 0x1c;\r\n  param_2[0x20] = 0;\r\n  param_2[0x21] = 0;\r\n  if (0xf < *(ulonglong *)(param_2 + 0x22)) {\r\n    puVar5 = *(uint **)puVar5;\r\n  }\r\n  *(undefined1 *)puVar5 = 0;\r\n  puVar5 = param_2 + 0x24;\r\n  param_2[0x28] = 0;\r\n  param_2[0x29] = 0;\r\n  if (0xf < *(ulonglong *)(param_2 + 0x2a)) {\r\n    puVar5 = *(uint **)puVar5;\r\n  }\r\n  *(undefined1 *)puVar5 = 0;\r\n  if (*(longlong **)(param_2 + 10) != *(longlong **)(param_2 + 0xc)) {\r\n    FUN_180006630(*(longlong **)(param_2 + 10),*(longlong **)(param_2 + 0xc));\r\n    *(undefined8 *)(param_2 + 0xc) = *(undefined8 *)(param_2 + 10);\r\n  }\r\n  bStack_a7 = (byte)(param_1 >> 8);\r\n  bStack_a6 = (byte)(param_1 >> 0x10);\r\n  bStack_a5 = (byte)(param_1 >> 0x18);\r\n  plVar7 = (longlong *)\r\n           (((((((ulonglong)(param_1 & 0xff) ^ 0xcbf29ce484222325) * 0x100000001b3 ^\r\n               (ulonglong)bStack_a7) * 0x100000001b3 ^ (ulonglong)bStack_a6) * 0x100000001b3 ^\r\n             (ulonglong)bStack_a5) * 0x100000001b3 & _DAT_180029e10) * 0x10 + DAT_180029df8);\r\n  lVar8 = plVar7[1];\r\n  lVar9 = 0;\r\n  if (lVar8 != DAT_180029de8) {\r\n    uVar2 = *(uint *)(lVar8 + 0x10);\r\n    while ((lVar9 = lVar8, param_1 != uVar2 && (lVar9 = 0, lVar8 != *plVar7))) {\r\n      lVar8 = *(longlong *)(lVar8 + 8);\r\n      uVar2 = *(uint *)(lVar8 + 0x10);\r\n    }\r\n  }\r\n  lVar8 = DAT_180029de8;\r\n  if (lVar9 != 0) {\r\n    lVar8 = lVar9;\r\n  }\r\n  if (lVar8 != DAT_180029de8) {\r\n    param_2[1] = *(uint *)(lVar8 + 0x1c);\r\n    if ((*(ulonglong *)(lVar8 + 0x30) != 0) && (puVar5 = (uint *)(lVar8 + 0x20), puVar1 != puVar5))\r\n    {\r\n      if (0xf < *(ulonglong *)(lVar8 + 0x38)) {\r\n        puVar5 = *(uint **)puVar5;\r\n      }\r\n      FUN_1800060c0((longlong *)puVar1,(undefined8 *)puVar5,*(ulonglong *)(lVar8 + 0x30));\r\n    }\r\n  }\r\n  hProcess = OpenProcess(0x1000,0,param_1);\r\n  uVar6 = 0;\r\n  if (hProcess != (HANDLE)0x0) {\r\n    BVar3 = GetProcessTimes(hProcess,local_88,&local_90,&local_a0,&local_98);\r\n    if (BVar3 != 0) {\r\n      *(ulonglong *)(param_2 + 0x10) = (ulonglong)((longlong)local_a0 + (longlong)local_98) / 10000;\r\n    }\r\n    uStack_70 = 0;\r\n    local_78 = 0x50;\r\n    local_68 = 0;\r\n    uStack_60 = 0;\r\n    local_58 = 0;\r\n    uStack_50 = 0;\r\n    local_48 = 0;\r\n    uStack_40 = 0;\r\n    local_38 = 0;\r\n    uStack_30 = 0;\r\n    iVar4 = K32GetProcessMemoryInfo(hProcess,&local_78,0x50);\r\n    if (iVar4 != 0) {\r\n      *(ulonglong *)(param_2 + 0x12) = local_68 >> 0x14;\r\n    }\r\n    BVar3 = CloseHandle(hProcess);\r\n    uVar6 = CONCAT71((int7)(CONCAT44(extraout_var,BVar3) >> 8),1);\r\n  }\r\n  return uVar6;\r\n}\r\n\r\n",
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+    "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+    "Windows Ghidra P0 accepts approved native x86 and x86-64 PE applications and DLLs; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically."
+  ],
+  "relationship_coverage": null,
+  "locations": [],
+  "evidence_links": []
+}

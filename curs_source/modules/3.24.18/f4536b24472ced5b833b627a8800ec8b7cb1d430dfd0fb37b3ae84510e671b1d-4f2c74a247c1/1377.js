@@ -1,0 +1,1 @@
+function p5(e,t,r,n){const o=e[0];if(o===null)return!1;if(t==="display"||t==="visibility")return!0;const i=e[e.length-1],s=u5(o,t),c=u5(i,t);return!s||!c?(s!==c&&ji(!1,`You are trying to animate ${t} from "${o}" to "${i}". "${s?i:o}" is not an animatable value.`,"value-not-animatable"),!1):d5(e)||(r==="spring"||Fl(r))&&n}

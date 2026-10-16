@@ -1,0 +1,6 @@
+var __wakaru_jDk_initialized = false;
+export function jDk() {
+if (__wakaru_jDk_initialized) return;
+__wakaru_jDk_initialized = true;
+
+}

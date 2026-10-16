@@ -1,0 +1,1 @@
+function Q2({paymentMethodId:e,className:t,render:r,children:n}){const{t:o}=Be(),i=Nt(),s=i.attempts[e];return s?.status!=="failed"||s.kind==="remove"?null:qt(Kr,{className:t,onClick:a(()=>i.actions.dismissAttempt(e),"onClick"),render:r,children:n??o("Done")})}

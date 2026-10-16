@@ -1,0 +1,1 @@
+function Tb(e,t,r,n){var o,i;const s=new Headers(r??{});s.set(iG,e?mG:uG),s.set(lG,"1");const c=(i=(o=s.get(AO))!==null&&o!==void 0?o:s.get(RO))!==null&&i!==void 0?i:"connect-es/2.2.0";return s.set(RO,c),n&&s.set(AO,c),t!==void 0&&s.set(sG,`${t}m`),s}

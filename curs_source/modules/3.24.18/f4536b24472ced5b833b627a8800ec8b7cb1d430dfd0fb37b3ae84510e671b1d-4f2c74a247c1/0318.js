@@ -1,0 +1,1 @@
+var V2,B2,kV=ge({"use-stripe-publishable-key.js"(){"use client";Lt(),V2={status:"error",isRevalidating:!1},B2={subscribe(){return a(function(){},"unsubscribe")},getSnapshot(){return V2},refresh(){return Promise.resolve()}},a(F2,"useStripePublishableKey")}});

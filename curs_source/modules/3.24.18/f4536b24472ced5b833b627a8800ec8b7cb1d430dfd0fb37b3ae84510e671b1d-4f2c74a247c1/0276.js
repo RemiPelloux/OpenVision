@@ -1,0 +1,1 @@
+function k1(){return{memoize:!0,memoizeFallback:!1,bindI18n:"",bindI18nStore:"",parseErrorHandler:a(function(t,r,n,o){return n},"parseErrorHandler"),parseLngForICU:a(function(t){return t},"parseLngForICU"),escapeVariables:!1}}

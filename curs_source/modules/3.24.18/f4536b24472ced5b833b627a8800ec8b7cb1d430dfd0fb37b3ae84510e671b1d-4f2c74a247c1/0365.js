@@ -1,0 +1,1 @@
+function ES({children:e,currency:t,appearance:r,publishableKey:n,onLoadFailed:o}){const i=fS(n,o),s={mode:"setup",paymentMethodCreation:"manual",paymentMethodTypes:["card"],loader:"never",appearance:r};return t!==void 0&&(s.currency=t.toLowerCase()),$o(xp,{stripe:i,options:s,children:e})}

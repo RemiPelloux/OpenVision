@@ -1,0 +1,40 @@
+import { init_code } from "../code.js";
+import { init_connect_error } from "../connect-error.js";
+import { init_implementation } from "../implementation.js";
+import { init_content_type2 } from "./content-type.js";
+import { init_headers } from "./headers.js";
+import { init_parse_timeout } from "./parse-timeout.js";
+import { init_trailer_status } from "./trailer-status.js";
+import { init_async_iterable } from "../protocol/async-iterable.js";
+import { init_compression } from "../protocol/compression.js";
+import { init_content_type_matcher } from "../protocol/content-type-matcher.js";
+import { init_create_method_url } from "../protocol/create-method-url.js";
+import { init_invoke_implementation } from "../protocol/invoke-implementation.js";
+import { init_serialization2 } from "../protocol/serialization.js";
+import { init_universal_handler } from "../protocol/universal-handler.js";
+import { init_universal } from "../protocol/universal.js";
+var protocolName2, methodPost2;
+export { methodPost2, protocolName2 };
+var __wakaru_init_handler_factory2_initialized = false;
+export function init_handler_factory2() {
+if (__wakaru_init_handler_factory2_initialized) return;
+__wakaru_init_handler_factory2_initialized = true;
+init_implementation();
+init_connect_error();
+init_code();
+init_content_type2();
+init_headers();
+init_trailer_status();
+init_parse_timeout();
+init_async_iterable();
+init_compression();
+init_content_type_matcher();
+init_create_method_url();
+init_invoke_implementation();
+init_serialization2();
+init_universal_handler();
+init_universal();
+protocolName2 = "grpc";
+methodPost2 = "POST";
+
+}

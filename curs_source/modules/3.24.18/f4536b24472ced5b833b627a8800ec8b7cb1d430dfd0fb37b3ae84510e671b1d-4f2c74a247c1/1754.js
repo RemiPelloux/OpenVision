@@ -1,0 +1,1 @@
+var Bj={duration:.45,ease:[.4,0,.1,1]},JA=a(e=>typeof navigator<"u"&&navigator.userAgent&&navigator.userAgent.toLowerCase().includes(e),"userAgentContains"),eR=JA("applewebkit/")&&!JA("chrome/")?Math.round:_r;

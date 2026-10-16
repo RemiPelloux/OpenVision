@@ -1,0 +1,6 @@
+var __wakaru_zxk_initialized = false;
+export function zxk() {
+if (__wakaru_zxk_initialized) return;
+__wakaru_zxk_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_$I1_initialized = false;
+export function $I1() {
+if (__wakaru_$I1_initialized) return;
+__wakaru_$I1_initialized = true;
+
+}

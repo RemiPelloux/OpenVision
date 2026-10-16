@@ -1,0 +1,1 @@
+function On(e,t){const{[nd]:r}=e(rw()),n=t?.keySeparator??".",o=t?.nsSeparator??":",i=t?.enableSelector==="strict";if(r.length>1&&o){const s=t?.ns,c=i?Array.isArray(s)?s:s?[s]:null:Array.isArray(s)?s:null;if(c&&(i?c:c.length>1?c.slice(1):[]).includes(r[0]))return`${r[0]}${o}${r.slice(1).join(n)}`}return r.join(n)}

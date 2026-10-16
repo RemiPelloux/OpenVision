@@ -1,0 +1,1 @@
+function fS(e,t){const[r]=OD(()=>pS(e)),n=MD(t);return Vb(()=>{n.current=t}),Vb(()=>{let o=!0;return r.then(a(function(s){s===null&&o&&n.current?.()},"reportMissingStripe")),a(function(){o=!1},"unmount")},[r]),r}

@@ -1,0 +1,1 @@
+function F3(e){switch(e.fieldKind){case"scalar":case"enum":case"message":return V3(e);case"list":case"map":{const t=e.fieldKind=="list"?Wv(e):Yv(e),r=e.name,n=e.jsonName,o=e.localName;return(i,s,c)=>{const l=t(i,s[o]);l!==void 0&&(c[i.useProtoFieldName?r:n]=l)}}}}

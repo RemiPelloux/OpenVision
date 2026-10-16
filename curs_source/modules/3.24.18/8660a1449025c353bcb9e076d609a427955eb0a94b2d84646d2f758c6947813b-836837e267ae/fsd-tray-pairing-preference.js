@@ -1,0 +1,12 @@
+import { PEe } from "./glass-fsd-pr-url.js";
+import { xc } from "./glass-storage-service.js";
+import { dv } from "./storage-keys.js";
+import { E } from "./tslib.es6.js";
+var __wakaru_kp__initialized = false;
+export function kp_() {
+if (__wakaru_kp__initialized) return;
+__wakaru_kp__initialized = true;
+"use strict";
+E(), dv(), xc(), PEe();
+
+}

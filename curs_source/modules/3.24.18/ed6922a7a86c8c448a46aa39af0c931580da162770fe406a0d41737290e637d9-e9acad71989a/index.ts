@@ -1,0 +1,47 @@
+import { qwg } from "./agent-host-module.ts";
+import { cCg } from "./agent-inbox.ts";
+import { lCg } from "./agent-store-commands.ts";
+import { _Cg } from "./agent-store-display-path.ts";
+import { Vss } from "./agent-store-ids.ts";
+import { bCg } from "./agent-transport.ts";
+import { wCg } from "./ask-question.ts";
+import { ECg } from "./auto-spillover-ui.ts";
+import { xCg } from "./canvas-host-theme.ts";
+import { FCg } from "./cloud-agent-startup-errors.ts";
+import { BCg } from "./cloud-agent-workspace-root.ts";
+import { uqc } from "./cloud-agent.ts";
+import { $Cg } from "./cloud-mcp-runtime-identity.ts";
+import { HCg } from "./composer.ts";
+import { qCg } from "./desktop-bridge.ts";
+import { zCg } from "./environment-setup.ts";
+import { KCg } from "./error-codes.ts";
+import { ZCg } from "./git-diff.ts";
+import { XCg } from "./git.ts";
+import { QCg } from "./glass-perf-vote-config.ts";
+import { f0g } from "./grok-bot-download.ts";
+import { _0g } from "./local-agent-headers.ts";
+import { S0g } from "./mcp-auth-prompted.ts";
+import { d0g } from "./mcp.ts";
+import { D0g } from "./permissions.ts";
+import { M0g } from "./plugin-brand-icon.ts";
+import { L0g } from "./private-inference-features.ts";
+import { N0g } from "./project-subagents.ts";
+import { U0g } from "./pull-request-review-links.ts";
+import { V0g } from "./repo-label.ts";
+import { j0g } from "./retry.ts";
+import { z0g } from "./scm-batch-limits.ts";
+import { q0g } from "./scm-provider-installations.ts";
+import { Y0g } from "./scm-rpc-callsite.ts";
+import { s1g } from "./side-chats.ts";
+import { o1g } from "./smart-mode-classifier.ts";
+import { l1g } from "./structured-log.ts";
+import { x } from "./tslib.es6.js";
+import { d1g } from "./unsupported-conversation-turn.ts";
+import { p1g } from "./worktrees.ts";
+var __wakaru_Ml_initialized = false;
+export function Ml() {
+if (__wakaru_Ml_initialized) return;
+__wakaru_Ml_initialized = true;
+x(), qwg(), cCg(), lCg(), _Cg(), Vss(), bCg(), wCg(), ECg(), xCg(), uqc(), FCg(), BCg(), $Cg(), HCg(), qCg(), zCg(), KCg(), XCg(), ZCg(), QCg(), f0g(), _0g(), d0g(), S0g(), D0g(), M0g(), L0g(), N0g(), U0g(), V0g(), j0g(), q0g(), z0g(), Y0g(), s1g(), o1g(), l1g(), d1g(), p1g();
+
+}

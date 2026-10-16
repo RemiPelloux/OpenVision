@@ -1,0 +1,42 @@
+import { Qe } from "./Iwo.js";
+import { l2 } from "./accessibilitySignalService.js";
+import { wl } from "./agentRepositoryServiceTypes.js";
+import { SR } from "./async_3.js";
+import { boe } from "./codeEditorWidget.js";
+import { mv } from "./editor-panel-context.react.js";
+import { Hxs } from "./editor-panel-tab-header-row.react.js";
+import { k_ } from "./editor-panel-tab-kind.js";
+import { HHt } from "./findController.js";
+import { cS } from "./glass-clipboard-service.js";
+import { AL } from "./glass-configuration-service.js";
+import { Zu } from "./glass-log-service.js";
+import { zc } from "./glass-notification-service.js";
+import { $6i } from "./glass-output-service-proxy.js";
+import { vT } from "./glass-tab-persistence-service.contract.js";
+import { AXt } from "./glass-text-model-service.js";
+import { BS } from "./glass-toast.js";
+import { xd } from "./glass-workspace-context-service.js";
+import { Mt } from "./index_197.js";
+import { It } from "./instantiation.js";
+import { Ki } from "./network.js";
+import { Vo_ } from "./output-tab-labels.js";
+import { lfc } from "./output-tab-state.js";
+import { Eo } from "./platform_2.js";
+import { E } from "./tslib.es6.js";
+import { fn } from "./uri.js";
+import { lTC } from "./use-output-channel-descriptors.react.js";
+import { hTC } from "./use-output-tab-snapshot.react.js";
+import { _TC } from "./use-output-tab-workspace-info.react.js";
+import { $h } from "./use-reactive.react_2.js";
+import { w_ } from "./use-service-event-state.react_2.js";
+import { In } from "./use-service.react_2.js";
+import { yBe } from "./use-timed-flag.react_2.js";
+import { Cu } from "./workspaceCollectionService.js";
+var __wakaru_wTC_initialized = false;
+export function wTC() {
+if (__wakaru_wTC_initialized) return;
+__wakaru_wTC_initialized = true;
+"use strict";
+E(), Mt(), SR(), Qe(), Ki(), fn(), boe(), HHt(), l2(), It(), Eo(), wl(), Cu(), $h(), In(), w_(), yBe(), cS(), AL(), Zu(), zc(), BS(), $6i(), vT(), AXt(), xd(), k_(), mv(), Hxs(), Vo_(), lfc(), lTC(), hTC(), _TC();
+
+}

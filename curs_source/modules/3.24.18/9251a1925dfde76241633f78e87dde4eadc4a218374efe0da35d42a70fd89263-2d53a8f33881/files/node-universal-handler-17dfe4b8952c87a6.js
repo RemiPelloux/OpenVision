@@ -1,0 +1,85 @@
+import { init_node_error } from "./node-error.js";
+import { init_node_universal_header } from "./node-universal-header.js";
+import { init_esm3 } from "../../../../../../_c9bdc997d82622067cc922804d7b4f50/node_modules/@connectrpc/connect/dist/esm/index.js";
+var __asyncValues5, __await5, __asyncGenerator5;
+export { __asyncGenerator5, __asyncValues5, __await5 };
+var __wakaru_init_node_universal_handler_initialized = false;
+export function init_node_universal_handler() {
+if (__wakaru_init_node_universal_handler_initialized) return;
+__wakaru_init_node_universal_handler_initialized = true;
+init_esm3();
+init_node_universal_header();
+init_node_error();
+__asyncValues5 = function(o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m2 = o[Symbol.asyncIterator], i;
+    return m2 ? m2.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() {
+        return this;
+    }, i);
+    function verb(n) {
+        i[n] = o[n] && function(v2) {
+            return new Promise(function(resolve36, reject2) {
+                v2 = o[n](v2), settle(resolve36, reject2, v2.done, v2.value);
+            });
+        };
+    }
+    function settle(resolve36, reject2, d, v2) {
+        Promise.resolve(v2).then(function(v3) {
+            resolve36({
+                value: v3,
+                done: d
+            });
+        }, reject2);
+    }
+};
+__await5 = function(v2) {
+    return this instanceof __await5 ? (this.v = v2, this) : new __await5(v2);
+};
+__asyncGenerator5 = function(thisArg, _arguments, generator) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var g2 = generator.apply(thisArg, _arguments || []), i, q2 = [];
+    return i = {}, verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() {
+        return this;
+    }, i;
+    function awaitReturn(f2) {
+        return function(v2) {
+            return Promise.resolve(v2).then(f2, reject2);
+        };
+    }
+    function verb(n, f2) {
+        if (g2[n]) {
+            i[n] = function(v2) {
+                return new Promise(function(a, b2) {
+                    q2.push([
+                        n,
+                        v2,
+                        a,
+                        b2
+                    ]) > 1 || resume(n, v2);
+                });
+            };
+            if (f2) i[n] = f2(i[n]);
+        }
+    }
+    function resume(n, v2) {
+        try {
+            step(g2[n](v2));
+        } catch (e) {
+            settle(q2[0][3], e);
+        }
+    }
+    function step(r) {
+        r.value instanceof __await5 ? Promise.resolve(r.value.v).then(fulfill, reject2) : settle(q2[0][2], r);
+    }
+    function fulfill(value) {
+        resume("next", value);
+    }
+    function reject2(value) {
+        resume("throw", value);
+    }
+    function settle(f2, v2) {
+        if (f2(v2), q2.shift(), q2.length) resume(q2[0][0], q2[0][1]);
+    }
+};
+
+}

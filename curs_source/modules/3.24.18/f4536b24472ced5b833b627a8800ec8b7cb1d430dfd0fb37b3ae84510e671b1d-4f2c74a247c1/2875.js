@@ -1,0 +1,1 @@
+function As(e,t){const r=mu(e.amount,t),n={id:[e.invoiceId??e.invoiceReference??"",e.originCode,e.createdAtMs,r.unitMicros].join(":"),kind:e.origin,amount:{currencyCode:t,unitMicros:0-r.unitMicros},createdAt:e.createdAtMs},o=LO(e.status);return o!==void 0&&(n.status=o),n}

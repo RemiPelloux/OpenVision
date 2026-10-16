@@ -1,0 +1,1 @@
+function wO(e,t){return async(r,n)=>{var o,i;const s=await e.unary(t,n?.signal,n?.timeoutMs,n?.headers,r,n?.contextValues);return(o=n?.onHeader)===null||o===void 0||o.call(n,s.header),(i=n?.onTrailer)===null||i===void 0||i.call(n,s.trailer),s.message}}

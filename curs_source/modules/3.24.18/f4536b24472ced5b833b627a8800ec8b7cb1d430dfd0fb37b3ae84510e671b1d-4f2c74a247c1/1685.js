@@ -1,0 +1,1 @@
+a(kg,"axisDeltaEquals");

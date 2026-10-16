@@ -1,0 +1,6 @@
+var __wakaru_F9f_initialized = false;
+export function F9f() {
+if (__wakaru_F9f_initialized) return;
+__wakaru_F9f_initialized = true;
+
+}

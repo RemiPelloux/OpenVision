@@ -1,0 +1,6 @@
+var __wakaru_faC_initialized = false;
+export function faC() {
+if (__wakaru_faC_initialized) return;
+__wakaru_faC_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+a(bg,"isDeltaZero");

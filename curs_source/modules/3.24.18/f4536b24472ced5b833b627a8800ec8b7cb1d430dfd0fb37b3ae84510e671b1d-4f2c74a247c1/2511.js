@@ -1,0 +1,1 @@
+function SM(e){const t=e.fields.find(n=>n.number===1),r=e.fields.find(n=>n.number===2);return kr(t&&t.fieldKind=="scalar"&&t.scalar!=N.BYTES&&t.scalar!=N.FLOAT&&t.scalar!=N.DOUBLE&&r&&r.fieldKind!="list"&&r.fieldKind!="map"),{key:t,value:r}}

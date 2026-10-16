@@ -1,0 +1,23 @@
+var LLM_GATEWAY_HELPER_COMMAND_ENV, CLOUD_ENV_MARKERS, LLM_GATEWAY_HELPER_TTL_MS_ENV, DEFAULT_LLM_GATEWAY_HELPER_TTL_MS, MAX_LLM_GATEWAY_HELPER_TTL_MS;
+export { CLOUD_ENV_MARKERS, DEFAULT_LLM_GATEWAY_HELPER_TTL_MS, LLM_GATEWAY_HELPER_COMMAND_ENV, LLM_GATEWAY_HELPER_TTL_MS_ENV, MAX_LLM_GATEWAY_HELPER_TTL_MS };
+var __wakaru_init_config_from_env_initialized = false;
+export function init_config_from_env() {
+if (__wakaru_init_config_from_env_initialized) return;
+__wakaru_init_config_from_env_initialized = true;
+"use strict";
+LLM_GATEWAY_HELPER_COMMAND_ENV = "CURSOR_LLM_GATEWAY_API_KEY_HELPER";
+CLOUD_ENV_MARKERS = [
+    [
+        "IS_CLOUD_AGENT",
+        "true"
+    ],
+    [
+        "EVERYSPHERE_DEV_IN_CLOUD",
+        "1"
+    ]
+];
+LLM_GATEWAY_HELPER_TTL_MS_ENV = "CURSOR_LLM_GATEWAY_API_KEY_HELPER_TTL_MS";
+DEFAULT_LLM_GATEWAY_HELPER_TTL_MS = 5 * 60 * 1e3;
+MAX_LLM_GATEWAY_HELPER_TTL_MS = 60 * 60 * 1e3;
+
+}

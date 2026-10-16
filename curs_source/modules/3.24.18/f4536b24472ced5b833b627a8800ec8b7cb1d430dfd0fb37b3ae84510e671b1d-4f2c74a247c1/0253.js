@@ -1,0 +1,1 @@
+function Qw(e,t={}){t={shouldParseSkeletons:!0,requiresOtherClause:!0,...t};const r=new s1(e,t).parse();if(r.err){const n=SyntaxError(Jw[r.err.kind]);throw n.location=r.err.location,n.originalMessage=r.err.message,n}return t?.captureLocation||hc(r.val),r.val}

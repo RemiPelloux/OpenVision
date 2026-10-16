@@ -1,0 +1,6 @@
+var __wakaru_WI1_initialized = false;
+export function WI1() {
+if (__wakaru_WI1_initialized) return;
+__wakaru_WI1_initialized = true;
+
+}

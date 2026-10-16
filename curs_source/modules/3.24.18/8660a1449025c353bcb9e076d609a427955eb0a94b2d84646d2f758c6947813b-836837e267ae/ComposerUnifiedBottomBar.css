@@ -1,0 +1,6 @@
+var __wakaru_F6k_initialized = false;
+export function F6k() {
+if (__wakaru_F6k_initialized) return;
+__wakaru_F6k_initialized = true;
+
+}

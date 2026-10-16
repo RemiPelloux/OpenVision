@@ -1,0 +1,8 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", {
+    value: !0
+}), exports.observeNotification = void 0, exports.observeNotification = function(e, t) {
+    const { kind: r, value: n, error: o } = e;
+    if ("string" != typeof r) throw new TypeError('Invalid notification, missing "kind"');
+    "N" === r ? t.next?.(n) : "E" === r ? t.error?.(o) : t.complete?.();
+};

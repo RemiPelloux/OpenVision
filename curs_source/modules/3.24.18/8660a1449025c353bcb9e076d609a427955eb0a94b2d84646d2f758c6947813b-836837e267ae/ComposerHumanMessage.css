@@ -1,0 +1,6 @@
+var __wakaru_Lwf_initialized = false;
+export function Lwf() {
+if (__wakaru_Lwf_initialized) return;
+__wakaru_Lwf_initialized = true;
+
+}

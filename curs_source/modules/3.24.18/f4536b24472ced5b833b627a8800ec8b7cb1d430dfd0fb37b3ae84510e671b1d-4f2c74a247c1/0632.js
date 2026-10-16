@@ -1,0 +1,1 @@
+var $B=qD.forwardRef(a(function(t,r){const{render:n,className:o,style:i,disabled:s=!1,nativeButton:c=!0,...l}=t,m=Wr(),u=m.useState("open"),{getButtonProps:d,buttonRef:p}=Uc({disabled:s,native:c}),h={disabled:s};function f(v){u&&m.setOpen(!1,Ht(_t.closePress,v.nativeEvent))}return a(f,"handleClick"),xr("button",t,{state:h,ref:[r,p],props:[{onClick:f},l,d]})},"DialogClose")),CE=0;

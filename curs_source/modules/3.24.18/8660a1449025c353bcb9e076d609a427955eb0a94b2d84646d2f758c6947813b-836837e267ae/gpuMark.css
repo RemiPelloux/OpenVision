@@ -1,0 +1,6 @@
+var __wakaru_JDy_initialized = false;
+export function JDy() {
+if (__wakaru_JDy_initialized) return;
+__wakaru_JDy_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function TP(e,t,r,n){switch(e.code){case"AMOUNT_FORMAT":return t(n==="USD"?"Enter a dollar amount":"Enter a valid amount");case"BELOW_MINIMUM":return t("Must be at least {minimumAmount}",{minimumAmount:Yt(e.limit,r,{trailingZeroDisplay:"stripIfInteger"})});default:return e}}

@@ -1,0 +1,6 @@
+var __wakaru_rl__initialized = false;
+export function rl_() {
+if (__wakaru_rl__initialized) return;
+__wakaru_rl__initialized = true;
+
+}

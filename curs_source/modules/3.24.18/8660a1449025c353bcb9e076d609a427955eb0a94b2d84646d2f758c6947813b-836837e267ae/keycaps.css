@@ -1,0 +1,6 @@
+var __wakaru_A7k_initialized = false;
+export function A7k() {
+if (__wakaru_A7k_initialized) return;
+__wakaru_A7k_initialized = true;
+
+}

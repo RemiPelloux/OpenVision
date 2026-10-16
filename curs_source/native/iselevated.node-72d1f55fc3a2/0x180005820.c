@@ -1,0 +1,17 @@
+
+/* Address: 0x180005820; Evidence: ev_43622c90fdcdaedd812b69a5f76e19a869518e147bce3d291c025b8fbb7ec87c */
+
+undefined1 FUN_180005820(void)
+
+{
+  FUN_180006a30(DAT_18001aac8);
+  DAT_18001aac8 = (LPVOID)0x0;
+  FUN_180006a30(DAT_18001aad0);
+  DAT_18001aad0 = (LPVOID)0x0;
+  FUN_180006a30(DAT_18001a5a0);
+  DAT_18001a5a0 = (LPVOID)0x0;
+  FUN_180006a30(DAT_18001a5a8);
+  DAT_18001a5a8 = (LPVOID)0x0;
+  return 1;
+}
+

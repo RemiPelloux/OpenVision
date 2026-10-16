@@ -1,0 +1,1 @@
+var{userAgent:WB,platform:YB,maxTouchPoints:XB}=NE(),Hc=WB.toLowerCase(),da=YB.toLowerCase(),sf=/^i(os$|p)/.test(da)||da==="macintel"&&XB>1,PE="android",_E=da===PE||Hc.includes(PE),ME=!sf&&da.startsWith("mac"),ZB=da.startsWith("win"),qB=!_E&&/^(linux|chrome os)/.test(da),OE=ME||sf,DE={};

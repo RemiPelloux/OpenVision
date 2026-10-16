@@ -1,0 +1,6 @@
+var __wakaru_SEk_initialized = false;
+export function SEk() {
+if (__wakaru_SEk_initialized) return;
+__wakaru_SEk_initialized = true;
+
+}

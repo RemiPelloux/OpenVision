@@ -1,0 +1,45 @@
+import { yt } from "./A3u.js";
+import { Q__ } from "./AgentContextTabDirtyIndicator.js";
+import { Se } from "./HVr.js";
+import { Vo } from "./actions.js";
+import { NFh } from "./aiFullFilePromptBarContribution.js";
+import { Aq } from "./async_3.js";
+import { HP } from "./codeEditorWidget.js";
+import { _i } from "./codicons.js";
+import { So } from "./constants_8.js";
+import { kre } from "./diffEditorWidget.js";
+import { sb_ } from "./diffMentionUtils.js";
+import { $Hh } from "./discussionUtils.js";
+import { yc } from "./editorExtensions.js";
+import { Ni } from "./editorService.js";
+import { UIh } from "./generatedFilesConstants.js";
+import { zLo } from "./glassAddToChat.js";
+import { Tb } from "./hoverWidget.js";
+import { gL } from "./iconButton_2.js";
+import { jg } from "./keyboardEvent.js";
+import { K3 } from "./pathUtils.js";
+import { fTe } from "./pureIcon.js";
+import { qn } from "./qIc.js";
+import { tNo } from "./reviewChangesEditorLifetime.js";
+import { Vs } from "./solidContext.js";
+import { sy } from "./solidEventsWrapper.js";
+import { Sr } from "./themables.js";
+import { x } from "./tslib.es6.js";
+import { Qt } from "./uri.js";
+import { eb_ } from "./useFileDirtiness.js";
+import { ib_ } from "./useFileMarkers.js";
+import { _0t } from "./useIsUsingFileIconTheme.js";
+import { XHh } from "./useResourceLineCounts.js";
+import { rB } from "./useVSHoverTooltip.js";
+import { b1 } from "./utils_16.js";
+import { $e } from "./web.js";
+var cNo, JHh, eWh, tWh, nWh, iWh, rWh, sWh, oWh, aWh, cWh, lWh, uWh;
+export { JHh, aWh, cNo, cWh, eWh, iWh, lWh, nWh, oWh, rWh, sWh, tWh, uWh };
+var __wakaru_ab__initialized = false;
+export function ab_() {
+if (__wakaru_ab__initialized) return;
+__wakaru_ab__initialized = true;
+"use strict";
+x(), $e(), $e(), $e(), $e(), $e(), $e(), $e(), $e(), $e(), qn(), jg(), Tb(), Vo(), Aq(), _i(), Se(), So(), Sr(), Qt(), yc(), HP(), kre(), NFh(), sy(), Ni(), b1(), K3(), Q__(), zLo(), eb_(), ib_(), Vs(), fTe(), gL(), _0t(), rB(), XHh(), tNo(), sb_(), $Hh(), UIh(), cNo = yt("<span><span class=icon-container><span>"), JHh = yt("<span class=app-layout-multi-diff-file-added>(New)"), eWh = yt("<span class=app-layout-multi-diff-file-deleted>(Deleted)"), tWh = yt("<span class=app-layout-multi-diff-count-added>+"), nWh = yt("<span class=app-layout-multi-diff-count-deleted>-"), iWh = yt("<div>"), rWh = yt("<div><div>"), sWh = yt("<span>"), oWh = yt("<div>Renamed"), aWh = yt("<div><div class=app-layout-multi-diff-item-header><div class=app-layout-multi-diff-item-header-content><div class=app-layout-multi-diff-file-info><div class=app-layout-multi-diff-file-dot><span class=app-layout-multi-diff-filename><span></span></span><span class=app-layout-multi-diff-counts-left aria-hidden=true></span></div></div><div class=app-layout-multi-diff-trailing-actions>"), cWh = yt("<span class=icon-container>"), lWh = yt("<span class=app-layout-multi-diff-path-filename>"), uWh = yt("<span class=app-layout-multi-diff-path-prefix><span>/");
+
+}

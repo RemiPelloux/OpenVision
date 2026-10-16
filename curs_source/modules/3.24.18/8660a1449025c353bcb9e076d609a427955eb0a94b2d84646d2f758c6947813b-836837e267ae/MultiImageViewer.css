@@ -1,0 +1,6 @@
+var __wakaru_b5k_initialized = false;
+export function b5k() {
+if (__wakaru_b5k_initialized) return;
+__wakaru_b5k_initialized = true;
+
+}

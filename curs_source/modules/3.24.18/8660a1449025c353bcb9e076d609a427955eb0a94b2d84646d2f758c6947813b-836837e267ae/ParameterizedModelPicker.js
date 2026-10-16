@@ -1,0 +1,44 @@
+import { igs } from "./LimitHitBubbleClassic.js";
+import { AIt } from "./LimitHitExperience.react.js";
+import { pCl } from "./LockedModelPicker.react.js";
+import { Tgs } from "./ModelPickerWrapper.react.js";
+import { aS } from "./Ycg.js";
+import { wm } from "./buildFlags.js";
+import { Ef } from "./constants_18.js";
+import { pa } from "./constants_8.js";
+import { gef } from "./effortFirstPicker.js";
+import { KO } from "./experimentHooks.js";
+import { kxn } from "./experimentalModelConfig.js";
+import { dCl } from "./expressModelPickerConfig.js";
+import { Eef } from "./freeUserComposerGrokPicker.js";
+import { bef } from "./freeUserLockedModel.js";
+import { lrs } from "./index_17.ts";
+import { Mt } from "./index_197.js";
+import { Dbe } from "./limitHitExperimentUtils.js";
+import { Q2i } from "./modelDialogueStorage.js";
+import { jPn } from "./modelPickerAnalytics.js";
+import { Hle } from "./modelPickerProductPolicy.js";
+import { BVe } from "./modelPickerUtils.js";
+import { CCl } from "./postPickerModelWarning.js";
+import { Um } from "./reactiveStorageTypes_2.js";
+import { vo } from "./solidContext.js";
+import { sk } from "./solidEventsWrapper.js";
+import { oCl } from "./solidSeenModelParameterValues.js";
+import { E } from "./tslib.es6.js";
+import { QW } from "./usageLimitPolicyStatusService.js";
+import { oye } from "./useComposerHoverTooltip.js";
+import { sye } from "./useKeyboardShortcut.js";
+import { wu } from "./utilities_3.js";
+import { at } from "./web.js";
+import { wt } from "./yBp.js";
+import { pi } from "./ze.js";
+var ttf, ntf;
+export { ntf, ttf };
+var __wakaru_itf_initialized = false;
+export function itf() {
+if (__wakaru_itf_initialized) return;
+__wakaru_itf_initialized = true;
+"use strict";
+E(), at(), at(), at(), lrs(), Mt(), pi(), pa(), wm(), sk(), oCl(), wu(), Um(), Dbe(), QW(), KO(), kxn(), aS(), vo(), sye(), Ef(), gef(), oye(), AIt(), igs(), bef(), dCl(), Eef(), pCl(), jPn(), Hle(), BVe(), Q2i(), Tgs(), CCl(), ttf = wt("<div>"), ntf = 1500;
+
+}

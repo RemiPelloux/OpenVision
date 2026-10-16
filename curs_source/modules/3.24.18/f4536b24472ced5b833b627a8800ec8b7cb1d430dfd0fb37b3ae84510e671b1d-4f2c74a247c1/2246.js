@@ -1,0 +1,1 @@
+function e_(e){if(e===null)return{kind:"ok",fields:{hardLimit:X0,noUsageBasedAllowed:!1}};if(e===0)return{kind:"ok",fields:{hardLimit:0,noUsageBasedAllowed:!0}};const t=e/100;return t<0?km("The limit can't be negative"):t>=X0?km("The limit is too large"):Number.isInteger(t)?{kind:"ok",fields:{hardLimit:t,noUsageBasedAllowed:!1}}:km("The limit must be a whole number of dollars")}

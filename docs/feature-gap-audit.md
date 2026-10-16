@@ -1,5 +1,9 @@
 # OpenVision: recovery gaps and remaining product work
 
+[Current percentages and delivery gates](progress.md) ·
+[Prioritized backlog and points](roadmap.md#ranked-rea-implementation-and-verification-work) ·
+[Published recovery archive](../curs_source/README.md)
+
 Audit date: **12 October 2026**. Product baseline: commit
 `27f3a3cceeb80c31200bff48b5152dfdbef972f1`. Original input: **Cursor 3.21.13,
 Windows**, with VS Code version field `1.128.0`.
@@ -7,7 +11,14 @@ Windows**, with VS Code version field `1.128.0`.
 Subsequent implementation: the [REA local-rules follow-up](rea-local-rules.md)
 replaces cloud-backed user-rule persistence and fixes discarded subagent model
 parameters. The measurements below remain the original recovery snapshot;
-native decompilation coverage has not increased in that follow-up.
+native decompilation coverage did not increase in that follow-up.
+
+**16 October recovery update:** [`curs_source`](../curs_source/README.md) now
+contains actual code and provenance in Git. Current application text and module
+extraction use the newer **3.24.18** snapshot. Historical **3.21.13** native
+recovery increased to nine modules and 4,647 identified procedures; the updated
+historical native rows below retain their original 52-file denominator. The
+current version has 53 native paths and no matching historical pseudocode.
 
 Execution planning now lives in the [completion sprint ledger](completion-sprints.md).
 The [autocomplete follow-up](rea-autocomplete-contract.md) documents the next REA
@@ -28,8 +39,8 @@ provider configuration and several runtime optimizations are our own changes.
 The original TypeScript project, native build inputs and hosted server code
 have not been recovered.
 
-The largest measured decompilation gap is **51 of 52 Windows native files
-(98.08%) without any pseudocode recovery**. This is a native-file count, not a
+The historical native gap is **43 of 52 Windows native files
+(82.69%) without any pseudocode recovery**. This is a native-file count, not a
 percentage of missing features, missing application code or remaining effort.
 Many of these binaries already run in OpenVision; their implementation is still
 compiled. JavaScript features can also remain incomplete despite readable code.
@@ -50,8 +61,8 @@ rows cannot be added or averaged into a product completion score.
 | Formatting: 15,805 text-file outcomes | 15,799 formatted: **99.96%** | 6 unchanged fallbacks: **0.04%** | Readability work; fallback files are retained, not lost. Types, comments and original names are not restored by formatting. |
 | Selected JavaScript bundle operations: 224 | Initially 218 without reported failure: **97.32%** | Initially 6: **2.68%**, subsequently retried successfully from raw inputs | No unresolved operation failures are reported for those six retries. Selected bundle processing does not establish complete semantic understanding. |
 | Native metadata: 52 Windows PE files | 52 parsed: **100%** | 0 unparsed: **0%** | Headers/resources/import metadata, not decompiled implementations. |
-| Native pseudocode: the same 52 PE files | 1 file with pseudocode: **1.92%** | 51 without pseudocode: **98.08%** | Files count equally, including repeated payloads at different paths; neither byte-weighted nor complexity-weighted. |
-| Identified procedures in that one addon: 626 | 626 pseudocode results: **100%** | 0 missing results: **0%** | Only analyzer-identified procedures in `cursor_proclist.node`; complete function discovery and recompilation are unproven. |
+| Historical native pseudocode: the same 52 PE files | 9 files with pseudocode: **17.31%** | 43 without pseudocode: **82.69%** | Updated 16 October. Files count equally; this is neither byte-weighted nor complexity-weighted and does not cover the current installation. |
+| Identified internal procedures in those nine modules: 4,647 | 4,647 pseudocode results: **100%** | 0 missing results: **0%** | Only analyzer-identified procedures in these selected modules; complete function discovery and recompilation are unproven. |
 | Distinct WASM payloads: 15, across 22 paths | 15 validated and decoded to WAT: **100%** | 0 undecoded: **0%** | Low-level text is available; original Rust/C/C++ sources and build recipes are not recovered. |
 | Complete REA WASM records: those 15 payloads | 14 complete records: **93.33%** | 1 without a complete record: **6.67%** | [Four timeout gaps closed](rea-wasm-inventory.md); the large build helper exceeds input/output budgets. Report completeness is separate from WAT decoding and feature verification. |
 | Original source via source maps | 0 maps present; 0 embedded originals recovered | **Percentage unknown** | The installation does not provide a total count of original source files to use as a denominator. |

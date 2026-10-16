@@ -1,0 +1,1 @@
+function zm(e,t){switch(e.scalar){case N.INT64:case N.SFIXED64:case N.SINT64:"longAsString"in e&&e.longAsString&&typeof t=="string"&&(t=st.parse(t));break;case N.FIXED64:case N.UINT64:"longAsString"in e&&e.longAsString&&typeof t=="string"&&(t=st.uParse(t));break}return t}

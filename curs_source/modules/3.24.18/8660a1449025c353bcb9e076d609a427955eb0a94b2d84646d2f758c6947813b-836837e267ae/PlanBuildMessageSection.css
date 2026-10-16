@@ -1,0 +1,6 @@
+var __wakaru_ecC_initialized = false;
+export function ecC() {
+if (__wakaru_ecC_initialized) return;
+__wakaru_ecC_initialized = true;
+
+}

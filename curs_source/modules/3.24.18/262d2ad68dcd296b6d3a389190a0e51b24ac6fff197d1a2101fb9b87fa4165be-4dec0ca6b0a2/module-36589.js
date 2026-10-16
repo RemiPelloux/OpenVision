@@ -1,0 +1,1954 @@
+"use strict";
+require.r(exports), require.d(exports, {
+    default: ()=>g
+});
+const n = {
+    AmazonBot: "amazonbot",
+    "Amazon Silk": "amazon_silk",
+    "Android Browser": "android",
+    BaiduSpider: "baiduspider",
+    Bada: "bada",
+    BingCrawler: "bingcrawler",
+    Brave: "brave",
+    BlackBerry: "blackberry",
+    "ChatGPT-User": "chatgpt_user",
+    Chrome: "chrome",
+    ClaudeBot: "claudebot",
+    Chromium: "chromium",
+    Diffbot: "diffbot",
+    DuckDuckBot: "duckduckbot",
+    DuckDuckGo: "duckduckgo",
+    Electron: "electron",
+    Epiphany: "epiphany",
+    FacebookExternalHit: "facebookexternalhit",
+    Firefox: "firefox",
+    Focus: "focus",
+    Generic: "generic",
+    "Google Search": "google_search",
+    Googlebot: "googlebot",
+    GPTBot: "gptbot",
+    "Internet Explorer": "ie",
+    InternetArchiveCrawler: "internetarchivecrawler",
+    "K-Meleon": "k_meleon",
+    LibreWolf: "librewolf",
+    Linespider: "linespider",
+    Maxthon: "maxthon",
+    "Meta-ExternalAds": "meta_externalads",
+    "Meta-ExternalAgent": "meta_externalagent",
+    "Meta-ExternalFetcher": "meta_externalfetcher",
+    "Meta-WebIndexer": "meta_webindexer",
+    "Microsoft Edge": "edge",
+    "MZ Browser": "mz",
+    "NAVER Whale Browser": "naver",
+    "OAI-SearchBot": "oai_searchbot",
+    Omgilibot: "omgilibot",
+    Opera: "opera",
+    "Opera Coast": "opera_coast",
+    "Pale Moon": "pale_moon",
+    PerplexityBot: "perplexitybot",
+    "Perplexity-User": "perplexity_user",
+    PhantomJS: "phantomjs",
+    PingdomBot: "pingdombot",
+    Puffin: "puffin",
+    QQ: "qq",
+    QQLite: "qqlite",
+    QupZilla: "qupzilla",
+    Roku: "roku",
+    Safari: "safari",
+    Sailfish: "sailfish",
+    "Samsung Internet for Android": "samsung_internet",
+    SlackBot: "slackbot",
+    SeaMonkey: "seamonkey",
+    Sleipnir: "sleipnir",
+    "Sogou Browser": "sogou",
+    Swing: "swing",
+    Tizen: "tizen",
+    "UC Browser": "uc",
+    Vivaldi: "vivaldi",
+    "WebOS Browser": "webos",
+    WeChat: "wechat",
+    YahooSlurp: "yahooslurp",
+    "Yandex Browser": "yandex",
+    YandexBot: "yandexbot",
+    YouBot: "youbot"
+}, o = {
+    amazonbot: "AmazonBot",
+    amazon_silk: "Amazon Silk",
+    android: "Android Browser",
+    baiduspider: "BaiduSpider",
+    bada: "Bada",
+    bingcrawler: "BingCrawler",
+    blackberry: "BlackBerry",
+    brave: "Brave",
+    chatgpt_user: "ChatGPT-User",
+    chrome: "Chrome",
+    claudebot: "ClaudeBot",
+    chromium: "Chromium",
+    diffbot: "Diffbot",
+    duckduckbot: "DuckDuckBot",
+    duckduckgo: "DuckDuckGo",
+    edge: "Microsoft Edge",
+    electron: "Electron",
+    epiphany: "Epiphany",
+    facebookexternalhit: "FacebookExternalHit",
+    firefox: "Firefox",
+    focus: "Focus",
+    generic: "Generic",
+    google_search: "Google Search",
+    googlebot: "Googlebot",
+    gptbot: "GPTBot",
+    ie: "Internet Explorer",
+    internetarchivecrawler: "InternetArchiveCrawler",
+    k_meleon: "K-Meleon",
+    librewolf: "LibreWolf",
+    linespider: "Linespider",
+    maxthon: "Maxthon",
+    meta_externalads: "Meta-ExternalAds",
+    meta_externalagent: "Meta-ExternalAgent",
+    meta_externalfetcher: "Meta-ExternalFetcher",
+    meta_webindexer: "Meta-WebIndexer",
+    mz: "MZ Browser",
+    naver: "NAVER Whale Browser",
+    oai_searchbot: "OAI-SearchBot",
+    omgilibot: "Omgilibot",
+    opera: "Opera",
+    opera_coast: "Opera Coast",
+    pale_moon: "Pale Moon",
+    perplexitybot: "PerplexityBot",
+    perplexity_user: "Perplexity-User",
+    phantomjs: "PhantomJS",
+    pingdombot: "PingdomBot",
+    puffin: "Puffin",
+    qq: "QQ Browser",
+    qqlite: "QQ Browser Lite",
+    qupzilla: "QupZilla",
+    roku: "Roku",
+    safari: "Safari",
+    sailfish: "Sailfish",
+    samsung_internet: "Samsung Internet for Android",
+    seamonkey: "SeaMonkey",
+    slackbot: "SlackBot",
+    sleipnir: "Sleipnir",
+    sogou: "Sogou Browser",
+    swing: "Swing",
+    tizen: "Tizen",
+    uc: "UC Browser",
+    vivaldi: "Vivaldi",
+    webos: "WebOS Browser",
+    wechat: "WeChat",
+    yahooslurp: "YahooSlurp",
+    yandex: "Yandex Browser",
+    yandexbot: "YandexBot",
+    youbot: "YouBot"
+}, s = {
+    bot: "bot",
+    desktop: "desktop",
+    mobile: "mobile",
+    tablet: "tablet",
+    tv: "tv"
+}, i = {
+    Android: "Android",
+    Bada: "Bada",
+    BlackBerry: "BlackBerry",
+    ChromeOS: "Chrome OS",
+    HarmonyOS: "HarmonyOS",
+    iOS: "iOS",
+    Linux: "Linux",
+    MacOS: "macOS",
+    PlayStation4: "PlayStation 4",
+    Roku: "Roku",
+    Tizen: "Tizen",
+    WebOS: "WebOS",
+    Windows: "Windows",
+    WindowsPhone: "Windows Phone"
+}, a = {
+    Blink: "Blink",
+    EdgeHTML: "EdgeHTML",
+    Gecko: "Gecko",
+    Presto: "Presto",
+    Trident: "Trident",
+    WebKit: "WebKit"
+};
+class l {
+    static getFirstMatch(e, t) {
+        const r = t.match(e);
+        return r && r.length > 0 && r[1] || "";
+    }
+    static getSecondMatch(e, t) {
+        const r = t.match(e);
+        return r && r.length > 1 && r[2] || "";
+    }
+    static matchAndReturnConst(e, t, r) {
+        if (e.test(t)) return r;
+    }
+    static getWindowsVersionName(e) {
+        switch(e){
+            case "NT":
+                return "NT";
+            case "XP":
+            case "NT 5.1":
+                return "XP";
+            case "NT 5.0":
+                return "2000";
+            case "NT 5.2":
+                return "2003";
+            case "NT 6.0":
+                return "Vista";
+            case "NT 6.1":
+                return "7";
+            case "NT 6.2":
+                return "8";
+            case "NT 6.3":
+                return "8.1";
+            case "NT 10.0":
+                return "10";
+            default:
+                return;
+        }
+    }
+    static getMacOSVersionName(e) {
+        const t = e.split(".").splice(0, 2).map((e)=>parseInt(e, 10) || 0);
+        t.push(0);
+        const r = t[0], n = t[1];
+        if (10 === r) switch(n){
+            case 5:
+                return "Leopard";
+            case 6:
+                return "Snow Leopard";
+            case 7:
+                return "Lion";
+            case 8:
+                return "Mountain Lion";
+            case 9:
+                return "Mavericks";
+            case 10:
+                return "Yosemite";
+            case 11:
+                return "El Capitan";
+            case 12:
+                return "Sierra";
+            case 13:
+                return "High Sierra";
+            case 14:
+                return "Mojave";
+            case 15:
+                return "Catalina";
+            default:
+                return;
+        }
+        switch(r){
+            case 11:
+                return "Big Sur";
+            case 12:
+                return "Monterey";
+            case 13:
+                return "Ventura";
+            case 14:
+                return "Sonoma";
+            case 15:
+                return "Sequoia";
+            default:
+                return;
+        }
+    }
+    static getAndroidVersionName(e) {
+        const t = e.split(".").splice(0, 2).map((e)=>parseInt(e, 10) || 0);
+        if (t.push(0), !(1 === t[0] && t[1] < 5)) return 1 === t[0] && t[1] < 6 ? "Cupcake" : 1 === t[0] && t[1] >= 6 ? "Donut" : 2 === t[0] && t[1] < 2 ? "Eclair" : 2 === t[0] && 2 === t[1] ? "Froyo" : 2 === t[0] && t[1] > 2 ? "Gingerbread" : 3 === t[0] ? "Honeycomb" : 4 === t[0] && t[1] < 1 ? "Ice Cream Sandwich" : 4 === t[0] && t[1] < 4 ? "Jelly Bean" : 4 === t[0] && t[1] >= 4 ? "KitKat" : 5 === t[0] ? "Lollipop" : 6 === t[0] ? "Marshmallow" : 7 === t[0] ? "Nougat" : 8 === t[0] ? "Oreo" : 9 === t[0] ? "Pie" : void 0;
+    }
+    static getVersionPrecision(e) {
+        return e.split(".").length;
+    }
+    static compareVersions(e, t, r = !1) {
+        const n = l.getVersionPrecision(e), o = l.getVersionPrecision(t);
+        let s = Math.max(n, o), i = 0;
+        const a = l.map([
+            e,
+            t
+        ], (e)=>{
+            const t = s - l.getVersionPrecision(e), r = e + new Array(t + 1).join(".0");
+            return l.map(r.split("."), (e)=>new Array(20 - e.length).join("0") + e).reverse();
+        });
+        for(r && (i = s - Math.min(n, o)), s -= 1; s >= i;){
+            if (a[0][s] > a[1][s]) return 1;
+            if (a[0][s] === a[1][s]) {
+                if (s === i) return 0;
+                s -= 1;
+            } else if (a[0][s] < a[1][s]) return -1;
+        }
+    }
+    static map(e, t) {
+        const r = [];
+        let n;
+        if (Array.prototype.map) return Array.prototype.map.call(e, t);
+        for(n = 0; n < e.length; n += 1)r.push(t(e[n]));
+        return r;
+    }
+    static find(e, t) {
+        let r, n;
+        if (Array.prototype.find) return Array.prototype.find.call(e, t);
+        for(r = 0, n = e.length; r < n; r += 1){
+            const n = e[r];
+            if (t(n, r)) return n;
+        }
+    }
+    static assign(e, ...t) {
+        const r = e;
+        let n, o;
+        if (Object.assign) return Object.assign(e, ...t);
+        for(n = 0, o = t.length; n < o; n += 1){
+            const e = t[n];
+            if ("object" == typeof e && null !== e) {
+                Object.keys(e).forEach((t)=>{
+                    r[t] = e[t];
+                });
+            }
+        }
+        return e;
+    }
+    static getBrowserAlias(e) {
+        return n[e];
+    }
+    static getBrowserTypeByAlias(e) {
+        return o[e] || "";
+    }
+}
+const c = /version\/(\d+(\.?_?\d+)+)/i, u = [
+    {
+        test: [
+            /gptbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "GPTBot"
+            }, r = l.getFirstMatch(/gptbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /chatgpt-user/i
+        ],
+        describe (e) {
+            const t = {
+                name: "ChatGPT-User"
+            }, r = l.getFirstMatch(/chatgpt-user\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /oai-searchbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "OAI-SearchBot"
+            }, r = l.getFirstMatch(/oai-searchbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /claudebot/i,
+            /claude-web/i,
+            /claude-user/i,
+            /claude-searchbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "ClaudeBot"
+            }, r = l.getFirstMatch(/(?:claudebot|claude-web|claude-user|claude-searchbot)\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /omgilibot/i,
+            /webzio-extended/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Omgilibot"
+            }, r = l.getFirstMatch(/(?:omgilibot|webzio-extended)\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /diffbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Diffbot"
+            }, r = l.getFirstMatch(/diffbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /perplexitybot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "PerplexityBot"
+            }, r = l.getFirstMatch(/perplexitybot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /perplexity-user/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Perplexity-User"
+            }, r = l.getFirstMatch(/perplexity-user\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /youbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "YouBot"
+            }, r = l.getFirstMatch(/youbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /meta-webindexer/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Meta-WebIndexer"
+            }, r = l.getFirstMatch(/meta-webindexer\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /meta-externalads/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Meta-ExternalAds"
+            }, r = l.getFirstMatch(/meta-externalads\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /meta-externalagent/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Meta-ExternalAgent"
+            }, r = l.getFirstMatch(/meta-externalagent\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /meta-externalfetcher/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Meta-ExternalFetcher"
+            }, r = l.getFirstMatch(/meta-externalfetcher\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /googlebot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Googlebot"
+            }, r = l.getFirstMatch(/googlebot\/(\d+(\.\d+))/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /linespider/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Linespider"
+            }, r = l.getFirstMatch(/(?:linespider)(?:-[-\w]+)?[\s/](\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /amazonbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "AmazonBot"
+            }, r = l.getFirstMatch(/amazonbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /bingbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "BingCrawler"
+            }, r = l.getFirstMatch(/bingbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /baiduspider/i
+        ],
+        describe (e) {
+            const t = {
+                name: "BaiduSpider"
+            }, r = l.getFirstMatch(/baiduspider\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /duckduckbot/i
+        ],
+        describe (e) {
+            const t = {
+                name: "DuckDuckBot"
+            }, r = l.getFirstMatch(/duckduckbot\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /ia_archiver/i
+        ],
+        describe (e) {
+            const t = {
+                name: "InternetArchiveCrawler"
+            }, r = l.getFirstMatch(/ia_archiver\/(\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /facebookexternalhit/i,
+            /facebookcatalog/i
+        ],
+        describe: ()=>({
+                name: "FacebookExternalHit"
+            })
+    },
+    {
+        test: [
+            /slackbot/i,
+            /slack-imgProxy/i
+        ],
+        describe (e) {
+            const t = {
+                name: "SlackBot"
+            }, r = l.getFirstMatch(/(?:slackbot|slack-imgproxy)(?:-[-\w]+)?[\s/](\d+(\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /yahoo!?[\s/]*slurp/i
+        ],
+        describe: ()=>({
+                name: "YahooSlurp"
+            })
+    },
+    {
+        test: [
+            /yandexbot/i,
+            /yandexmobilebot/i
+        ],
+        describe: ()=>({
+                name: "YandexBot"
+            })
+    },
+    {
+        test: [
+            /pingdom/i
+        ],
+        describe: ()=>({
+                name: "PingdomBot"
+            })
+    },
+    {
+        test: [
+            /opera/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Opera"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:opera)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /opr\/|opios/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Opera"
+            }, r = l.getFirstMatch(/(?:opr|opios)[\s/](\S+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /SamsungBrowser/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Samsung Internet for Android"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:SamsungBrowser)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /Whale/i
+        ],
+        describe (e) {
+            const t = {
+                name: "NAVER Whale Browser"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:whale)[\s/](\d+(?:\.\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /PaleMoon/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Pale Moon"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:PaleMoon)[\s/](\d+(?:\.\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /MZBrowser/i
+        ],
+        describe (e) {
+            const t = {
+                name: "MZ Browser"
+            }, r = l.getFirstMatch(/(?:MZBrowser)[\s/](\d+(?:\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /focus/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Focus"
+            }, r = l.getFirstMatch(/(?:focus)[\s/](\d+(?:\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /swing/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Swing"
+            }, r = l.getFirstMatch(/(?:swing)[\s/](\d+(?:\.\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /coast/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Opera Coast"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:coast)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /opt\/\d+(?:.?_?\d+)+/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Opera Touch"
+            }, r = l.getFirstMatch(/(?:opt)[\s/](\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /yabrowser/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Yandex Browser"
+            }, r = l.getFirstMatch(/(?:yabrowser)[\s/](\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /ucbrowser/i
+        ],
+        describe (e) {
+            const t = {
+                name: "UC Browser"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:ucbrowser)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /Maxthon|mxios/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Maxthon"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:Maxthon|mxios)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /epiphany/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Epiphany"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:epiphany)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /puffin/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Puffin"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:puffin)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /sleipnir/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Sleipnir"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:sleipnir)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /k-meleon/i
+        ],
+        describe (e) {
+            const t = {
+                name: "K-Meleon"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/(?:k-meleon)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /micromessenger/i
+        ],
+        describe (e) {
+            const t = {
+                name: "WeChat"
+            }, r = l.getFirstMatch(/(?:micromessenger)[\s/](\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /qqbrowser/i
+        ],
+        describe (e) {
+            const t = {
+                name: /qqbrowserlite/i.test(e) ? "QQ Browser Lite" : "QQ Browser"
+            }, r = l.getFirstMatch(/(?:qqbrowserlite|qqbrowser)[/](\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /msie|trident/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Internet Explorer"
+            }, r = l.getFirstMatch(/(?:msie |rv:)(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /\sedg\//i
+        ],
+        describe (e) {
+            const t = {
+                name: "Microsoft Edge"
+            }, r = l.getFirstMatch(/\sedg\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /edg([ea]|ios)/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Microsoft Edge"
+            }, r = l.getSecondMatch(/edg([ea]|ios)\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /vivaldi/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Vivaldi"
+            }, r = l.getFirstMatch(/vivaldi\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /seamonkey/i
+        ],
+        describe (e) {
+            const t = {
+                name: "SeaMonkey"
+            }, r = l.getFirstMatch(/seamonkey\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /sailfish/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Sailfish"
+            }, r = l.getFirstMatch(/sailfish\s?browser\/(\d+(\.\d+)?)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /silk/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Amazon Silk"
+            }, r = l.getFirstMatch(/silk\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /phantom/i
+        ],
+        describe (e) {
+            const t = {
+                name: "PhantomJS"
+            }, r = l.getFirstMatch(/phantomjs\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /slimerjs/i
+        ],
+        describe (e) {
+            const t = {
+                name: "SlimerJS"
+            }, r = l.getFirstMatch(/slimerjs\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /blackberry|\bbb\d+/i,
+            /rim\stablet/i
+        ],
+        describe (e) {
+            const t = {
+                name: "BlackBerry"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/blackberry[\d]+\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /(web|hpw)[o0]s/i
+        ],
+        describe (e) {
+            const t = {
+                name: "WebOS Browser"
+            }, r = l.getFirstMatch(c, e) || l.getFirstMatch(/w(?:eb)?[o0]sbrowser\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /bada/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Bada"
+            }, r = l.getFirstMatch(/dolfin\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /tizen/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Tizen"
+            }, r = l.getFirstMatch(/(?:tizen\s?)?browser\/(\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /qupzilla/i
+        ],
+        describe (e) {
+            const t = {
+                name: "QupZilla"
+            }, r = l.getFirstMatch(/(?:qupzilla)[\s/](\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /librewolf/i
+        ],
+        describe (e) {
+            const t = {
+                name: "LibreWolf"
+            }, r = l.getFirstMatch(/(?:librewolf)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /firefox|iceweasel|fxios/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Firefox"
+            }, r = l.getFirstMatch(/(?:firefox|iceweasel|fxios)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /electron/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Electron"
+            }, r = l.getFirstMatch(/(?:electron)\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /sogoumobilebrowser/i,
+            /metasr/i,
+            /se 2\.[x]/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Sogou Browser"
+            }, r = l.getFirstMatch(/(?:sogoumobilebrowser)[\s/](\d+(\.?_?\d+)+)/i, e), n = l.getFirstMatch(/(?:chrome|crios|crmo)\/(\d+(\.?_?\d+)+)/i, e), o = l.getFirstMatch(/se ([\d.]+)x/i, e), s = r || n || o;
+            return s && (t.version = s), t;
+        }
+    },
+    {
+        test: [
+            /MiuiBrowser/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Miui"
+            }, r = l.getFirstMatch(/(?:MiuiBrowser)[\s/](\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: (e)=>!!e.hasBrand("DuckDuckGo") || e.test(/\sDdg\/[\d.]+$/i),
+        describe (e, t) {
+            const r = {
+                name: "DuckDuckGo"
+            };
+            if (t) {
+                const e = t.getBrandVersion("DuckDuckGo");
+                if (e) return r.version = e, r;
+            }
+            const n = l.getFirstMatch(/\sDdg\/([\d.]+)$/i, e);
+            return n && (r.version = n), r;
+        }
+    },
+    {
+        test: (e)=>e.hasBrand("Brave"),
+        describe (e, t) {
+            const r = {
+                name: "Brave"
+            };
+            if (t) {
+                const e = t.getBrandVersion("Brave");
+                if (e) return r.version = e, r;
+            }
+            return r;
+        }
+    },
+    {
+        test: [
+            /chromium/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Chromium"
+            }, r = l.getFirstMatch(/(?:chromium)[\s/](\d+(\.?_?\d+)+)/i, e) || l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /chrome|crios|crmo/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Chrome"
+            }, r = l.getFirstMatch(/(?:chrome|crios|crmo)\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /GSA/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Google Search"
+            }, r = l.getFirstMatch(/(?:GSA)\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test (e) {
+            const t = !e.test(/like android/i), r = e.test(/android/i);
+            return t && r;
+        },
+        describe (e) {
+            const t = {
+                name: "Android Browser"
+            }, r = l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /playstation 4/i
+        ],
+        describe (e) {
+            const t = {
+                name: "PlayStation 4"
+            }, r = l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /safari|applewebkit/i
+        ],
+        describe (e) {
+            const t = {
+                name: "Safari"
+            }, r = l.getFirstMatch(c, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /.*/i
+        ],
+        describe (e) {
+            const t = -1 !== e.search("\\(") ? /^(.*)\/(.*)[ \t]\((.*)/ : /^(.*)\/(.*) /;
+            return {
+                name: l.getFirstMatch(t, e),
+                version: l.getSecondMatch(t, e)
+            };
+        }
+    }
+], d = u, p = [
+    {
+        test: [
+            /Roku\/DVP/
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/Roku\/DVP-(\d+\.\d+)/i, e);
+            return {
+                name: i.Roku,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /windows phone/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/windows phone (?:os)?\s?(\d+(\.\d+)*)/i, e);
+            return {
+                name: i.WindowsPhone,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /windows /i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/Windows ((NT|XP)( \d\d?.\d)?)/i, e), r = l.getWindowsVersionName(t);
+            return {
+                name: i.Windows,
+                version: t,
+                versionName: r
+            };
+        }
+    },
+    {
+        test: [
+            /Macintosh(.*?) FxiOS(.*?)\//
+        ],
+        describe (e) {
+            const t = {
+                name: i.iOS
+            }, r = l.getSecondMatch(/(Version\/)(\d[\d.]+)/, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /macintosh/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/mac os x (\d+(\.?_?\d+)+)/i, e).replace(/[_\s]/g, "."), r = l.getMacOSVersionName(t), n = {
+                name: i.MacOS,
+                version: t
+            };
+            return r && (n.versionName = r), n;
+        }
+    },
+    {
+        test: [
+            /(ipod|iphone|ipad)/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/os (\d+([_\s]\d+)*) like mac os x/i, e).replace(/[_\s]/g, ".");
+            return {
+                name: i.iOS,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /OpenHarmony/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/OpenHarmony\s+(\d+(\.\d+)*)/i, e);
+            return {
+                name: i.HarmonyOS,
+                version: t
+            };
+        }
+    },
+    {
+        test (e) {
+            const t = !e.test(/like android/i), r = e.test(/android/i);
+            return t && r;
+        },
+        describe (e) {
+            const t = l.getFirstMatch(/android[\s/-](\d+(\.\d+)*)/i, e), r = l.getAndroidVersionName(t), n = {
+                name: i.Android,
+                version: t
+            };
+            return r && (n.versionName = r), n;
+        }
+    },
+    {
+        test: [
+            /(web|hpw)[o0]s/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/(?:web|hpw)[o0]s\/(\d+(\.\d+)*)/i, e), r = {
+                name: i.WebOS
+            };
+            return t && t.length && (r.version = t), r;
+        }
+    },
+    {
+        test: [
+            /blackberry|\bbb\d+/i,
+            /rim\stablet/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/rim\stablet\sos\s(\d+(\.\d+)*)/i, e) || l.getFirstMatch(/blackberry\d+\/(\d+([_\s]\d+)*)/i, e) || l.getFirstMatch(/\bbb(\d+)/i, e);
+            return {
+                name: i.BlackBerry,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /bada/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/bada\/(\d+(\.\d+)*)/i, e);
+            return {
+                name: i.Bada,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /tizen/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/tizen[/\s](\d+(\.\d+)*)/i, e);
+            return {
+                name: i.Tizen,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /linux/i
+        ],
+        describe: ()=>({
+                name: i.Linux
+            })
+    },
+    {
+        test: [
+            /CrOS/
+        ],
+        describe: ()=>({
+                name: i.ChromeOS
+            })
+    },
+    {
+        test: [
+            /PlayStation 4/
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/PlayStation 4[/\s](\d+(\.\d+)*)/i, e);
+            return {
+                name: i.PlayStation4,
+                version: t
+            };
+        }
+    }
+], h = [
+    {
+        test: [
+            /googlebot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Google"
+            })
+    },
+    {
+        test: [
+            /linespider/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Line"
+            })
+    },
+    {
+        test: [
+            /amazonbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Amazon"
+            })
+    },
+    {
+        test: [
+            /gptbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "OpenAI"
+            })
+    },
+    {
+        test: [
+            /chatgpt-user/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "OpenAI"
+            })
+    },
+    {
+        test: [
+            /oai-searchbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "OpenAI"
+            })
+    },
+    {
+        test: [
+            /baiduspider/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Baidu"
+            })
+    },
+    {
+        test: [
+            /bingbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Bing"
+            })
+    },
+    {
+        test: [
+            /duckduckbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "DuckDuckGo"
+            })
+    },
+    {
+        test: [
+            /claudebot/i,
+            /claude-web/i,
+            /claude-user/i,
+            /claude-searchbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Anthropic"
+            })
+    },
+    {
+        test: [
+            /omgilibot/i,
+            /webzio-extended/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Webz.io"
+            })
+    },
+    {
+        test: [
+            /diffbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Diffbot"
+            })
+    },
+    {
+        test: [
+            /perplexitybot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Perplexity AI"
+            })
+    },
+    {
+        test: [
+            /perplexity-user/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Perplexity AI"
+            })
+    },
+    {
+        test: [
+            /youbot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "You.com"
+            })
+    },
+    {
+        test: [
+            /ia_archiver/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Internet Archive"
+            })
+    },
+    {
+        test: [
+            /meta-webindexer/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Meta"
+            })
+    },
+    {
+        test: [
+            /meta-externalads/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Meta"
+            })
+    },
+    {
+        test: [
+            /meta-externalagent/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Meta"
+            })
+    },
+    {
+        test: [
+            /meta-externalfetcher/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Meta"
+            })
+    },
+    {
+        test: [
+            /facebookexternalhit/i,
+            /facebookcatalog/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Meta"
+            })
+    },
+    {
+        test: [
+            /slackbot/i,
+            /slack-imgProxy/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Slack"
+            })
+    },
+    {
+        test: [
+            /yahoo/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Yahoo"
+            })
+    },
+    {
+        test: [
+            /yandexbot/i,
+            /yandexmobilebot/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Yandex"
+            })
+    },
+    {
+        test: [
+            /pingdom/i
+        ],
+        describe: ()=>({
+                type: s.bot,
+                vendor: "Pingdom"
+            })
+    },
+    {
+        test: [
+            /huawei/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/(can-l01)/i, e) && "Nova", r = {
+                type: s.mobile,
+                vendor: "Huawei"
+            };
+            return t && (r.model = t), r;
+        }
+    },
+    {
+        test: [
+            /nexus\s*(?:7|8|9|10).*/i
+        ],
+        describe: ()=>({
+                type: s.tablet,
+                vendor: "Nexus"
+            })
+    },
+    {
+        test: [
+            /ipad/i
+        ],
+        describe: ()=>({
+                type: s.tablet,
+                vendor: "Apple",
+                model: "iPad"
+            })
+    },
+    {
+        test: [
+            /Macintosh(.*?) FxiOS(.*?)\//
+        ],
+        describe: ()=>({
+                type: s.tablet,
+                vendor: "Apple",
+                model: "iPad"
+            })
+    },
+    {
+        test: [
+            /kftt build/i
+        ],
+        describe: ()=>({
+                type: s.tablet,
+                vendor: "Amazon",
+                model: "Kindle Fire HD 7"
+            })
+    },
+    {
+        test: [
+            /silk/i
+        ],
+        describe: ()=>({
+                type: s.tablet,
+                vendor: "Amazon"
+            })
+    },
+    {
+        test: [
+            /tablet(?! pc)/i
+        ],
+        describe: ()=>({
+                type: s.tablet
+            })
+    },
+    {
+        test (e) {
+            const t = e.test(/ipod|iphone/i), r = e.test(/like (ipod|iphone)/i);
+            return t && !r;
+        },
+        describe (e) {
+            const t = l.getFirstMatch(/(ipod|iphone)/i, e);
+            return {
+                type: s.mobile,
+                vendor: "Apple",
+                model: t
+            };
+        }
+    },
+    {
+        test: [
+            /nexus\s*[0-6].*/i,
+            /galaxy nexus/i
+        ],
+        describe: ()=>({
+                type: s.mobile,
+                vendor: "Nexus"
+            })
+    },
+    {
+        test: [
+            /Nokia/i
+        ],
+        describe (e) {
+            const t = l.getFirstMatch(/Nokia\s+([0-9]+(\.[0-9]+)?)/i, e), r = {
+                type: s.mobile,
+                vendor: "Nokia"
+            };
+            return t && (r.model = t), r;
+        }
+    },
+    {
+        test: [
+            /[^-]mobi/i
+        ],
+        describe: ()=>({
+                type: s.mobile
+            })
+    },
+    {
+        test: (e)=>"blackberry" === e.getBrowserName(!0),
+        describe: ()=>({
+                type: s.mobile,
+                vendor: "BlackBerry"
+            })
+    },
+    {
+        test: (e)=>"bada" === e.getBrowserName(!0),
+        describe: ()=>({
+                type: s.mobile
+            })
+    },
+    {
+        test: (e)=>"windows phone" === e.getBrowserName(),
+        describe: ()=>({
+                type: s.mobile,
+                vendor: "Microsoft"
+            })
+    },
+    {
+        test (e) {
+            const t = Number(String(e.getOSVersion()).split(".")[0]);
+            return "android" === e.getOSName(!0) && t >= 3;
+        },
+        describe: ()=>({
+                type: s.tablet
+            })
+    },
+    {
+        test: (e)=>"android" === e.getOSName(!0),
+        describe: ()=>({
+                type: s.mobile
+            })
+    },
+    {
+        test: [
+            /smart-?tv|smarttv/i
+        ],
+        describe: ()=>({
+                type: s.tv
+            })
+    },
+    {
+        test: [
+            /netcast/i
+        ],
+        describe: ()=>({
+                type: s.tv
+            })
+    },
+    {
+        test: (e)=>"macos" === e.getOSName(!0),
+        describe: ()=>({
+                type: s.desktop,
+                vendor: "Apple"
+            })
+    },
+    {
+        test: (e)=>"windows" === e.getOSName(!0),
+        describe: ()=>({
+                type: s.desktop
+            })
+    },
+    {
+        test: (e)=>"linux" === e.getOSName(!0),
+        describe: ()=>({
+                type: s.desktop
+            })
+    },
+    {
+        test: (e)=>"playstation 4" === e.getOSName(!0),
+        describe: ()=>({
+                type: s.tv
+            })
+    },
+    {
+        test: (e)=>"roku" === e.getOSName(!0),
+        describe: ()=>({
+                type: s.tv
+            })
+    }
+], m = [
+    {
+        test: (e)=>"microsoft edge" === e.getBrowserName(!0),
+        describe (e) {
+            if (/\sedg\//i.test(e)) return {
+                name: a.Blink
+            };
+            const t = l.getFirstMatch(/edge\/(\d+(\.?_?\d+)+)/i, e);
+            return {
+                name: a.EdgeHTML,
+                version: t
+            };
+        }
+    },
+    {
+        test: [
+            /trident/i
+        ],
+        describe (e) {
+            const t = {
+                name: a.Trident
+            }, r = l.getFirstMatch(/trident\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: (e)=>e.test(/presto/i),
+        describe (e) {
+            const t = {
+                name: a.Presto
+            }, r = l.getFirstMatch(/presto\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test (e) {
+            const t = e.test(/gecko/i), r = e.test(/like gecko/i);
+            return t && !r;
+        },
+        describe (e) {
+            const t = {
+                name: a.Gecko
+            }, r = l.getFirstMatch(/gecko\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    },
+    {
+        test: [
+            /(apple)?webkit\/537\.36/i
+        ],
+        describe: ()=>({
+                name: a.Blink
+            })
+    },
+    {
+        test: [
+            /(apple)?webkit/i
+        ],
+        describe (e) {
+            const t = {
+                name: a.WebKit
+            }, r = l.getFirstMatch(/webkit\/(\d+(\.?_?\d+)+)/i, e);
+            return r && (t.version = r), t;
+        }
+    }
+];
+const f = class {
+    constructor(e, t = !1, r = null){
+        if (null == e || "" === e) throw new Error("UserAgent parameter can't be empty");
+        this._ua = e;
+        let n = !1;
+        "boolean" == typeof t ? (n = t, this._hints = r) : this._hints = null != t && "object" == typeof t ? t : null, this.parsedResult = {}, !0 !== n && this.parse();
+    }
+    getHints() {
+        return this._hints;
+    }
+    hasBrand(e) {
+        if (!this._hints || !Array.isArray(this._hints.brands)) return !1;
+        const t = e.toLowerCase();
+        return this._hints.brands.some((e)=>e.brand && e.brand.toLowerCase() === t);
+    }
+    getBrandVersion(e) {
+        if (!this._hints || !Array.isArray(this._hints.brands)) return;
+        const t = e.toLowerCase(), r = this._hints.brands.find((e)=>e.brand && e.brand.toLowerCase() === t);
+        return r ? r.version : void 0;
+    }
+    getUA() {
+        return this._ua;
+    }
+    test(e) {
+        return e.test(this._ua);
+    }
+    parseBrowser() {
+        this.parsedResult.browser = {};
+        const e = l.find(d, (e)=>{
+            if ("function" == typeof e.test) return e.test(this);
+            if (Array.isArray(e.test)) return e.test.some((e)=>this.test(e));
+            throw new Error("Browser's test function is not valid");
+        });
+        return e && (this.parsedResult.browser = e.describe(this.getUA(), this)), this.parsedResult.browser;
+    }
+    getBrowser() {
+        return this.parsedResult.browser ? this.parsedResult.browser : this.parseBrowser();
+    }
+    getBrowserName(e) {
+        return e ? String(this.getBrowser().name).toLowerCase() || "" : this.getBrowser().name || "";
+    }
+    getBrowserVersion() {
+        return this.getBrowser().version;
+    }
+    getOS() {
+        return this.parsedResult.os ? this.parsedResult.os : this.parseOS();
+    }
+    parseOS() {
+        this.parsedResult.os = {};
+        const e = l.find(p, (e)=>{
+            if ("function" == typeof e.test) return e.test(this);
+            if (Array.isArray(e.test)) return e.test.some((e)=>this.test(e));
+            throw new Error("Browser's test function is not valid");
+        });
+        return e && (this.parsedResult.os = e.describe(this.getUA())), this.parsedResult.os;
+    }
+    getOSName(e) {
+        const { name: t } = this.getOS();
+        return e ? String(t).toLowerCase() || "" : t || "";
+    }
+    getOSVersion() {
+        return this.getOS().version;
+    }
+    getPlatform() {
+        return this.parsedResult.platform ? this.parsedResult.platform : this.parsePlatform();
+    }
+    getPlatformType(e = !1) {
+        const { type: t } = this.getPlatform();
+        return e ? String(t).toLowerCase() || "" : t || "";
+    }
+    parsePlatform() {
+        this.parsedResult.platform = {};
+        const e = l.find(h, (e)=>{
+            if ("function" == typeof e.test) return e.test(this);
+            if (Array.isArray(e.test)) return e.test.some((e)=>this.test(e));
+            throw new Error("Browser's test function is not valid");
+        });
+        return e && (this.parsedResult.platform = e.describe(this.getUA())), this.parsedResult.platform;
+    }
+    getEngine() {
+        return this.parsedResult.engine ? this.parsedResult.engine : this.parseEngine();
+    }
+    getEngineName(e) {
+        return e ? String(this.getEngine().name).toLowerCase() || "" : this.getEngine().name || "";
+    }
+    parseEngine() {
+        this.parsedResult.engine = {};
+        const e = l.find(m, (e)=>{
+            if ("function" == typeof e.test) return e.test(this);
+            if (Array.isArray(e.test)) return e.test.some((e)=>this.test(e));
+            throw new Error("Browser's test function is not valid");
+        });
+        return e && (this.parsedResult.engine = e.describe(this.getUA())), this.parsedResult.engine;
+    }
+    parse() {
+        return this.parseBrowser(), this.parseOS(), this.parsePlatform(), this.parseEngine(), this;
+    }
+    getResult() {
+        return l.assign({}, this.parsedResult);
+    }
+    satisfies(e) {
+        const t = {};
+        let r = 0;
+        const n = {};
+        let o = 0;
+        if (Object.keys(e).forEach((s)=>{
+            const i = e[s];
+            "string" == typeof i ? (n[s] = i, o += 1) : "object" == typeof i && (t[s] = i, r += 1);
+        }), r > 0) {
+            const e = Object.keys(t), r = l.find(e, (e)=>this.isOS(e));
+            if (r) {
+                const e = this.satisfies(t[r]);
+                if (void 0 !== e) return e;
+            }
+            const n = l.find(e, (e)=>this.isPlatform(e));
+            if (n) {
+                const e = this.satisfies(t[n]);
+                if (void 0 !== e) return e;
+            }
+        }
+        if (o > 0) {
+            const e = Object.keys(n), t = l.find(e, (e)=>this.isBrowser(e, !0));
+            if (void 0 !== t) return this.compareVersion(n[t]);
+        }
+    }
+    isBrowser(e, t = !1) {
+        const r = this.getBrowserName().toLowerCase();
+        let n = e.toLowerCase();
+        const o = l.getBrowserTypeByAlias(n);
+        return t && o && (n = o.toLowerCase()), n === r;
+    }
+    compareVersion(e) {
+        let t = [
+            0
+        ], r = e, n = !1;
+        const o = this.getBrowserVersion();
+        if ("string" == typeof o) return ">" === e[0] || "<" === e[0] ? (r = e.substr(1), "=" === e[1] ? (n = !0, r = e.substr(2)) : t = [], ">" === e[0] ? t.push(1) : t.push(-1)) : "=" === e[0] ? r = e.substr(1) : "~" === e[0] && (n = !0, r = e.substr(1)), t.indexOf(l.compareVersions(o, r, n)) > -1;
+    }
+    isOS(e) {
+        return this.getOSName(!0) === String(e).toLowerCase();
+    }
+    isPlatform(e) {
+        return this.getPlatformType(!0) === String(e).toLowerCase();
+    }
+    isEngine(e) {
+        return this.getEngineName(!0) === String(e).toLowerCase();
+    }
+    is(e, t = !1) {
+        return this.isBrowser(e, t) || this.isOS(e) || this.isPlatform(e);
+    }
+    some(e = []) {
+        return e.some((e)=>this.is(e));
+    }
+};
+const g = class {
+    static getParser(e, t = !1, r = null) {
+        if ("string" != typeof e) throw new Error("UserAgent should be a string");
+        return new f(e, t, r);
+    }
+    static parse(e, t = null) {
+        return new f(e, t).getResult();
+    }
+    static get BROWSER_MAP() {
+        return o;
+    }
+    static get ENGINE_MAP() {
+        return a;
+    }
+    static get OS_MAP() {
+        return i;
+    }
+    static get PLATFORMS_MAP() {
+        return s;
+    }
+};

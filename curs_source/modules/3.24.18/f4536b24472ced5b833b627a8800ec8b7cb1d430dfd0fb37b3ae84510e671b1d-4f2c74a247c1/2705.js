@@ -1,0 +1,1 @@
+function ru(e){const t=e.enum;return t.typeName=="google.protobuf.NullValue"?(r,n)=>{if(typeof n!="number")throw Xv(t,n);return null}:(r,n)=>{var o,i;if(typeof n!="number")throw Xv(t,n);return r.enumAsInteger?n:(i=(o=t.value[n])===null||o===void 0?void 0:o.name)!==null&&i!==void 0?i:n}}

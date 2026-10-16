@@ -1,0 +1,6 @@
+var __wakaru_kc__initialized = false;
+export function kc_() {
+if (__wakaru_kc__initialized) return;
+__wakaru_kc__initialized = true;
+
+}

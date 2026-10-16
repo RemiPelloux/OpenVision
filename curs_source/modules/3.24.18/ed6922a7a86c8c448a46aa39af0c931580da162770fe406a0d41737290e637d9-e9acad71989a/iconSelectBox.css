@@ -1,0 +1,6 @@
+var __wakaru_Zd__initialized = false;
+export function Zd_() {
+if (__wakaru_Zd__initialized) return;
+__wakaru_Zd__initialized = true;
+
+}

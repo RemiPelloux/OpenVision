@@ -1,0 +1,1 @@
+function fI(e){let t="",r="",n="",o="";return e.length>5?(t=e.substring(1,3),r=e.substring(3,5),n=e.substring(5,7),o=e.substring(7,9)):(t=e.substring(1,2),r=e.substring(2,3),n=e.substring(3,4),o=e.substring(4,5),t+=t,r+=r,n+=n,o+=o),{red:parseInt(t,16),green:parseInt(r,16),blue:parseInt(n,16),alpha:o?parseInt(o,16)/255:1}}

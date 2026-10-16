@@ -1,0 +1,6 @@
+var __wakaru_HLy_initialized = false;
+export function HLy() {
+if (__wakaru_HLy_initialized) return;
+__wakaru_HLy_initialized = true;
+
+}

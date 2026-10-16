@@ -1,0 +1,6 @@
+var __wakaru_Q71_initialized = false;
+export function Q71() {
+if (__wakaru_Q71_initialized) return;
+__wakaru_Q71_initialized = true;
+
+}

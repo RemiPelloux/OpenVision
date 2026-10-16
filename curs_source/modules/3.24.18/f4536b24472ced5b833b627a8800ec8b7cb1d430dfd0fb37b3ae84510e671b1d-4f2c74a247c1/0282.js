@@ -1,0 +1,1 @@
+function Kd(e){e.forEach(function(t){if(t.type==="text"){t.content=t.content.split(ra).join("<");return}if(t.type==="comment"){t.comment=t.comment.split(ra).join("<");return}for(const r in t.attrs){const n=t.attrs[r];typeof n=="string"&&n.indexOf(ra)>-1&&(t.attrs[r]=n.split(ra).join("<"))}t.children.length&&Kd(t.children)})}

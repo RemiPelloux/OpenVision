@@ -1,0 +1,6 @@
+var __wakaru_ZEk_initialized = false;
+export function ZEk() {
+if (__wakaru_ZEk_initialized) return;
+__wakaru_ZEk_initialized = true;
+
+}

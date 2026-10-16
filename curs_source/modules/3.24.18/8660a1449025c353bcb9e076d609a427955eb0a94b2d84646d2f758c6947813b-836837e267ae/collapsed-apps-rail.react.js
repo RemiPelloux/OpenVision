@@ -1,0 +1,48 @@
+import { Ss } from "./aiMiscServices.js";
+import { rp } from "./bcIdFromAuthority.js";
+import { iUC } from "./changes-count-badge.react.js";
+import { AEn } from "./cloudAgentMachineKind.js";
+import { jyc } from "./collapsed-apps-rail-layout.react.js";
+import { kUC } from "./collapsed-apps-rail-row-flyout.react.js";
+import { u__ } from "./collapsed-apps-rail-rows.js";
+import { Hn } from "./dom_2.js";
+import { iRt } from "./environment-setup-tab-eligibility.js";
+import { IUC } from "./glass-collapsed-apps-rail-analytics.js";
+import { yp } from "./glass-command-service.js";
+import { qV } from "./glass-diff-hooks.js";
+import { $G } from "./glass-diff-service.js";
+import { FA } from "./glass-side-chat-utils.js";
+import { NE } from "./glass-tab-persistence-constants.js";
+import { cD } from "./glass-tab-persistence-service.js";
+import { iEe } from "./glass-terminal-service-proxy.js";
+import { xd } from "./glass-workspace-context-service.js";
+import { nl } from "./index.ts";
+import { Mt } from "./index_197.js";
+import { _7i } from "./machineResources.js";
+import { BOs } from "./open-preferred-pull-request-externally.js";
+import { Mv_ } from "./pull-request-external-click.js";
+import { Wv_ } from "./request-glass-changes-tab.js";
+import { SQt } from "./terminal_4.js";
+import { E } from "./tslib.es6.js";
+import { b__ } from "./use-agent-side-chat-tabs.react.js";
+import { Ru } from "./use-feature-gate.react_2.js";
+import { IG } from "./use-header-tracked-git-derived.react.js";
+import { KT } from "./use-layout-service.react.js";
+import { pRt } from "./use-machine-reachability.react.js";
+import { $v_ } from "./use-machine-resources.react.js";
+import { QTe } from "./use-motion-reduced.react.js";
+import { Lmc } from "./use-open-preferred-pull-request-externally-services.react.js";
+import { $h } from "./use-reactive.react_2.js";
+import { In } from "./use-service.react_2.js";
+import { Gyc } from "./visible-pr-list.react.js";
+import { cm } from "./workspace-helpers.js";
+var k__, D4n, zyc;
+export { D4n, k__, zyc };
+var __wakaru_Vyc_initialized = false;
+export function Vyc() {
+if (__wakaru_Vyc_initialized) return;
+__wakaru_Vyc_initialized = true;
+"use strict";
+E(), iEe(), Mt(), nl(), Hn(), rp(), xd(), _7i(), AEn(), Ss(), Ru(), IG(), KT(), Lmc(), QTe(), $h(), In(), yp(), qV(), $G(), NE(), cD(), FA(), BOs(), Mv_(), SQt(), cm(), iRt(), pRt(), $v_(), Wv_(), iUC(), jyc(), kUC(), u__(), IUC(), b__(), Gyc(), jyc(), k__ = 300, D4n = "base", zyc = "collapsed-apps-rail-side-chats";
+
+}

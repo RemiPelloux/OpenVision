@@ -1,0 +1,6 @@
+var __wakaru_Qvg_initialized = false;
+export function Qvg() {
+if (__wakaru_Qvg_initialized) return;
+__wakaru_Qvg_initialized = true;
+
+}

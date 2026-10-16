@@ -1,0 +1,1 @@
+function ps(e){if(e.fieldKind=="message"&&!e.oneof&&Xn(e.message))return e.message.fields[0].scalar==N.BYTES?ja:void 0;if(e.message.typeName=="google.protobuf.Struct"&&e.parent.typeName!=="google.protobuf.Value")return;const t=e.message;let r;return n=>!Sn(n)||Cm(n,t)?n:(r??(r=lv(t)),r(n))}

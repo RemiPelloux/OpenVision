@@ -1,0 +1,1 @@
+function $N(e){return By("svg",{xmlns:"http://www.w3.org/2000/svg",fill:"currentColor","data-icon":"icon-chevron-left-sm",viewBox:"0 0 24 24",display:"flex",role:"img",width:"1em",height:"1em",...e,children:By("path",{d:"M13.91 7.5 9.41 12l4.5 4.5-1.41 1.41L6.59 12l5.91-5.91z"})})}

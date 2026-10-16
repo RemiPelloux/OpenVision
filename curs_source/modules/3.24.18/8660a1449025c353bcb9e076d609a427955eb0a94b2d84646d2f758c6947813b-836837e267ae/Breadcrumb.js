@@ -1,0 +1,172 @@
+import { Unp, hjS } from "./BreadcrumbHoverCard.js";
+import { YSt } from "./PreviewCard.js";
+import { MPr } from "./PreviewCard.types.js";
+import { dy } from "./Text.js";
+import { qu } from "./attach.js";
+import { jnp } from "./breadcrumb-primitives.js";
+import { wpi } from "./context-menu.js";
+import { fd } from "./icon.js";
+import { RjS } from "./ipa.js";
+import { Va } from "./stylex.js";
+import { hL } from "./tooltip.js";
+import { E } from "./tslib.es6.js";
+var ZY, ofi, Hnp, Wnp;
+export { Hnp, Wnp, ZY, ofi };
+var __wakaru_PjS_initialized = false;
+export function PjS() {
+if (__wakaru_PjS_initialized) return;
+__wakaru_PjS_initialized = true;
+"use strict";
+E(), Va(), hjS(), jnp(), MPr(), qu(), fd(), dy(), wpi(), hL(), YSt(), ZY = {
+    root: {
+        k1xSpc: "ui-78zum5",
+        k7Eaqz: "ui-euugli",
+        kzQI83: "ui-1iyjqo2",
+        kmuXW: "ui-s83m0k",
+        kCS8Yb: "ui-dl72j9",
+        ks0D6T: "ui-193iq5w",
+        kGNEyG: "ui-6s0dn4",
+        $$css: !0
+    },
+    rootMulti: {
+        kzQI83: "ui-1c4vz4f",
+        kmuXW: "ui-2lah0s",
+        kCS8Yb: "ui-dl72j9",
+        k7Eaqz: "ui-15x72sd",
+        ks0D6T: "ui-16q51m2",
+        kzqmXN: "ui-ezivpi",
+        $$css: !0
+    },
+    trigger: {
+        kVAEAm: "ui-1n2onr6",
+        k1xSpc: "ui-3nfvp2",
+        kZKoxP: "ui-1e94bgo",
+        kAzted: "ui-t6xkjb",
+        kB7OPa: "ui-9f619",
+        kGNEyG: "ui-6s0dn4",
+        kjj79g: "ui-1nhvcw1",
+        kOIVth: "ui-ehausa",
+        k7Eaqz: "ui-euugli",
+        kzQI83: "ui-1iyjqo2",
+        kmuXW: "ui-s83m0k",
+        kCS8Yb: "ui-dl72j9",
+        ks0D6T: "ui-193iq5w",
+        kzqmXN: "ui-h8yej3",
+        kysU6D: "ui-jyslct",
+        kEafiO: "ui-972fbf",
+        kWqL5O: "ui-gfja2r",
+        kt9PQ7: "ui-1qhh985",
+        kZ1KPB: "ui-yj58a3",
+        kPef9Z: "ui-1ejq31n",
+        kSWEuD: "ui-11pwa6s",
+        kfdmCh: "ui-1sy0etr",
+        k4WBpm: "ui-1b16gh4",
+        kaIpWk: "ui-1043rbw",
+        keoZOQ: "ui-dj266r",
+        km5ZXQ: "ui-1yf7rl7",
+        k1K539: "ui-at24cr",
+        koQZXg: "ui-j3b58b",
+        kLKAdn: "ui-exx8yu",
+        kpe85a: "ui-17v7654",
+        kGO01o: "ui-18d9i69",
+        kE3dHu: "ui-1lfpczk",
+        kMv6JI: "ui-jb2p0i",
+        kGuDYH: "ui-1qlqyl8",
+        kKX8nH: "ui-1t35e8",
+        k63SB2: "ui-1pd3egz",
+        kLWn49: "ui-15bjb6t",
+        kMwMTN: "ui-1heor9g",
+        kkrTdU: "ui-1ypdohk",
+        k1ekBW: "ui-15406qy",
+        kIyJzY: "ui-g3p6pi",
+        kAMwcw: "ui-6tor67",
+        kMeerF: "ui-1k57tk5 ui-784prv",
+        k3XXqK: "ui-1t137rt ui-9v5kkp",
+        kjBf7l: "ui-1uczgqu ui-dt7ydb",
+        kInvED: "ui-1wfwxd8 ui-7s97pk",
+        $$css: !0
+    },
+    triggerCompound: {
+        kE3dHu: "ui-1uhho1l",
+        kpe85a: "ui-1xpa7k",
+        kzqmXN: "ui-14atkfc",
+        kzQI83: "ui-1c4vz4f",
+        kmuXW: "ui-s83m0k",
+        kCS8Yb: "ui-dl72j9",
+        k7Eaqz: "ui-euugli",
+        $$css: !0
+    },
+    triggerCompoundParent: {
+        ks0D6T: "ui-1ncir08",
+        $$css: !0
+    },
+    triggerCompoundMain: {
+        kzQI83: "ui-1iyjqo2",
+        kmuXW: "ui-s83m0k",
+        kCS8Yb: "ui-dl72j9",
+        k7Eaqz: "ui-euugli",
+        $$css: !0
+    },
+    triggerHasBreadcrumbsPadding: {
+        kE3dHu: "ui-1uhho1l",
+        kpe85a: "ui-1xpa7k",
+        $$css: !0
+    },
+    triggerMulti: {
+        kzQI83: "ui-1c4vz4f",
+        kmuXW: "ui-2lah0s",
+        kCS8Yb: "ui-dl72j9",
+        k7Eaqz: "ui-15x72sd",
+        kzqmXN: "ui-eq5yr9",
+        ks0D6T: "ui-16q51m2",
+        $$css: !0
+    },
+    triggerBgDefault: {
+        kWkggS: "ui-jbqb8w ui-qjnua1 ui-1p6j26l",
+        $$css: !0
+    },
+    triggerBgActive: {
+        kWkggS: "ui-flfp0o ui-1iuyybk ui-1p6j26l",
+        $$css: !0
+    },
+    triggerBgHasBreadcrumbs: {
+        kWkggS: "ui-jbqb8w",
+        $$css: !0
+    },
+    triggerBgActiveHasBreadcrumbs: {
+        kWkggS: "ui-flfp0o",
+        $$css: !0
+    }
+}, ofi = {
+    base: {
+        kEafiO: "ui-178xt8z",
+        ke9TFa: "ui-1lun4ml",
+        kt9PQ7: "ui-so031l",
+        k2ei4v: "ui-pilrb4",
+        kPef9Z: "ui-13fuv20",
+        k8ry5P: "ui-18b5jzi",
+        kfdmCh: "ui-1q0q8m5",
+        kVhnKS: "ui-1t7ytsu",
+        kLZC3w: "ui-p9pnto",
+        kBCPoo: "ui-gtm274",
+        kL6WhQ: "ui-16gzn2n",
+        kGJrpR: "ui-fysgsd",
+        kWkggS: "ui-1baer3o",
+        k6WDB: "ui-1qb2erx",
+        kGVxlE: "ui-3t1j80",
+        kXHlph: "ui-6ikm8r",
+        kORKVm: "ui-10wlt62",
+        $$css: !0
+    },
+    content: {
+        kLKAdn: "ui-exx8yu",
+        kwRFfy: "ui-yri2b",
+        kGO01o: "ui-18d9i69",
+        kZCmMZ: "ui-1c1uobl",
+        $$css: !0
+    }
+}, Hnp = 4e3, Wnp = Object.assign(RjS, {
+    HoverCard: Unp
+});
+
+}

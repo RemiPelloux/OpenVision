@@ -1,0 +1,1 @@
+function I5(e,t,r={}){e.notify("AnimationStart",t);let n;if(Array.isArray(t)){const o=t.map(i=>Hl(e,i,r));n=Promise.all(o)}else if(typeof t=="string")n=Hl(e,t,r);else{const o=typeof t=="function"?$n(e,t,r.custom):t;n=Promise.all(Ix(e,o,r))}return n.then(()=>{e.notify("AnimationComplete",t)})}

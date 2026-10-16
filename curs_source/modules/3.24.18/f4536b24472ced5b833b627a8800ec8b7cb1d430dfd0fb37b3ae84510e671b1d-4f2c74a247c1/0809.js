@@ -1,0 +1,1 @@
+function Ff(e){const t=a((r,n)=>{const o=Rr(Sk).current;let i;try{Lf=o;for(const s of Df)s.before(o);i=e(r,n);for(const s of Df)s.after(o);o.didInitialize=!0}finally{Lf=void 0}return i},"FastComponent");return t.displayName=e.displayName||e.name,t}

@@ -1,0 +1,1 @@
+function rP(e){const t=e.regionCode.trim().toUpperCase(),r=e.postalCode.trim();if(t===""||!tP(t,r))return;const n=e.addressLines?.flatMap(o=>o.trim()||[])??[];return{regionCode:t,postalCode:r,administrativeAreaCode:e.administrativeAreaCode?.trim()||void 0,addressLines:n.length>0?n:void 0,locality:e.locality?.trim()||void 0}}

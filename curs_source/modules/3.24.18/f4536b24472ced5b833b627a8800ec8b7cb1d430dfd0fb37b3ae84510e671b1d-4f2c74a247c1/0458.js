@@ -1,0 +1,1 @@
+var jS=class{static{a(this,"Removable")}#e;destroy(){this.clearGcTimeout()}scheduleGc(){this.clearGcTimeout(),Ep(this.gcTime)&&(this.#e=co.setTimeout(()=>{this.optionalRemove()},this.gcTime))}updateGcTime(e){this.gcTime=Math.max(this.gcTime||0,e??(_p()?1/0:3e5))}clearGcTimeout(){this.#e!==void 0&&(co.clearTimeout(this.#e),this.#e=void 0)}};

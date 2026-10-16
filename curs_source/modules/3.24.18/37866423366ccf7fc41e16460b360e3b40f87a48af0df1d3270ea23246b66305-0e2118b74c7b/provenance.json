@@ -1,0 +1,14 @@
+{
+  "format": "webpack5",
+  "strategy": "structural",
+  "modules": {
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[15728,15838]], "extraction": "structural"},
+    "module-184.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[4821,13787]], "extraction": "structural"},
+    "module-377.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[13809,15125]], "extraction": "structural"},
+    "module-398.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[15135,15162]], "extraction": "structural"},
+    "module-857.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[15172,15195]], "extraction": "structural"},
+    "module-928.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[15205,15230]], "extraction": "structural"},
+    "module-93.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[39,4799]], "extraction": "structural"},
+    "module-982.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-ndjson-ingest\\dist\\main.js", "ranges": [[15240,15267]], "extraction": "structural"}
+  }
+}

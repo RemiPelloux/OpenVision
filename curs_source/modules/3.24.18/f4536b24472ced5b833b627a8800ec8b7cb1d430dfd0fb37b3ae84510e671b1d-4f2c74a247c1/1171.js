@@ -1,0 +1,1 @@
+function vh({className:e,render:t,checkoutLabel:r,saveLabel:n}){const{state:o}=nr(),{t:i}=Be(),s=o.wallet.status!=="ready"||o.wallet.wallet.availability.kind==="unavailable"||o.submitting||!o.buying&&!o.ruleChanged,c=o.buying?r??i("Checkout"):n??i("Save");return t!==void 0?t({children:c,disabled:s,type:"submit"}):Wo("button",{type:"submit",className:e,disabled:s,children:c})}

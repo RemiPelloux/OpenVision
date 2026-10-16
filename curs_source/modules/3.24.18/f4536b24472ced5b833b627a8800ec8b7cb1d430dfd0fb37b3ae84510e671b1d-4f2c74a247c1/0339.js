@@ -1,0 +1,1 @@
+function eS({className:e,render:t,children:r}){const{t:n}=Be(),o=Nt();return!o.canAdd||o.add.status!=="idle"&&o.add.status!=="added"?null:qt(Kr,{className:e,disabled:o.busy,onClick:o.actions.beginAdd,render:t,children:r??n("Add payment method")})}

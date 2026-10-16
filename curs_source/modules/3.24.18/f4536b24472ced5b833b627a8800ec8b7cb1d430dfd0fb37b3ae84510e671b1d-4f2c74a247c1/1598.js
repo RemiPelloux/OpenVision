@@ -1,0 +1,1 @@
+function tg(){if(eg.current=!0,!!gj)if(window.matchMedia){const e=window.matchMedia("(prefers-reduced-motion)"),t=a(()=>nm.current=e.matches,"setReducedMotionPreferences");e.addEventListener("change",t),t()}else nm.current=!1}

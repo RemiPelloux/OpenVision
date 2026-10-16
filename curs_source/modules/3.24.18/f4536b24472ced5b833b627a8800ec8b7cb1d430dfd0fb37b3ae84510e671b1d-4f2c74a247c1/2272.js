@@ -1,0 +1,1 @@
+a(Cm,"isMessage");

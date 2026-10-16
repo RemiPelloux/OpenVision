@@ -1,0 +1,1 @@
+function CT(e,t){return qr({kind:"schema",type:"optional",reference:CT,expects:`(${e.expects} | undefined)`,async:!1,wrapped:e,default:t,"~run"(r,n){return r.value===void 0&&(this.default!==void 0&&(r.value=Xf(this,r,n)),r.value===void 0)?(r.typed=!0,r):this.wrapped["~run"](r,n)}})}

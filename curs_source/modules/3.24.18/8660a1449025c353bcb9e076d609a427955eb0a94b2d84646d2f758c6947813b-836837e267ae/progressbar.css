@@ -1,0 +1,6 @@
+var __wakaru_xRk_initialized = false;
+export function xRk() {
+if (__wakaru_xRk_initialized) return;
+__wakaru_xRk_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_JMy_initialized = false;
+export function JMy() {
+if (__wakaru_JMy_initialized) return;
+__wakaru_JMy_initialized = true;
+
+}

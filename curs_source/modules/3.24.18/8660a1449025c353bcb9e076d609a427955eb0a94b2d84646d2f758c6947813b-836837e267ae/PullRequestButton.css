@@ -1,0 +1,6 @@
+var __wakaru_Z2w_initialized = false;
+export function Z2w() {
+if (__wakaru_Z2w_initialized) return;
+__wakaru_Z2w_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function rO(e){const t=e.localName,r=nO(e);return(n,o,i)=>{if(o===null)return;if(!Array.isArray(o))throw new ct(e,"expected Array, got "+St(o));const s=n[t];for(let c=0;c<o.length;c++){const l=r(o[c],i,s.length);l!==Ka&&s.push(l)}}}

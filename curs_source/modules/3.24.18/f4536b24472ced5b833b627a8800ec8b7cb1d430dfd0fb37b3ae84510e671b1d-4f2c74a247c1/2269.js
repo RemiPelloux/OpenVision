@@ -1,0 +1,1 @@
+function c_({prepaidClient:e,open:t,onOpenChange:r,returnUrl:n,themeType:o,skin:i,locale:s,onOpenUrl:c}){return Jy(ds,{locale:s,onOpenUrl:c,prepaidClient:e,skin:i,themeType:o,children:Jy(G0,{onOpenChange:r,open:t,returnUrl:n})})}

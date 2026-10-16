@@ -1,0 +1,1 @@
+function tM(e,t="std"){if(eM)return eM.call(e,IH[t]);const r=kv(t),n=t=="std";let o="",i=0,s,c=0;for(let l=0;l<e.length;l++)switch(s=e[l],i){case 0:o+=r[s>>2],c=(s&3)<<4,i=1;break;case 1:o+=r[c|s>>4],c=(s&15)<<2,i=2;break;case 2:o+=r[c|s>>6],o+=r[s&63],i=0;break}return i&&(o+=r[c],n&&(o+="=",i==1&&(o+="="))),o}

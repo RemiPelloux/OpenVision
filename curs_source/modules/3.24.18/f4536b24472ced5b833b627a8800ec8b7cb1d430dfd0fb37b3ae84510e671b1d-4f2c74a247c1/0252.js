@@ -1,0 +1,1 @@
+function hc(e){e.forEach(t=>{if(delete t.location,Rd(t)||Nd(t))for(const r in t.options)delete t.options[r].location,hc(t.options[r].value);else Cd(t)&&_d(t.style)||(Id(t)||Ad(t))&&pc(t.style)?delete t.style.location:Pd(t)&&hc(t.children)})}

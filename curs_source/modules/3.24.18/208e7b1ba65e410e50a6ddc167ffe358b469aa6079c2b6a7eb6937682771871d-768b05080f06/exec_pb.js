@@ -1,0 +1,41 @@
+import { Iat } from "./agent_store_conflict_exec_pb.js";
+import { DP } from "./background_shell_exec_pb.js";
+import { _at } from "./canvas_diagnostics_exec_pb.js";
+import { QP } from "./computer_use_tool_pb.js";
+import { kie } from "./conversation_search_exec_pb.js";
+import { tee } from "./delete_exec_pb.js";
+import { ew } from "./diagnostics_exec_pb.js";
+import { zte } from "./fetch_exec_pb.js";
+import { vee } from "./grep_exec_pb.js";
+import { CP } from "./hook_additional_context_pb.js";
+import { Aat } from "./hooks_pb.js";
+import { Lg } from "./ls_exec_pb.js";
+import { Tat } from "./mcp_allowlist_precheck_exec_pb.js";
+import { Cg } from "./mcp_exec_pb.js";
+import { yat } from "./pi_bash_exec_pb.js";
+import { wat } from "./pi_edit_exec_pb.js";
+import { Rat } from "./pi_find_exec_pb.js";
+import { bat } from "./pi_grep_exec_pb.js";
+import { Cat } from "./pi_ls_exec_pb.js";
+import { Sat } from "./pi_read_exec_pb.js";
+import { Eat } from "./pi_write_exec_pb.js";
+import { F } from "./protobuf.js";
+import { gat } from "./read_exec_pb.js";
+import { UP } from "./record_screen_exec_pb.js";
+import { zN } from "./request_context_exec_pb.js";
+import { vat } from "./shell_allowlist_precheck_exec_pb.js";
+import { du } from "./shell_exec_pb.js";
+import { pP } from "./smart_mode_classifier_exec_pb.js";
+import { fat } from "./subagent_exec_pb.js";
+import { h } from "./tslib.es6.js";
+import { lr } from "./utils_pb_2.js";
+import { kat } from "./web_fetch_allowlist_precheck_exec_pb.js";
+import { hat } from "./write_exec_pb.js";
+var __wakaru_Mat_initialized = false;
+export function Mat() {
+if (__wakaru_Mat_initialized) return;
+__wakaru_Mat_initialized = true;
+"use strict";
+h(), F(), du(), hat(), tee(), vee(), gat(), Lg(), ew(), zN(), Cg(), DP(), zte(), UP(), QP(), fat(), pP(), _at(), vat(), Tat(), kat(), lr(), Sat(), yat(), wat(), Eat(), bat(), Rat(), Cat(), kie(), Iat(), CP(), Aat();
+
+}

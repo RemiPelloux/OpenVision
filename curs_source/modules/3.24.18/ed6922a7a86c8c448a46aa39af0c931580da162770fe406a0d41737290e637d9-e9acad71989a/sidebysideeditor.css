@@ -1,0 +1,6 @@
+var __wakaru_Xl__initialized = false;
+export function Xl_() {
+if (__wakaru_Xl__initialized) return;
+__wakaru_Xl__initialized = true;
+
+}

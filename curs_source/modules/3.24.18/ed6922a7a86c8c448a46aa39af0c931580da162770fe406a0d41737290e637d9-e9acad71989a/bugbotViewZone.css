@@ -1,0 +1,6 @@
+var __wakaru_q___initialized = false;
+export function q__() {
+if (__wakaru_q___initialized) return;
+__wakaru_q___initialized = true;
+
+}

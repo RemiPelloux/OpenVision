@@ -1,0 +1,338 @@
+import { defineOwn, enumType2 } from "../../../../../external_exports.js";
+import { Timestamp } from "../../../../../node_modules/.pnpm/_8fe50e43c18d65d89126ee88d56fab73/node_modules/@bufbuild/protobuf/dist/esm/google/protobuf/timestamp_pb.js";
+import { init_esm2 } from "../../../../../node_modules/.pnpm/_8fe50e43c18d65d89126ee88d56fab73/node_modules/@bufbuild/protobuf/dist/esm/index.js";
+import { protoInt64 } from "../../../../../node_modules/.pnpm/_8fe50e43c18d65d89126ee88d56fab73/node_modules/@bufbuild/protobuf/dist/esm/proto-int64.js";
+import { proto3 } from "../../../../../node_modules/.pnpm/_8fe50e43c18d65d89126ee88d56fab73/node_modules/@bufbuild/protobuf/dist/esm/proto3.js";
+import { ClientRepoIdentifier, init_origin_common_pb } from "./origin_common_pb.js";
+import { CompactMessage, init_compact } from "../../../runtime/compact.js";
+var __protoPackage177, __protoMessage3170, ImportedGithubPullRequestState, ImportedGithubReviewVerdict, ImportedGithubCommentSide, ImportGithubPullRequestRequest, ImportGithubPullRequestResponse, ImportedGithubPullRequest, ImportedGithubActor, ImportedGithubReview, ImportedGithubReviewComment, ImportedGithubIssueComment, ImportedGithubTimelineEvent;
+export { ImportGithubPullRequestRequest, ImportGithubPullRequestResponse, ImportedGithubActor, ImportedGithubCommentSide, ImportedGithubIssueComment, ImportedGithubPullRequest, ImportedGithubPullRequestState, ImportedGithubReview, ImportedGithubReviewComment, ImportedGithubReviewVerdict, ImportedGithubTimelineEvent, __protoMessage3170, __protoPackage177 };
+var __wakaru_init_pull_request_import_pb_initialized = false;
+export function init_pull_request_import_pb() {
+if (__wakaru_init_pull_request_import_pb_initialized) return;
+__wakaru_init_pull_request_import_pb_initialized = true;
+"use strict";
+init_esm2();
+init_origin_common_pb();
+init_compact();
+__protoPackage177 = "origin.v1.";
+__protoMessage3170 = class extends CompactMessage {
+    static get runtime() {
+        return defineOwn(this, "runtime", proto3);
+    }
+    static $p() {
+        return __protoPackage177;
+    }
+};
+ImportedGithubPullRequestState = enumType2(proto3, __protoPackage177, "ImportedGithubPullRequestState", [
+    [
+        0,
+        "UNSPECIFIED"
+    ],
+    [
+        1,
+        "OPEN"
+    ],
+    [
+        2,
+        "CLOSED"
+    ],
+    [
+        3,
+        "MERGED"
+    ]
+], 1);
+ImportedGithubReviewVerdict = enumType2(proto3, __protoPackage177, "ImportedGithubReviewVerdict", [
+    [
+        0,
+        "UNSPECIFIED"
+    ],
+    [
+        1,
+        "APPROVE"
+    ],
+    [
+        2,
+        "REQUEST_CHANGES"
+    ],
+    [
+        3,
+        "COMMENT"
+    ]
+], 1);
+ImportedGithubCommentSide = enumType2(proto3, __protoPackage177, "ImportedGithubCommentSide", [
+    [
+        0,
+        "UNSPECIFIED"
+    ],
+    [
+        1,
+        "LEFT"
+    ],
+    [
+        2,
+        "RIGHT"
+    ]
+], 1);
+ImportGithubPullRequestRequest = class _ImportGithubPullRequestRequest extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.allowDefaultActorFallback = false;
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportGithubPullRequestRequest().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportGithubPullRequestRequest().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportGithubPullRequestRequest().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportGithubPullRequestRequest, a, b2);
+    }
+    static $() {
+        return [
+            "ImportGithubPullRequestRequest|1 identifier #0|2 pull_request #1|3 allow_default_actor_fallback 8",
+            ClientRepoIdentifier,
+            ImportedGithubPullRequest
+        ];
+    }
+};
+ImportGithubPullRequestResponse = class _ImportGithubPullRequestResponse extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.changeId = "";
+        this.number = 0;
+        this.versionsCreated = 0;
+        this.reviewsCreated = 0;
+        this.threadsCreated = 0;
+        this.commentsCreated = 0;
+        this.timelineEventsCreated = 0;
+        this.warnings = [];
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportGithubPullRequestResponse().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportGithubPullRequestResponse().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportGithubPullRequestResponse().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportGithubPullRequestResponse, a, b2);
+    }
+    static $() {
+        return [
+            "ImportGithubPullRequestResponse|1 change_id 9|2 number 5|3 versions_created 5|4 reviews_created 5|5 threads_created 5|6 comments_created 5|7 timeline_events_created 5|8 warnings 9*"
+        ];
+    }
+};
+ImportedGithubPullRequest = class _ImportedGithubPullRequest extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.number = 0;
+        this.githubNodeId = "";
+        this.title = "";
+        this.description = "";
+        this.state = ImportedGithubPullRequestState.UNSPECIFIED;
+        this.draft = false;
+        this.authorLogin = "";
+        this.headRef = "";
+        this.headSha = "";
+        this.baseRef = "";
+        this.baseSha = "";
+        this.mergeCommitSha = "";
+        this.mergedByLogin = "";
+        this.reviews = [];
+        this.reviewComments = [];
+        this.issueComments = [];
+        this.timelineEvents = [];
+        this.actors = [];
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportedGithubPullRequest().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportedGithubPullRequest().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportedGithubPullRequest().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportedGithubPullRequest, a, b2);
+    }
+    static $() {
+        return [
+            "ImportedGithubPullRequest|1 number 5|2 github_node_id 9|3 title 9|4 description 9|5 state #0|6 draft 8|7 author_login 9|8 head_ref 9|9 head_sha 9|10 base_ref 9|11 base_sha 9|12 created_at #1|13 merged_at #1?|14 closed_at #1?|15 merge_commit_sha 9|16 merged_by_login 9|17 reviews #2*|18 review_comments #3*|19 issue_comments #4*|20 timeline_events #5*|21 actors #6*",
+            ImportedGithubPullRequestState,
+            Timestamp,
+            ImportedGithubReview,
+            ImportedGithubReviewComment,
+            ImportedGithubIssueComment,
+            ImportedGithubTimelineEvent,
+            ImportedGithubActor
+        ];
+    }
+};
+ImportedGithubActor = class _ImportedGithubActor extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.login = "";
+        this.githubUserNodeId = "";
+        this.githubUserDatabaseId = protoInt64.zero;
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportedGithubActor().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportedGithubActor().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportedGithubActor().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportedGithubActor, a, b2);
+    }
+    static $() {
+        return [
+            "ImportedGithubActor|1 login 9|2 github_user_node_id 9|3 github_user_database_id 3"
+        ];
+    }
+};
+ImportedGithubReview = class _ImportedGithubReview extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.githubNodeId = "";
+        this.authorLogin = "";
+        this.verdict = ImportedGithubReviewVerdict.UNSPECIFIED;
+        this.body = "";
+        this.commitSha = "";
+        this.dismissedByLogin = "";
+        this.dismissalMessage = "";
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportedGithubReview().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportedGithubReview().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportedGithubReview().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportedGithubReview, a, b2);
+    }
+    static $() {
+        return [
+            "ImportedGithubReview|1 github_node_id 9|2 author_login 9|3 verdict #0|4 body 9|5 commit_sha 9|6 submitted_at #1|7 dismissed_at #1?|8 dismissed_by_login 9|9 dismissal_message 9",
+            ImportedGithubReviewVerdict,
+            Timestamp
+        ];
+    }
+};
+ImportedGithubReviewComment = class _ImportedGithubReviewComment extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.githubNodeId = "";
+        this.reviewGithubNodeId = "";
+        this.inReplyToGithubNodeId = "";
+        this.authorLogin = "";
+        this.body = "";
+        this.path = "";
+        this.commitSha = "";
+        this.side = ImportedGithubCommentSide.UNSPECIFIED;
+        this.startLine = 0;
+        this.endLine = 0;
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportedGithubReviewComment().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportedGithubReviewComment().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportedGithubReviewComment().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportedGithubReviewComment, a, b2);
+    }
+    static $() {
+        return [
+            "ImportedGithubReviewComment|1 github_node_id 9|2 review_github_node_id 9|3 in_reply_to_github_node_id 9|4 author_login 9|5 body 9|6 path 9|7 commit_sha 9|8 side #0|9 start_line 5|10 end_line 5|11 created_at #1",
+            ImportedGithubCommentSide,
+            Timestamp
+        ];
+    }
+};
+ImportedGithubIssueComment = class _ImportedGithubIssueComment extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.githubNodeId = "";
+        this.authorLogin = "";
+        this.body = "";
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportedGithubIssueComment().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportedGithubIssueComment().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportedGithubIssueComment().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportedGithubIssueComment, a, b2);
+    }
+    static $() {
+        return [
+            "ImportedGithubIssueComment|1 github_node_id 9|2 author_login 9|3 body 9|4 created_at #0",
+            Timestamp
+        ];
+    }
+};
+ImportedGithubTimelineEvent = class _ImportedGithubTimelineEvent extends __protoMessage3170 {
+    constructor(data){
+        super();
+        this.githubEvent = "";
+        this.actorLogin = "";
+        this.label = "";
+        this.subjectLogin = "";
+        this.previousTitle = "";
+        this.newTitle = "";
+        this.previousSha = "";
+        this.newSha = "";
+        this.previousBaseRef = "";
+        this.newBaseRef = "";
+        this.dismissedReviewGithubNodeId = "";
+        proto3.util.initPartial(data, this);
+    }
+    static fromBinary(bytes, options2) {
+        return new _ImportedGithubTimelineEvent().fromBinary(bytes, options2);
+    }
+    static fromJson(jsonValue, options2) {
+        return new _ImportedGithubTimelineEvent().fromJson(jsonValue, options2);
+    }
+    static fromJsonString(jsonString, options2) {
+        return new _ImportedGithubTimelineEvent().fromJsonString(jsonString, options2);
+    }
+    static equals(a, b2) {
+        return proto3.util.equals(_ImportedGithubTimelineEvent, a, b2);
+    }
+    static $() {
+        return [
+            "ImportedGithubTimelineEvent|1 github_event 9|2 actor_login 9|3 created_at #0|4 label 9|5 subject_login 9|6 previous_title 9|7 new_title 9|8 previous_sha 9|9 new_sha 9|10 previous_base_ref 9|11 new_base_ref 9|12 dismissed_review_github_node_id 9",
+            Timestamp
+        ];
+    }
+};
+
+}

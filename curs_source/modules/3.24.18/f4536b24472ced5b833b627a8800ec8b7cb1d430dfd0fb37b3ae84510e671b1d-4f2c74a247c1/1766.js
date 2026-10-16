@@ -1,0 +1,1 @@
+function oR(...e){return t=>{let r=!1;const n=e.map(o=>{const i=Bg(o,t);return!r&&typeof i=="function"&&(r=!0),i});if(r)return()=>{for(let o=0;o<n.length;o++){const i=n[o];typeof i=="function"?i():Bg(e[o],null)}}}}

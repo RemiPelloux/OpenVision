@@ -1,0 +1,1 @@
+function GI(e){const[t,r]=e.slice(0,-1).split("(");if(t==="drop-shadow")return e;const[n]=r.match(Lh)||[];if(!n)return e;const o=r.replace(n,"");let i=g8.has(t)?1:0;return n!==r&&(i*=100),t+"("+i+o+")"}

@@ -1,0 +1,1 @@
+function cg(e){if(!e)return;if(!e.isControllingVariants){const r=e.parent?cg(e.parent)||{}:{};return e.props.initial!==void 0&&(r.initial=e.props.initial),r}const t={};for(let r=0;r<Sj;r++){const n=rm[r],o=e.props[n];(Oa(o)||o===!1)&&(t[n]=o)}return t}

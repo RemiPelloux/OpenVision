@@ -1,0 +1,1 @@
+function $w(e,t){let r="";for(let n=0;n<e.length;n++){const o=e.charAt(n);if(o==="j"){let i=0;for(;n+1<e.length&&e.charAt(n+1)===o;)i++,n++;let s=1+(i&1),c=i<2?1:3+(i>>1),l="a",m=Kw(t);for((m=="H"||m=="k")&&(c=0);c-- >0;)r+=l;for(;s-- >0;)r=m+r}else o==="J"?r+="H":r+=o}return r}

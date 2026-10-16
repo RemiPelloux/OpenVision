@@ -1,0 +1,1 @@
+function CM(e){return Object.assign(Object.create({syntax:"",edition:0}),Object.assign(Object.assign({$typeName:"google.protobuf.FileDescriptorProto",dependency:[],publicDependency:[],weakDependency:[],optionDependency:[],service:[],extension:[]},e),{messageType:e.messageType.map(Mv),enumType:e.enumType.map(Ov)}))}

@@ -1,0 +1,7 @@
+module.exports = function(obj) {
+    return {
+        iterator: obj,
+        next: obj.next,
+        done: false
+    };
+};

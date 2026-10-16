@@ -1,0 +1,41 @@
+import { tMt } from "./agent-menu-controller.js";
+import { Yle } from "./agent-migration-targets.js";
+import { JMe } from "./agent-temp-repo-display.js";
+import { rp } from "./bcIdFromAuthority.js";
+import { Nw } from "./cloudEnvironmentTemplateService.js";
+import { wS } from "./displayHelpers.js";
+import { Q4n } from "./glass-clone-repository-service.js";
+import { Zu } from "./glass-log-service.js";
+import { FA } from "./glass-side-chat-utils.js";
+import { xd } from "./glass-workspace-context-service.js";
+import { Jme } from "./glass-workspaces-service.js";
+import { RYt } from "./localPrivateWorkers.js";
+import { WT } from "./project-selector-utils.js";
+import { L_ } from "./projectService.js";
+import { el } from "./reactiveStorageServiceTypes.js";
+import { $Fi } from "./remote-control-migration-target.js";
+import { PJt } from "./remoteAgentHostGate.js";
+import { VX } from "./resolved-project-source.js";
+import { E } from "./tslib.es6.js";
+import { kBi } from "./use-agent-migration-targets.react.js";
+import { GBe } from "./use-cloud-agents-privacy.react.js";
+import { cEe } from "./use-cloud-projects.react.js";
+import { Ru } from "./use-feature-gate.react_2.js";
+import { nJt } from "./use-private-workers.react.js";
+import { G6 } from "./use-project-agents.react.js";
+import { $h } from "./use-reactive.react_2.js";
+import { JEs } from "./use-remote-control-user-setting.react.js";
+import { qBe } from "./use-remote-control.react.js";
+import { In } from "./use-service.react_2.js";
+import { cm } from "./workspace-helpers.js";
+import { Lh } from "./workspaceMetadataService.js";
+var Tkc;
+export { Tkc };
+var __wakaru_DsT_initialized = false;
+export function DsT() {
+if (__wakaru_DsT_initialized) return;
+__wakaru_DsT_initialized = true;
+"use strict";
+E(), rp(), el(), Nw(), PJt(), L_(), wS(), RYt(), Lh(), kBi(), GBe(), cEe(), Ru(), qBe(), $h(), JEs(), In(), Q4n(), Jme(), Zu(), xd(), tMt(), Yle(), JMe(), FA(), G6(), $Fi(), VX(), cm(), WT(), nJt(), Tkc = "status_bar_environment_picker";
+
+}

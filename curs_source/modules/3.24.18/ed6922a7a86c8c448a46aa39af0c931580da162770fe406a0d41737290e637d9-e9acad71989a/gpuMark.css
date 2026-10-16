@@ -1,0 +1,6 @@
+var __wakaru_obg_initialized = false;
+export function obg() {
+if (__wakaru_obg_initialized) return;
+__wakaru_obg_initialized = true;
+
+}

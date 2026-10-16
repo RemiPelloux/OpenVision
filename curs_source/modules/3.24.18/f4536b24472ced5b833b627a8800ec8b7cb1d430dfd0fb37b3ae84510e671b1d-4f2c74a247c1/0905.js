@@ -1,0 +1,1 @@
+function iT(e){const t=Du.useRef(""),r=Du.useCallback(o=>{o.defaultPrevented||(t.current=o.pointerType,e(o,o.pointerType))},[e]);return{onClick:Du.useCallback(o=>{if(o.detail===0){e(o,"keyboard");return}"pointerType"in o?e(o,o.pointerType):e(o,t.current),t.current=""},[e]),onPointerDown:r}}

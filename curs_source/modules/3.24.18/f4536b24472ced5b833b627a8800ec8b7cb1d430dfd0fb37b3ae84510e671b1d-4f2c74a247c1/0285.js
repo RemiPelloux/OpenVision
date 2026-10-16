@@ -1,0 +1,1 @@
+function Wd(e,t){switch(t.type){case"text":return e+t.content;case"tag":{const r=t.voidElement&&t.name.toLowerCase()!=="!doctype"?"/>":">";return e+="<"+t.name+(t.attrs?B1(t.attrs):"")+r,t.voidElement?e:e+t.children.reduce(Wd,"")+"</"+t.name+">"}case"comment":return e+="<!--"+t.comment+"-->",e}}

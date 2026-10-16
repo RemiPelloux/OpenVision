@@ -1,0 +1,1 @@
+function YP(){return Qt("div",{className:"flex flex-col gap-4","aria-busy":!0,children:[ye($t,{className:"h-4 w-24"}),ye($t,{className:"h-8 w-32"}),ye($t,{className:"h-5 w-full"}),ye($t,{className:"h-5 w-full"})]})}

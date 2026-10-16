@@ -1,0 +1,1 @@
+var vS,bS,AV=ge({"use-stripe-scope-appearance.js"(){"use client";CV(),IV(),vS=`${hS}, (pointer: coarse)`,bS={md:{lineHeight:"20px",padding:"9px 16px"},"md-lg":{lineHeight:"21px",padding:"10px 16px"}},a(yp,"buildStripeAppearance"),a(wp,"resolveScopeAppearance"),a(Sp,"unchangedAppearance"),a(gS,"useStripeScopeAppearance")}}),yS={};

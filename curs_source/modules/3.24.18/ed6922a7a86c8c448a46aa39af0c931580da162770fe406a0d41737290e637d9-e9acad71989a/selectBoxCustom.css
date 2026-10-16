@@ -1,0 +1,6 @@
+var __wakaru_Ryg_initialized = false;
+export function Ryg() {
+if (__wakaru_Ryg_initialized) return;
+__wakaru_Ryg_initialized = true;
+
+}

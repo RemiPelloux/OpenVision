@@ -1,0 +1,1 @@
+function ER(e,t,r,{latestValues:n},o,i=!1,s,c){const m=(s??dm(e)?yR:vR)(t,n,o,e),u=SR(t,typeof e=="string",i,c),d=e!==LL?{...u,...m,ref:r}:{},{children:p}=t,h=FL(()=>Ct(p)?p.get():p,[p]);return VL(e,{...d,children:h})}

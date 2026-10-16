@@ -1,0 +1,6 @@
+var __wakaru_Xvg_initialized = false;
+export function Xvg() {
+if (__wakaru_Xvg_initialized) return;
+__wakaru_Xvg_initialized = true;
+
+}

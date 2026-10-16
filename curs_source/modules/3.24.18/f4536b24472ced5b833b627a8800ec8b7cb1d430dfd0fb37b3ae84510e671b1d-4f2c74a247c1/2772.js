@@ -1,0 +1,1 @@
+function aO(e){switch(e){case N.BOOL:return t=>{switch(t){case"true":return!0;case"false":return!1}return t};case N.INT32:case N.FIXED32:case N.UINT32:case N.SFIXED32:case N.SINT32:return rb;case N.INT64:case N.SINT64:case N.SFIXED64:case N.UINT64:case N.FIXED64:return t=>/^-?0+$/.test(t)?"0":t.replace(/^(-?)0+(?=\d)/,"$1");default:return t=>t}}

@@ -1,0 +1,27 @@
+var Cir;
+export { Cir };
+var __wakaru_ivi_initialized = false;
+export function ivi() {
+if (__wakaru_ivi_initialized) return;
+__wakaru_ivi_initialized = true;
+Cir = {
+    classId: "classID",
+    dataType: "datatype",
+    itemId: "itemID",
+    strokeDashArray: "strokeDasharray",
+    strokeDashOffset: "strokeDashoffset",
+    strokeLineCap: "strokeLinecap",
+    strokeLineJoin: "strokeLinejoin",
+    strokeMiterLimit: "strokeMiterlimit",
+    typeOf: "typeof",
+    xLinkActuate: "xlinkActuate",
+    xLinkArcRole: "xlinkArcrole",
+    xLinkHref: "xlinkHref",
+    xLinkRole: "xlinkRole",
+    xLinkShow: "xlinkShow",
+    xLinkTitle: "xlinkTitle",
+    xLinkType: "xlinkType",
+    xmlnsXLink: "xmlnsXlink"
+};
+
+}

@@ -1,0 +1,1 @@
+a(ws,"writeTypeOfScalar");

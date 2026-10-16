@@ -1,0 +1,6 @@
+var __wakaru_FHc_initialized = false;
+export function FHc() {
+if (__wakaru_FHc_initialized) return;
+__wakaru_FHc_initialized = true;
+
+}

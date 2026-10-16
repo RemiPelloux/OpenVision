@@ -1,0 +1,1 @@
+function Zf(e){return qr({kind:"schema",type:"number",reference:Zf,expects:"number",async:!1,message:e,"~run"(t,r){return typeof t.value=="number"&&!isNaN(t.value)?t.typed=!0:Nr(this,"type",t,r),t}})}

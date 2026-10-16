@@ -1,0 +1,1 @@
+function xl(e,t){const r=`${e}|${t}`,n=NC.get(r);if(n!==void 0)return n;const o=new Intl.NumberFormat(e,{style:"currency",currency:t}).formatToParts(0),i=o.findIndex(c=>c.type==="currency"),s={symbol:o[i]?.value??t,side:i<o.findIndex(c=>c.type==="integer")?"start":"end"};return NC.set(r,s),s}

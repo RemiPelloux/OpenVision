@@ -1,0 +1,6 @@
+var __wakaru_ac__initialized = false;
+export function ac_() {
+if (__wakaru_ac__initialized) return;
+__wakaru_ac__initialized = true;
+
+}

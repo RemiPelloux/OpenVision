@@ -1,0 +1,6 @@
+var __wakaru_Da__initialized = false;
+export function Da_() {
+if (__wakaru_Da__initialized) return;
+__wakaru_Da__initialized = true;
+
+}

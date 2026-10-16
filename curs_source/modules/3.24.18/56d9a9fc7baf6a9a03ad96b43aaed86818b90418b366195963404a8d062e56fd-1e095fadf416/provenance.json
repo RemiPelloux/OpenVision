@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "rewrite-bufbuild-loader.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-resolver\\rewrite-bufbuild-loader.js", "ranges": [[0,583]], "extraction": "structural"}
+  }
+}

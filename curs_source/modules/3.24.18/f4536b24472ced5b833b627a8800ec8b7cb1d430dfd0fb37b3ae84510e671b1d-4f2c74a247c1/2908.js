@@ -1,0 +1,1 @@
+function GO(e){switch(e){case Is.SUCCEEDED:return"succeeded";case Is.FAILED_TO_CHARGE:return"failed-charge";case Is.FAILED_TO_GENERATE_INVOICE:return"failed-invoice";case Is.TO_CHARGE:case Is.TO_GENERATE_INVOICE:return"pending";default:return}}

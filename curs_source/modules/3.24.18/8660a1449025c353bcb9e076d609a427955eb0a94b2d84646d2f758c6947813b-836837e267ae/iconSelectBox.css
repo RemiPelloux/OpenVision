@@ -1,0 +1,6 @@
+var __wakaru_rDk_initialized = false;
+export function rDk() {
+if (__wakaru_rDk_initialized) return;
+__wakaru_rDk_initialized = true;
+
+}

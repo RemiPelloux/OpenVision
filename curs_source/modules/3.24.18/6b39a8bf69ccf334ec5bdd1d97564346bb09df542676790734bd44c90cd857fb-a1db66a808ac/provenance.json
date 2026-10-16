@@ -1,0 +1,9 @@
+{
+  "format": "esbuild",
+  "strategy": "structural",
+  "modules": {
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-ORS33AAG.js", "ranges": [[1,265],[266,8308]], "extraction": "structural"},
+    "index.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-ORS33AAG.js", "ranges": [[8225,8263]], "extraction": "structural"},
+    "react.production.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\react-runtime\\chunk-ORS33AAG.js", "ranges": [[383,8224]], "extraction": "structural"}
+  }
+}

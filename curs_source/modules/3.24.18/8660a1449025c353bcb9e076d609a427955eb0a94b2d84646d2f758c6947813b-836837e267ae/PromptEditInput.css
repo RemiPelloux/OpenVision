@@ -1,0 +1,6 @@
+var __wakaru_Xbw_initialized = false;
+export function Xbw() {
+if (__wakaru_Xbw_initialized) return;
+__wakaru_Xbw_initialized = true;
+
+}

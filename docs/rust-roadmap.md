@@ -1,5 +1,9 @@
 # OpenVision Rust rewrite roadmap
 
+[Product progress, percentages and gate-based ETA](progress.md) ·
+[Current feature priorities](roadmap.md#ranked-rea-implementation-and-verification-work) ·
+[Recovery coverage](recovery-status.md)
+
 **Planning audit: 15 October 2026 · no Rust implementation or Rust performance result shipped.**
 Source reference: `a9ebd69691b5eed10c702d3dd6b9014814bdca5a`.
 

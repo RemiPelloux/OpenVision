@@ -1,0 +1,6056 @@
+{
+  "evidence_id": "ev_a597f9edb7ff51326d9da6ab52db7ac2e52477c6d605fd20eab416cd8290d0bc",
+  "subject": {
+    "name": "cursor_proclist.node",
+    "digest": {
+      "sha256": "928fbd09405cba7a73916b1941fe0016aadc551f42ffb2c42b42a99c2fbbb379"
+    },
+    "format": "pe",
+    "architecture": "x86_64",
+    "local_path": "C:\\Users\\User\\AppData\\Local\\Programs\\cursor\\resources\\app\\node_modules\\cursor-proclist\\build\\Release\\cursor_proclist.node"
+  },
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile": {
+    "provider": {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "version": "12.1.4"
+    },
+    "parameters": {
+      "target_kind": "executable",
+      "target_format": "pe",
+      "executable_role": "shared-library",
+      "managed": false,
+      "native_aot_metadata": {
+        "contract_revision": "rtr-9.1-x64-pe-read-only-v3",
+        "source_bytes": 134217728,
+        "work_units": 67108864,
+        "working_memory_bytes": 67108864,
+        "report_bytes": 4194304
+      },
+      "architecture": "x86_64",
+      "available_architectures": [
+        "x86_64"
+      ],
+      "import_mode": "ephemeral-source-immutable",
+      "annotation_policy": "atomic-function-entry-metadata-v1",
+      "load_image_observations": "source-mappings-entry-context-v2",
+      "function_body_evidence": "complete-inclusive-ranges-v1",
+      "function_references": "complete-body-and-entry-reference-manager-v2",
+      "call_relationship_coverage": "resolved-call-reference-diagnostics-v1",
+      "string_inventory_evidence": "defined-data-coverage-v1",
+      "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+      "instruction_flow_evidence": "decoded-return-pcode-v1",
+      "instruction_references": "exact-address-incoming-v1",
+      "function_boundary_observations": "ghidra-terminal-call-limitations-v1",
+      "no_return_repair": "disabled-windows-p0",
+      "process_launch": "official-headless-script-v1",
+      "jump_table_evidence": "typed-case-default-blocks-v1",
+      "decompiler_jump_loads": true,
+      "loader": "auto-from-header",
+      "language_id": "auto-from-header",
+      "compiler_spec_id": "auto-default",
+      "analyzer_preset": "ghidra-default"
+    },
+    "digest": "10aea50bbbd2fa717ea0655ae615adceaca59e622e9295a1da4fb8f99143c4fd"
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "search_procedures",
+  "parameters": {
+    "pattern": ".",
+    "mode": "regex",
+    "case_sensitive": false
+  },
+  "raw_result": [
+    {
+      "address": "EXTERNAL:0x1",
+      "value": "KERNEL32.DLL::GetModuleHandleA"
+    },
+    {
+      "address": "EXTERNAL:0x2",
+      "value": "KERNEL32.DLL::OpenProcess"
+    },
+    {
+      "address": "EXTERNAL:0x3",
+      "value": "KERNEL32.DLL::CreateToolhelp32Snapshot"
+    },
+    {
+      "address": "EXTERNAL:0x4",
+      "value": "KERNEL32.DLL::Process32NextW"
+    },
+    {
+      "address": "EXTERNAL:0x5",
+      "value": "KERNEL32.DLL::K32GetProcessMemoryInfo"
+    },
+    {
+      "address": "EXTERNAL:0x6",
+      "value": "KERNEL32.DLL::Process32FirstW"
+    },
+    {
+      "address": "EXTERNAL:0x7",
+      "value": "KERNEL32.DLL::CloseHandle"
+    },
+    {
+      "address": "EXTERNAL:0x8",
+      "value": "KERNEL32.DLL::WideCharToMultiByte"
+    },
+    {
+      "address": "EXTERNAL:0x9",
+      "value": "KERNEL32.DLL::GetProcessTimes"
+    },
+    {
+      "address": "EXTERNAL:0xa",
+      "value": "KERNEL32.DLL::LoadLibraryExA"
+    },
+    {
+      "address": "EXTERNAL:0xb",
+      "value": "KERNEL32.DLL::RtlCaptureContext"
+    },
+    {
+      "address": "EXTERNAL:0xc",
+      "value": "KERNEL32.DLL::RtlLookupFunctionEntry"
+    },
+    {
+      "address": "EXTERNAL:0xd",
+      "value": "KERNEL32.DLL::RtlVirtualUnwind"
+    },
+    {
+      "address": "EXTERNAL:0xe",
+      "value": "KERNEL32.DLL::UnhandledExceptionFilter"
+    },
+    {
+      "address": "EXTERNAL:0xf",
+      "value": "KERNEL32.DLL::SetUnhandledExceptionFilter"
+    },
+    {
+      "address": "EXTERNAL:0x10",
+      "value": "KERNEL32.DLL::GetCurrentProcess"
+    },
+    {
+      "address": "EXTERNAL:0x11",
+      "value": "KERNEL32.DLL::TerminateProcess"
+    },
+    {
+      "address": "EXTERNAL:0x12",
+      "value": "KERNEL32.DLL::IsProcessorFeaturePresent"
+    },
+    {
+      "address": "EXTERNAL:0x13",
+      "value": "KERNEL32.DLL::IsDebuggerPresent"
+    },
+    {
+      "address": "EXTERNAL:0x14",
+      "value": "KERNEL32.DLL::GetStartupInfoW"
+    },
+    {
+      "address": "EXTERNAL:0x15",
+      "value": "KERNEL32.DLL::GetModuleHandleW"
+    },
+    {
+      "address": "EXTERNAL:0x16",
+      "value": "KERNEL32.DLL::QueryPerformanceCounter"
+    },
+    {
+      "address": "EXTERNAL:0x17",
+      "value": "KERNEL32.DLL::GetCurrentProcessId"
+    },
+    {
+      "address": "EXTERNAL:0x18",
+      "value": "KERNEL32.DLL::GetCurrentThreadId"
+    },
+    {
+      "address": "EXTERNAL:0x19",
+      "value": "KERNEL32.DLL::GetSystemTimeAsFileTime"
+    },
+    {
+      "address": "EXTERNAL:0x1b",
+      "value": "KERNEL32.DLL::RtlUnwindEx"
+    },
+    {
+      "address": "EXTERNAL:0x1c",
+      "value": "KERNEL32.DLL::RtlPcToFileHeader"
+    },
+    {
+      "address": "EXTERNAL:0x1d",
+      "value": "KERNEL32.DLL::RaiseException"
+    },
+    {
+      "address": "EXTERNAL:0x1e",
+      "value": "KERNEL32.DLL::InterlockedFlushSList"
+    },
+    {
+      "address": "EXTERNAL:0x1f",
+      "value": "KERNEL32.DLL::GetLastError"
+    },
+    {
+      "address": "EXTERNAL:0x20",
+      "value": "KERNEL32.DLL::SetLastError"
+    },
+    {
+      "address": "EXTERNAL:0x21",
+      "value": "KERNEL32.DLL::EncodePointer"
+    },
+    {
+      "address": "EXTERNAL:0x24",
+      "value": "KERNEL32.DLL::DeleteCriticalSection"
+    },
+    {
+      "address": "EXTERNAL:0x25",
+      "value": "KERNEL32.DLL::InitializeCriticalSectionAndSpinCount"
+    },
+    {
+      "address": "EXTERNAL:0x28",
+      "value": "KERNEL32.DLL::TlsSetValue"
+    },
+    {
+      "address": "EXTERNAL:0x2a",
+      "value": "KERNEL32.DLL::FreeLibrary"
+    },
+    {
+      "address": "EXTERNAL:0x2b",
+      "value": "KERNEL32.DLL::GetProcAddress"
+    },
+    {
+      "address": "EXTERNAL:0x2c",
+      "value": "KERNEL32.DLL::LoadLibraryExW"
+    },
+    {
+      "address": "EXTERNAL:0x2d",
+      "value": "KERNEL32.DLL::ExitProcess"
+    },
+    {
+      "address": "EXTERNAL:0x2e",
+      "value": "KERNEL32.DLL::GetModuleHandleExW"
+    },
+    {
+      "address": "EXTERNAL:0x2f",
+      "value": "KERNEL32.DLL::GetModuleFileNameW"
+    },
+    {
+      "address": "EXTERNAL:0x30",
+      "value": "KERNEL32.DLL::HeapAlloc"
+    },
+    {
+      "address": "EXTERNAL:0x31",
+      "value": "KERNEL32.DLL::HeapFree"
+    },
+    {
+      "address": "EXTERNAL:0x32",
+      "value": "KERNEL32.DLL::FindClose"
+    },
+    {
+      "address": "EXTERNAL:0x33",
+      "value": "KERNEL32.DLL::FindFirstFileExW"
+    },
+    {
+      "address": "EXTERNAL:0x34",
+      "value": "KERNEL32.DLL::FindNextFileW"
+    },
+    {
+      "address": "EXTERNAL:0x35",
+      "value": "KERNEL32.DLL::IsValidCodePage"
+    },
+    {
+      "address": "EXTERNAL:0x36",
+      "value": "KERNEL32.DLL::GetACP"
+    },
+    {
+      "address": "EXTERNAL:0x37",
+      "value": "KERNEL32.DLL::GetOEMCP"
+    },
+    {
+      "address": "EXTERNAL:0x38",
+      "value": "KERNEL32.DLL::GetCPInfo"
+    },
+    {
+      "address": "EXTERNAL:0x39",
+      "value": "KERNEL32.DLL::GetCommandLineA"
+    },
+    {
+      "address": "EXTERNAL:0x3a",
+      "value": "KERNEL32.DLL::GetCommandLineW"
+    },
+    {
+      "address": "EXTERNAL:0x3c",
+      "value": "KERNEL32.DLL::GetEnvironmentStringsW"
+    },
+    {
+      "address": "EXTERNAL:0x3d",
+      "value": "KERNEL32.DLL::FreeEnvironmentStringsW"
+    },
+    {
+      "address": "EXTERNAL:0x3e",
+      "value": "KERNEL32.DLL::FlsAlloc"
+    },
+    {
+      "address": "EXTERNAL:0x3f",
+      "value": "KERNEL32.DLL::FlsGetValue"
+    },
+    {
+      "address": "EXTERNAL:0x40",
+      "value": "KERNEL32.DLL::FlsSetValue"
+    },
+    {
+      "address": "EXTERNAL:0x41",
+      "value": "KERNEL32.DLL::FlsFree"
+    },
+    {
+      "address": "EXTERNAL:0x42",
+      "value": "KERNEL32.DLL::InitializeCriticalSectionEx"
+    },
+    {
+      "address": "EXTERNAL:0x43",
+      "value": "KERNEL32.DLL::VirtualProtect"
+    },
+    {
+      "address": "EXTERNAL:0x44",
+      "value": "KERNEL32.DLL::LCMapStringW"
+    },
+    {
+      "address": "EXTERNAL:0x45",
+      "value": "KERNEL32.DLL::GetProcessHeap"
+    },
+    {
+      "address": "EXTERNAL:0x46",
+      "value": "KERNEL32.DLL::GetStdHandle"
+    },
+    {
+      "address": "EXTERNAL:0x47",
+      "value": "KERNEL32.DLL::GetFileType"
+    },
+    {
+      "address": "EXTERNAL:0x48",
+      "value": "KERNEL32.DLL::GetStringTypeW"
+    },
+    {
+      "address": "EXTERNAL:0x4a",
+      "value": "KERNEL32.DLL::HeapReAlloc"
+    },
+    {
+      "address": "EXTERNAL:0x4b",
+      "value": "KERNEL32.DLL::SetStdHandle"
+    },
+    {
+      "address": "EXTERNAL:0x4c",
+      "value": "KERNEL32.DLL::FlushFileBuffers"
+    },
+    {
+      "address": "EXTERNAL:0x4d",
+      "value": "KERNEL32.DLL::WriteFile"
+    },
+    {
+      "address": "EXTERNAL:0x4e",
+      "value": "KERNEL32.DLL::GetConsoleOutputCP"
+    },
+    {
+      "address": "EXTERNAL:0x4f",
+      "value": "KERNEL32.DLL::GetConsoleMode"
+    },
+    {
+      "address": "EXTERNAL:0x50",
+      "value": "KERNEL32.DLL::SetFilePointerEx"
+    },
+    {
+      "address": "EXTERNAL:0x51",
+      "value": "KERNEL32.DLL::CreateFileW"
+    },
+    {
+      "address": "EXTERNAL:0x52",
+      "value": "KERNEL32.DLL::WriteConsoleW"
+    },
+    {
+      "address": "EXTERNAL:0x53",
+      "value": "KERNEL32.DLL::GetSystemInfo"
+    },
+    {
+      "address": "EXTERNAL:0x54",
+      "value": "KERNEL32.DLL::VirtualQuery"
+    },
+    {
+      "address": "EXTERNAL:0x55",
+      "value": "NODE.EXE::napi_create_array_with_length"
+    },
+    {
+      "address": "EXTERNAL:0x56",
+      "value": "NODE.EXE::napi_get_array_length"
+    },
+    {
+      "address": "EXTERNAL:0x57",
+      "value": "NODE.EXE::napi_create_function"
+    },
+    {
+      "address": "EXTERNAL:0x58",
+      "value": "NODE.EXE::napi_open_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x59",
+      "value": "NODE.EXE::napi_get_element"
+    },
+    {
+      "address": "EXTERNAL:0x5a",
+      "value": "NODE.EXE::napi_get_last_error_info"
+    },
+    {
+      "address": "EXTERNAL:0x5b",
+      "value": "NODE.EXE::napi_create_error"
+    },
+    {
+      "address": "EXTERNAL:0x5c",
+      "value": "NODE.EXE::napi_call_function"
+    },
+    {
+      "address": "EXTERNAL:0x5d",
+      "value": "NODE.EXE::napi_get_null"
+    },
+    {
+      "address": "EXTERNAL:0x5e",
+      "value": "NODE.EXE::napi_queue_async_work"
+    },
+    {
+      "address": "EXTERNAL:0x5f",
+      "value": "NODE.EXE::napi_delete_reference"
+    },
+    {
+      "address": "EXTERNAL:0x60",
+      "value": "NODE.EXE::napi_fatal_error"
+    },
+    {
+      "address": "EXTERNAL:0x61",
+      "value": "NODE.EXE::napi_is_exception_pending"
+    },
+    {
+      "address": "EXTERNAL:0x62",
+      "value": "NODE.EXE::napi_set_element"
+    },
+    {
+      "address": "EXTERNAL:0x63",
+      "value": "NODE.EXE::napi_get_value_string_utf8"
+    },
+    {
+      "address": "EXTERNAL:0x64",
+      "value": "NODE.EXE::napi_close_escapable_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x65",
+      "value": "NODE.EXE::napi_escape_handle"
+    },
+    {
+      "address": "EXTERNAL:0x66",
+      "value": "NODE.EXE::napi_get_property"
+    },
+    {
+      "address": "EXTERNAL:0x67",
+      "value": "NODE.EXE::napi_add_finalizer"
+    },
+    {
+      "address": "EXTERNAL:0x68",
+      "value": "NODE.EXE::napi_resolve_deferred"
+    },
+    {
+      "address": "EXTERNAL:0x69",
+      "value": "NODE.EXE::napi_is_array"
+    },
+    {
+      "address": "EXTERNAL:0x6a",
+      "value": "NODE.EXE::napi_create_type_error"
+    },
+    {
+      "address": "EXTERNAL:0x6b",
+      "value": "NODE.EXE::napi_reject_deferred"
+    },
+    {
+      "address": "EXTERNAL:0x6c",
+      "value": "NODE.EXE::napi_create_string_latin1"
+    },
+    {
+      "address": "EXTERNAL:0x6d",
+      "value": "NODE.EXE::napi_create_async_work"
+    },
+    {
+      "address": "EXTERNAL:0x6e",
+      "value": "NODE.EXE::napi_create_string_utf8"
+    },
+    {
+      "address": "EXTERNAL:0x6f",
+      "value": "NODE.EXE::napi_has_property"
+    },
+    {
+      "address": "EXTERNAL:0x70",
+      "value": "NODE.EXE::napi_define_properties"
+    },
+    {
+      "address": "EXTERNAL:0x71",
+      "value": "NODE.EXE::napi_create_array"
+    },
+    {
+      "address": "EXTERNAL:0x72",
+      "value": "NODE.EXE::napi_typeof"
+    },
+    {
+      "address": "EXTERNAL:0x73",
+      "value": "NODE.EXE::napi_throw"
+    },
+    {
+      "address": "EXTERNAL:0x74",
+      "value": "NODE.EXE::napi_create_promise"
+    },
+    {
+      "address": "EXTERNAL:0x75",
+      "value": "NODE.EXE::napi_get_and_clear_last_exception"
+    },
+    {
+      "address": "EXTERNAL:0x76",
+      "value": "NODE.EXE::napi_create_object"
+    },
+    {
+      "address": "EXTERNAL:0x77",
+      "value": "NODE.EXE::napi_get_undefined"
+    },
+    {
+      "address": "EXTERNAL:0x78",
+      "value": "NODE.EXE::napi_set_property"
+    },
+    {
+      "address": "EXTERNAL:0x79",
+      "value": "NODE.EXE::napi_get_cb_info"
+    },
+    {
+      "address": "EXTERNAL:0x7a",
+      "value": "NODE.EXE::napi_delete_async_work"
+    },
+    {
+      "address": "EXTERNAL:0x7b",
+      "value": "NODE.EXE::napi_open_escapable_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x7c",
+      "value": "NODE.EXE::napi_get_value_double"
+    },
+    {
+      "address": "EXTERNAL:0x7d",
+      "value": "NODE.EXE::napi_create_reference"
+    },
+    {
+      "address": "EXTERNAL:0x7e",
+      "value": "NODE.EXE::napi_close_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x7f",
+      "value": "NODE.EXE::napi_create_double"
+    },
+    {
+      "address": "EXTERNAL:0x80",
+      "value": "NODE.EXE::napi_get_reference_value"
+    },
+    {
+      "address": "0x180001000",
+      "value": "FUN_180001000"
+    },
+    {
+      "address": "0x180001110",
+      "value": "FUN_180001110"
+    },
+    {
+      "address": "0x180001180",
+      "value": "FUN_180001180"
+    },
+    {
+      "address": "0x1800011c0",
+      "value": "_guard_check_icall"
+    },
+    {
+      "address": "0x1800011d0",
+      "value": "FUN_1800011d0"
+    },
+    {
+      "address": "0x180001200",
+      "value": "FUN_180001200"
+    },
+    {
+      "address": "0x180001220",
+      "value": "FUN_180001220"
+    },
+    {
+      "address": "0x180001250",
+      "value": "FUN_180001250"
+    },
+    {
+      "address": "0x180001270",
+      "value": "FUN_180001270"
+    },
+    {
+      "address": "0x180001290",
+      "value": "FUN_180001290"
+    },
+    {
+      "address": "0x180001330",
+      "value": "FUN_180001330"
+    },
+    {
+      "address": "0x180001360",
+      "value": "FUN_180001360"
+    },
+    {
+      "address": "0x180001470",
+      "value": "FUN_180001470"
+    },
+    {
+      "address": "0x180001590",
+      "value": "FUN_180001590"
+    },
+    {
+      "address": "0x180001730",
+      "value": "FUN_180001730"
+    },
+    {
+      "address": "0x180001a20",
+      "value": "FUN_180001a20"
+    },
+    {
+      "address": "0x180001b30",
+      "value": "FUN_180001b30"
+    },
+    {
+      "address": "0x180001c40",
+      "value": "FUN_180001c40"
+    },
+    {
+      "address": "0x180001d60",
+      "value": "FUN_180001d60"
+    },
+    {
+      "address": "0x180001ff0",
+      "value": "FUN_180001ff0"
+    },
+    {
+      "address": "0x180002010",
+      "value": "FUN_180002010"
+    },
+    {
+      "address": "0x180002160",
+      "value": "FUN_180002160"
+    },
+    {
+      "address": "0x1800023f0",
+      "value": "FUN_1800023f0"
+    },
+    {
+      "address": "0x180002470",
+      "value": "FUN_180002470"
+    },
+    {
+      "address": "0x180002680",
+      "value": "FUN_180002680"
+    },
+    {
+      "address": "0x1800027b0",
+      "value": "FUN_1800027b0"
+    },
+    {
+      "address": "0x180002890",
+      "value": "FUN_180002890"
+    },
+    {
+      "address": "0x1800028c0",
+      "value": "FUN_1800028c0"
+    },
+    {
+      "address": "0x1800029a0",
+      "value": "FUN_1800029a0"
+    },
+    {
+      "address": "0x1800029d0",
+      "value": "FUN_1800029d0"
+    },
+    {
+      "address": "0x180002ae0",
+      "value": "FUN_180002ae0"
+    },
+    {
+      "address": "0x180002b20",
+      "value": "FUN_180002b20"
+    },
+    {
+      "address": "0x180002db0",
+      "value": "FUN_180002db0"
+    },
+    {
+      "address": "0x180002eb0",
+      "value": "FUN_180002eb0"
+    },
+    {
+      "address": "0x180003040",
+      "value": "FUN_180003040"
+    },
+    {
+      "address": "0x1800031e0",
+      "value": "FUN_1800031e0"
+    },
+    {
+      "address": "0x180003350",
+      "value": "FUN_180003350"
+    },
+    {
+      "address": "0x180003570",
+      "value": "FUN_180003570"
+    },
+    {
+      "address": "0x180003740",
+      "value": "FUN_180003740"
+    },
+    {
+      "address": "0x180003bc0",
+      "value": "FUN_180003bc0"
+    },
+    {
+      "address": "0x180003da0",
+      "value": "FUN_180003da0"
+    },
+    {
+      "address": "0x180003e40",
+      "value": "FUN_180003e40"
+    },
+    {
+      "address": "0x180003f50",
+      "value": "FUN_180003f50"
+    },
+    {
+      "address": "0x180004050",
+      "value": "FUN_180004050"
+    },
+    {
+      "address": "0x180004100",
+      "value": "FUN_180004100"
+    },
+    {
+      "address": "0x180004640",
+      "value": "FUN_180004640"
+    },
+    {
+      "address": "0x180004700",
+      "value": "FUN_180004700"
+    },
+    {
+      "address": "0x180004870",
+      "value": "FUN_180004870"
+    },
+    {
+      "address": "0x180004980",
+      "value": "FUN_180004980"
+    },
+    {
+      "address": "0x180004bb0",
+      "value": "node_api_module_get_api_version_v1"
+    },
+    {
+      "address": "0x180004bc0",
+      "value": "napi_register_module_v1"
+    },
+    {
+      "address": "0x180004bf0",
+      "value": "FUN_180004bf0"
+    },
+    {
+      "address": "0x180004db0",
+      "value": "FUN_180004db0"
+    },
+    {
+      "address": "0x180004f30",
+      "value": "FUN_180004f30"
+    },
+    {
+      "address": "0x1800050a0",
+      "value": "FUN_1800050a0"
+    },
+    {
+      "address": "0x180005210",
+      "value": "FUN_180005210"
+    },
+    {
+      "address": "0x180005330",
+      "value": "FUN_180005330"
+    },
+    {
+      "address": "0x1800053a0",
+      "value": "FUN_1800053a0"
+    },
+    {
+      "address": "0x180005400",
+      "value": "FUN_180005400"
+    },
+    {
+      "address": "0x180005530",
+      "value": "FUN_180005530"
+    },
+    {
+      "address": "0x180005710",
+      "value": "thunk_FUN_180005ff0"
+    },
+    {
+      "address": "0x180005720",
+      "value": "FUN_180005720"
+    },
+    {
+      "address": "0x180005790",
+      "value": "FUN_180005790"
+    },
+    {
+      "address": "0x180005810",
+      "value": "FUN_180005810"
+    },
+    {
+      "address": "0x180005950",
+      "value": "FUN_180005950"
+    },
+    {
+      "address": "0x180005b40",
+      "value": "FUN_180005b40"
+    },
+    {
+      "address": "0x180005e10",
+      "value": "FUN_180005e10"
+    },
+    {
+      "address": "0x180005f70",
+      "value": "FUN_180005f70"
+    },
+    {
+      "address": "0x180005fd0",
+      "value": "FUN_180005fd0"
+    },
+    {
+      "address": "0x180005ff0",
+      "value": "FUN_180005ff0"
+    },
+    {
+      "address": "0x1800060c0",
+      "value": "FUN_1800060c0"
+    },
+    {
+      "address": "0x180006250",
+      "value": "FUN_180006250"
+    },
+    {
+      "address": "0x180006470",
+      "value": "FUN_180006470"
+    },
+    {
+      "address": "0x180006630",
+      "value": "FUN_180006630"
+    },
+    {
+      "address": "0x1800066d0",
+      "value": "FUN_1800066d0"
+    },
+    {
+      "address": "0x180006890",
+      "value": "FUN_180006890"
+    },
+    {
+      "address": "0x1800069f0",
+      "value": "FUN_1800069f0"
+    },
+    {
+      "address": "0x180006ae0",
+      "value": "FUN_180006ae0"
+    },
+    {
+      "address": "0x180006ca0",
+      "value": "FUN_180006ca0"
+    },
+    {
+      "address": "0x180006d40",
+      "value": "FUN_180006d40"
+    },
+    {
+      "address": "0x180006e90",
+      "value": "FUN_180006e90"
+    },
+    {
+      "address": "0x180007160",
+      "value": "FUN_180007160"
+    },
+    {
+      "address": "0x1800071e0",
+      "value": "FUN_1800071e0"
+    },
+    {
+      "address": "0x180007270",
+      "value": "FUN_180007270"
+    },
+    {
+      "address": "0x180007300",
+      "value": "FUN_180007300"
+    },
+    {
+      "address": "0x180007320",
+      "value": "FUN_180007320"
+    },
+    {
+      "address": "0x180007400",
+      "value": "FUN_180007400"
+    },
+    {
+      "address": "0x180007570",
+      "value": "FUN_180007570"
+    },
+    {
+      "address": "0x180007760",
+      "value": "FUN_180007760"
+    },
+    {
+      "address": "0x180007b40",
+      "value": "FUN_180007b40"
+    },
+    {
+      "address": "0x180007dc0",
+      "value": "FUN_180007dc0"
+    },
+    {
+      "address": "0x1800080f0",
+      "value": "FUN_1800080f0"
+    },
+    {
+      "address": "0x180008120",
+      "value": "FUN_180008120"
+    },
+    {
+      "address": "0x180008190",
+      "value": "FUN_180008190"
+    },
+    {
+      "address": "0x1800081c0",
+      "value": "FUN_1800081c0"
+    },
+    {
+      "address": "0x180008330",
+      "value": "FUN_180008330"
+    },
+    {
+      "address": "0x1800083c0",
+      "value": "FUN_1800083c0"
+    },
+    {
+      "address": "0x1800086a0",
+      "value": "FUN_1800086a0"
+    },
+    {
+      "address": "0x180008730",
+      "value": "FUN_180008730"
+    },
+    {
+      "address": "0x1800087d0",
+      "value": "FUN_1800087d0"
+    },
+    {
+      "address": "0x180008aa0",
+      "value": "FUN_180008aa0"
+    },
+    {
+      "address": "0x180008c90",
+      "value": "FUN_180008c90"
+    },
+    {
+      "address": "0x180008d40",
+      "value": "FUN_180008d40"
+    },
+    {
+      "address": "0x180008df0",
+      "value": "FUN_180008df0"
+    },
+    {
+      "address": "0x180008eb0",
+      "value": "FUN_180008eb0"
+    },
+    {
+      "address": "0x180009010",
+      "value": "FUN_180009010"
+    },
+    {
+      "address": "0x1800091d0",
+      "value": "FUN_1800091d0"
+    },
+    {
+      "address": "0x180009270",
+      "value": "FUN_180009270"
+    },
+    {
+      "address": "0x18000942f",
+      "value": "FUN_18000942f"
+    },
+    {
+      "address": "0x1800094a8",
+      "value": "DelayLoad_napi_create_array_with_length"
+    },
+    {
+      "address": "0x1800094b4",
+      "value": "DelayLoad_napi_create_function"
+    },
+    {
+      "address": "0x1800094c0",
+      "value": "DelayLoad_napi_open_handle_scope"
+    },
+    {
+      "address": "0x1800094cc",
+      "value": "DelayLoad_napi_get_element"
+    },
+    {
+      "address": "0x1800094d8",
+      "value": "DelayLoad_napi_get_last_error_info"
+    },
+    {
+      "address": "0x1800094e4",
+      "value": "DelayLoad_napi_create_error"
+    },
+    {
+      "address": "0x1800094f0",
+      "value": "DelayLoad_napi_call_function"
+    },
+    {
+      "address": "0x1800094fc",
+      "value": "DelayLoad_napi_get_null"
+    },
+    {
+      "address": "0x180009508",
+      "value": "DelayLoad_napi_queue_async_work"
+    },
+    {
+      "address": "0x180009514",
+      "value": "DelayLoad_napi_delete_reference"
+    },
+    {
+      "address": "0x180009520",
+      "value": "DelayLoad_napi_fatal_error"
+    },
+    {
+      "address": "0x18000952c",
+      "value": "DelayLoad_napi_is_exception_pending"
+    },
+    {
+      "address": "0x180009538",
+      "value": "DelayLoad_napi_set_element"
+    },
+    {
+      "address": "0x180009544",
+      "value": "DelayLoad_napi_get_value_string_utf8"
+    },
+    {
+      "address": "0x180009550",
+      "value": "DelayLoad_napi_close_escapable_handle_scope"
+    },
+    {
+      "address": "0x18000955c",
+      "value": "DelayLoad_napi_escape_handle"
+    },
+    {
+      "address": "0x180009568",
+      "value": "DelayLoad_napi_get_property"
+    },
+    {
+      "address": "0x180009574",
+      "value": "DelayLoad_napi_add_finalizer"
+    },
+    {
+      "address": "0x180009580",
+      "value": "DelayLoad_napi_resolve_deferred"
+    },
+    {
+      "address": "0x18000958c",
+      "value": "DelayLoad_napi_is_array"
+    },
+    {
+      "address": "0x180009598",
+      "value": "DelayLoad_napi_create_type_error"
+    },
+    {
+      "address": "0x1800095a4",
+      "value": "DelayLoad_napi_reject_deferred"
+    },
+    {
+      "address": "0x1800095b0",
+      "value": "DelayLoad_napi_create_string_latin1"
+    },
+    {
+      "address": "0x1800095bc",
+      "value": "DelayLoad_napi_create_async_work"
+    },
+    {
+      "address": "0x1800095c8",
+      "value": "DelayLoad_napi_create_string_utf8"
+    },
+    {
+      "address": "0x1800095d4",
+      "value": "DelayLoad_napi_has_property"
+    },
+    {
+      "address": "0x1800095e0",
+      "value": "DelayLoad_napi_define_properties"
+    },
+    {
+      "address": "0x1800095ec",
+      "value": "DelayLoad_napi_create_array"
+    },
+    {
+      "address": "0x1800095f8",
+      "value": "DelayLoad_napi_typeof"
+    },
+    {
+      "address": "0x180009604",
+      "value": "DelayLoad_napi_throw"
+    },
+    {
+      "address": "0x180009610",
+      "value": "DelayLoad_napi_create_promise"
+    },
+    {
+      "address": "0x18000961c",
+      "value": "DelayLoad_napi_get_and_clear_last_exception"
+    },
+    {
+      "address": "0x180009628",
+      "value": "DelayLoad_napi_create_object"
+    },
+    {
+      "address": "0x180009634",
+      "value": "DelayLoad_napi_get_undefined"
+    },
+    {
+      "address": "0x180009640",
+      "value": "DelayLoad_napi_set_property"
+    },
+    {
+      "address": "0x18000964c",
+      "value": "DelayLoad_napi_get_cb_info"
+    },
+    {
+      "address": "0x180009658",
+      "value": "DelayLoad_napi_delete_async_work"
+    },
+    {
+      "address": "0x180009664",
+      "value": "DelayLoad_napi_open_escapable_handle_scope"
+    },
+    {
+      "address": "0x180009670",
+      "value": "DelayLoad_napi_get_value_double"
+    },
+    {
+      "address": "0x18000967c",
+      "value": "DelayLoad_napi_create_reference"
+    },
+    {
+      "address": "0x180009688",
+      "value": "DelayLoad_napi_close_handle_scope"
+    },
+    {
+      "address": "0x180009694",
+      "value": "DelayLoad_napi_create_double"
+    },
+    {
+      "address": "0x1800096a0",
+      "value": "DelayLoad_napi_get_array_length"
+    },
+    {
+      "address": "0x1800096ac",
+      "value": "DelayLoad_napi_get_reference_value"
+    },
+    {
+      "address": "0x1800096d0",
+      "value": "__security_check_cookie"
+    },
+    {
+      "address": "0x1800096f0",
+      "value": "thunk_FUN_1800116e0"
+    },
+    {
+      "address": "0x1800096f8",
+      "value": "operator_new"
+    },
+    {
+      "address": "0x180009734",
+      "value": "thunk_FUN_1800116e0"
+    },
+    {
+      "address": "0x18000973c",
+      "value": "operator_new"
+    },
+    {
+      "address": "0x180009744",
+      "value": "FUN_180009744"
+    },
+    {
+      "address": "0x180009770",
+      "value": "__scrt_acquire_startup_lock"
+    },
+    {
+      "address": "0x1800097ac",
+      "value": "__scrt_dllmain_after_initialize_c"
+    },
+    {
+      "address": "0x1800097e0",
+      "value": "FUN_1800097e0"
+    },
+    {
+      "address": "0x1800097f8",
+      "value": "__scrt_dllmain_crt_thread_attach"
+    },
+    {
+      "address": "0x180009820",
+      "value": "FUN_180009820"
+    },
+    {
+      "address": "0x180009838",
+      "value": "__scrt_dllmain_exception_filter"
+    },
+    {
+      "address": "0x180009898",
+      "value": "__scrt_dllmain_uninitialize_c"
+    },
+    {
+      "address": "0x1800098c8",
+      "value": "FUN_1800098c8"
+    },
+    {
+      "address": "0x1800098dc",
+      "value": "FUN_1800098dc"
+    },
+    {
+      "address": "0x180009918",
+      "value": "FUN_180009918"
+    },
+    {
+      "address": "0x1800099a4",
+      "value": "FUN_1800099a4"
+    },
+    {
+      "address": "0x180009a3c",
+      "value": "__scrt_release_startup_lock"
+    },
+    {
+      "address": "0x180009a60",
+      "value": "__scrt_uninitialize_crt"
+    },
+    {
+      "address": "0x180009a8c",
+      "value": "_onexit"
+    },
+    {
+      "address": "0x180009ac8",
+      "value": "atexit"
+    },
+    {
+      "address": "0x180009ae0",
+      "value": "FUN_180009ae0"
+    },
+    {
+      "address": "0x180009b30",
+      "value": "FUN_180009b30"
+    },
+    {
+      "address": "0x180009c48",
+      "value": "FUN_180009c48"
+    },
+    {
+      "address": "0x180009ccc",
+      "value": "FUN_180009ccc"
+    },
+    {
+      "address": "0x180009df4",
+      "value": "entry"
+    },
+    {
+      "address": "0x180009e34",
+      "value": "__raise_securityfailure"
+    },
+    {
+      "address": "0x180009e68",
+      "value": "FUN_180009e68"
+    },
+    {
+      "address": "0x180009f3c",
+      "value": "FUN_180009f3c"
+    },
+    {
+      "address": "0x180009fb0",
+      "value": "FUN_180009fb0"
+    },
+    {
+      "address": "0x180009fec",
+      "value": "FUN_180009fec"
+    },
+    {
+      "address": "0x18000a010",
+      "value": "FUN_18000a010"
+    },
+    {
+      "address": "0x18000a04c",
+      "value": "FUN_18000a04c"
+    },
+    {
+      "address": "0x18000a070",
+      "value": "std::exception::exception"
+    },
+    {
+      "address": "0x18000a0b8",
+      "value": "FUN_18000a0b8"
+    },
+    {
+      "address": "0x18000a0fc",
+      "value": "FUN_18000a0fc"
+    },
+    {
+      "address": "0x18000a11c",
+      "value": "FUN_18000a11c"
+    },
+    {
+      "address": "0x18000a13c",
+      "value": "FUN_18000a13c"
+    },
+    {
+      "address": "0x18000a150",
+      "value": "FUN_18000a150"
+    },
+    {
+      "address": "0x18000a3e8",
+      "value": "FUN_18000a3e8"
+    },
+    {
+      "address": "0x18000a3f0",
+      "value": "__scrt_is_ucrt_dll_in_use"
+    },
+    {
+      "address": "0x18000a3fc",
+      "value": "FUN_18000a3fc"
+    },
+    {
+      "address": "0x18000a408",
+      "value": "FUN_18000a408"
+    },
+    {
+      "address": "0x18000a554",
+      "value": "FUN_18000a554"
+    },
+    {
+      "address": "0x18000a604",
+      "value": "FUN_18000a604"
+    },
+    {
+      "address": "0x18000a614",
+      "value": "FUN_18000a614"
+    },
+    {
+      "address": "0x18000a620",
+      "value": "FUN_18000a620"
+    },
+    {
+      "address": "0x18000a628",
+      "value": "FUN_18000a628"
+    },
+    {
+      "address": "0x18000a630",
+      "value": "FUN_18000a630"
+    },
+    {
+      "address": "0x18000a64c",
+      "value": "FUN_18000a64c"
+    },
+    {
+      "address": "0x18000a654",
+      "value": "FUN_18000a654"
+    },
+    {
+      "address": "0x18000a690",
+      "value": "FUN_18000a690"
+    },
+    {
+      "address": "0x18000a6d0",
+      "value": "FUN_18000a6d0"
+    },
+    {
+      "address": "0x18000a70c",
+      "value": "FUN_18000a70c"
+    },
+    {
+      "address": "0x18000a754",
+      "value": "FUN_18000a754"
+    },
+    {
+      "address": "0x18000a790",
+      "value": "FUN_18000a790"
+    },
+    {
+      "address": "0x18000a7b4",
+      "value": "FUN_18000a7b4"
+    },
+    {
+      "address": "0x18000a808",
+      "value": "FUN_18000a808"
+    },
+    {
+      "address": "0x18000a85c",
+      "value": "FUN_18000a85c"
+    },
+    {
+      "address": "0x18000a8c0",
+      "value": "FUN_18000a8c0"
+    },
+    {
+      "address": "0x18000a9ec",
+      "value": "FUN_18000a9ec"
+    },
+    {
+      "address": "0x18000aa18",
+      "value": "FUN_18000aa18"
+    },
+    {
+      "address": "0x18000aa20",
+      "value": "__FrameHandler3::FrameUnwindToEmptyState"
+    },
+    {
+      "address": "0x18000aa84",
+      "value": "__FrameHandler4::FrameUnwindToEmptyState"
+    },
+    {
+      "address": "0x18000aab8",
+      "value": "FUN_18000aab8"
+    },
+    {
+      "address": "0x18000aba0",
+      "value": "FUN_18000aba0"
+    },
+    {
+      "address": "0x18000abc4",
+      "value": "FUN_18000abc4"
+    },
+    {
+      "address": "0x18000acfc",
+      "value": "FUN_18000acfc"
+    },
+    {
+      "address": "0x18000ae7c",
+      "value": "FUN_18000ae7c"
+    },
+    {
+      "address": "0x18000af80",
+      "value": "FUN_18000af80"
+    },
+    {
+      "address": "0x18000b0a0",
+      "value": "FUN_18000b0a0"
+    },
+    {
+      "address": "0x18000b28c",
+      "value": "_CreateFrameInfo"
+    },
+    {
+      "address": "0x18000b2c8",
+      "value": "FUN_18000b2c8"
+    },
+    {
+      "address": "0x18000b31c",
+      "value": "FUN_18000b31c"
+    },
+    {
+      "address": "0x18000b330",
+      "value": "FUN_18000b330"
+    },
+    {
+      "address": "0x18000b344",
+      "value": "FUN_18000b344"
+    },
+    {
+      "address": "0x18000b35c",
+      "value": "FUN_18000b35c"
+    },
+    {
+      "address": "0x18000b374",
+      "value": "__CxxFrameHandler3"
+    },
+    {
+      "address": "0x18000b3fc",
+      "value": "FUN_18000b3fc"
+    },
+    {
+      "address": "0x18000b4c4",
+      "value": "FUN_18000b4c4"
+    },
+    {
+      "address": "0x18000b4d0",
+      "value": "FUN_18000b4d0"
+    },
+    {
+      "address": "0x18000b4ec",
+      "value": "FUN_18000b4ec"
+    },
+    {
+      "address": "0x18000b560",
+      "value": "FUN_18000b560"
+    },
+    {
+      "address": "0x18000b564",
+      "value": "_IsExceptionObjectToBeDestroyed"
+    },
+    {
+      "address": "0x18000b594",
+      "value": "__AdjustPointer"
+    },
+    {
+      "address": "0x18000b5b8",
+      "value": "FUN_18000b5b8"
+    },
+    {
+      "address": "0x18000b620",
+      "value": "Unwind@18000b620"
+    },
+    {
+      "address": "0x18000b62c",
+      "value": "__vcrt_initialize"
+    },
+    {
+      "address": "0x18000b654",
+      "value": "FUN_18000b654"
+    },
+    {
+      "address": "0x18000b668",
+      "value": "FUN_18000b668"
+    },
+    {
+      "address": "0x18000b678",
+      "value": "__vcrt_uninitialize"
+    },
+    {
+      "address": "0x18000b694",
+      "value": "FUN_18000b694"
+    },
+    {
+      "address": "0x18000b6a4",
+      "value": "FUN_18000b6a4"
+    },
+    {
+      "address": "0x18000b8bc",
+      "value": "FUN_18000b8bc"
+    },
+    {
+      "address": "0x18000b93c",
+      "value": "FUN_18000b93c"
+    },
+    {
+      "address": "0x18000b964",
+      "value": "FUN_18000b964"
+    },
+    {
+      "address": "0x18000ba10",
+      "value": "FUN_18000ba10"
+    },
+    {
+      "address": "0x18000ba28",
+      "value": "FUN_18000ba28"
+    },
+    {
+      "address": "0x18000ba54",
+      "value": "FUN_18000ba54"
+    },
+    {
+      "address": "0x18000ba74",
+      "value": "FUN_18000ba74"
+    },
+    {
+      "address": "0x18000babc",
+      "value": "FUN_18000babc"
+    },
+    {
+      "address": "0x18000bad8",
+      "value": "FUN_18000bad8"
+    },
+    {
+      "address": "0x18000bba4",
+      "value": "__vcrt_initialize_ptd"
+    },
+    {
+      "address": "0x18000bbec",
+      "value": "FUN_18000bbec"
+    },
+    {
+      "address": "0x18000bc14",
+      "value": "FUN_18000bc14"
+    },
+    {
+      "address": "0x18000bc3c",
+      "value": "__FrameHandler3::GetUnwindTryBlock"
+    },
+    {
+      "address": "0x18000bc68",
+      "value": "__FrameHandler3::SetState"
+    },
+    {
+      "address": "0x18000bc74",
+      "value": "__FrameHandler3::SetUnwindTryBlock"
+    },
+    {
+      "address": "0x18000bcb0",
+      "value": "FUN_18000bcb0"
+    },
+    {
+      "address": "0x18000bcb8",
+      "value": "FUN_18000bcb8"
+    },
+    {
+      "address": "0x18000bcc0",
+      "value": "FUN_18000bcc0"
+    },
+    {
+      "address": "0x18000bd28",
+      "value": "FUN_18000bd28"
+    },
+    {
+      "address": "0x18000be18",
+      "value": "FUN_18000be18"
+    },
+    {
+      "address": "0x18000c00c",
+      "value": "FUN_18000c00c"
+    },
+    {
+      "address": "0x18000c204",
+      "value": "FUN_18000c204"
+    },
+    {
+      "address": "0x18000c2c4",
+      "value": "FUN_18000c2c4"
+    },
+    {
+      "address": "0x18000c388",
+      "value": "FUN_18000c388"
+    },
+    {
+      "address": "0x18000c460",
+      "value": "FUN_18000c460"
+    },
+    {
+      "address": "0x18000c538",
+      "value": "FUN_18000c538"
+    },
+    {
+      "address": "0x18000ca28",
+      "value": "FUN_18000ca28"
+    },
+    {
+      "address": "0x18000cf60",
+      "value": "FUN_18000cf60"
+    },
+    {
+      "address": "0x18000d1c4",
+      "value": "FUN_18000d1c4"
+    },
+    {
+      "address": "0x18000d4cc",
+      "value": "FUN_18000d4cc"
+    },
+    {
+      "address": "0x18000d5ec",
+      "value": "FUN_18000d5ec"
+    },
+    {
+      "address": "0x18000d72c",
+      "value": "FUN_18000d72c"
+    },
+    {
+      "address": "0x18000d95c",
+      "value": "FUN_18000d95c"
+    },
+    {
+      "address": "0x18000dc04",
+      "value": "thunk_FUN_18000d72c"
+    },
+    {
+      "address": "0x18000dc0c",
+      "value": "FUN_18000dc0c"
+    },
+    {
+      "address": "0x18000dc58",
+      "value": "FUN_18000dc58"
+    },
+    {
+      "address": "0x18000dcdc",
+      "value": "FUN_18000dcdc"
+    },
+    {
+      "address": "0x18000ddc0",
+      "value": "FUN_18000ddc0"
+    },
+    {
+      "address": "0x18000ddfc",
+      "value": "FUN_18000ddfc"
+    },
+    {
+      "address": "0x18000de20",
+      "value": "FUN_18000de20"
+    },
+    {
+      "address": "0x18000e00c",
+      "value": "FUN_18000e00c"
+    },
+    {
+      "address": "0x18000e24c",
+      "value": "FH4::HandlerMap4::DecompHandler"
+    },
+    {
+      "address": "0x18000e3d4",
+      "value": "FUN_18000e3d4"
+    },
+    {
+      "address": "0x18000e46c",
+      "value": "ExFilterRethrowFH4"
+    },
+    {
+      "address": "0x18000e49c",
+      "value": "FUN_18000e49c"
+    },
+    {
+      "address": "0x18000e628",
+      "value": "FUN_18000e628"
+    },
+    {
+      "address": "0x18000e934",
+      "value": "__FrameHandler3::GetHandlerSearchState"
+    },
+    {
+      "address": "0x18000e9cc",
+      "value": "FUN_18000e9cc"
+    },
+    {
+      "address": "0x18000eab4",
+      "value": "FUN_18000eab4"
+    },
+    {
+      "address": "0x18000eb3c",
+      "value": "FH4::UWMap4::ReadEntry"
+    },
+    {
+      "address": "0x18000ebdc",
+      "value": "FUN_18000ebdc"
+    },
+    {
+      "address": "0x18000ebe8",
+      "value": "FUN_18000ebe8"
+    },
+    {
+      "address": "0x18000ebf8",
+      "value": "FUN_18000ebf8"
+    },
+    {
+      "address": "0x18000ecc8",
+      "value": "FUN_18000ecc8"
+    },
+    {
+      "address": "0x18000ed78",
+      "value": "__vcrt_initialize_locks"
+    },
+    {
+      "address": "0x18000edc0",
+      "value": "__vcrt_uninitialize_locks"
+    },
+    {
+      "address": "0x18000ee30",
+      "value": "FUN_18000ee30"
+    },
+    {
+      "address": "0x18000ee50",
+      "value": "FUN_18000ee50"
+    },
+    {
+      "address": "0x18000ee60",
+      "value": "FUN_18000ee60"
+    },
+    {
+      "address": "0x18000ee64",
+      "value": "__except_validate_context_record"
+    },
+    {
+      "address": "0x18000ee9c",
+      "value": "FUN_18000ee9c"
+    },
+    {
+      "address": "0x18000efec",
+      "value": "__vcrt_FlsAlloc"
+    },
+    {
+      "address": "0x18000f034",
+      "value": "__vcrt_FlsFree"
+    },
+    {
+      "address": "0x18000f07c",
+      "value": "__vcrt_FlsGetValue"
+    },
+    {
+      "address": "0x18000f0c4",
+      "value": "__vcrt_FlsSetValue"
+    },
+    {
+      "address": "0x18000f118",
+      "value": "__vcrt_InitializeCriticalSectionEx"
+    },
+    {
+      "address": "0x18000f1c0",
+      "value": "_CallSettingFrame"
+    },
+    {
+      "address": "0x18000f200",
+      "value": "FUN_18000f200"
+    },
+    {
+      "address": "0x18000f230",
+      "value": "FUN_18000f230"
+    },
+    {
+      "address": "0x18000f260",
+      "value": "_CallSettingFrameEncoded"
+    },
+    {
+      "address": "0x18000f2b0",
+      "value": "FUN_18000f2b0"
+    },
+    {
+      "address": "0x18000f370",
+      "value": "FUN_18000f370"
+    },
+    {
+      "address": "0x18000f3a0",
+      "value": "FUN_18000f3a0"
+    },
+    {
+      "address": "0x18000f410",
+      "value": "FUN_18000f410"
+    },
+    {
+      "address": "0x18000f530",
+      "value": "FUN_18000f530"
+    },
+    {
+      "address": "0x18000f598",
+      "value": "FUN_18000f598"
+    },
+    {
+      "address": "0x18000f604",
+      "value": "FUN_18000f604"
+    },
+    {
+      "address": "0x18000f650",
+      "value": "FUN_18000f650"
+    },
+    {
+      "address": "0x18000f7c0",
+      "value": "FUN_18000f7c0"
+    },
+    {
+      "address": "0x18000f7c8",
+      "value": "FUN_18000f7c8"
+    },
+    {
+      "address": "0x18000f864",
+      "value": "FUN_18000f864"
+    },
+    {
+      "address": "0x18000f91c",
+      "value": "FUN_18000f91c"
+    },
+    {
+      "address": "0x18000f93c",
+      "value": "_invoke_watson"
+    },
+    {
+      "address": "0x18000f984",
+      "value": "KERNEL32.DLL::GetCurrentProcessId"
+    },
+    {
+      "address": "0x18000f990",
+      "value": "FUN_18000f990"
+    },
+    {
+      "address": "0x18000f9d0",
+      "value": "FUN_18000f9d0"
+    },
+    {
+      "address": "0x18000f9e0",
+      "value": "FUN_18000f9e0"
+    },
+    {
+      "address": "0x18000fa20",
+      "value": "_set_new_handler"
+    },
+    {
+      "address": "0x18000fa90",
+      "value": "_malloc_base"
+    },
+    {
+      "address": "0x18000faa0",
+      "value": "thunk_FUN_1800116e0"
+    },
+    {
+      "address": "0x18000faa8",
+      "value": "_seh_filter_dll"
+    },
+    {
+      "address": "0x18000fabc",
+      "value": "FUN_18000fabc"
+    },
+    {
+      "address": "0x18000fc28",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x18000fc60",
+      "value": "FUN_18000fc60"
+    },
+    {
+      "address": "0x18000fd20",
+      "value": "FUN_18000fd20"
+    },
+    {
+      "address": "0x18000fe04",
+      "value": "FUN_18000fe04"
+    },
+    {
+      "address": "0x18000fe34",
+      "value": "FUN_18000fe34"
+    },
+    {
+      "address": "0x18000fe98",
+      "value": "FUN_18000fe98"
+    },
+    {
+      "address": "0x18000fea0",
+      "value": "FUN_18000fea0"
+    },
+    {
+      "address": "0x18000feb0",
+      "value": "FUN_18000feb0"
+    },
+    {
+      "address": "0x18000febc",
+      "value": "FUN_18000febc"
+    },
+    {
+      "address": "0x18000fec4",
+      "value": "FUN_18000fec4"
+    },
+    {
+      "address": "0x180010084",
+      "value": "__acrt_allocate_buffer_for_argv"
+    },
+    {
+      "address": "0x1800100e4",
+      "value": "FUN_1800100e4"
+    },
+    {
+      "address": "0x180010264",
+      "value": "FUN_180010264"
+    },
+    {
+      "address": "0x1800102d8",
+      "value": "FUN_1800102d8"
+    },
+    {
+      "address": "0x1800103ec",
+      "value": "free_environment<>"
+    },
+    {
+      "address": "0x180010430",
+      "value": "uninitialize_environment_internal<>"
+    },
+    {
+      "address": "0x18001044c",
+      "value": "uninitialize_environment_internal<>"
+    },
+    {
+      "address": "0x180010468",
+      "value": "FUN_180010468"
+    },
+    {
+      "address": "0x1800104ac",
+      "value": "thunk_FUN_180010264"
+    },
+    {
+      "address": "0x1800104b4",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x1800104f0",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x18001052c",
+      "value": "FUN_18001052c"
+    },
+    {
+      "address": "0x1800106dc",
+      "value": "FUN_1800106dc"
+    },
+    {
+      "address": "0x1800107f4",
+      "value": "FUN_1800107f4"
+    },
+    {
+      "address": "0x180010804",
+      "value": "FUN_180010804"
+    },
+    {
+      "address": "0x180010848",
+      "value": "_initialize_onexit_table"
+    },
+    {
+      "address": "0x180010870",
+      "value": "_register_onexit_function"
+    },
+    {
+      "address": "0x1800108cc",
+      "value": "FUN_1800108cc"
+    },
+    {
+      "address": "0x1800108f4",
+      "value": "FUN_1800108f4"
+    },
+    {
+      "address": "0x180010904",
+      "value": "FUN_180010904"
+    },
+    {
+      "address": "0x18001094c",
+      "value": "FUN_18001094c"
+    },
+    {
+      "address": "0x18001098c",
+      "value": "FUN_18001098c"
+    },
+    {
+      "address": "0x1800109e8",
+      "value": "FUN_1800109e8"
+    },
+    {
+      "address": "0x1800109fc",
+      "value": "FUN_1800109fc"
+    },
+    {
+      "address": "0x180010a10",
+      "value": "FUN_180010a10"
+    },
+    {
+      "address": "0x180010a20",
+      "value": "__acrt_uninitialize"
+    },
+    {
+      "address": "0x180010a58",
+      "value": "FUN_180010a58"
+    },
+    {
+      "address": "0x180010a68",
+      "value": "FUN_180010a68"
+    },
+    {
+      "address": "0x180010aa0",
+      "value": "FUN_180010aa0"
+    },
+    {
+      "address": "0x180010adc",
+      "value": "FUN_180010adc"
+    },
+    {
+      "address": "0x180010afc",
+      "value": "abort"
+    },
+    {
+      "address": "0x180010b60",
+      "value": "FUN_180010b60"
+    },
+    {
+      "address": "0x180010be0",
+      "value": "_calloc_base"
+    },
+    {
+      "address": "0x180010bf0",
+      "value": "FUN_180010bf0"
+    },
+    {
+      "address": "0x180010c70",
+      "value": "wcsncmp"
+    },
+    {
+      "address": "0x180010ca4",
+      "value": "FUN_180010ca4"
+    },
+    {
+      "address": "0x180010d74",
+      "value": "FUN_180010d74"
+    },
+    {
+      "address": "0x180010d9c",
+      "value": "FUN_180010d9c"
+    },
+    {
+      "address": "0x180010dc0",
+      "value": "FUN_180010dc0"
+    },
+    {
+      "address": "0x180010de4",
+      "value": "FUN_180010de4"
+    },
+    {
+      "address": "0x180010e08",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010e48",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010e88",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010ed0",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010f30",
+      "value": "construct_ptd_array"
+    },
+    {
+      "address": "0x180011000",
+      "value": "FUN_180011000"
+    },
+    {
+      "address": "0x180011020",
+      "value": "destroy_ptd_array"
+    },
+    {
+      "address": "0x180011118",
+      "value": "FUN_180011118"
+    },
+    {
+      "address": "0x1800111d0",
+      "value": "replace_current_thread_locale_nolock"
+    },
+    {
+      "address": "0x180011238",
+      "value": "FUN_180011238"
+    },
+    {
+      "address": "0x180011288",
+      "value": "FUN_180011288"
+    },
+    {
+      "address": "0x1800112a4",
+      "value": "FUN_1800112a4"
+    },
+    {
+      "address": "0x1800112e8",
+      "value": "FUN_1800112e8"
+    },
+    {
+      "address": "0x180011378",
+      "value": "FUN_180011378"
+    },
+    {
+      "address": "0x1800113d4",
+      "value": "FUN_1800113d4"
+    },
+    {
+      "address": "0x180011418",
+      "value": "FUN_180011418"
+    },
+    {
+      "address": "0x18001143c",
+      "value": "__acrt_update_locale_info"
+    },
+    {
+      "address": "0x180011470",
+      "value": "FUN_180011470"
+    },
+    {
+      "address": "0x1800114a8",
+      "value": "FUN_1800114a8"
+    },
+    {
+      "address": "0x1800114dc",
+      "value": "FUN_1800114dc"
+    },
+    {
+      "address": "0x180011514",
+      "value": "__crt_seh_guarded_call<void>::operator()<<lambda_410d79af7f07d98d83a3f525b3859a53>,<lambda_3e16ef9562a7dcce91392c22ab16ea36>&___ptr64,<lambda_38119f0e861e05405d8a144b9b982f0a>_>"
+    },
+    {
+      "address": "0x180011584",
+      "value": "FUN_180011584"
+    },
+    {
+      "address": "0x180011590",
+      "value": "__acrt_uninitialize_locale"
+    },
+    {
+      "address": "0x1800115c0",
+      "value": "__acrt_initialize_locks"
+    },
+    {
+      "address": "0x180011608",
+      "value": "__acrt_lock"
+    },
+    {
+      "address": "0x180011624",
+      "value": "__acrt_uninitialize_locks"
+    },
+    {
+      "address": "0x18001165c",
+      "value": "__acrt_unlock"
+    },
+    {
+      "address": "0x180011680",
+      "value": "_malloc_base"
+    },
+    {
+      "address": "0x1800116e0",
+      "value": "FUN_1800116e0"
+    },
+    {
+      "address": "0x180011738",
+      "value": "FUN_180011738"
+    },
+    {
+      "address": "0x180011754",
+      "value": "FUN_180011754"
+    },
+    {
+      "address": "0x18001176c",
+      "value": "FUN_18001176c"
+    },
+    {
+      "address": "0x1800117a0",
+      "value": "_calloc_base"
+    },
+    {
+      "address": "0x18001182c",
+      "value": "FUN_18001182c"
+    },
+    {
+      "address": "0x1800119cc",
+      "value": "FUN_1800119cc"
+    },
+    {
+      "address": "0x180011b78",
+      "value": "FUN_180011b78"
+    },
+    {
+      "address": "0x180011db4",
+      "value": "FUN_180011db4"
+    },
+    {
+      "address": "0x180011f38",
+      "value": "FUN_180011f38"
+    },
+    {
+      "address": "0x180012298",
+      "value": "thunk_FUN_180011b78"
+    },
+    {
+      "address": "0x1800122a0",
+      "value": "FUN_1800122a0"
+    },
+    {
+      "address": "0x1800123bc",
+      "value": "FUN_1800123bc"
+    },
+    {
+      "address": "0x1800124e0",
+      "value": "FUN_1800124e0"
+    },
+    {
+      "address": "0x1800126b0",
+      "value": "getSystemCP"
+    },
+    {
+      "address": "0x180012730",
+      "value": "FUN_180012730"
+    },
+    {
+      "address": "0x1800127c8",
+      "value": "FUN_1800127c8"
+    },
+    {
+      "address": "0x1800129c0",
+      "value": "FUN_1800129c0"
+    },
+    {
+      "address": "0x180012c30",
+      "value": "update_thread_multibyte_data_internal"
+    },
+    {
+      "address": "0x180012ce8",
+      "value": "__acrt_initialize_multibyte"
+    },
+    {
+      "address": "0x180012d48",
+      "value": "FUN_180012d48"
+    },
+    {
+      "address": "0x180012d64",
+      "value": "FUN_180012d64"
+    },
+    {
+      "address": "0x18001302c",
+      "value": "FUN_18001302c"
+    },
+    {
+      "address": "0x1800130a0",
+      "value": "FUN_1800130a0"
+    },
+    {
+      "address": "0x1800130b4",
+      "value": "FUN_1800130b4"
+    },
+    {
+      "address": "0x1800130dc",
+      "value": "FUN_1800130dc"
+    },
+    {
+      "address": "0x18001316c",
+      "value": "FUN_18001316c"
+    },
+    {
+      "address": "0x18001324c",
+      "value": "FUN_18001324c"
+    },
+    {
+      "address": "0x180013360",
+      "value": "_recalloc_base"
+    },
+    {
+      "address": "0x180013408",
+      "value": "FUN_180013408"
+    },
+    {
+      "address": "0x1800135bc",
+      "value": "FUN_1800135bc"
+    },
+    {
+      "address": "0x180013618",
+      "value": "FUN_180013618"
+    },
+    {
+      "address": "0x180013664",
+      "value": "KERNEL32.DLL::FlsAlloc"
+    },
+    {
+      "address": "0x18001366c",
+      "value": "KERNEL32.DLL::FlsFree"
+    },
+    {
+      "address": "0x180013674",
+      "value": "KERNEL32.DLL::FlsGetValue"
+    },
+    {
+      "address": "0x18001367c",
+      "value": "FUN_18001367c"
+    },
+    {
+      "address": "0x180013688",
+      "value": "KERNEL32.DLL::FlsSetValue"
+    },
+    {
+      "address": "0x180013690",
+      "value": "KERNEL32.DLL::InitializeCriticalSectionEx"
+    },
+    {
+      "address": "0x180013698",
+      "value": "FUN_180013698"
+    },
+    {
+      "address": "0x18001378c",
+      "value": "FUN_18001378c"
+    },
+    {
+      "address": "0x1800137f0",
+      "value": "FUN_1800137f0"
+    },
+    {
+      "address": "0x180013820",
+      "value": "FUN_180013820"
+    },
+    {
+      "address": "0x180013864",
+      "value": "__acrt_uninitialize_winapi_thunks"
+    },
+    {
+      "address": "0x1800138c0",
+      "value": "FUN_1800138c0"
+    },
+    {
+      "address": "0x180013918",
+      "value": "FUN_180013918"
+    },
+    {
+      "address": "0x180013a18",
+      "value": "FUN_180013a18"
+    },
+    {
+      "address": "0x180013b20",
+      "value": "__acrt_initialize_lowio"
+    },
+    {
+      "address": "0x180013b5c",
+      "value": "__acrt_uninitialize_lowio"
+    },
+    {
+      "address": "0x180013b9c",
+      "value": "FUN_180013b9c"
+    },
+    {
+      "address": "0x180013c1c",
+      "value": "FUN_180013c1c"
+    },
+    {
+      "address": "0x180013c58",
+      "value": "FUN_180013c58"
+    },
+    {
+      "address": "0x180013ca0",
+      "value": "__acrt_get_sigabrt_handler"
+    },
+    {
+      "address": "0x180013cd0",
+      "value": "FUN_180013cd0"
+    },
+    {
+      "address": "0x180013cf0",
+      "value": "FUN_180013cf0"
+    },
+    {
+      "address": "0x180013f50",
+      "value": "FUN_180013f50"
+    },
+    {
+      "address": "0x180013f58",
+      "value": "FUN_180013f58"
+    },
+    {
+      "address": "0x180013ff4",
+      "value": "FUN_180013ff4"
+    },
+    {
+      "address": "0x1800140d8",
+      "value": "common_flush_all"
+    },
+    {
+      "address": "0x180014138",
+      "value": "FUN_180014138"
+    },
+    {
+      "address": "0x1800141c4",
+      "value": "FUN_1800141c4"
+    },
+    {
+      "address": "0x180014298",
+      "value": "common_flush_all"
+    },
+    {
+      "address": "0x1800142a0",
+      "value": "FUN_1800142a0"
+    },
+    {
+      "address": "0x1800143c0",
+      "value": "__acrt_uninitialize_stdio"
+    },
+    {
+      "address": "0x18001441c",
+      "value": "FUN_18001441c"
+    },
+    {
+      "address": "0x180014428",
+      "value": "FUN_180014428"
+    },
+    {
+      "address": "0x180014434",
+      "value": "FUN_180014434"
+    },
+    {
+      "address": "0x1800145ac",
+      "value": "FUN_1800145ac"
+    },
+    {
+      "address": "0x1800145e4",
+      "value": "FUN_1800145e4"
+    },
+    {
+      "address": "0x1800147a4",
+      "value": "FUN_1800147a4"
+    },
+    {
+      "address": "0x1800147ec",
+      "value": "FUN_1800147ec"
+    },
+    {
+      "address": "0x1800149a4",
+      "value": "FUN_1800149a4"
+    },
+    {
+      "address": "0x1800149cc",
+      "value": "__acrt_add_locale_ref"
+    },
+    {
+      "address": "0x180014a58",
+      "value": "__acrt_free_locale"
+    },
+    {
+      "address": "0x180014bd0",
+      "value": "__acrt_locale_add_lc_time_reference"
+    },
+    {
+      "address": "0x180014bf8",
+      "value": "__acrt_locale_free_lc_time_if_unreferenced"
+    },
+    {
+      "address": "0x180014c30",
+      "value": "__acrt_locale_release_lc_time_reference"
+    },
+    {
+      "address": "0x180014c58",
+      "value": "__acrt_release_locale_ref"
+    },
+    {
+      "address": "0x180014d00",
+      "value": "__acrt_update_thread_locale_data"
+    },
+    {
+      "address": "0x180014d70",
+      "value": "_updatetlocinfoEx_nolock"
+    },
+    {
+      "address": "0x180014dd8",
+      "value": "__acrt_locale_free_monetary"
+    },
+    {
+      "address": "0x180014ee4",
+      "value": "__acrt_locale_free_numeric"
+    },
+    {
+      "address": "0x180014f50",
+      "value": "FUN_180014f50"
+    },
+    {
+      "address": "0x180014f84",
+      "value": "__acrt_locale_free_time"
+    },
+    {
+      "address": "0x18001508c",
+      "value": "FUN_18001508c"
+    },
+    {
+      "address": "0x180015220",
+      "value": "FUN_180015220"
+    },
+    {
+      "address": "0x180015230",
+      "value": "FUN_180015230"
+    },
+    {
+      "address": "0x180015260",
+      "value": "FUN_180015260"
+    },
+    {
+      "address": "0x180015600",
+      "value": "FUN_180015600"
+    },
+    {
+      "address": "0x180015730",
+      "value": "FUN_180015730"
+    },
+    {
+      "address": "0x1800157d0",
+      "value": "FUN_1800157d0"
+    },
+    {
+      "address": "0x180015b88",
+      "value": "FUN_180015b88"
+    },
+    {
+      "address": "0x180015b90",
+      "value": "_mbsdec_l"
+    },
+    {
+      "address": "0x180015c24",
+      "value": "FUN_180015c24"
+    },
+    {
+      "address": "0x180015f58",
+      "value": "__acrt_LCMapStringA"
+    },
+    {
+      "address": "0x180015ff0",
+      "value": "FUN_180015ff0"
+    },
+    {
+      "address": "0x180016010",
+      "value": "_msize_base"
+    },
+    {
+      "address": "0x180016060",
+      "value": "_realloc_base"
+    },
+    {
+      "address": "0x1800160dc",
+      "value": "FUN_1800160dc"
+    },
+    {
+      "address": "0x180016184",
+      "value": "__acrt_lowio_create_handle_array"
+    },
+    {
+      "address": "0x18001622c",
+      "value": "__acrt_lowio_destroy_handle_array"
+    },
+    {
+      "address": "0x18001627c",
+      "value": "__acrt_lowio_ensure_fh_exists"
+    },
+    {
+      "address": "0x180016324",
+      "value": "FUN_180016324"
+    },
+    {
+      "address": "0x18001634c",
+      "value": "FUN_18001634c"
+    },
+    {
+      "address": "0x180016374",
+      "value": "FUN_180016374"
+    },
+    {
+      "address": "0x180016430",
+      "value": "FUN_180016430"
+    },
+    {
+      "address": "0x1800164a8",
+      "value": "FUN_1800164a8"
+    },
+    {
+      "address": "0x180016534",
+      "value": "_commit"
+    },
+    {
+      "address": "0x1800165c8",
+      "value": "FUN_1800165c8"
+    },
+    {
+      "address": "0x180016a5c",
+      "value": "FUN_180016a5c"
+    },
+    {
+      "address": "0x180016b64",
+      "value": "FUN_180016b64"
+    },
+    {
+      "address": "0x180016c80",
+      "value": "FUN_180016c80"
+    },
+    {
+      "address": "0x180016df4",
+      "value": "FUN_180016df4"
+    },
+    {
+      "address": "0x180016f14",
+      "value": "FUN_180016f14"
+    },
+    {
+      "address": "0x180017244",
+      "value": "FUN_180017244"
+    },
+    {
+      "address": "0x1800172f8",
+      "value": "__acrt_stdio_free_buffer_nolock"
+    },
+    {
+      "address": "0x18001733c",
+      "value": "FUN_18001733c"
+    },
+    {
+      "address": "0x18001739c",
+      "value": "FUN_18001739c"
+    },
+    {
+      "address": "0x1800173a4",
+      "value": "FUN_1800173a4"
+    },
+    {
+      "address": "0x1800173c0",
+      "value": "FUN_1800173c0"
+    },
+    {
+      "address": "0x180017428",
+      "value": "FUN_180017428"
+    },
+    {
+      "address": "0x180017440",
+      "value": "__strncnt"
+    },
+    {
+      "address": "0x180017458",
+      "value": "FUN_180017458"
+    },
+    {
+      "address": "0x180017460",
+      "value": "FUN_180017460"
+    },
+    {
+      "address": "0x180017510",
+      "value": "thunk_FUN_180017460"
+    },
+    {
+      "address": "0x180017518",
+      "value": "FUN_180017518"
+    },
+    {
+      "address": "0x180017558",
+      "value": "FUN_180017558"
+    },
+    {
+      "address": "0x1800175d4",
+      "value": "FUN_1800175d4"
+    },
+    {
+      "address": "0x18001767c",
+      "value": "FUN_18001767c"
+    },
+    {
+      "address": "0x180017720",
+      "value": "__dcrt_lowio_ensure_console_output_initialized"
+    },
+    {
+      "address": "0x180017774",
+      "value": "FUN_180017774"
+    },
+    {
+      "address": "0x180017790",
+      "value": "__dcrt_write_console"
+    },
+    {
+      "address": "0x180017850",
+      "value": "FUN_180017850"
+    },
+    {
+      "address": "0x1800178c8",
+      "value": "FUN_1800178c8"
+    },
+    {
+      "address": "0x18001798c",
+      "value": "FUN_18001798c"
+    },
+    {
+      "address": "0x180017a5c",
+      "value": "FUN_180017a5c"
+    },
+    {
+      "address": "0x180017a80",
+      "value": "FUN_180017a80"
+    },
+    {
+      "address": "0x180017aa0",
+      "value": "FUN_180017aa0"
+    },
+    {
+      "address": "0x180017b54",
+      "value": "FUN_180017b54"
+    },
+    {
+      "address": "0x180017c40",
+      "value": "FUN_180017c40"
+    },
+    {
+      "address": "0x180017cfc",
+      "value": "FUN_180017cfc"
+    },
+    {
+      "address": "0x180017d9c",
+      "value": "DloadMakePermanentImageCommit"
+    },
+    {
+      "address": "0x180017e34",
+      "value": "FUN_180017e34"
+    },
+    {
+      "address": "0x180017ed0",
+      "value": "FUN_180017ed0"
+    },
+    {
+      "address": "0x180017fc8",
+      "value": "FUN_180017fc8"
+    },
+    {
+      "address": "0x180018074",
+      "value": "FUN_180018074"
+    },
+    {
+      "address": "0x180018370",
+      "value": "FUN_180018370"
+    },
+    {
+      "address": "0x180018390",
+      "value": "FUN_180018390"
+    },
+    {
+      "address": "0x1800183f0",
+      "value": "_FindPESection"
+    },
+    {
+      "address": "0x180018440",
+      "value": "FUN_180018440"
+    },
+    {
+      "address": "0x180018490",
+      "value": "FUN_180018490"
+    },
+    {
+      "address": "0x1800184bc",
+      "value": "__GSHandlerCheck_SEH"
+    },
+    {
+      "address": "0x180018544",
+      "value": "FUN_180018544"
+    },
+    {
+      "address": "0x1800185e0",
+      "value": "__chkstk"
+    },
+    {
+      "address": "0x180018630",
+      "value": "FUN_180018630"
+    },
+    {
+      "address": "0x180018680",
+      "value": "FUN_180018680"
+    },
+    {
+      "address": "0x180018700",
+      "value": "thunk_FUN_1800187b0"
+    },
+    {
+      "address": "0x180018710",
+      "value": "FUN_180018710"
+    },
+    {
+      "address": "0x1800187b0",
+      "value": "FUN_1800187b0"
+    },
+    {
+      "address": "0x180018820",
+      "value": "_guard_dispatch_icall"
+    },
+    {
+      "address": "0x180018840",
+      "value": "_guard_dispatch_icall"
+    },
+    {
+      "address": "0x180018860",
+      "value": "_guard_dispatch_icall"
+    },
+    {
+      "address": "0x180018890",
+      "value": "FUN_180018890"
+    },
+    {
+      "address": "0x1800188a0",
+      "value": "FUN_1800188a0"
+    },
+    {
+      "address": "0x180018c50",
+      "value": "FUN_180018c50"
+    },
+    {
+      "address": "0x180018c60",
+      "value": "FUN_180018c60"
+    },
+    {
+      "address": "0x1800192e0",
+      "value": "strcmp"
+    },
+    {
+      "address": "0x180019360",
+      "value": "strlen"
+    },
+    {
+      "address": "0x180019420",
+      "value": "strncmp"
+    },
+    {
+      "address": "0x18001965c",
+      "value": "FUN_18001965c"
+    },
+    {
+      "address": "0x18001968e",
+      "value": "FUN_18001968e"
+    },
+    {
+      "address": "0x180019700",
+      "value": "FUN_180019700"
+    },
+    {
+      "address": "0x180019774",
+      "value": "FUN_180019774"
+    },
+    {
+      "address": "0x180019800",
+      "value": "FUN_180019800"
+    },
+    {
+      "address": "0x180019870",
+      "value": "FUN_180019870"
+    },
+    {
+      "address": "0x180019a50",
+      "value": "FUN_180019a50"
+    },
+    {
+      "address": "0x180019ad8",
+      "value": "FUN_180019ad8"
+    },
+    {
+      "address": "0x180019af0",
+      "value": "FUN_180019af0"
+    },
+    {
+      "address": "0x180019b07",
+      "value": "FUN_180019b07"
+    },
+    {
+      "address": "0x180019b20",
+      "value": "FUN_180019b20"
+    },
+    {
+      "address": "0x180019b34",
+      "value": "FUN_180019b34"
+    },
+    {
+      "address": "0x180019b6a",
+      "value": "FUN_180019b6a"
+    },
+    {
+      "address": "0x180019c11",
+      "value": "FUN_180019c11"
+    },
+    {
+      "address": "0x180019cc6",
+      "value": "FUN_180019cc6"
+    },
+    {
+      "address": "0x180019d58",
+      "value": "FUN_180019d58"
+    },
+    {
+      "address": "0x180019d74",
+      "value": "FUN_180019d74"
+    },
+    {
+      "address": "0x180019d95",
+      "value": "FUN_180019d95"
+    },
+    {
+      "address": "0x180019e1b",
+      "value": "FUN_180019e1b"
+    },
+    {
+      "address": "0x180019e43",
+      "value": "FUN_180019e43"
+    },
+    {
+      "address": "0x180019ed4",
+      "value": "FUN_180019ed4"
+    },
+    {
+      "address": "0x180019eea",
+      "value": "FUN_180019eea"
+    },
+    {
+      "address": "0x180019f0d",
+      "value": "FUN_180019f0d"
+    },
+    {
+      "address": "0x180019f23",
+      "value": "FUN_180019f23"
+    },
+    {
+      "address": "0x180019f50",
+      "value": "FUN_180019f50"
+    },
+    {
+      "address": "0x180019f66",
+      "value": "FUN_180019f66"
+    },
+    {
+      "address": "0x180019f7c",
+      "value": "FUN_180019f7c"
+    },
+    {
+      "address": "0x180019f96",
+      "value": "FUN_180019f96"
+    },
+    {
+      "address": "0x180019fc3",
+      "value": "FUN_180019fc3"
+    },
+    {
+      "address": "0x180019fdd",
+      "value": "FUN_180019fdd"
+    },
+    {
+      "address": "0x180019ff7",
+      "value": "FUN_180019ff7"
+    },
+    {
+      "address": "0x18001a010",
+      "value": "FUN_18001a010"
+    },
+    {
+      "address": "0x18001a029",
+      "value": "FUN_18001a029"
+    },
+    {
+      "address": "0x18001a04a",
+      "value": "FUN_18001a04a"
+    },
+    {
+      "address": "0x18001a065",
+      "value": "FUN_18001a065"
+    },
+    {
+      "address": "0x18001a082",
+      "value": "FUN_18001a082"
+    },
+    {
+      "address": "0x18001a09b",
+      "value": "FUN_18001a09b"
+    },
+    {
+      "address": "0x18001a0b5",
+      "value": "FUN_18001a0b5"
+    },
+    {
+      "address": "0x18001a0cc",
+      "value": "FUN_18001a0cc"
+    },
+    {
+      "address": "0x18001a0e5",
+      "value": "FUN_18001a0e5"
+    },
+    {
+      "address": "0x18001a100",
+      "value": "FUN_18001a100"
+    },
+    {
+      "address": "0x18001a120",
+      "value": "FUN_18001a120"
+    }
+  ],
+  "normalized_result": [
+    {
+      "address": "EXTERNAL:0x1",
+      "value": "KERNEL32.DLL::GetModuleHandleA"
+    },
+    {
+      "address": "EXTERNAL:0x2",
+      "value": "KERNEL32.DLL::OpenProcess"
+    },
+    {
+      "address": "EXTERNAL:0x3",
+      "value": "KERNEL32.DLL::CreateToolhelp32Snapshot"
+    },
+    {
+      "address": "EXTERNAL:0x4",
+      "value": "KERNEL32.DLL::Process32NextW"
+    },
+    {
+      "address": "EXTERNAL:0x5",
+      "value": "KERNEL32.DLL::K32GetProcessMemoryInfo"
+    },
+    {
+      "address": "EXTERNAL:0x6",
+      "value": "KERNEL32.DLL::Process32FirstW"
+    },
+    {
+      "address": "EXTERNAL:0x7",
+      "value": "KERNEL32.DLL::CloseHandle"
+    },
+    {
+      "address": "EXTERNAL:0x8",
+      "value": "KERNEL32.DLL::WideCharToMultiByte"
+    },
+    {
+      "address": "EXTERNAL:0x9",
+      "value": "KERNEL32.DLL::GetProcessTimes"
+    },
+    {
+      "address": "EXTERNAL:0xa",
+      "value": "KERNEL32.DLL::LoadLibraryExA"
+    },
+    {
+      "address": "EXTERNAL:0xb",
+      "value": "KERNEL32.DLL::RtlCaptureContext"
+    },
+    {
+      "address": "EXTERNAL:0xc",
+      "value": "KERNEL32.DLL::RtlLookupFunctionEntry"
+    },
+    {
+      "address": "EXTERNAL:0xd",
+      "value": "KERNEL32.DLL::RtlVirtualUnwind"
+    },
+    {
+      "address": "EXTERNAL:0xe",
+      "value": "KERNEL32.DLL::UnhandledExceptionFilter"
+    },
+    {
+      "address": "EXTERNAL:0xf",
+      "value": "KERNEL32.DLL::SetUnhandledExceptionFilter"
+    },
+    {
+      "address": "EXTERNAL:0x10",
+      "value": "KERNEL32.DLL::GetCurrentProcess"
+    },
+    {
+      "address": "EXTERNAL:0x11",
+      "value": "KERNEL32.DLL::TerminateProcess"
+    },
+    {
+      "address": "EXTERNAL:0x12",
+      "value": "KERNEL32.DLL::IsProcessorFeaturePresent"
+    },
+    {
+      "address": "EXTERNAL:0x13",
+      "value": "KERNEL32.DLL::IsDebuggerPresent"
+    },
+    {
+      "address": "EXTERNAL:0x14",
+      "value": "KERNEL32.DLL::GetStartupInfoW"
+    },
+    {
+      "address": "EXTERNAL:0x15",
+      "value": "KERNEL32.DLL::GetModuleHandleW"
+    },
+    {
+      "address": "EXTERNAL:0x16",
+      "value": "KERNEL32.DLL::QueryPerformanceCounter"
+    },
+    {
+      "address": "EXTERNAL:0x17",
+      "value": "KERNEL32.DLL::GetCurrentProcessId"
+    },
+    {
+      "address": "EXTERNAL:0x18",
+      "value": "KERNEL32.DLL::GetCurrentThreadId"
+    },
+    {
+      "address": "EXTERNAL:0x19",
+      "value": "KERNEL32.DLL::GetSystemTimeAsFileTime"
+    },
+    {
+      "address": "EXTERNAL:0x1b",
+      "value": "KERNEL32.DLL::RtlUnwindEx"
+    },
+    {
+      "address": "EXTERNAL:0x1c",
+      "value": "KERNEL32.DLL::RtlPcToFileHeader"
+    },
+    {
+      "address": "EXTERNAL:0x1d",
+      "value": "KERNEL32.DLL::RaiseException"
+    },
+    {
+      "address": "EXTERNAL:0x1e",
+      "value": "KERNEL32.DLL::InterlockedFlushSList"
+    },
+    {
+      "address": "EXTERNAL:0x1f",
+      "value": "KERNEL32.DLL::GetLastError"
+    },
+    {
+      "address": "EXTERNAL:0x20",
+      "value": "KERNEL32.DLL::SetLastError"
+    },
+    {
+      "address": "EXTERNAL:0x21",
+      "value": "KERNEL32.DLL::EncodePointer"
+    },
+    {
+      "address": "EXTERNAL:0x24",
+      "value": "KERNEL32.DLL::DeleteCriticalSection"
+    },
+    {
+      "address": "EXTERNAL:0x25",
+      "value": "KERNEL32.DLL::InitializeCriticalSectionAndSpinCount"
+    },
+    {
+      "address": "EXTERNAL:0x28",
+      "value": "KERNEL32.DLL::TlsSetValue"
+    },
+    {
+      "address": "EXTERNAL:0x2a",
+      "value": "KERNEL32.DLL::FreeLibrary"
+    },
+    {
+      "address": "EXTERNAL:0x2b",
+      "value": "KERNEL32.DLL::GetProcAddress"
+    },
+    {
+      "address": "EXTERNAL:0x2c",
+      "value": "KERNEL32.DLL::LoadLibraryExW"
+    },
+    {
+      "address": "EXTERNAL:0x2d",
+      "value": "KERNEL32.DLL::ExitProcess"
+    },
+    {
+      "address": "EXTERNAL:0x2e",
+      "value": "KERNEL32.DLL::GetModuleHandleExW"
+    },
+    {
+      "address": "EXTERNAL:0x2f",
+      "value": "KERNEL32.DLL::GetModuleFileNameW"
+    },
+    {
+      "address": "EXTERNAL:0x30",
+      "value": "KERNEL32.DLL::HeapAlloc"
+    },
+    {
+      "address": "EXTERNAL:0x31",
+      "value": "KERNEL32.DLL::HeapFree"
+    },
+    {
+      "address": "EXTERNAL:0x32",
+      "value": "KERNEL32.DLL::FindClose"
+    },
+    {
+      "address": "EXTERNAL:0x33",
+      "value": "KERNEL32.DLL::FindFirstFileExW"
+    },
+    {
+      "address": "EXTERNAL:0x34",
+      "value": "KERNEL32.DLL::FindNextFileW"
+    },
+    {
+      "address": "EXTERNAL:0x35",
+      "value": "KERNEL32.DLL::IsValidCodePage"
+    },
+    {
+      "address": "EXTERNAL:0x36",
+      "value": "KERNEL32.DLL::GetACP"
+    },
+    {
+      "address": "EXTERNAL:0x37",
+      "value": "KERNEL32.DLL::GetOEMCP"
+    },
+    {
+      "address": "EXTERNAL:0x38",
+      "value": "KERNEL32.DLL::GetCPInfo"
+    },
+    {
+      "address": "EXTERNAL:0x39",
+      "value": "KERNEL32.DLL::GetCommandLineA"
+    },
+    {
+      "address": "EXTERNAL:0x3a",
+      "value": "KERNEL32.DLL::GetCommandLineW"
+    },
+    {
+      "address": "EXTERNAL:0x3c",
+      "value": "KERNEL32.DLL::GetEnvironmentStringsW"
+    },
+    {
+      "address": "EXTERNAL:0x3d",
+      "value": "KERNEL32.DLL::FreeEnvironmentStringsW"
+    },
+    {
+      "address": "EXTERNAL:0x3e",
+      "value": "KERNEL32.DLL::FlsAlloc"
+    },
+    {
+      "address": "EXTERNAL:0x3f",
+      "value": "KERNEL32.DLL::FlsGetValue"
+    },
+    {
+      "address": "EXTERNAL:0x40",
+      "value": "KERNEL32.DLL::FlsSetValue"
+    },
+    {
+      "address": "EXTERNAL:0x41",
+      "value": "KERNEL32.DLL::FlsFree"
+    },
+    {
+      "address": "EXTERNAL:0x42",
+      "value": "KERNEL32.DLL::InitializeCriticalSectionEx"
+    },
+    {
+      "address": "EXTERNAL:0x43",
+      "value": "KERNEL32.DLL::VirtualProtect"
+    },
+    {
+      "address": "EXTERNAL:0x44",
+      "value": "KERNEL32.DLL::LCMapStringW"
+    },
+    {
+      "address": "EXTERNAL:0x45",
+      "value": "KERNEL32.DLL::GetProcessHeap"
+    },
+    {
+      "address": "EXTERNAL:0x46",
+      "value": "KERNEL32.DLL::GetStdHandle"
+    },
+    {
+      "address": "EXTERNAL:0x47",
+      "value": "KERNEL32.DLL::GetFileType"
+    },
+    {
+      "address": "EXTERNAL:0x48",
+      "value": "KERNEL32.DLL::GetStringTypeW"
+    },
+    {
+      "address": "EXTERNAL:0x4a",
+      "value": "KERNEL32.DLL::HeapReAlloc"
+    },
+    {
+      "address": "EXTERNAL:0x4b",
+      "value": "KERNEL32.DLL::SetStdHandle"
+    },
+    {
+      "address": "EXTERNAL:0x4c",
+      "value": "KERNEL32.DLL::FlushFileBuffers"
+    },
+    {
+      "address": "EXTERNAL:0x4d",
+      "value": "KERNEL32.DLL::WriteFile"
+    },
+    {
+      "address": "EXTERNAL:0x4e",
+      "value": "KERNEL32.DLL::GetConsoleOutputCP"
+    },
+    {
+      "address": "EXTERNAL:0x4f",
+      "value": "KERNEL32.DLL::GetConsoleMode"
+    },
+    {
+      "address": "EXTERNAL:0x50",
+      "value": "KERNEL32.DLL::SetFilePointerEx"
+    },
+    {
+      "address": "EXTERNAL:0x51",
+      "value": "KERNEL32.DLL::CreateFileW"
+    },
+    {
+      "address": "EXTERNAL:0x52",
+      "value": "KERNEL32.DLL::WriteConsoleW"
+    },
+    {
+      "address": "EXTERNAL:0x53",
+      "value": "KERNEL32.DLL::GetSystemInfo"
+    },
+    {
+      "address": "EXTERNAL:0x54",
+      "value": "KERNEL32.DLL::VirtualQuery"
+    },
+    {
+      "address": "EXTERNAL:0x55",
+      "value": "NODE.EXE::napi_create_array_with_length"
+    },
+    {
+      "address": "EXTERNAL:0x56",
+      "value": "NODE.EXE::napi_get_array_length"
+    },
+    {
+      "address": "EXTERNAL:0x57",
+      "value": "NODE.EXE::napi_create_function"
+    },
+    {
+      "address": "EXTERNAL:0x58",
+      "value": "NODE.EXE::napi_open_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x59",
+      "value": "NODE.EXE::napi_get_element"
+    },
+    {
+      "address": "EXTERNAL:0x5a",
+      "value": "NODE.EXE::napi_get_last_error_info"
+    },
+    {
+      "address": "EXTERNAL:0x5b",
+      "value": "NODE.EXE::napi_create_error"
+    },
+    {
+      "address": "EXTERNAL:0x5c",
+      "value": "NODE.EXE::napi_call_function"
+    },
+    {
+      "address": "EXTERNAL:0x5d",
+      "value": "NODE.EXE::napi_get_null"
+    },
+    {
+      "address": "EXTERNAL:0x5e",
+      "value": "NODE.EXE::napi_queue_async_work"
+    },
+    {
+      "address": "EXTERNAL:0x5f",
+      "value": "NODE.EXE::napi_delete_reference"
+    },
+    {
+      "address": "EXTERNAL:0x60",
+      "value": "NODE.EXE::napi_fatal_error"
+    },
+    {
+      "address": "EXTERNAL:0x61",
+      "value": "NODE.EXE::napi_is_exception_pending"
+    },
+    {
+      "address": "EXTERNAL:0x62",
+      "value": "NODE.EXE::napi_set_element"
+    },
+    {
+      "address": "EXTERNAL:0x63",
+      "value": "NODE.EXE::napi_get_value_string_utf8"
+    },
+    {
+      "address": "EXTERNAL:0x64",
+      "value": "NODE.EXE::napi_close_escapable_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x65",
+      "value": "NODE.EXE::napi_escape_handle"
+    },
+    {
+      "address": "EXTERNAL:0x66",
+      "value": "NODE.EXE::napi_get_property"
+    },
+    {
+      "address": "EXTERNAL:0x67",
+      "value": "NODE.EXE::napi_add_finalizer"
+    },
+    {
+      "address": "EXTERNAL:0x68",
+      "value": "NODE.EXE::napi_resolve_deferred"
+    },
+    {
+      "address": "EXTERNAL:0x69",
+      "value": "NODE.EXE::napi_is_array"
+    },
+    {
+      "address": "EXTERNAL:0x6a",
+      "value": "NODE.EXE::napi_create_type_error"
+    },
+    {
+      "address": "EXTERNAL:0x6b",
+      "value": "NODE.EXE::napi_reject_deferred"
+    },
+    {
+      "address": "EXTERNAL:0x6c",
+      "value": "NODE.EXE::napi_create_string_latin1"
+    },
+    {
+      "address": "EXTERNAL:0x6d",
+      "value": "NODE.EXE::napi_create_async_work"
+    },
+    {
+      "address": "EXTERNAL:0x6e",
+      "value": "NODE.EXE::napi_create_string_utf8"
+    },
+    {
+      "address": "EXTERNAL:0x6f",
+      "value": "NODE.EXE::napi_has_property"
+    },
+    {
+      "address": "EXTERNAL:0x70",
+      "value": "NODE.EXE::napi_define_properties"
+    },
+    {
+      "address": "EXTERNAL:0x71",
+      "value": "NODE.EXE::napi_create_array"
+    },
+    {
+      "address": "EXTERNAL:0x72",
+      "value": "NODE.EXE::napi_typeof"
+    },
+    {
+      "address": "EXTERNAL:0x73",
+      "value": "NODE.EXE::napi_throw"
+    },
+    {
+      "address": "EXTERNAL:0x74",
+      "value": "NODE.EXE::napi_create_promise"
+    },
+    {
+      "address": "EXTERNAL:0x75",
+      "value": "NODE.EXE::napi_get_and_clear_last_exception"
+    },
+    {
+      "address": "EXTERNAL:0x76",
+      "value": "NODE.EXE::napi_create_object"
+    },
+    {
+      "address": "EXTERNAL:0x77",
+      "value": "NODE.EXE::napi_get_undefined"
+    },
+    {
+      "address": "EXTERNAL:0x78",
+      "value": "NODE.EXE::napi_set_property"
+    },
+    {
+      "address": "EXTERNAL:0x79",
+      "value": "NODE.EXE::napi_get_cb_info"
+    },
+    {
+      "address": "EXTERNAL:0x7a",
+      "value": "NODE.EXE::napi_delete_async_work"
+    },
+    {
+      "address": "EXTERNAL:0x7b",
+      "value": "NODE.EXE::napi_open_escapable_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x7c",
+      "value": "NODE.EXE::napi_get_value_double"
+    },
+    {
+      "address": "EXTERNAL:0x7d",
+      "value": "NODE.EXE::napi_create_reference"
+    },
+    {
+      "address": "EXTERNAL:0x7e",
+      "value": "NODE.EXE::napi_close_handle_scope"
+    },
+    {
+      "address": "EXTERNAL:0x7f",
+      "value": "NODE.EXE::napi_create_double"
+    },
+    {
+      "address": "EXTERNAL:0x80",
+      "value": "NODE.EXE::napi_get_reference_value"
+    },
+    {
+      "address": "0x180001000",
+      "value": "FUN_180001000"
+    },
+    {
+      "address": "0x180001110",
+      "value": "FUN_180001110"
+    },
+    {
+      "address": "0x180001180",
+      "value": "FUN_180001180"
+    },
+    {
+      "address": "0x1800011c0",
+      "value": "_guard_check_icall"
+    },
+    {
+      "address": "0x1800011d0",
+      "value": "FUN_1800011d0"
+    },
+    {
+      "address": "0x180001200",
+      "value": "FUN_180001200"
+    },
+    {
+      "address": "0x180001220",
+      "value": "FUN_180001220"
+    },
+    {
+      "address": "0x180001250",
+      "value": "FUN_180001250"
+    },
+    {
+      "address": "0x180001270",
+      "value": "FUN_180001270"
+    },
+    {
+      "address": "0x180001290",
+      "value": "FUN_180001290"
+    },
+    {
+      "address": "0x180001330",
+      "value": "FUN_180001330"
+    },
+    {
+      "address": "0x180001360",
+      "value": "FUN_180001360"
+    },
+    {
+      "address": "0x180001470",
+      "value": "FUN_180001470"
+    },
+    {
+      "address": "0x180001590",
+      "value": "FUN_180001590"
+    },
+    {
+      "address": "0x180001730",
+      "value": "FUN_180001730"
+    },
+    {
+      "address": "0x180001a20",
+      "value": "FUN_180001a20"
+    },
+    {
+      "address": "0x180001b30",
+      "value": "FUN_180001b30"
+    },
+    {
+      "address": "0x180001c40",
+      "value": "FUN_180001c40"
+    },
+    {
+      "address": "0x180001d60",
+      "value": "FUN_180001d60"
+    },
+    {
+      "address": "0x180001ff0",
+      "value": "FUN_180001ff0"
+    },
+    {
+      "address": "0x180002010",
+      "value": "FUN_180002010"
+    },
+    {
+      "address": "0x180002160",
+      "value": "FUN_180002160"
+    },
+    {
+      "address": "0x1800023f0",
+      "value": "FUN_1800023f0"
+    },
+    {
+      "address": "0x180002470",
+      "value": "FUN_180002470"
+    },
+    {
+      "address": "0x180002680",
+      "value": "FUN_180002680"
+    },
+    {
+      "address": "0x1800027b0",
+      "value": "FUN_1800027b0"
+    },
+    {
+      "address": "0x180002890",
+      "value": "FUN_180002890"
+    },
+    {
+      "address": "0x1800028c0",
+      "value": "FUN_1800028c0"
+    },
+    {
+      "address": "0x1800029a0",
+      "value": "FUN_1800029a0"
+    },
+    {
+      "address": "0x1800029d0",
+      "value": "FUN_1800029d0"
+    },
+    {
+      "address": "0x180002ae0",
+      "value": "FUN_180002ae0"
+    },
+    {
+      "address": "0x180002b20",
+      "value": "FUN_180002b20"
+    },
+    {
+      "address": "0x180002db0",
+      "value": "FUN_180002db0"
+    },
+    {
+      "address": "0x180002eb0",
+      "value": "FUN_180002eb0"
+    },
+    {
+      "address": "0x180003040",
+      "value": "FUN_180003040"
+    },
+    {
+      "address": "0x1800031e0",
+      "value": "FUN_1800031e0"
+    },
+    {
+      "address": "0x180003350",
+      "value": "FUN_180003350"
+    },
+    {
+      "address": "0x180003570",
+      "value": "FUN_180003570"
+    },
+    {
+      "address": "0x180003740",
+      "value": "FUN_180003740"
+    },
+    {
+      "address": "0x180003bc0",
+      "value": "FUN_180003bc0"
+    },
+    {
+      "address": "0x180003da0",
+      "value": "FUN_180003da0"
+    },
+    {
+      "address": "0x180003e40",
+      "value": "FUN_180003e40"
+    },
+    {
+      "address": "0x180003f50",
+      "value": "FUN_180003f50"
+    },
+    {
+      "address": "0x180004050",
+      "value": "FUN_180004050"
+    },
+    {
+      "address": "0x180004100",
+      "value": "FUN_180004100"
+    },
+    {
+      "address": "0x180004640",
+      "value": "FUN_180004640"
+    },
+    {
+      "address": "0x180004700",
+      "value": "FUN_180004700"
+    },
+    {
+      "address": "0x180004870",
+      "value": "FUN_180004870"
+    },
+    {
+      "address": "0x180004980",
+      "value": "FUN_180004980"
+    },
+    {
+      "address": "0x180004bb0",
+      "value": "node_api_module_get_api_version_v1"
+    },
+    {
+      "address": "0x180004bc0",
+      "value": "napi_register_module_v1"
+    },
+    {
+      "address": "0x180004bf0",
+      "value": "FUN_180004bf0"
+    },
+    {
+      "address": "0x180004db0",
+      "value": "FUN_180004db0"
+    },
+    {
+      "address": "0x180004f30",
+      "value": "FUN_180004f30"
+    },
+    {
+      "address": "0x1800050a0",
+      "value": "FUN_1800050a0"
+    },
+    {
+      "address": "0x180005210",
+      "value": "FUN_180005210"
+    },
+    {
+      "address": "0x180005330",
+      "value": "FUN_180005330"
+    },
+    {
+      "address": "0x1800053a0",
+      "value": "FUN_1800053a0"
+    },
+    {
+      "address": "0x180005400",
+      "value": "FUN_180005400"
+    },
+    {
+      "address": "0x180005530",
+      "value": "FUN_180005530"
+    },
+    {
+      "address": "0x180005710",
+      "value": "thunk_FUN_180005ff0"
+    },
+    {
+      "address": "0x180005720",
+      "value": "FUN_180005720"
+    },
+    {
+      "address": "0x180005790",
+      "value": "FUN_180005790"
+    },
+    {
+      "address": "0x180005810",
+      "value": "FUN_180005810"
+    },
+    {
+      "address": "0x180005950",
+      "value": "FUN_180005950"
+    },
+    {
+      "address": "0x180005b40",
+      "value": "FUN_180005b40"
+    },
+    {
+      "address": "0x180005e10",
+      "value": "FUN_180005e10"
+    },
+    {
+      "address": "0x180005f70",
+      "value": "FUN_180005f70"
+    },
+    {
+      "address": "0x180005fd0",
+      "value": "FUN_180005fd0"
+    },
+    {
+      "address": "0x180005ff0",
+      "value": "FUN_180005ff0"
+    },
+    {
+      "address": "0x1800060c0",
+      "value": "FUN_1800060c0"
+    },
+    {
+      "address": "0x180006250",
+      "value": "FUN_180006250"
+    },
+    {
+      "address": "0x180006470",
+      "value": "FUN_180006470"
+    },
+    {
+      "address": "0x180006630",
+      "value": "FUN_180006630"
+    },
+    {
+      "address": "0x1800066d0",
+      "value": "FUN_1800066d0"
+    },
+    {
+      "address": "0x180006890",
+      "value": "FUN_180006890"
+    },
+    {
+      "address": "0x1800069f0",
+      "value": "FUN_1800069f0"
+    },
+    {
+      "address": "0x180006ae0",
+      "value": "FUN_180006ae0"
+    },
+    {
+      "address": "0x180006ca0",
+      "value": "FUN_180006ca0"
+    },
+    {
+      "address": "0x180006d40",
+      "value": "FUN_180006d40"
+    },
+    {
+      "address": "0x180006e90",
+      "value": "FUN_180006e90"
+    },
+    {
+      "address": "0x180007160",
+      "value": "FUN_180007160"
+    },
+    {
+      "address": "0x1800071e0",
+      "value": "FUN_1800071e0"
+    },
+    {
+      "address": "0x180007270",
+      "value": "FUN_180007270"
+    },
+    {
+      "address": "0x180007300",
+      "value": "FUN_180007300"
+    },
+    {
+      "address": "0x180007320",
+      "value": "FUN_180007320"
+    },
+    {
+      "address": "0x180007400",
+      "value": "FUN_180007400"
+    },
+    {
+      "address": "0x180007570",
+      "value": "FUN_180007570"
+    },
+    {
+      "address": "0x180007760",
+      "value": "FUN_180007760"
+    },
+    {
+      "address": "0x180007b40",
+      "value": "FUN_180007b40"
+    },
+    {
+      "address": "0x180007dc0",
+      "value": "FUN_180007dc0"
+    },
+    {
+      "address": "0x1800080f0",
+      "value": "FUN_1800080f0"
+    },
+    {
+      "address": "0x180008120",
+      "value": "FUN_180008120"
+    },
+    {
+      "address": "0x180008190",
+      "value": "FUN_180008190"
+    },
+    {
+      "address": "0x1800081c0",
+      "value": "FUN_1800081c0"
+    },
+    {
+      "address": "0x180008330",
+      "value": "FUN_180008330"
+    },
+    {
+      "address": "0x1800083c0",
+      "value": "FUN_1800083c0"
+    },
+    {
+      "address": "0x1800086a0",
+      "value": "FUN_1800086a0"
+    },
+    {
+      "address": "0x180008730",
+      "value": "FUN_180008730"
+    },
+    {
+      "address": "0x1800087d0",
+      "value": "FUN_1800087d0"
+    },
+    {
+      "address": "0x180008aa0",
+      "value": "FUN_180008aa0"
+    },
+    {
+      "address": "0x180008c90",
+      "value": "FUN_180008c90"
+    },
+    {
+      "address": "0x180008d40",
+      "value": "FUN_180008d40"
+    },
+    {
+      "address": "0x180008df0",
+      "value": "FUN_180008df0"
+    },
+    {
+      "address": "0x180008eb0",
+      "value": "FUN_180008eb0"
+    },
+    {
+      "address": "0x180009010",
+      "value": "FUN_180009010"
+    },
+    {
+      "address": "0x1800091d0",
+      "value": "FUN_1800091d0"
+    },
+    {
+      "address": "0x180009270",
+      "value": "FUN_180009270"
+    },
+    {
+      "address": "0x18000942f",
+      "value": "FUN_18000942f"
+    },
+    {
+      "address": "0x1800094a8",
+      "value": "DelayLoad_napi_create_array_with_length"
+    },
+    {
+      "address": "0x1800094b4",
+      "value": "DelayLoad_napi_create_function"
+    },
+    {
+      "address": "0x1800094c0",
+      "value": "DelayLoad_napi_open_handle_scope"
+    },
+    {
+      "address": "0x1800094cc",
+      "value": "DelayLoad_napi_get_element"
+    },
+    {
+      "address": "0x1800094d8",
+      "value": "DelayLoad_napi_get_last_error_info"
+    },
+    {
+      "address": "0x1800094e4",
+      "value": "DelayLoad_napi_create_error"
+    },
+    {
+      "address": "0x1800094f0",
+      "value": "DelayLoad_napi_call_function"
+    },
+    {
+      "address": "0x1800094fc",
+      "value": "DelayLoad_napi_get_null"
+    },
+    {
+      "address": "0x180009508",
+      "value": "DelayLoad_napi_queue_async_work"
+    },
+    {
+      "address": "0x180009514",
+      "value": "DelayLoad_napi_delete_reference"
+    },
+    {
+      "address": "0x180009520",
+      "value": "DelayLoad_napi_fatal_error"
+    },
+    {
+      "address": "0x18000952c",
+      "value": "DelayLoad_napi_is_exception_pending"
+    },
+    {
+      "address": "0x180009538",
+      "value": "DelayLoad_napi_set_element"
+    },
+    {
+      "address": "0x180009544",
+      "value": "DelayLoad_napi_get_value_string_utf8"
+    },
+    {
+      "address": "0x180009550",
+      "value": "DelayLoad_napi_close_escapable_handle_scope"
+    },
+    {
+      "address": "0x18000955c",
+      "value": "DelayLoad_napi_escape_handle"
+    },
+    {
+      "address": "0x180009568",
+      "value": "DelayLoad_napi_get_property"
+    },
+    {
+      "address": "0x180009574",
+      "value": "DelayLoad_napi_add_finalizer"
+    },
+    {
+      "address": "0x180009580",
+      "value": "DelayLoad_napi_resolve_deferred"
+    },
+    {
+      "address": "0x18000958c",
+      "value": "DelayLoad_napi_is_array"
+    },
+    {
+      "address": "0x180009598",
+      "value": "DelayLoad_napi_create_type_error"
+    },
+    {
+      "address": "0x1800095a4",
+      "value": "DelayLoad_napi_reject_deferred"
+    },
+    {
+      "address": "0x1800095b0",
+      "value": "DelayLoad_napi_create_string_latin1"
+    },
+    {
+      "address": "0x1800095bc",
+      "value": "DelayLoad_napi_create_async_work"
+    },
+    {
+      "address": "0x1800095c8",
+      "value": "DelayLoad_napi_create_string_utf8"
+    },
+    {
+      "address": "0x1800095d4",
+      "value": "DelayLoad_napi_has_property"
+    },
+    {
+      "address": "0x1800095e0",
+      "value": "DelayLoad_napi_define_properties"
+    },
+    {
+      "address": "0x1800095ec",
+      "value": "DelayLoad_napi_create_array"
+    },
+    {
+      "address": "0x1800095f8",
+      "value": "DelayLoad_napi_typeof"
+    },
+    {
+      "address": "0x180009604",
+      "value": "DelayLoad_napi_throw"
+    },
+    {
+      "address": "0x180009610",
+      "value": "DelayLoad_napi_create_promise"
+    },
+    {
+      "address": "0x18000961c",
+      "value": "DelayLoad_napi_get_and_clear_last_exception"
+    },
+    {
+      "address": "0x180009628",
+      "value": "DelayLoad_napi_create_object"
+    },
+    {
+      "address": "0x180009634",
+      "value": "DelayLoad_napi_get_undefined"
+    },
+    {
+      "address": "0x180009640",
+      "value": "DelayLoad_napi_set_property"
+    },
+    {
+      "address": "0x18000964c",
+      "value": "DelayLoad_napi_get_cb_info"
+    },
+    {
+      "address": "0x180009658",
+      "value": "DelayLoad_napi_delete_async_work"
+    },
+    {
+      "address": "0x180009664",
+      "value": "DelayLoad_napi_open_escapable_handle_scope"
+    },
+    {
+      "address": "0x180009670",
+      "value": "DelayLoad_napi_get_value_double"
+    },
+    {
+      "address": "0x18000967c",
+      "value": "DelayLoad_napi_create_reference"
+    },
+    {
+      "address": "0x180009688",
+      "value": "DelayLoad_napi_close_handle_scope"
+    },
+    {
+      "address": "0x180009694",
+      "value": "DelayLoad_napi_create_double"
+    },
+    {
+      "address": "0x1800096a0",
+      "value": "DelayLoad_napi_get_array_length"
+    },
+    {
+      "address": "0x1800096ac",
+      "value": "DelayLoad_napi_get_reference_value"
+    },
+    {
+      "address": "0x1800096d0",
+      "value": "__security_check_cookie"
+    },
+    {
+      "address": "0x1800096f0",
+      "value": "thunk_FUN_1800116e0"
+    },
+    {
+      "address": "0x1800096f8",
+      "value": "operator_new"
+    },
+    {
+      "address": "0x180009734",
+      "value": "thunk_FUN_1800116e0"
+    },
+    {
+      "address": "0x18000973c",
+      "value": "operator_new"
+    },
+    {
+      "address": "0x180009744",
+      "value": "FUN_180009744"
+    },
+    {
+      "address": "0x180009770",
+      "value": "__scrt_acquire_startup_lock"
+    },
+    {
+      "address": "0x1800097ac",
+      "value": "__scrt_dllmain_after_initialize_c"
+    },
+    {
+      "address": "0x1800097e0",
+      "value": "FUN_1800097e0"
+    },
+    {
+      "address": "0x1800097f8",
+      "value": "__scrt_dllmain_crt_thread_attach"
+    },
+    {
+      "address": "0x180009820",
+      "value": "FUN_180009820"
+    },
+    {
+      "address": "0x180009838",
+      "value": "__scrt_dllmain_exception_filter"
+    },
+    {
+      "address": "0x180009898",
+      "value": "__scrt_dllmain_uninitialize_c"
+    },
+    {
+      "address": "0x1800098c8",
+      "value": "FUN_1800098c8"
+    },
+    {
+      "address": "0x1800098dc",
+      "value": "FUN_1800098dc"
+    },
+    {
+      "address": "0x180009918",
+      "value": "FUN_180009918"
+    },
+    {
+      "address": "0x1800099a4",
+      "value": "FUN_1800099a4"
+    },
+    {
+      "address": "0x180009a3c",
+      "value": "__scrt_release_startup_lock"
+    },
+    {
+      "address": "0x180009a60",
+      "value": "__scrt_uninitialize_crt"
+    },
+    {
+      "address": "0x180009a8c",
+      "value": "_onexit"
+    },
+    {
+      "address": "0x180009ac8",
+      "value": "atexit"
+    },
+    {
+      "address": "0x180009ae0",
+      "value": "FUN_180009ae0"
+    },
+    {
+      "address": "0x180009b30",
+      "value": "FUN_180009b30"
+    },
+    {
+      "address": "0x180009c48",
+      "value": "FUN_180009c48"
+    },
+    {
+      "address": "0x180009ccc",
+      "value": "FUN_180009ccc"
+    },
+    {
+      "address": "0x180009df4",
+      "value": "entry"
+    },
+    {
+      "address": "0x180009e34",
+      "value": "__raise_securityfailure"
+    },
+    {
+      "address": "0x180009e68",
+      "value": "FUN_180009e68"
+    },
+    {
+      "address": "0x180009f3c",
+      "value": "FUN_180009f3c"
+    },
+    {
+      "address": "0x180009fb0",
+      "value": "FUN_180009fb0"
+    },
+    {
+      "address": "0x180009fec",
+      "value": "FUN_180009fec"
+    },
+    {
+      "address": "0x18000a010",
+      "value": "FUN_18000a010"
+    },
+    {
+      "address": "0x18000a04c",
+      "value": "FUN_18000a04c"
+    },
+    {
+      "address": "0x18000a070",
+      "value": "std::exception::exception"
+    },
+    {
+      "address": "0x18000a0b8",
+      "value": "FUN_18000a0b8"
+    },
+    {
+      "address": "0x18000a0fc",
+      "value": "FUN_18000a0fc"
+    },
+    {
+      "address": "0x18000a11c",
+      "value": "FUN_18000a11c"
+    },
+    {
+      "address": "0x18000a13c",
+      "value": "FUN_18000a13c"
+    },
+    {
+      "address": "0x18000a150",
+      "value": "FUN_18000a150"
+    },
+    {
+      "address": "0x18000a3e8",
+      "value": "FUN_18000a3e8"
+    },
+    {
+      "address": "0x18000a3f0",
+      "value": "__scrt_is_ucrt_dll_in_use"
+    },
+    {
+      "address": "0x18000a3fc",
+      "value": "FUN_18000a3fc"
+    },
+    {
+      "address": "0x18000a408",
+      "value": "FUN_18000a408"
+    },
+    {
+      "address": "0x18000a554",
+      "value": "FUN_18000a554"
+    },
+    {
+      "address": "0x18000a604",
+      "value": "FUN_18000a604"
+    },
+    {
+      "address": "0x18000a614",
+      "value": "FUN_18000a614"
+    },
+    {
+      "address": "0x18000a620",
+      "value": "FUN_18000a620"
+    },
+    {
+      "address": "0x18000a628",
+      "value": "FUN_18000a628"
+    },
+    {
+      "address": "0x18000a630",
+      "value": "FUN_18000a630"
+    },
+    {
+      "address": "0x18000a64c",
+      "value": "FUN_18000a64c"
+    },
+    {
+      "address": "0x18000a654",
+      "value": "FUN_18000a654"
+    },
+    {
+      "address": "0x18000a690",
+      "value": "FUN_18000a690"
+    },
+    {
+      "address": "0x18000a6d0",
+      "value": "FUN_18000a6d0"
+    },
+    {
+      "address": "0x18000a70c",
+      "value": "FUN_18000a70c"
+    },
+    {
+      "address": "0x18000a754",
+      "value": "FUN_18000a754"
+    },
+    {
+      "address": "0x18000a790",
+      "value": "FUN_18000a790"
+    },
+    {
+      "address": "0x18000a7b4",
+      "value": "FUN_18000a7b4"
+    },
+    {
+      "address": "0x18000a808",
+      "value": "FUN_18000a808"
+    },
+    {
+      "address": "0x18000a85c",
+      "value": "FUN_18000a85c"
+    },
+    {
+      "address": "0x18000a8c0",
+      "value": "FUN_18000a8c0"
+    },
+    {
+      "address": "0x18000a9ec",
+      "value": "FUN_18000a9ec"
+    },
+    {
+      "address": "0x18000aa18",
+      "value": "FUN_18000aa18"
+    },
+    {
+      "address": "0x18000aa20",
+      "value": "__FrameHandler3::FrameUnwindToEmptyState"
+    },
+    {
+      "address": "0x18000aa84",
+      "value": "__FrameHandler4::FrameUnwindToEmptyState"
+    },
+    {
+      "address": "0x18000aab8",
+      "value": "FUN_18000aab8"
+    },
+    {
+      "address": "0x18000aba0",
+      "value": "FUN_18000aba0"
+    },
+    {
+      "address": "0x18000abc4",
+      "value": "FUN_18000abc4"
+    },
+    {
+      "address": "0x18000acfc",
+      "value": "FUN_18000acfc"
+    },
+    {
+      "address": "0x18000ae7c",
+      "value": "FUN_18000ae7c"
+    },
+    {
+      "address": "0x18000af80",
+      "value": "FUN_18000af80"
+    },
+    {
+      "address": "0x18000b0a0",
+      "value": "FUN_18000b0a0"
+    },
+    {
+      "address": "0x18000b28c",
+      "value": "_CreateFrameInfo"
+    },
+    {
+      "address": "0x18000b2c8",
+      "value": "FUN_18000b2c8"
+    },
+    {
+      "address": "0x18000b31c",
+      "value": "FUN_18000b31c"
+    },
+    {
+      "address": "0x18000b330",
+      "value": "FUN_18000b330"
+    },
+    {
+      "address": "0x18000b344",
+      "value": "FUN_18000b344"
+    },
+    {
+      "address": "0x18000b35c",
+      "value": "FUN_18000b35c"
+    },
+    {
+      "address": "0x18000b374",
+      "value": "__CxxFrameHandler3"
+    },
+    {
+      "address": "0x18000b3fc",
+      "value": "FUN_18000b3fc"
+    },
+    {
+      "address": "0x18000b4c4",
+      "value": "FUN_18000b4c4"
+    },
+    {
+      "address": "0x18000b4d0",
+      "value": "FUN_18000b4d0"
+    },
+    {
+      "address": "0x18000b4ec",
+      "value": "FUN_18000b4ec"
+    },
+    {
+      "address": "0x18000b560",
+      "value": "FUN_18000b560"
+    },
+    {
+      "address": "0x18000b564",
+      "value": "_IsExceptionObjectToBeDestroyed"
+    },
+    {
+      "address": "0x18000b594",
+      "value": "__AdjustPointer"
+    },
+    {
+      "address": "0x18000b5b8",
+      "value": "FUN_18000b5b8"
+    },
+    {
+      "address": "0x18000b620",
+      "value": "Unwind@18000b620"
+    },
+    {
+      "address": "0x18000b62c",
+      "value": "__vcrt_initialize"
+    },
+    {
+      "address": "0x18000b654",
+      "value": "FUN_18000b654"
+    },
+    {
+      "address": "0x18000b668",
+      "value": "FUN_18000b668"
+    },
+    {
+      "address": "0x18000b678",
+      "value": "__vcrt_uninitialize"
+    },
+    {
+      "address": "0x18000b694",
+      "value": "FUN_18000b694"
+    },
+    {
+      "address": "0x18000b6a4",
+      "value": "FUN_18000b6a4"
+    },
+    {
+      "address": "0x18000b8bc",
+      "value": "FUN_18000b8bc"
+    },
+    {
+      "address": "0x18000b93c",
+      "value": "FUN_18000b93c"
+    },
+    {
+      "address": "0x18000b964",
+      "value": "FUN_18000b964"
+    },
+    {
+      "address": "0x18000ba10",
+      "value": "FUN_18000ba10"
+    },
+    {
+      "address": "0x18000ba28",
+      "value": "FUN_18000ba28"
+    },
+    {
+      "address": "0x18000ba54",
+      "value": "FUN_18000ba54"
+    },
+    {
+      "address": "0x18000ba74",
+      "value": "FUN_18000ba74"
+    },
+    {
+      "address": "0x18000babc",
+      "value": "FUN_18000babc"
+    },
+    {
+      "address": "0x18000bad8",
+      "value": "FUN_18000bad8"
+    },
+    {
+      "address": "0x18000bba4",
+      "value": "__vcrt_initialize_ptd"
+    },
+    {
+      "address": "0x18000bbec",
+      "value": "FUN_18000bbec"
+    },
+    {
+      "address": "0x18000bc14",
+      "value": "FUN_18000bc14"
+    },
+    {
+      "address": "0x18000bc3c",
+      "value": "__FrameHandler3::GetUnwindTryBlock"
+    },
+    {
+      "address": "0x18000bc68",
+      "value": "__FrameHandler3::SetState"
+    },
+    {
+      "address": "0x18000bc74",
+      "value": "__FrameHandler3::SetUnwindTryBlock"
+    },
+    {
+      "address": "0x18000bcb0",
+      "value": "FUN_18000bcb0"
+    },
+    {
+      "address": "0x18000bcb8",
+      "value": "FUN_18000bcb8"
+    },
+    {
+      "address": "0x18000bcc0",
+      "value": "FUN_18000bcc0"
+    },
+    {
+      "address": "0x18000bd28",
+      "value": "FUN_18000bd28"
+    },
+    {
+      "address": "0x18000be18",
+      "value": "FUN_18000be18"
+    },
+    {
+      "address": "0x18000c00c",
+      "value": "FUN_18000c00c"
+    },
+    {
+      "address": "0x18000c204",
+      "value": "FUN_18000c204"
+    },
+    {
+      "address": "0x18000c2c4",
+      "value": "FUN_18000c2c4"
+    },
+    {
+      "address": "0x18000c388",
+      "value": "FUN_18000c388"
+    },
+    {
+      "address": "0x18000c460",
+      "value": "FUN_18000c460"
+    },
+    {
+      "address": "0x18000c538",
+      "value": "FUN_18000c538"
+    },
+    {
+      "address": "0x18000ca28",
+      "value": "FUN_18000ca28"
+    },
+    {
+      "address": "0x18000cf60",
+      "value": "FUN_18000cf60"
+    },
+    {
+      "address": "0x18000d1c4",
+      "value": "FUN_18000d1c4"
+    },
+    {
+      "address": "0x18000d4cc",
+      "value": "FUN_18000d4cc"
+    },
+    {
+      "address": "0x18000d5ec",
+      "value": "FUN_18000d5ec"
+    },
+    {
+      "address": "0x18000d72c",
+      "value": "FUN_18000d72c"
+    },
+    {
+      "address": "0x18000d95c",
+      "value": "FUN_18000d95c"
+    },
+    {
+      "address": "0x18000dc04",
+      "value": "thunk_FUN_18000d72c"
+    },
+    {
+      "address": "0x18000dc0c",
+      "value": "FUN_18000dc0c"
+    },
+    {
+      "address": "0x18000dc58",
+      "value": "FUN_18000dc58"
+    },
+    {
+      "address": "0x18000dcdc",
+      "value": "FUN_18000dcdc"
+    },
+    {
+      "address": "0x18000ddc0",
+      "value": "FUN_18000ddc0"
+    },
+    {
+      "address": "0x18000ddfc",
+      "value": "FUN_18000ddfc"
+    },
+    {
+      "address": "0x18000de20",
+      "value": "FUN_18000de20"
+    },
+    {
+      "address": "0x18000e00c",
+      "value": "FUN_18000e00c"
+    },
+    {
+      "address": "0x18000e24c",
+      "value": "FH4::HandlerMap4::DecompHandler"
+    },
+    {
+      "address": "0x18000e3d4",
+      "value": "FUN_18000e3d4"
+    },
+    {
+      "address": "0x18000e46c",
+      "value": "ExFilterRethrowFH4"
+    },
+    {
+      "address": "0x18000e49c",
+      "value": "FUN_18000e49c"
+    },
+    {
+      "address": "0x18000e628",
+      "value": "FUN_18000e628"
+    },
+    {
+      "address": "0x18000e934",
+      "value": "__FrameHandler3::GetHandlerSearchState"
+    },
+    {
+      "address": "0x18000e9cc",
+      "value": "FUN_18000e9cc"
+    },
+    {
+      "address": "0x18000eab4",
+      "value": "FUN_18000eab4"
+    },
+    {
+      "address": "0x18000eb3c",
+      "value": "FH4::UWMap4::ReadEntry"
+    },
+    {
+      "address": "0x18000ebdc",
+      "value": "FUN_18000ebdc"
+    },
+    {
+      "address": "0x18000ebe8",
+      "value": "FUN_18000ebe8"
+    },
+    {
+      "address": "0x18000ebf8",
+      "value": "FUN_18000ebf8"
+    },
+    {
+      "address": "0x18000ecc8",
+      "value": "FUN_18000ecc8"
+    },
+    {
+      "address": "0x18000ed78",
+      "value": "__vcrt_initialize_locks"
+    },
+    {
+      "address": "0x18000edc0",
+      "value": "__vcrt_uninitialize_locks"
+    },
+    {
+      "address": "0x18000ee30",
+      "value": "FUN_18000ee30"
+    },
+    {
+      "address": "0x18000ee50",
+      "value": "FUN_18000ee50"
+    },
+    {
+      "address": "0x18000ee60",
+      "value": "FUN_18000ee60"
+    },
+    {
+      "address": "0x18000ee64",
+      "value": "__except_validate_context_record"
+    },
+    {
+      "address": "0x18000ee9c",
+      "value": "FUN_18000ee9c"
+    },
+    {
+      "address": "0x18000efec",
+      "value": "__vcrt_FlsAlloc"
+    },
+    {
+      "address": "0x18000f034",
+      "value": "__vcrt_FlsFree"
+    },
+    {
+      "address": "0x18000f07c",
+      "value": "__vcrt_FlsGetValue"
+    },
+    {
+      "address": "0x18000f0c4",
+      "value": "__vcrt_FlsSetValue"
+    },
+    {
+      "address": "0x18000f118",
+      "value": "__vcrt_InitializeCriticalSectionEx"
+    },
+    {
+      "address": "0x18000f1c0",
+      "value": "_CallSettingFrame"
+    },
+    {
+      "address": "0x18000f200",
+      "value": "FUN_18000f200"
+    },
+    {
+      "address": "0x18000f230",
+      "value": "FUN_18000f230"
+    },
+    {
+      "address": "0x18000f260",
+      "value": "_CallSettingFrameEncoded"
+    },
+    {
+      "address": "0x18000f2b0",
+      "value": "FUN_18000f2b0"
+    },
+    {
+      "address": "0x18000f370",
+      "value": "FUN_18000f370"
+    },
+    {
+      "address": "0x18000f3a0",
+      "value": "FUN_18000f3a0"
+    },
+    {
+      "address": "0x18000f410",
+      "value": "FUN_18000f410"
+    },
+    {
+      "address": "0x18000f530",
+      "value": "FUN_18000f530"
+    },
+    {
+      "address": "0x18000f598",
+      "value": "FUN_18000f598"
+    },
+    {
+      "address": "0x18000f604",
+      "value": "FUN_18000f604"
+    },
+    {
+      "address": "0x18000f650",
+      "value": "FUN_18000f650"
+    },
+    {
+      "address": "0x18000f7c0",
+      "value": "FUN_18000f7c0"
+    },
+    {
+      "address": "0x18000f7c8",
+      "value": "FUN_18000f7c8"
+    },
+    {
+      "address": "0x18000f864",
+      "value": "FUN_18000f864"
+    },
+    {
+      "address": "0x18000f91c",
+      "value": "FUN_18000f91c"
+    },
+    {
+      "address": "0x18000f93c",
+      "value": "_invoke_watson"
+    },
+    {
+      "address": "0x18000f984",
+      "value": "KERNEL32.DLL::GetCurrentProcessId"
+    },
+    {
+      "address": "0x18000f990",
+      "value": "FUN_18000f990"
+    },
+    {
+      "address": "0x18000f9d0",
+      "value": "FUN_18000f9d0"
+    },
+    {
+      "address": "0x18000f9e0",
+      "value": "FUN_18000f9e0"
+    },
+    {
+      "address": "0x18000fa20",
+      "value": "_set_new_handler"
+    },
+    {
+      "address": "0x18000fa90",
+      "value": "_malloc_base"
+    },
+    {
+      "address": "0x18000faa0",
+      "value": "thunk_FUN_1800116e0"
+    },
+    {
+      "address": "0x18000faa8",
+      "value": "_seh_filter_dll"
+    },
+    {
+      "address": "0x18000fabc",
+      "value": "FUN_18000fabc"
+    },
+    {
+      "address": "0x18000fc28",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x18000fc60",
+      "value": "FUN_18000fc60"
+    },
+    {
+      "address": "0x18000fd20",
+      "value": "FUN_18000fd20"
+    },
+    {
+      "address": "0x18000fe04",
+      "value": "FUN_18000fe04"
+    },
+    {
+      "address": "0x18000fe34",
+      "value": "FUN_18000fe34"
+    },
+    {
+      "address": "0x18000fe98",
+      "value": "FUN_18000fe98"
+    },
+    {
+      "address": "0x18000fea0",
+      "value": "FUN_18000fea0"
+    },
+    {
+      "address": "0x18000feb0",
+      "value": "FUN_18000feb0"
+    },
+    {
+      "address": "0x18000febc",
+      "value": "FUN_18000febc"
+    },
+    {
+      "address": "0x18000fec4",
+      "value": "FUN_18000fec4"
+    },
+    {
+      "address": "0x180010084",
+      "value": "__acrt_allocate_buffer_for_argv"
+    },
+    {
+      "address": "0x1800100e4",
+      "value": "FUN_1800100e4"
+    },
+    {
+      "address": "0x180010264",
+      "value": "FUN_180010264"
+    },
+    {
+      "address": "0x1800102d8",
+      "value": "FUN_1800102d8"
+    },
+    {
+      "address": "0x1800103ec",
+      "value": "free_environment<>"
+    },
+    {
+      "address": "0x180010430",
+      "value": "uninitialize_environment_internal<>"
+    },
+    {
+      "address": "0x18001044c",
+      "value": "uninitialize_environment_internal<>"
+    },
+    {
+      "address": "0x180010468",
+      "value": "FUN_180010468"
+    },
+    {
+      "address": "0x1800104ac",
+      "value": "thunk_FUN_180010264"
+    },
+    {
+      "address": "0x1800104b4",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x1800104f0",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x18001052c",
+      "value": "FUN_18001052c"
+    },
+    {
+      "address": "0x1800106dc",
+      "value": "FUN_1800106dc"
+    },
+    {
+      "address": "0x1800107f4",
+      "value": "FUN_1800107f4"
+    },
+    {
+      "address": "0x180010804",
+      "value": "FUN_180010804"
+    },
+    {
+      "address": "0x180010848",
+      "value": "_initialize_onexit_table"
+    },
+    {
+      "address": "0x180010870",
+      "value": "_register_onexit_function"
+    },
+    {
+      "address": "0x1800108cc",
+      "value": "FUN_1800108cc"
+    },
+    {
+      "address": "0x1800108f4",
+      "value": "FUN_1800108f4"
+    },
+    {
+      "address": "0x180010904",
+      "value": "FUN_180010904"
+    },
+    {
+      "address": "0x18001094c",
+      "value": "FUN_18001094c"
+    },
+    {
+      "address": "0x18001098c",
+      "value": "FUN_18001098c"
+    },
+    {
+      "address": "0x1800109e8",
+      "value": "FUN_1800109e8"
+    },
+    {
+      "address": "0x1800109fc",
+      "value": "FUN_1800109fc"
+    },
+    {
+      "address": "0x180010a10",
+      "value": "FUN_180010a10"
+    },
+    {
+      "address": "0x180010a20",
+      "value": "__acrt_uninitialize"
+    },
+    {
+      "address": "0x180010a58",
+      "value": "FUN_180010a58"
+    },
+    {
+      "address": "0x180010a68",
+      "value": "FUN_180010a68"
+    },
+    {
+      "address": "0x180010aa0",
+      "value": "FUN_180010aa0"
+    },
+    {
+      "address": "0x180010adc",
+      "value": "FUN_180010adc"
+    },
+    {
+      "address": "0x180010afc",
+      "value": "abort"
+    },
+    {
+      "address": "0x180010b60",
+      "value": "FUN_180010b60"
+    },
+    {
+      "address": "0x180010be0",
+      "value": "_calloc_base"
+    },
+    {
+      "address": "0x180010bf0",
+      "value": "FUN_180010bf0"
+    },
+    {
+      "address": "0x180010c70",
+      "value": "wcsncmp"
+    },
+    {
+      "address": "0x180010ca4",
+      "value": "FUN_180010ca4"
+    },
+    {
+      "address": "0x180010d74",
+      "value": "FUN_180010d74"
+    },
+    {
+      "address": "0x180010d9c",
+      "value": "FUN_180010d9c"
+    },
+    {
+      "address": "0x180010dc0",
+      "value": "FUN_180010dc0"
+    },
+    {
+      "address": "0x180010de4",
+      "value": "FUN_180010de4"
+    },
+    {
+      "address": "0x180010e08",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010e48",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010e88",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010ed0",
+      "value": "operator()<>"
+    },
+    {
+      "address": "0x180010f30",
+      "value": "construct_ptd_array"
+    },
+    {
+      "address": "0x180011000",
+      "value": "FUN_180011000"
+    },
+    {
+      "address": "0x180011020",
+      "value": "destroy_ptd_array"
+    },
+    {
+      "address": "0x180011118",
+      "value": "FUN_180011118"
+    },
+    {
+      "address": "0x1800111d0",
+      "value": "replace_current_thread_locale_nolock"
+    },
+    {
+      "address": "0x180011238",
+      "value": "FUN_180011238"
+    },
+    {
+      "address": "0x180011288",
+      "value": "FUN_180011288"
+    },
+    {
+      "address": "0x1800112a4",
+      "value": "FUN_1800112a4"
+    },
+    {
+      "address": "0x1800112e8",
+      "value": "FUN_1800112e8"
+    },
+    {
+      "address": "0x180011378",
+      "value": "FUN_180011378"
+    },
+    {
+      "address": "0x1800113d4",
+      "value": "FUN_1800113d4"
+    },
+    {
+      "address": "0x180011418",
+      "value": "FUN_180011418"
+    },
+    {
+      "address": "0x18001143c",
+      "value": "__acrt_update_locale_info"
+    },
+    {
+      "address": "0x180011470",
+      "value": "FUN_180011470"
+    },
+    {
+      "address": "0x1800114a8",
+      "value": "FUN_1800114a8"
+    },
+    {
+      "address": "0x1800114dc",
+      "value": "FUN_1800114dc"
+    },
+    {
+      "address": "0x180011514",
+      "value": "__crt_seh_guarded_call<void>::operator()<<lambda_410d79af7f07d98d83a3f525b3859a53>,<lambda_3e16ef9562a7dcce91392c22ab16ea36>&___ptr64,<lambda_38119f0e861e05405d8a144b9b982f0a>_>"
+    },
+    {
+      "address": "0x180011584",
+      "value": "FUN_180011584"
+    },
+    {
+      "address": "0x180011590",
+      "value": "__acrt_uninitialize_locale"
+    },
+    {
+      "address": "0x1800115c0",
+      "value": "__acrt_initialize_locks"
+    },
+    {
+      "address": "0x180011608",
+      "value": "__acrt_lock"
+    },
+    {
+      "address": "0x180011624",
+      "value": "__acrt_uninitialize_locks"
+    },
+    {
+      "address": "0x18001165c",
+      "value": "__acrt_unlock"
+    },
+    {
+      "address": "0x180011680",
+      "value": "_malloc_base"
+    },
+    {
+      "address": "0x1800116e0",
+      "value": "FUN_1800116e0"
+    },
+    {
+      "address": "0x180011738",
+      "value": "FUN_180011738"
+    },
+    {
+      "address": "0x180011754",
+      "value": "FUN_180011754"
+    },
+    {
+      "address": "0x18001176c",
+      "value": "FUN_18001176c"
+    },
+    {
+      "address": "0x1800117a0",
+      "value": "_calloc_base"
+    },
+    {
+      "address": "0x18001182c",
+      "value": "FUN_18001182c"
+    },
+    {
+      "address": "0x1800119cc",
+      "value": "FUN_1800119cc"
+    },
+    {
+      "address": "0x180011b78",
+      "value": "FUN_180011b78"
+    },
+    {
+      "address": "0x180011db4",
+      "value": "FUN_180011db4"
+    },
+    {
+      "address": "0x180011f38",
+      "value": "FUN_180011f38"
+    },
+    {
+      "address": "0x180012298",
+      "value": "thunk_FUN_180011b78"
+    },
+    {
+      "address": "0x1800122a0",
+      "value": "FUN_1800122a0"
+    },
+    {
+      "address": "0x1800123bc",
+      "value": "FUN_1800123bc"
+    },
+    {
+      "address": "0x1800124e0",
+      "value": "FUN_1800124e0"
+    },
+    {
+      "address": "0x1800126b0",
+      "value": "getSystemCP"
+    },
+    {
+      "address": "0x180012730",
+      "value": "FUN_180012730"
+    },
+    {
+      "address": "0x1800127c8",
+      "value": "FUN_1800127c8"
+    },
+    {
+      "address": "0x1800129c0",
+      "value": "FUN_1800129c0"
+    },
+    {
+      "address": "0x180012c30",
+      "value": "update_thread_multibyte_data_internal"
+    },
+    {
+      "address": "0x180012ce8",
+      "value": "__acrt_initialize_multibyte"
+    },
+    {
+      "address": "0x180012d48",
+      "value": "FUN_180012d48"
+    },
+    {
+      "address": "0x180012d64",
+      "value": "FUN_180012d64"
+    },
+    {
+      "address": "0x18001302c",
+      "value": "FUN_18001302c"
+    },
+    {
+      "address": "0x1800130a0",
+      "value": "FUN_1800130a0"
+    },
+    {
+      "address": "0x1800130b4",
+      "value": "FUN_1800130b4"
+    },
+    {
+      "address": "0x1800130dc",
+      "value": "FUN_1800130dc"
+    },
+    {
+      "address": "0x18001316c",
+      "value": "FUN_18001316c"
+    },
+    {
+      "address": "0x18001324c",
+      "value": "FUN_18001324c"
+    },
+    {
+      "address": "0x180013360",
+      "value": "_recalloc_base"
+    },
+    {
+      "address": "0x180013408",
+      "value": "FUN_180013408"
+    },
+    {
+      "address": "0x1800135bc",
+      "value": "FUN_1800135bc"
+    },
+    {
+      "address": "0x180013618",
+      "value": "FUN_180013618"
+    },
+    {
+      "address": "0x180013664",
+      "value": "KERNEL32.DLL::FlsAlloc"
+    },
+    {
+      "address": "0x18001366c",
+      "value": "KERNEL32.DLL::FlsFree"
+    },
+    {
+      "address": "0x180013674",
+      "value": "KERNEL32.DLL::FlsGetValue"
+    },
+    {
+      "address": "0x18001367c",
+      "value": "FUN_18001367c"
+    },
+    {
+      "address": "0x180013688",
+      "value": "KERNEL32.DLL::FlsSetValue"
+    },
+    {
+      "address": "0x180013690",
+      "value": "KERNEL32.DLL::InitializeCriticalSectionEx"
+    },
+    {
+      "address": "0x180013698",
+      "value": "FUN_180013698"
+    },
+    {
+      "address": "0x18001378c",
+      "value": "FUN_18001378c"
+    },
+    {
+      "address": "0x1800137f0",
+      "value": "FUN_1800137f0"
+    },
+    {
+      "address": "0x180013820",
+      "value": "FUN_180013820"
+    },
+    {
+      "address": "0x180013864",
+      "value": "__acrt_uninitialize_winapi_thunks"
+    },
+    {
+      "address": "0x1800138c0",
+      "value": "FUN_1800138c0"
+    },
+    {
+      "address": "0x180013918",
+      "value": "FUN_180013918"
+    },
+    {
+      "address": "0x180013a18",
+      "value": "FUN_180013a18"
+    },
+    {
+      "address": "0x180013b20",
+      "value": "__acrt_initialize_lowio"
+    },
+    {
+      "address": "0x180013b5c",
+      "value": "__acrt_uninitialize_lowio"
+    },
+    {
+      "address": "0x180013b9c",
+      "value": "FUN_180013b9c"
+    },
+    {
+      "address": "0x180013c1c",
+      "value": "FUN_180013c1c"
+    },
+    {
+      "address": "0x180013c58",
+      "value": "FUN_180013c58"
+    },
+    {
+      "address": "0x180013ca0",
+      "value": "__acrt_get_sigabrt_handler"
+    },
+    {
+      "address": "0x180013cd0",
+      "value": "FUN_180013cd0"
+    },
+    {
+      "address": "0x180013cf0",
+      "value": "FUN_180013cf0"
+    },
+    {
+      "address": "0x180013f50",
+      "value": "FUN_180013f50"
+    },
+    {
+      "address": "0x180013f58",
+      "value": "FUN_180013f58"
+    },
+    {
+      "address": "0x180013ff4",
+      "value": "FUN_180013ff4"
+    },
+    {
+      "address": "0x1800140d8",
+      "value": "common_flush_all"
+    },
+    {
+      "address": "0x180014138",
+      "value": "FUN_180014138"
+    },
+    {
+      "address": "0x1800141c4",
+      "value": "FUN_1800141c4"
+    },
+    {
+      "address": "0x180014298",
+      "value": "common_flush_all"
+    },
+    {
+      "address": "0x1800142a0",
+      "value": "FUN_1800142a0"
+    },
+    {
+      "address": "0x1800143c0",
+      "value": "__acrt_uninitialize_stdio"
+    },
+    {
+      "address": "0x18001441c",
+      "value": "FUN_18001441c"
+    },
+    {
+      "address": "0x180014428",
+      "value": "FUN_180014428"
+    },
+    {
+      "address": "0x180014434",
+      "value": "FUN_180014434"
+    },
+    {
+      "address": "0x1800145ac",
+      "value": "FUN_1800145ac"
+    },
+    {
+      "address": "0x1800145e4",
+      "value": "FUN_1800145e4"
+    },
+    {
+      "address": "0x1800147a4",
+      "value": "FUN_1800147a4"
+    },
+    {
+      "address": "0x1800147ec",
+      "value": "FUN_1800147ec"
+    },
+    {
+      "address": "0x1800149a4",
+      "value": "FUN_1800149a4"
+    },
+    {
+      "address": "0x1800149cc",
+      "value": "__acrt_add_locale_ref"
+    },
+    {
+      "address": "0x180014a58",
+      "value": "__acrt_free_locale"
+    },
+    {
+      "address": "0x180014bd0",
+      "value": "__acrt_locale_add_lc_time_reference"
+    },
+    {
+      "address": "0x180014bf8",
+      "value": "__acrt_locale_free_lc_time_if_unreferenced"
+    },
+    {
+      "address": "0x180014c30",
+      "value": "__acrt_locale_release_lc_time_reference"
+    },
+    {
+      "address": "0x180014c58",
+      "value": "__acrt_release_locale_ref"
+    },
+    {
+      "address": "0x180014d00",
+      "value": "__acrt_update_thread_locale_data"
+    },
+    {
+      "address": "0x180014d70",
+      "value": "_updatetlocinfoEx_nolock"
+    },
+    {
+      "address": "0x180014dd8",
+      "value": "__acrt_locale_free_monetary"
+    },
+    {
+      "address": "0x180014ee4",
+      "value": "__acrt_locale_free_numeric"
+    },
+    {
+      "address": "0x180014f50",
+      "value": "FUN_180014f50"
+    },
+    {
+      "address": "0x180014f84",
+      "value": "__acrt_locale_free_time"
+    },
+    {
+      "address": "0x18001508c",
+      "value": "FUN_18001508c"
+    },
+    {
+      "address": "0x180015220",
+      "value": "FUN_180015220"
+    },
+    {
+      "address": "0x180015230",
+      "value": "FUN_180015230"
+    },
+    {
+      "address": "0x180015260",
+      "value": "FUN_180015260"
+    },
+    {
+      "address": "0x180015600",
+      "value": "FUN_180015600"
+    },
+    {
+      "address": "0x180015730",
+      "value": "FUN_180015730"
+    },
+    {
+      "address": "0x1800157d0",
+      "value": "FUN_1800157d0"
+    },
+    {
+      "address": "0x180015b88",
+      "value": "FUN_180015b88"
+    },
+    {
+      "address": "0x180015b90",
+      "value": "_mbsdec_l"
+    },
+    {
+      "address": "0x180015c24",
+      "value": "FUN_180015c24"
+    },
+    {
+      "address": "0x180015f58",
+      "value": "__acrt_LCMapStringA"
+    },
+    {
+      "address": "0x180015ff0",
+      "value": "FUN_180015ff0"
+    },
+    {
+      "address": "0x180016010",
+      "value": "_msize_base"
+    },
+    {
+      "address": "0x180016060",
+      "value": "_realloc_base"
+    },
+    {
+      "address": "0x1800160dc",
+      "value": "FUN_1800160dc"
+    },
+    {
+      "address": "0x180016184",
+      "value": "__acrt_lowio_create_handle_array"
+    },
+    {
+      "address": "0x18001622c",
+      "value": "__acrt_lowio_destroy_handle_array"
+    },
+    {
+      "address": "0x18001627c",
+      "value": "__acrt_lowio_ensure_fh_exists"
+    },
+    {
+      "address": "0x180016324",
+      "value": "FUN_180016324"
+    },
+    {
+      "address": "0x18001634c",
+      "value": "FUN_18001634c"
+    },
+    {
+      "address": "0x180016374",
+      "value": "FUN_180016374"
+    },
+    {
+      "address": "0x180016430",
+      "value": "FUN_180016430"
+    },
+    {
+      "address": "0x1800164a8",
+      "value": "FUN_1800164a8"
+    },
+    {
+      "address": "0x180016534",
+      "value": "_commit"
+    },
+    {
+      "address": "0x1800165c8",
+      "value": "FUN_1800165c8"
+    },
+    {
+      "address": "0x180016a5c",
+      "value": "FUN_180016a5c"
+    },
+    {
+      "address": "0x180016b64",
+      "value": "FUN_180016b64"
+    },
+    {
+      "address": "0x180016c80",
+      "value": "FUN_180016c80"
+    },
+    {
+      "address": "0x180016df4",
+      "value": "FUN_180016df4"
+    },
+    {
+      "address": "0x180016f14",
+      "value": "FUN_180016f14"
+    },
+    {
+      "address": "0x180017244",
+      "value": "FUN_180017244"
+    },
+    {
+      "address": "0x1800172f8",
+      "value": "__acrt_stdio_free_buffer_nolock"
+    },
+    {
+      "address": "0x18001733c",
+      "value": "FUN_18001733c"
+    },
+    {
+      "address": "0x18001739c",
+      "value": "FUN_18001739c"
+    },
+    {
+      "address": "0x1800173a4",
+      "value": "FUN_1800173a4"
+    },
+    {
+      "address": "0x1800173c0",
+      "value": "FUN_1800173c0"
+    },
+    {
+      "address": "0x180017428",
+      "value": "FUN_180017428"
+    },
+    {
+      "address": "0x180017440",
+      "value": "__strncnt"
+    },
+    {
+      "address": "0x180017458",
+      "value": "FUN_180017458"
+    },
+    {
+      "address": "0x180017460",
+      "value": "FUN_180017460"
+    },
+    {
+      "address": "0x180017510",
+      "value": "thunk_FUN_180017460"
+    },
+    {
+      "address": "0x180017518",
+      "value": "FUN_180017518"
+    },
+    {
+      "address": "0x180017558",
+      "value": "FUN_180017558"
+    },
+    {
+      "address": "0x1800175d4",
+      "value": "FUN_1800175d4"
+    },
+    {
+      "address": "0x18001767c",
+      "value": "FUN_18001767c"
+    },
+    {
+      "address": "0x180017720",
+      "value": "__dcrt_lowio_ensure_console_output_initialized"
+    },
+    {
+      "address": "0x180017774",
+      "value": "FUN_180017774"
+    },
+    {
+      "address": "0x180017790",
+      "value": "__dcrt_write_console"
+    },
+    {
+      "address": "0x180017850",
+      "value": "FUN_180017850"
+    },
+    {
+      "address": "0x1800178c8",
+      "value": "FUN_1800178c8"
+    },
+    {
+      "address": "0x18001798c",
+      "value": "FUN_18001798c"
+    },
+    {
+      "address": "0x180017a5c",
+      "value": "FUN_180017a5c"
+    },
+    {
+      "address": "0x180017a80",
+      "value": "FUN_180017a80"
+    },
+    {
+      "address": "0x180017aa0",
+      "value": "FUN_180017aa0"
+    },
+    {
+      "address": "0x180017b54",
+      "value": "FUN_180017b54"
+    },
+    {
+      "address": "0x180017c40",
+      "value": "FUN_180017c40"
+    },
+    {
+      "address": "0x180017cfc",
+      "value": "FUN_180017cfc"
+    },
+    {
+      "address": "0x180017d9c",
+      "value": "DloadMakePermanentImageCommit"
+    },
+    {
+      "address": "0x180017e34",
+      "value": "FUN_180017e34"
+    },
+    {
+      "address": "0x180017ed0",
+      "value": "FUN_180017ed0"
+    },
+    {
+      "address": "0x180017fc8",
+      "value": "FUN_180017fc8"
+    },
+    {
+      "address": "0x180018074",
+      "value": "FUN_180018074"
+    },
+    {
+      "address": "0x180018370",
+      "value": "FUN_180018370"
+    },
+    {
+      "address": "0x180018390",
+      "value": "FUN_180018390"
+    },
+    {
+      "address": "0x1800183f0",
+      "value": "_FindPESection"
+    },
+    {
+      "address": "0x180018440",
+      "value": "FUN_180018440"
+    },
+    {
+      "address": "0x180018490",
+      "value": "FUN_180018490"
+    },
+    {
+      "address": "0x1800184bc",
+      "value": "__GSHandlerCheck_SEH"
+    },
+    {
+      "address": "0x180018544",
+      "value": "FUN_180018544"
+    },
+    {
+      "address": "0x1800185e0",
+      "value": "__chkstk"
+    },
+    {
+      "address": "0x180018630",
+      "value": "FUN_180018630"
+    },
+    {
+      "address": "0x180018680",
+      "value": "FUN_180018680"
+    },
+    {
+      "address": "0x180018700",
+      "value": "thunk_FUN_1800187b0"
+    },
+    {
+      "address": "0x180018710",
+      "value": "FUN_180018710"
+    },
+    {
+      "address": "0x1800187b0",
+      "value": "FUN_1800187b0"
+    },
+    {
+      "address": "0x180018820",
+      "value": "_guard_dispatch_icall"
+    },
+    {
+      "address": "0x180018840",
+      "value": "_guard_dispatch_icall"
+    },
+    {
+      "address": "0x180018860",
+      "value": "_guard_dispatch_icall"
+    },
+    {
+      "address": "0x180018890",
+      "value": "FUN_180018890"
+    },
+    {
+      "address": "0x1800188a0",
+      "value": "FUN_1800188a0"
+    },
+    {
+      "address": "0x180018c50",
+      "value": "FUN_180018c50"
+    },
+    {
+      "address": "0x180018c60",
+      "value": "FUN_180018c60"
+    },
+    {
+      "address": "0x1800192e0",
+      "value": "strcmp"
+    },
+    {
+      "address": "0x180019360",
+      "value": "strlen"
+    },
+    {
+      "address": "0x180019420",
+      "value": "strncmp"
+    },
+    {
+      "address": "0x18001965c",
+      "value": "FUN_18001965c"
+    },
+    {
+      "address": "0x18001968e",
+      "value": "FUN_18001968e"
+    },
+    {
+      "address": "0x180019700",
+      "value": "FUN_180019700"
+    },
+    {
+      "address": "0x180019774",
+      "value": "FUN_180019774"
+    },
+    {
+      "address": "0x180019800",
+      "value": "FUN_180019800"
+    },
+    {
+      "address": "0x180019870",
+      "value": "FUN_180019870"
+    },
+    {
+      "address": "0x180019a50",
+      "value": "FUN_180019a50"
+    },
+    {
+      "address": "0x180019ad8",
+      "value": "FUN_180019ad8"
+    },
+    {
+      "address": "0x180019af0",
+      "value": "FUN_180019af0"
+    },
+    {
+      "address": "0x180019b07",
+      "value": "FUN_180019b07"
+    },
+    {
+      "address": "0x180019b20",
+      "value": "FUN_180019b20"
+    },
+    {
+      "address": "0x180019b34",
+      "value": "FUN_180019b34"
+    },
+    {
+      "address": "0x180019b6a",
+      "value": "FUN_180019b6a"
+    },
+    {
+      "address": "0x180019c11",
+      "value": "FUN_180019c11"
+    },
+    {
+      "address": "0x180019cc6",
+      "value": "FUN_180019cc6"
+    },
+    {
+      "address": "0x180019d58",
+      "value": "FUN_180019d58"
+    },
+    {
+      "address": "0x180019d74",
+      "value": "FUN_180019d74"
+    },
+    {
+      "address": "0x180019d95",
+      "value": "FUN_180019d95"
+    },
+    {
+      "address": "0x180019e1b",
+      "value": "FUN_180019e1b"
+    },
+    {
+      "address": "0x180019e43",
+      "value": "FUN_180019e43"
+    },
+    {
+      "address": "0x180019ed4",
+      "value": "FUN_180019ed4"
+    },
+    {
+      "address": "0x180019eea",
+      "value": "FUN_180019eea"
+    },
+    {
+      "address": "0x180019f0d",
+      "value": "FUN_180019f0d"
+    },
+    {
+      "address": "0x180019f23",
+      "value": "FUN_180019f23"
+    },
+    {
+      "address": "0x180019f50",
+      "value": "FUN_180019f50"
+    },
+    {
+      "address": "0x180019f66",
+      "value": "FUN_180019f66"
+    },
+    {
+      "address": "0x180019f7c",
+      "value": "FUN_180019f7c"
+    },
+    {
+      "address": "0x180019f96",
+      "value": "FUN_180019f96"
+    },
+    {
+      "address": "0x180019fc3",
+      "value": "FUN_180019fc3"
+    },
+    {
+      "address": "0x180019fdd",
+      "value": "FUN_180019fdd"
+    },
+    {
+      "address": "0x180019ff7",
+      "value": "FUN_180019ff7"
+    },
+    {
+      "address": "0x18001a010",
+      "value": "FUN_18001a010"
+    },
+    {
+      "address": "0x18001a029",
+      "value": "FUN_18001a029"
+    },
+    {
+      "address": "0x18001a04a",
+      "value": "FUN_18001a04a"
+    },
+    {
+      "address": "0x18001a065",
+      "value": "FUN_18001a065"
+    },
+    {
+      "address": "0x18001a082",
+      "value": "FUN_18001a082"
+    },
+    {
+      "address": "0x18001a09b",
+      "value": "FUN_18001a09b"
+    },
+    {
+      "address": "0x18001a0b5",
+      "value": "FUN_18001a0b5"
+    },
+    {
+      "address": "0x18001a0cc",
+      "value": "FUN_18001a0cc"
+    },
+    {
+      "address": "0x18001a0e5",
+      "value": "FUN_18001a0e5"
+    },
+    {
+      "address": "0x18001a100",
+      "value": "FUN_18001a100"
+    },
+    {
+      "address": "0x18001a120",
+      "value": "FUN_18001a120"
+    }
+  ],
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "Regex mode uses Java Pattern semantics. Matcher or compiler stack exhaustion returns a resource constraint without closing the session; literal mode avoids regex recursion and returns complete matching values.",
+    "Windows Ghidra P0 accepts approved native x86 and x86-64 PE applications and DLLs; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically."
+  ],
+  "relationship_coverage": null,
+  "locations": [],
+  "evidence_links": []
+}

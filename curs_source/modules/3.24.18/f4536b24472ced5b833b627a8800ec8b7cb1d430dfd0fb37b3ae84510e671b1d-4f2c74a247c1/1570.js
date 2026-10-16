@@ -1,0 +1,1 @@
+a(sA,"createResizeObserver");

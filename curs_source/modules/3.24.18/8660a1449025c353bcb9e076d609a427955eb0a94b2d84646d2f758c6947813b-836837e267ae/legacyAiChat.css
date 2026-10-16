@@ -1,0 +1,6 @@
+var __wakaru_b2w_initialized = false;
+export function b2w() {
+if (__wakaru_b2w_initialized) return;
+__wakaru_b2w_initialized = true;
+
+}

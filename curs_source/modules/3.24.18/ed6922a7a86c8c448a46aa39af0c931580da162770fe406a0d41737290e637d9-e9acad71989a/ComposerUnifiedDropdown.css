@@ -1,0 +1,6 @@
+var __wakaru_jFh_initialized = false;
+export function jFh() {
+if (__wakaru_jFh_initialized) return;
+__wakaru_jFh_initialized = true;
+
+}

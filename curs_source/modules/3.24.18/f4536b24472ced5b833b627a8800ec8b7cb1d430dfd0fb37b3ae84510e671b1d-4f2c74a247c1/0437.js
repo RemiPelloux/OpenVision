@@ -1,0 +1,1 @@
+function DS(e,t,r){return{dehydratedAt:Date.now(),state:{...e.state,...e.state.data!==void 0&&{data:t?t(e.state.data):e.state.data}},queryKey:e.queryKey,queryHash:e.queryHash,...e.state.status==="pending"&&{promise:OS(e,t,r)},...e.meta&&{meta:e.meta},...e.queryType&&{queryType:e.queryType}}}

@@ -1,0 +1,6 @@
+var __wakaru_Uvg_initialized = false;
+export function Uvg() {
+if (__wakaru_Uvg_initialized) return;
+__wakaru_Uvg_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function BC(e,t,r){const n=DC(e,r);if(Object.keys(n).length>0)return{kind:"invalid",issues:n};const o=r.minimum.currencyCode,i=ph(e,t,o),s=wi(i,t)?void 0:i;if(s!==void 0){const c=VC(s);if(c!==null)return{kind:"rule-issue",issue:c}}return{kind:"ready",submission:{rule:s,amount:FC(e,o)}}}

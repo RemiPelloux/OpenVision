@@ -1,0 +1,6 @@
+var __wakaru_P3k_initialized = false;
+export function P3k() {
+if (__wakaru_P3k_initialized) return;
+__wakaru_P3k_initialized = true;
+
+}

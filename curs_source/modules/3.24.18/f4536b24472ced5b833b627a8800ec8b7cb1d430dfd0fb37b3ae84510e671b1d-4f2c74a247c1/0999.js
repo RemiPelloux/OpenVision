@@ -1,0 +1,1 @@
+function WT(e){return iy("svg",{xmlns:"http://www.w3.org/2000/svg",fill:"currentColor","data-icon":"icon-chevron-left-md",viewBox:"0 0 24 24",display:"flex",role:"img",width:"1em",height:"1em",...e,children:iy("path",{d:"m14.91 6-6 6 6 6-1.41 1.41L6.09 12l7.41-7.41z"})})}

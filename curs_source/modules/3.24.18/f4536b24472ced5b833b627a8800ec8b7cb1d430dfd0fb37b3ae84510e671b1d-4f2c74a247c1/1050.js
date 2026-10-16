@@ -1,0 +1,1 @@
+function it({align:e,as:t,className:r,color:n,decoration:o,fontStyle:i,numberOfLines:s,overflowWrap:c,size:l,weight:m,whitespace:u,ref:d,...p}){const h=V4(fC),v=cy(t??(h?_U:PU),{ref:d,className:_e(pC({align:e,color:n,decoration:o,fontStyle:i,numberOfLines:s,overflowWrap:c,size:l,weight:m,whitespace:u}),r),...p});return h?v:cy(fC,{value:!0,children:v})}

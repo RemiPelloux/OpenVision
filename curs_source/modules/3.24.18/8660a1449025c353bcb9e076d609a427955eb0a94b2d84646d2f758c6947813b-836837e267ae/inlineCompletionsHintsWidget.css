@@ -1,0 +1,6 @@
+var __wakaru_kOy_initialized = false;
+export function kOy() {
+if (__wakaru_kOy_initialized) return;
+__wakaru_kOy_initialized = true;
+
+}

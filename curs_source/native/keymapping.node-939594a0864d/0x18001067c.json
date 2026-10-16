@@ -1,0 +1,95 @@
+{
+  "evidence_id": "ev_86acdd7201d59569d16c86f37e0b54b5f9ddc3798af829bfad9c4989cff33698",
+  "subject": {
+    "name": "keymapping.node",
+    "digest": {
+      "sha256": "939594a0864d5e1d7a8e1fcf81ce445b4d833ec3d9b0cd55990376a9fa4936ad"
+    },
+    "local_path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\native-keymap\\build\\Release\\keymapping.node",
+    "format": "pe",
+    "architecture": "x86_64"
+  },
+  "provider": {
+    "id": "ghidra",
+    "name": "Ghidra",
+    "version": "12.1.4"
+  },
+  "analysis_profile": {
+    "provider": {
+      "id": "ghidra",
+      "name": "Ghidra",
+      "version": "12.1.4"
+    },
+    "parameters": {
+      "target_kind": "executable",
+      "target_format": "pe",
+      "executable_role": "shared-library",
+      "managed": false,
+      "native_aot_metadata": {
+        "contract_revision": "rtr-9.1-x64-pe-read-only-v3",
+        "source_bytes": 134217728,
+        "work_units": 67108864,
+        "working_memory_bytes": 67108864,
+        "report_bytes": 4194304
+      },
+      "architecture": "x86_64",
+      "available_architectures": [
+        "x86_64"
+      ],
+      "import_mode": "ephemeral-source-immutable",
+      "pdb_observations": "program-info-v1",
+      "annotation_policy": "atomic-function-entry-metadata-v1",
+      "load_image_observations": "source-mappings-entry-context-v2",
+      "function_body_evidence": "complete-inclusive-ranges-v1",
+      "function_references": "complete-body-and-entry-reference-manager-v2",
+      "call_relationship_coverage": "function-body-call-coverage-v5",
+      "function_dossier_coverage": "observed-facets-and-call-relationships-v1",
+      "string_inventory_evidence": "defined-data-coverage-v1",
+      "location_resolution": "explicit-address-exact-entry-symbol-first-v3",
+      "procedure_file_offset_resolution": "address-first-unique-target-source-mapping-v2",
+      "instruction_flow_evidence": "decoded-return-pcode-v1",
+      "instruction_references": "exact-address-incoming-v1",
+      "function_boundary_observations": "ghidra-function-boundary-limitations-v3",
+      "no_return_repair": "disabled-windows-p0",
+      "process_launch": "official-headless-script-v1",
+      "jump_table_evidence": "typed-case-default-blocks-v1",
+      "decompiler_jump_loads": true,
+      "loader": "auto-from-header",
+      "language_id": "auto-from-header",
+      "compiler_spec_id": "auto-default",
+      "analyzer_preset": "ghidra-default"
+    },
+    "digest": "dcc676845881c04a2d22833fb35d26569462e033daee5e99a95edac5aa61ac05"
+  },
+  "predicate_type": "rea.analysis",
+  "operation": "procedure_pseudo_code",
+  "parameters": {
+    "procedure": "0x18001067c"
+  },
+  "raw_result": {
+    "value": "\r\n/* WARNING: Function: _guard_dispatch_icall replaced with injection: guard_dispatch_icall */\r\n\r\nundefined8 FUN_18001067c(uint param_1)\r\n\r\n{\r\n  bool bVar1;\r\n  longlong lVar2;\r\n  longlong lVar3;\r\n  longlong lVar4;\r\n  undefined8 uVar5;\r\n  byte bVar6;\r\n  code *pcVar7;\r\n  ulonglong *puVar8;\r\n  __acrt_ptd *p_Var9;\r\n  undefined4 local_res10;\r\n  __acrt_ptd *p_Var10;\r\n  \r\n  p_Var10 = (__acrt_ptd *)0x0;\r\n  p_Var9 = (__acrt_ptd *)0x0;\r\n  local_res10 = 0;\r\n  bVar1 = true;\r\n  if (param_1 == 2) {\r\nLAB_1800106d3:\r\n    if (param_1 == 2) {\r\n      puVar8 = (ulonglong *)&DAT_180028c18;\r\n    }\r\n    else if (param_1 == 6) {\r\nLAB_180010775:\r\n      puVar8 = &DAT_180028c28;\r\n      p_Var9 = p_Var10;\r\n    }\r\n    else if (param_1 == 0xf) {\r\n      puVar8 = (ulonglong *)&DAT_180028c30;\r\n    }\r\n    else if (param_1 == 0x15) {\r\n      puVar8 = (ulonglong *)&DAT_180028c20;\r\n      p_Var9 = p_Var10;\r\n    }\r\n    else {\r\n      if (param_1 == 0x16) goto LAB_180010775;\r\n      puVar8 = (ulonglong *)0x0;\r\n      p_Var9 = p_Var10;\r\n    }\r\n  }\r\n  else {\r\n    if (param_1 != 4) {\r\n      if (param_1 != 6) {\r\n        if ((param_1 == 8) || (param_1 == 0xb)) goto LAB_180010703;\r\n        if ((param_1 != 0xf) && ((param_1 != 0x15 && (param_1 != 0x16)))) goto LAB_180010755;\r\n      }\r\n      goto LAB_1800106d3;\r\n    }\r\nLAB_180010703:\r\n    p_Var9 = FUN_18000bc78();\r\n    if (p_Var9 == (__acrt_ptd *)0x0) {\r\n      return 0xffffffff;\r\n    }\r\n    lVar4 = *(longlong *)p_Var9;\r\n    lVar2 = lVar4 + 0xc0;\r\n    for (; lVar4 != lVar2; lVar4 = lVar4 + 0x10) {\r\n      if (*(uint *)(lVar4 + 4) == param_1) goto LAB_180010750;\r\n    }\r\n    lVar4 = 0;\r\nLAB_180010750:\r\n    if (lVar4 == 0) {\r\nLAB_180010755:\r\n      p_Var9 = FUN_18000b774();\r\n      *(undefined4 *)p_Var9 = 0x16;\r\n      FUN_18000821c();\r\n      return 0xffffffff;\r\n    }\r\n    puVar8 = (ulonglong *)(lVar4 + 8);\r\n    bVar1 = false;\r\n  }\r\n  lVar4 = 0;\r\n  if (bVar1) {\r\n    __acrt_lock(3);\r\n  }\r\n  pcVar7 = (code *)*puVar8;\r\n  if (bVar1) {\r\n    bVar6 = (byte)DAT_180027000 & 0x3f;\r\n    pcVar7 = (code *)(((ulonglong)pcVar7 ^ DAT_180027000) >> bVar6 |\r\n                     ((ulonglong)pcVar7 ^ DAT_180027000) << 0x40 - bVar6);\r\n  }\r\n  if (pcVar7 == (code *)0x1) goto LAB_18001085e;\r\n  if (pcVar7 == (code *)0x0) {\r\n    if (bVar1) {\r\n      __acrt_unlock(3);\r\n    }\r\n    FUN_18000ab44(3);\r\n    pcVar7 = (code *)swi(3);\r\n    uVar5 = (*pcVar7)();\r\n    return uVar5;\r\n  }\r\n  if ((param_1 < 0xc) && ((0x910U >> (param_1 & 0x1f) & 1) != 0)) {\r\n    lVar4 = *(longlong *)(p_Var9 + 8);\r\n    *(longlong *)(p_Var9 + 8) = 0;\r\n    if (param_1 == 8) {\r\n      lVar2 = FUN_18000bc18();\r\n      local_res10 = *(undefined4 *)(lVar2 + 0x10);\r\n      lVar2 = FUN_18000bc18();\r\n      *(undefined4 *)(lVar2 + 0x10) = 0x8c;\r\n      goto LAB_180010816;\r\n    }\r\n  }\r\n  else {\r\nLAB_180010816:\r\n    if (param_1 == 8) {\r\n      lVar2 = *(longlong *)p_Var9;\r\n      for (lVar3 = lVar2 + 0x30; lVar3 != lVar2 + 0xc0; lVar3 = lVar3 + 0x10) {\r\n        *(undefined8 *)(lVar3 + 8) = 0;\r\n      }\r\n      goto LAB_18001085e;\r\n    }\r\n  }\r\n  *puVar8 = DAT_180027000;\r\nLAB_18001085e:\r\n  if (bVar1) {\r\n    __acrt_unlock(3);\r\n  }\r\n  if (pcVar7 != (code *)0x1) {\r\n    if (param_1 == 8) {\r\n      lVar2 = FUN_18000bc18();\r\n      (*pcVar7)(8,*(undefined4 *)(lVar2 + 0x10));\r\n    }\r\n    else {\r\n      (*pcVar7)(param_1);\r\n    }\r\n    if (((param_1 < 0xc) && ((0x910U >> (param_1 & 0x1f) & 1) != 0)) &&\r\n       (*(longlong *)(p_Var9 + 8) = lVar4, param_1 == 8)) {\r\n      lVar4 = FUN_18000bc18();\r\n      *(undefined4 *)(lVar4 + 0x10) = local_res10;\r\n    }\r\n  }\r\n  return 0;\r\n}\r\n\r\n",
+    "limitations": [
+      "Ghidra Listing reports a terminal call at 0x1800108d7 with no resolved callee; its no-return basis is unknown."
+    ]
+  },
+  "normalized_result": "\r\n/* WARNING: Function: _guard_dispatch_icall replaced with injection: guard_dispatch_icall */\r\n\r\nundefined8 FUN_18001067c(uint param_1)\r\n\r\n{\r\n  bool bVar1;\r\n  longlong lVar2;\r\n  longlong lVar3;\r\n  longlong lVar4;\r\n  undefined8 uVar5;\r\n  byte bVar6;\r\n  code *pcVar7;\r\n  ulonglong *puVar8;\r\n  __acrt_ptd *p_Var9;\r\n  undefined4 local_res10;\r\n  __acrt_ptd *p_Var10;\r\n  \r\n  p_Var10 = (__acrt_ptd *)0x0;\r\n  p_Var9 = (__acrt_ptd *)0x0;\r\n  local_res10 = 0;\r\n  bVar1 = true;\r\n  if (param_1 == 2) {\r\nLAB_1800106d3:\r\n    if (param_1 == 2) {\r\n      puVar8 = (ulonglong *)&DAT_180028c18;\r\n    }\r\n    else if (param_1 == 6) {\r\nLAB_180010775:\r\n      puVar8 = &DAT_180028c28;\r\n      p_Var9 = p_Var10;\r\n    }\r\n    else if (param_1 == 0xf) {\r\n      puVar8 = (ulonglong *)&DAT_180028c30;\r\n    }\r\n    else if (param_1 == 0x15) {\r\n      puVar8 = (ulonglong *)&DAT_180028c20;\r\n      p_Var9 = p_Var10;\r\n    }\r\n    else {\r\n      if (param_1 == 0x16) goto LAB_180010775;\r\n      puVar8 = (ulonglong *)0x0;\r\n      p_Var9 = p_Var10;\r\n    }\r\n  }\r\n  else {\r\n    if (param_1 != 4) {\r\n      if (param_1 != 6) {\r\n        if ((param_1 == 8) || (param_1 == 0xb)) goto LAB_180010703;\r\n        if ((param_1 != 0xf) && ((param_1 != 0x15 && (param_1 != 0x16)))) goto LAB_180010755;\r\n      }\r\n      goto LAB_1800106d3;\r\n    }\r\nLAB_180010703:\r\n    p_Var9 = FUN_18000bc78();\r\n    if (p_Var9 == (__acrt_ptd *)0x0) {\r\n      return 0xffffffff;\r\n    }\r\n    lVar4 = *(longlong *)p_Var9;\r\n    lVar2 = lVar4 + 0xc0;\r\n    for (; lVar4 != lVar2; lVar4 = lVar4 + 0x10) {\r\n      if (*(uint *)(lVar4 + 4) == param_1) goto LAB_180010750;\r\n    }\r\n    lVar4 = 0;\r\nLAB_180010750:\r\n    if (lVar4 == 0) {\r\nLAB_180010755:\r\n      p_Var9 = FUN_18000b774();\r\n      *(undefined4 *)p_Var9 = 0x16;\r\n      FUN_18000821c();\r\n      return 0xffffffff;\r\n    }\r\n    puVar8 = (ulonglong *)(lVar4 + 8);\r\n    bVar1 = false;\r\n  }\r\n  lVar4 = 0;\r\n  if (bVar1) {\r\n    __acrt_lock(3);\r\n  }\r\n  pcVar7 = (code *)*puVar8;\r\n  if (bVar1) {\r\n    bVar6 = (byte)DAT_180027000 & 0x3f;\r\n    pcVar7 = (code *)(((ulonglong)pcVar7 ^ DAT_180027000) >> bVar6 |\r\n                     ((ulonglong)pcVar7 ^ DAT_180027000) << 0x40 - bVar6);\r\n  }\r\n  if (pcVar7 == (code *)0x1) goto LAB_18001085e;\r\n  if (pcVar7 == (code *)0x0) {\r\n    if (bVar1) {\r\n      __acrt_unlock(3);\r\n    }\r\n    FUN_18000ab44(3);\r\n    pcVar7 = (code *)swi(3);\r\n    uVar5 = (*pcVar7)();\r\n    return uVar5;\r\n  }\r\n  if ((param_1 < 0xc) && ((0x910U >> (param_1 & 0x1f) & 1) != 0)) {\r\n    lVar4 = *(longlong *)(p_Var9 + 8);\r\n    *(longlong *)(p_Var9 + 8) = 0;\r\n    if (param_1 == 8) {\r\n      lVar2 = FUN_18000bc18();\r\n      local_res10 = *(undefined4 *)(lVar2 + 0x10);\r\n      lVar2 = FUN_18000bc18();\r\n      *(undefined4 *)(lVar2 + 0x10) = 0x8c;\r\n      goto LAB_180010816;\r\n    }\r\n  }\r\n  else {\r\nLAB_180010816:\r\n    if (param_1 == 8) {\r\n      lVar2 = *(longlong *)p_Var9;\r\n      for (lVar3 = lVar2 + 0x30; lVar3 != lVar2 + 0xc0; lVar3 = lVar3 + 0x10) {\r\n        *(undefined8 *)(lVar3 + 8) = 0;\r\n      }\r\n      goto LAB_18001085e;\r\n    }\r\n  }\r\n  *puVar8 = DAT_180027000;\r\nLAB_18001085e:\r\n  if (bVar1) {\r\n    __acrt_unlock(3);\r\n  }\r\n  if (pcVar7 != (code *)0x1) {\r\n    if (param_1 == 8) {\r\n      lVar2 = FUN_18000bc18();\r\n      (*pcVar7)(8,*(undefined4 *)(lVar2 + 0x10));\r\n    }\r\n    else {\r\n      (*pcVar7)(param_1);\r\n    }\r\n    if (((param_1 < 0xc) && ((0x910U >> (param_1 & 0x1f) & 1) != 0)) &&\r\n       (*(longlong *)(p_Var9 + 8) = lVar4, param_1 == 8)) {\r\n      lVar4 = FUN_18000bc18();\r\n      *(undefined4 *)(lVar4 + 0x10) = local_res10;\r\n    }\r\n  }\r\n  return 0;\r\n}\r\n\r\n",
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+    "The session serves operations only after Ghidra reports default auto-analysis complete; incomplete analysis does not expose partial results.",
+    "The imported Program and temporary project are ephemeral and deleted on close. Annotation operations edit session database metadata; original executable bytes are never written.",
+    "Cancelling an active Ghidra request terminates its ephemeral database and discards session annotations. The selected target remains open; the next provider query imports the original artifact again.",
+    "Default-space addresses use lowercase 0x-prefixed hexadecimal; other address spaces use <percent-encoded-space>:0x<hex>.",
+    "Pseudocode is Ghidra decompiler output, not original source and not text-equivalent to Hopper output.",
+    "External functions and functions without an analyzable body return null; other decompiler failures remain explicit.",
+    "Ghidra Listing reports a terminal call at 0x1800108d7 with no resolved callee; its no-return basis is unknown.",
+    "Windows Ghidra P0 accepts native x86 and x86-64 PE applications and DLLs, and explicitly selected raw 6502 images; managed, hostile, sensitive, and mutable-path targets are unsupported.",
+    "The Windows bridge uses authenticated IPv4 loopback because Node path-based IPC does not expose Java AF_UNIX sockets; the endpoint file contains no bearer token.",
+    "Windows sessions require the matching packaged Windows x64 native addon, local NTFS targets and runtimes, and Windows 10 or later. Native handles enforce path admission, private DACLs, and Job Object ownership automatically.",
+    "The target references PDB keymapping.pdb (GUID 3bc68ca4-00cd-4534-a0e9-87273f94ac0f, age (hex) 1, signature unknown, version RSDS); Ghidra reports load state unknown. Original names and types may be missing; an empty name search does not prove a procedure is absent. Use list_procedures and address-based analysis to inspect recovered functions. REA does not admit a caller-selected PDB companion."
+  ],
+  "relationship_coverage": null,
+  "locations": [],
+  "evidence_links": []
+}

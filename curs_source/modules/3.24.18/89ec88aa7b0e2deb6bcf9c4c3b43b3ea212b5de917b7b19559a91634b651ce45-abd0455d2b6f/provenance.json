@@ -1,0 +1,8 @@
+{
+  "format": "webpack5",
+  "strategy": "structural",
+  "modules": {
+    "module-42862.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\dist\\88.js", "ranges": [[77,16104]], "extraction": "structural"},
+    "module-75088.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\dist\\88.js", "ranges": [[16122,81137]], "extraction": "structural"}
+  }
+}

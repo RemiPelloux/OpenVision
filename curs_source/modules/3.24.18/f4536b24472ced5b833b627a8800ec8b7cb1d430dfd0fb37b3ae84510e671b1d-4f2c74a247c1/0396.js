@@ -1,0 +1,1 @@
+function Tp(e,t){const{type:r="all",exact:n,fetchStatus:o,predicate:i,queryKey:s,stale:c}=e;if(s){if(n){if(t.queryHash!==Ac(s,t.options))return!1}else if(!mo(t.queryKey,s))return!1}if(r!=="all"){const l=t.isActive();if(r==="active"&&!l||r==="inactive"&&l)return!1}return!(typeof c=="boolean"&&t.isStale()!==c||o&&o!==t.state.fetchStatus||i&&!i(t))}

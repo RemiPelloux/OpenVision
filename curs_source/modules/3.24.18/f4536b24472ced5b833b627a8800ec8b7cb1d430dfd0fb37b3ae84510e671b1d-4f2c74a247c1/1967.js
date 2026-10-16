@@ -1,0 +1,1 @@
+var pN=Object.assign(dN(),{addEffect:_5,removeEffect:Nx}),bz=hn("animate-spin",{variants:{size:{xs:"size-3",sm:"size-4",md:"size-[18px]",lg:"size-5",xl:"size-6"},color:{primary:"text-brand",background:"text-[var(--x-bg-primary)]",text:"text-primary",white:"text-white",inherit:"text-[color:inherit]"}},defaultVariants:{color:"primary",size:"md"}});

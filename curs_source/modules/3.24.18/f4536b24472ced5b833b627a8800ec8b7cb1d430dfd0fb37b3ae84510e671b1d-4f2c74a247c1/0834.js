@@ -1,0 +1,1 @@
+function ol(e){const{enabled:t=!0,open:r,ref:n,batch:o=!1,onComplete:i}=e,s=pt(i),c=Rk(n,r,o);f4.useEffect(()=>{if(!t)return;const l=new AbortController;return c(s,l.signal),()=>{l.abort()}},[t,r,s,c])}

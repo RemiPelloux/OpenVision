@@ -1,0 +1,1 @@
+function ou(e){const t=e.values[0].number,r=e.values;return(n,o)=>{if(n===null)return t;switch(typeof n){case"number":if(Number.isInteger(n))return n;break;case"string":{const i=r.find(s=>s.name===n);if(i!==void 0)return i.number;if(o)return Ka;break}}throw new Error(`cannot decode ${e} from JSON: ${St(n)}`)}}

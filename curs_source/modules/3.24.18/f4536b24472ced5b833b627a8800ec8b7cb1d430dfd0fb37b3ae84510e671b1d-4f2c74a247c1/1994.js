@@ -1,0 +1,1 @@
+function kN({className:e,currency:t,onFailed:r}){const n=Nt(),[o,i]=oF(0);return n.provider!=="STRIPE"||!n.canAdd?null:wy(rF,{fallback:null,children:wy(Iz,{className:e,currency:t,onLoadFailed:a(()=>r?.(()=>i(s=>s+1)),"onLoadFailed")},o)})}

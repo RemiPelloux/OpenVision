@@ -1,0 +1,6 @@
+var __wakaru_ZPw_initialized = false;
+export function ZPw() {
+if (__wakaru_ZPw_initialized) return;
+__wakaru_ZPw_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+a(mk,"getEventType");

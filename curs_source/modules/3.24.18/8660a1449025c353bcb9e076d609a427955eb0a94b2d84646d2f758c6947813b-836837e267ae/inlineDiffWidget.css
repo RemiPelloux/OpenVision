@@ -1,0 +1,6 @@
+var __wakaru_zcs_initialized = false;
+export function zcs() {
+if (__wakaru_zcs_initialized) return;
+__wakaru_zcs_initialized = true;
+
+}

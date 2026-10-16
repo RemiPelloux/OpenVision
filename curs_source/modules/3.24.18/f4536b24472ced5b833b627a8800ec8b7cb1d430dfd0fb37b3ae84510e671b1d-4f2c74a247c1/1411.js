@@ -1,0 +1,1 @@
+function jl(e,t,r,n){if(typeof t=="function"){const[o,i]=Ex(n);t=t(r!==void 0?r:e.custom,o,i)}if(typeof t=="string"&&(t=e.variants&&e.variants[t]),typeof t=="function"){const[o,i]=Ex(n);t=t(r!==void 0?r:e.custom,o,i)}return t}

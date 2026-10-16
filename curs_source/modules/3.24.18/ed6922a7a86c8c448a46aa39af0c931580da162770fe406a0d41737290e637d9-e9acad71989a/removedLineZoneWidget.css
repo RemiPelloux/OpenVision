@@ -1,0 +1,6 @@
+var __wakaru_ul__initialized = false;
+export function ul_() {
+if (__wakaru_ul__initialized) return;
+__wakaru_ul__initialized = true;
+
+}

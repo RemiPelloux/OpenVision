@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "preload.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\base\\parts\\sandbox\\electron-sandbox\\preload.js", "ranges": [[0,2746]], "extraction": "structural"}
+  }
+}

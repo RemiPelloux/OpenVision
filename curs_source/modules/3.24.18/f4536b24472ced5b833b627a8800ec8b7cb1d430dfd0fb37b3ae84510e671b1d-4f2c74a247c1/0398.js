@@ -1,0 +1,1 @@
+function Cp(e,t){const{exact:r,status:n,predicate:o,mutationKey:i}=e;if(i){if(!t.options.mutationKey)return!1;if(r){if(lo(t.options.mutationKey)!==lo(i))return!1}else if(!mo(t.options.mutationKey,i))return!1}return!(n&&t.state.status!==n||o&&!o(t))}

@@ -1,0 +1,6 @@
+var __wakaru_NRk_initialized = false;
+export function NRk() {
+if (__wakaru_NRk_initialized) return;
+__wakaru_NRk_initialized = true;
+
+}

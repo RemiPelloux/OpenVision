@@ -1,0 +1,6 @@
+var __wakaru_c6k_initialized = false;
+export function c6k() {
+if (__wakaru_c6k_initialized) return;
+__wakaru_c6k_initialized = true;
+
+}

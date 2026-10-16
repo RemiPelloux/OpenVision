@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "notebookWebWorkerMain.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\workbench\\contrib\\notebook\\common\\services\\notebookWebWorkerMain.js", "ranges": [[0,288803]], "extraction": "structural"}
+  }
+}

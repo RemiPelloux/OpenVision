@@ -1,0 +1,1 @@
+var SG={[Fe.PermissionDenied]:{code:"PERMISSION_DENIED",retriable:!1},[Fe.Unauthenticated]:{code:"SUBJECT_REQUIRED",retriable:!1},[Fe.FailedPrecondition]:{code:"PREPAID_UNAVAILABLE",retriable:!1},[Fe.InvalidArgument]:{code:"INVALID_REQUEST",retriable:!1},[Fe.ResourceExhausted]:{code:"RATE_LIMITED",retriable:!0},[Fe.NotFound]:{code:"NOT_FOUND",retriable:!1}};

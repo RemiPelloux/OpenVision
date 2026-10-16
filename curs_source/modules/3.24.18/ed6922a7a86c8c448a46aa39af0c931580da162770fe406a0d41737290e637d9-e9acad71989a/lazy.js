@@ -1,0 +1,32 @@
+import { x } from "./tslib.es6.js";
+var Yf;
+export { Yf };
+var __wakaru_qC_initialized = false;
+export function qC() {
+if (__wakaru_qC_initialized) return;
+__wakaru_qC_initialized = true;
+"use strict";
+x(), Yf = class {
+    constructor(e){
+        this.executor = e, this._didRun = !1;
+    }
+    get hasValue() {
+        return this._didRun;
+    }
+    get value() {
+        if (!this._didRun) try {
+            this._value = this.executor();
+        } catch (e) {
+            this._error = e;
+        } finally{
+            this._didRun = !0;
+        }
+        if (this._error) throw this._error;
+        return this._value;
+    }
+    get rawValue() {
+        return this._value;
+    }
+};
+
+}

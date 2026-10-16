@@ -1,0 +1,6 @@
+var __wakaru_oEw_initialized = false;
+export function oEw() {
+if (__wakaru_oEw_initialized) return;
+__wakaru_oEw_initialized = true;
+
+}

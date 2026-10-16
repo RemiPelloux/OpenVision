@@ -1,0 +1,1 @@
+function Ov(e){return Object.assign(Object.create({visibility:0}),{$typeName:"google.protobuf.EnumDescriptorProto",name:e.name,reservedName:[],reservedRange:[],value:e.value.map(r=>Object.assign({$typeName:"google.protobuf.EnumValueDescriptorProto"},r))})}

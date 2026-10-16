@@ -1,0 +1,1 @@
+function IR(e,t,r){const n=gy(r);jL(()=>{n.current=r});const o=gy(null);return zL(i=>{i&&e.onMount?.(i),t&&(i?t.mount(i):t.unmount());const s=n.current;if(typeof s=="function")if(i){const c=s(i);typeof c=="function"&&(o.current=c)}else o.current?(o.current(),o.current=null):s(i);else s&&(s.current=i)},[t])}

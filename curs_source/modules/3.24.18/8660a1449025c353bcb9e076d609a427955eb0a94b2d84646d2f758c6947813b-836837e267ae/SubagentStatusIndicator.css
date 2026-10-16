@@ -1,0 +1,6 @@
+var __wakaru_uV0_initialized = false;
+export function uV0() {
+if (__wakaru_uV0_initialized) return;
+__wakaru_uV0_initialized = true;
+
+}

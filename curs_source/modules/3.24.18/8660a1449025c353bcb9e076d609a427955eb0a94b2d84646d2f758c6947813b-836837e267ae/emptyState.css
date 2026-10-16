@@ -1,0 +1,6 @@
+var __wakaru_T2w_initialized = false;
+export function T2w() {
+if (__wakaru_T2w_initialized) return;
+__wakaru_T2w_initialized = true;
+
+}

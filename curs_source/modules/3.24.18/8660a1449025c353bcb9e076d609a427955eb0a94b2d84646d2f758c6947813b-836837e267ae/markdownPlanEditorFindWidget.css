@@ -1,0 +1,6 @@
+var __wakaru_EEw_initialized = false;
+export function EEw() {
+if (__wakaru_EEw_initialized) return;
+__wakaru_EEw_initialized = true;
+
+}

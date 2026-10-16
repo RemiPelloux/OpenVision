@@ -1,0 +1,6 @@
+var __wakaru_v8c_initialized = false;
+export function v8c() {
+if (__wakaru_v8c_initialized) return;
+__wakaru_v8c_initialized = true;
+
+}

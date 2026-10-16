@@ -1,0 +1,6 @@
+var __wakaru_BLy_initialized = false;
+export function BLy() {
+if (__wakaru_BLy_initialized) return;
+__wakaru_BLy_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function rv(e){const t=e[0]==="-";t&&(e=e.slice(1));const r=1e6;let n=0,o=0;function i(s,c){const l=Number(e.slice(s,c));o*=r,n=n*r+l,n>=Im&&(o=o+(n/Im|0),n=n%Im)}return a(i,"add1e6digit"),i(-24,-18),i(-18,-12),i(-12,-6),i(-6),t?ov(n,o):Am(n,o)}

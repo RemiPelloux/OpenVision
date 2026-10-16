@@ -1,0 +1,214 @@
+import { k } from "./proto3.js";
+import { bi } from "./protobuf.js";
+import { x } from "./tslib.es6.js";
+var Kpu, Ypu, Xpu, zue, B6e, Gxn;
+export { B6e, Gxn, Kpu, Xpu, Ypu, zue };
+var __wakaru_U6e_initialized = false;
+export function U6e() {
+if (__wakaru_U6e_initialized) return;
+__wakaru_U6e_initialized = true;
+"use strict";
+x(), bi(), Kpu = k.makeMessageType("agent.v1.NetworkPolicyLoggingConfig", ()=>[
+        {
+            no: 1,
+            name: "decision_log_path",
+            kind: "scalar",
+            T: 9,
+            opt: !0
+        },
+        {
+            no: 2,
+            name: "log_format",
+            kind: "scalar",
+            T: 9,
+            opt: !0
+        }
+    ]), Ypu = k.makeMessageType("agent.v1.NetworkPolicy", ()=>[
+        {
+            no: 1,
+            name: "version",
+            kind: "scalar",
+            T: 13,
+            opt: !0
+        },
+        {
+            no: 2,
+            name: "default_action",
+            kind: "enum",
+            T: k.getEnumType(Xpu),
+            opt: !0
+        },
+        {
+            no: 3,
+            name: "deny",
+            kind: "scalar",
+            T: 9,
+            repeated: !0
+        },
+        {
+            no: 4,
+            name: "allow",
+            kind: "scalar",
+            T: 9,
+            repeated: !0
+        },
+        {
+            no: 5,
+            name: "logging",
+            kind: "message",
+            T: Kpu,
+            opt: !0
+        }
+    ]), Xpu = k.makeEnum("agent.v1.NetworkPolicy.DefaultAction", [
+    {
+        no: 0,
+        name: "DEFAULT_ACTION_UNSPECIFIED",
+        localName: "UNSPECIFIED"
+    },
+    {
+        no: 1,
+        name: "DEFAULT_ACTION_ALLOW",
+        localName: "ALLOW"
+    },
+    {
+        no: 2,
+        name: "DEFAULT_ACTION_DENY",
+        localName: "DENY"
+    }
+]), zue = k.makeMessageType("agent.v1.SandboxPolicy", ()=>[
+        {
+            no: 1,
+            name: "type",
+            kind: "enum",
+            T: k.getEnumType(B6e)
+        },
+        {
+            no: 2,
+            name: "network_access",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 3,
+            name: "additional_readwrite_paths",
+            kind: "scalar",
+            T: 9,
+            repeated: !0
+        },
+        {
+            no: 4,
+            name: "additional_readonly_paths",
+            kind: "scalar",
+            T: 9,
+            repeated: !0
+        },
+        {
+            no: 5,
+            name: "debug_output_dir",
+            kind: "scalar",
+            T: 9,
+            opt: !0
+        },
+        {
+            no: 7,
+            name: "disable_tmp_write",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 8,
+            name: "allowlist_escalated",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 9,
+            name: "enable_shared_build_cache",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 10,
+            name: "network_policy",
+            kind: "message",
+            T: Ypu,
+            opt: !0
+        },
+        {
+            no: 11,
+            name: "network_policy_strict",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 12,
+            name: "capture_denies",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 13,
+            name: "skip_statsig_defaults",
+            kind: "scalar",
+            T: 8,
+            opt: !0
+        },
+        {
+            no: 14,
+            name: "read_boundary",
+            kind: "enum",
+            T: k.getEnumType(Gxn)
+        },
+        {
+            no: 15,
+            name: "additional_read_paths",
+            kind: "scalar",
+            T: 9,
+            repeated: !0
+        }
+    ]), B6e = k.makeEnum("agent.v1.SandboxPolicy.Type", [
+    {
+        no: 0,
+        name: "TYPE_UNSPECIFIED",
+        localName: "UNSPECIFIED"
+    },
+    {
+        no: 1,
+        name: "TYPE_INSECURE_NONE",
+        localName: "INSECURE_NONE"
+    },
+    {
+        no: 2,
+        name: "TYPE_WORKSPACE_READWRITE",
+        localName: "WORKSPACE_READWRITE"
+    },
+    {
+        no: 3,
+        name: "TYPE_WORKSPACE_READONLY",
+        localName: "WORKSPACE_READONLY"
+    }
+]), Gxn = k.makeEnum("agent.v1.SandboxPolicy.ReadBoundaryMode", [
+    {
+        no: 0,
+        name: "READ_BOUNDARY_MODE_UNSPECIFIED",
+        localName: "UNSPECIFIED"
+    },
+    {
+        no: 1,
+        name: "READ_BOUNDARY_MODE_SYSTEM",
+        localName: "SYSTEM"
+    },
+    {
+        no: 2,
+        name: "READ_BOUNDARY_MODE_WORKSPACE",
+        localName: "WORKSPACE"
+    }
+]);
+
+}

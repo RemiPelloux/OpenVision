@@ -1,0 +1,1 @@
+a(ck,"createEventEmitter");

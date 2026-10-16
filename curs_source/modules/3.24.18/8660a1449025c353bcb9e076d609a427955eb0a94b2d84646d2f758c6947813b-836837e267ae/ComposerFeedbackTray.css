@@ -1,0 +1,6 @@
+var __wakaru_BOk_initialized = false;
+export function BOk() {
+if (__wakaru_BOk_initialized) return;
+__wakaru_BOk_initialized = true;
+
+}

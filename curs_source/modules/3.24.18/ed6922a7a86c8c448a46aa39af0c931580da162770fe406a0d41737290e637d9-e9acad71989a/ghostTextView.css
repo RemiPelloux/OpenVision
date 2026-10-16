@@ -1,0 +1,6 @@
+var __wakaru_$cv_initialized = false;
+export function $cv() {
+if (__wakaru_$cv_initialized) return;
+__wakaru_$cv_initialized = true;
+
+}

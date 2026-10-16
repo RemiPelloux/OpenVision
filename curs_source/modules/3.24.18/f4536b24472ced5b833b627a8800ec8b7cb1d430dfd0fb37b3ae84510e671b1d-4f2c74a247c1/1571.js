@@ -1,0 +1,1 @@
+function cA(e,t){em||sA();const r=Gl(e);return r.forEach(n=>{let o=Jl.get(n);o||(o=new Set,Jl.set(n,o)),o.add(t),em?.observe(n)}),()=>{r.forEach(n=>{const o=Jl.get(n);o?.delete(t),o?.size||em?.unobserve(n)})}}

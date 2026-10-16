@@ -1,0 +1,6 @@
+var __wakaru_XOy_initialized = false;
+export function XOy() {
+if (__wakaru_XOy_initialized) return;
+__wakaru_XOy_initialized = true;
+
+}

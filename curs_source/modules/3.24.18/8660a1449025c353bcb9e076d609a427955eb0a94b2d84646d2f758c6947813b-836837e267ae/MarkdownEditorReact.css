@@ -1,0 +1,6 @@
+var __wakaru_FBw_initialized = false;
+export function FBw() {
+if (__wakaru_FBw_initialized) return;
+__wakaru_FBw_initialized = true;
+
+}

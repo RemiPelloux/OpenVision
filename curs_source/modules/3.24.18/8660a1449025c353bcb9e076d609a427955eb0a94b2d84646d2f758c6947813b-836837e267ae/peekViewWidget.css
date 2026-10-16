@@ -1,0 +1,6 @@
+var __wakaru_UOy_initialized = false;
+export function UOy() {
+if (__wakaru_UOy_initialized) return;
+__wakaru_UOy_initialized = true;
+
+}

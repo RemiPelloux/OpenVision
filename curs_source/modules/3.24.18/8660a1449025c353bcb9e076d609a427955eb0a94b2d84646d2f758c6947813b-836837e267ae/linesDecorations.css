@@ -1,0 +1,6 @@
+var __wakaru_KMy_initialized = false;
+export function KMy() {
+if (__wakaru_KMy_initialized) return;
+__wakaru_KMy_initialized = true;
+
+}

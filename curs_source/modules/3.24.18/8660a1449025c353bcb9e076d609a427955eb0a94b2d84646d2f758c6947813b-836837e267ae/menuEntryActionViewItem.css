@@ -1,0 +1,6 @@
+var __wakaru_TLy_initialized = false;
+export function TLy() {
+if (__wakaru_TLy_initialized) return;
+__wakaru_TLy_initialized = true;
+
+}

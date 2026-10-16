@@ -1,0 +1,1 @@
+function ew(e){const t=e.toLowerCase(),r=oc[t]??t;if(Zu.has(r))return r;const[n="",o]=r.split("-");if(!n)return null;const i=o?.length===4?oc[`${n}-${o}`]:void 0;if(i!==void 0)return i;const s=oc[n]??n;return Zu.has(s)?s:null}

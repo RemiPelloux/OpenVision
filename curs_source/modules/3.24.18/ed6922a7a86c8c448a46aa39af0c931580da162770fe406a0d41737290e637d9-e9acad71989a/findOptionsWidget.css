@@ -1,0 +1,6 @@
+var __wakaru_vcv_initialized = false;
+export function vcv() {
+if (__wakaru_vcv_initialized) return;
+__wakaru_vcv_initialized = true;
+
+}

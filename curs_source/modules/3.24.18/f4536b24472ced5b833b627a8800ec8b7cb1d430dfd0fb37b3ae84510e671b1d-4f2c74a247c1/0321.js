@@ -1,0 +1,1 @@
+function kc(e,t){if(e.paymentType==="sepa_debit"&&e.last4!==void 0)return`${t("SEPA Direct Debit")} \u2022\u2022\u2022\u2022 ${e.last4}`;if(e.displayBrand!==void 0&&e.last4!==void 0)return`${e.displayBrand.charAt(0).toUpperCase()+e.displayBrand.slice(1)} \u2022\u2022\u2022\u2022 ${e.last4}`;const r=iS[e.paymentType];return r!==void 0?r(t):e.paymentType}

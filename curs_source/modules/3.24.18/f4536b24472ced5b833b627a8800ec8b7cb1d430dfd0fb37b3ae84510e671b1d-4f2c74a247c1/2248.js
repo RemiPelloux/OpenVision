@@ -1,0 +1,1 @@
+function t_(e,t){if(!e.eligible)return null;const r=e.autoTopUp;return{monthlyUsageCents:JP(e.spentThisMonthCents),limitCents:Z0(t),autoTopUp:r===void 0?null:{enabled:r.enabled,thresholdCents:Number(r.thresholdCents),topUpAmountCents:Number(r.topUpAmountCents)}}}

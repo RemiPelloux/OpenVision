@@ -1,0 +1,1 @@
+function i_(e,t,r,n){return new Promise(o=>{let i=!1,s=!1,c;const l=e.startedAt+n_-n.now();let m=l<=0;const u=a(p=>{i||(i=!0,c?.(),o(p))},"finish"),d=a(()=>{m&&s&&u(r())},"giveUpIfDue");m||(c=n.schedule(()=>{m=!0,d()},l)),t.then(()=>{s=!0,d()},()=>u({})),e.answer.then(u,()=>u(r()))})}

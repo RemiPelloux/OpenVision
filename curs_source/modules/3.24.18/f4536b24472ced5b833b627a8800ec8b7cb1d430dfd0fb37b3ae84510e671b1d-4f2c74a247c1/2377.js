@@ -1,0 +1,1 @@
+function G_(e){if(typeof e=="string"){const t=e;if(e=Number(e),Number.isNaN(e)&&t!=="NaN")throw new Error("invalid float32: "+t)}else if(typeof e!="number")throw new Error("invalid float32: "+typeof e);if(Number.isFinite(e)&&(e>L_||e<F_))throw new Error("invalid float32: "+e)}

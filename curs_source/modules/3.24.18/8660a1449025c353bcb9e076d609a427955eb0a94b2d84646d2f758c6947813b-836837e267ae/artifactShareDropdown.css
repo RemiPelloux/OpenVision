@@ -1,0 +1,6 @@
+var __wakaru_s5k_initialized = false;
+export function s5k() {
+if (__wakaru_s5k_initialized) return;
+__wakaru_s5k_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function Cc(e,t){if(!Number.isInteger(e))throw new RangeError(`Minor units must be an integer, got ${e}`);const r=e*(Tc/10**sa(t));if(!Number.isSafeInteger(r))throw new RangeError(`${e} minor units of ${t} exceed the safe integer range in micros`);return{currencyCode:t,unitMicros:r}}

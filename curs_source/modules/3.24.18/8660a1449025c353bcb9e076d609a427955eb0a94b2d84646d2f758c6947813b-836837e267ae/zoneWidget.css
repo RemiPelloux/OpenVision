@@ -1,0 +1,6 @@
+var __wakaru_jOy_initialized = false;
+export function jOy() {
+if (__wakaru_jOy_initialized) return;
+__wakaru_jOy_initialized = true;
+
+}

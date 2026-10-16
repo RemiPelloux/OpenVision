@@ -1,0 +1,1 @@
+function Pk(e,t=!1){const r=zc(),n=f9()!=null,o=Rr(()=>e(r,n)).current;return Ik({popupStore:o,treatPopupAsFloatingElement:t,floatingRootContext:o.state.floatingRootContext,floatingId:r,nested:n,onOpenChange:o.setOpen}),o}

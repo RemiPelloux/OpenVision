@@ -1,0 +1,6 @@
+var __wakaru_QTv_initialized = false;
+export function QTv() {
+if (__wakaru_QTv_initialized) return;
+__wakaru_QTv_initialized = true;
+
+}

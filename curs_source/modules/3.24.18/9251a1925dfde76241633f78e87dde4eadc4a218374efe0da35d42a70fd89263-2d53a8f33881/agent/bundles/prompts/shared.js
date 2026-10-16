@@ -1,0 +1,45 @@
+import { init_meta_parent_agent_description } from "../meta/meta-parent-agent-description.js";
+import { init_agent_type_description } from "./agent-type-description.js";
+import { init_self_hosted_machine } from "./cloud/self-hosted-machine.js";
+import { init_core5 } from "../tools/core.js";
+import { init_exclude_tools } from "../tools/exclude-tools.js";
+import { init_agent_config } from "../utils/agent-config.js";
+import { init_mcp_auth_instruction } from "../utils/mcp-auth-instruction.js";
+import { init_mcp_meta_tool } from "../utils/mcp-meta-tool.js";
+import { init_dist2 } from "../../../constants/dist/index.js";
+import { init_dist20 } from "../../../local-exec/dist/index.js";
+import { init_jsx_runtime } from "../../../prompt-jsx/dist/jsx-runtime.js";
+import { init_agent_pb } from "../../../proto/dist/generated/agent/v1/agent_pb.js";
+import { init_background_composer_pb } from "../../../proto/dist/generated/aiserver/v1/background_composer_pb.js";
+import { init_dist3 } from "../../../utils/dist/index.js";
+var GITHUB_CLI_ACCESS_NOTE, GITHUB_CLI_READ_WRITE_ACCESS_NOTE, ORIGIN_CLI_ACCESS_NOTE, SELF_HOSTED_GITHUB_CLI_ACCESS_NOTE, SELF_HOSTED_GITHUB_CLI_READ_WRITE_ACCESS_NOTE, SELF_HOSTED_ORIGIN_CLI_ACCESS_NOTE, NO_FORCE_PUSH_OR_AMEND_COMMITS_NOTE, TEST_SUBAGENT_DEDICATE_TYPE_DESCRIPTION;
+export { GITHUB_CLI_ACCESS_NOTE, GITHUB_CLI_READ_WRITE_ACCESS_NOTE, NO_FORCE_PUSH_OR_AMEND_COMMITS_NOTE, ORIGIN_CLI_ACCESS_NOTE, SELF_HOSTED_GITHUB_CLI_ACCESS_NOTE, SELF_HOSTED_GITHUB_CLI_READ_WRITE_ACCESS_NOTE, SELF_HOSTED_ORIGIN_CLI_ACCESS_NOTE, TEST_SUBAGENT_DEDICATE_TYPE_DESCRIPTION };
+var __wakaru_init_shared2_initialized = false;
+export function init_shared2() {
+if (__wakaru_init_shared2_initialized) return;
+__wakaru_init_shared2_initialized = true;
+"use strict";
+init_jsx_runtime();
+init_dist2();
+init_dist20();
+init_agent_pb();
+init_background_composer_pb();
+init_dist3();
+init_meta_parent_agent_description();
+init_self_hosted_machine();
+init_core5();
+init_exclude_tools();
+init_agent_config();
+init_mcp_auth_instruction();
+init_mcp_meta_tool();
+init_agent_type_description();
+GITHUB_CLI_ACCESS_NOTE = "You have access to the GitHub CLI (`gh`) which is already authenticated. The `gh` CLI is READ-ONLY and can only be used to view information, not to create or modify resources. Use it to find information about past PRs, CI job failure logs, and other GitHub data. For example: `gh pr view`, `gh run list`, `gh run view --log`, etc. Do NOT use `gh` for write operations like creating PRs or issues \u2014 use the dedicated tools (e.g., ManagePullRequest) for those actions.";
+GITHUB_CLI_READ_WRITE_ACCESS_NOTE = "You have access to the GitHub CLI (`gh`) which is already authenticated. The `gh` CLI has read-write permissions and can be used to view and modify GitHub resources.";
+ORIGIN_CLI_ACCESS_NOTE = 'You have access to the Origin CLI (`origin`) which is already authenticated. Do NOT run `gh`; `origin` is the only authenticated forge CLI in Origin-backed repos. Do not run `origin --help` or `origin <cmd> --help`; the commands below are sufficient. For example: `origin pr view`, `origin pr view <number>`, `origin pr list --state merged --search "<query>" --limit N`, `origin pr checks <number>`, `origin pr view <number> --checks`, `origin pr view <number> --comments`, `origin pr diff <number>`, `origin pr comment <number> --body "..."`, `origin pr review <number> --comment -b "..."`, `origin pr thread resolve <thread-id> <number>`, `origin pr merge <number>`. On a stacked PR, `origin pr merge <number>` lands every open PR from the stack root through `<number>` in one commit; to land a stack one PR at a time, merge the lowest open PR each time. `--auto` arms merge-when-ready for one PR, and Origin lands it only once it is the lowest open PR in its stack. `origin pr` mirrors a common subset of `gh pr` flags. CI status comes only from `origin pr checks` / `origin pr view --checks`; there is no `run` subcommand \u2014 an empty checks list is valid (run tests locally if you need failure logs). What `origin` may do depends on the permissions of the token in this session; if a command fails for auth or permission reasons, report the error rather than inventing a workaround or claiming a general policy.';
+SELF_HOSTED_GITHUB_CLI_ACCESS_NOTE = "The GitHub CLI (`gh`) may be installed on this self-hosted machine. If it is, it uses the machine's own login, which may be missing or may allow writes, so run `gh auth status` before relying on it. Use `gh` only to view information, such as past PRs and CI job failure logs (for example `gh pr view`, `gh run list`, `gh run view --log`). Do NOT use `gh` for write operations like creating PRs or issues \u2014 use the dedicated tools (e.g., ManagePullRequest) for those actions.";
+SELF_HOSTED_GITHUB_CLI_READ_WRITE_ACCESS_NOTE = "The GitHub CLI (`gh`) may be installed on this self-hosted machine. If it is, it uses the machine's own login, which may be missing, so run `gh auth status` before relying on it. When it is authenticated, it can be used to view and modify GitHub resources.";
+SELF_HOSTED_ORIGIN_CLI_ACCESS_NOTE = "The Origin CLI (`origin`) may be installed on this self-hosted machine; do not assume it is installed or authenticated. If it is, use it rather than `gh` for Origin-backed repos, for example `origin pr view <number>`, `origin pr checks <number>`, `origin pr view <number> --comments`, and `origin pr diff <number>`. On a stacked PR, `origin pr merge <number>` lands every open PR from the stack root through `<number>` in one commit; to land a stack one PR at a time, merge the lowest open PR each time. If a command fails for auth or permission reasons, report the error rather than inventing a workaround.";
+NO_FORCE_PUSH_OR_AMEND_COMMITS_NOTE = "Do not force push or amend commits unless explictly instructed to do so.";
+TEST_SUBAGENT_DEDICATE_TYPE_DESCRIPTION = true;
+
+}

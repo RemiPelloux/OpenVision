@@ -1,0 +1,1 @@
+function a5(e,t,r,{delay:n=0,duration:o=300,repeat:i=0,repeatType:s="loop",ease:c="easeOut",times:l}={},m=void 0){const u={[t]:r};l&&(u.offset=l);const d=xx(c,o);Array.isArray(d)&&(u.easing=d);const p={delay:n,duration:o,easing:Array.isArray(d)?"linear":d,fill:"both",iterations:i+1,direction:s==="reverse"?"alternate":"normal"};return m&&(p.pseudoElement=m),e.animate(u,p)}

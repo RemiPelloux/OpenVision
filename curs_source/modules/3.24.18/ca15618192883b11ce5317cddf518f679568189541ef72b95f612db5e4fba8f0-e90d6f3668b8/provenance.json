@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "darwinUpdateExitWatchdog.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\platform\\update\\electron-main\\darwinUpdateExitWatchdog.js", "ranges": [[0,2175]], "extraction": "structural"}
+  }
+}

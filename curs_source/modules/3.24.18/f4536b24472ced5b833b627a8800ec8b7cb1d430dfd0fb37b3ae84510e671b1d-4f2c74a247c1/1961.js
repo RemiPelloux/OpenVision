@@ -1,0 +1,1 @@
+function mN(e,t,r){const n=[],o=e.map(s=>{if(Array.isArray(s)&&typeof s[0]=="function"){const c=s[0],l=nn(0);return l.on("change",c),s.length===1?[l,[0,1]]:s.length===2?[l,[0,1],s[1]]:[l,s[1],s[2]]}return s});return iN(o,t,r,{spring:Aa}).forEach(({keyframes:s,transition:c},l)=>{n.push(...g0(l,s,c))}),n}

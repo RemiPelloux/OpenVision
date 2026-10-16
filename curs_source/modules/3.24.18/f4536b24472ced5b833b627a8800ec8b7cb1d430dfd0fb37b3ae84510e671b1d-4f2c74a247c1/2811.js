@@ -1,0 +1,1 @@
+function ib(e){let t;const r=gO(4294967295);return new ReadableStream({start(){t=e.getReader()},async pull(n){let o=!1;for(;!o;){const i=await t.read();if(i.done)r.byteLength>0&&n.error(new vt("protocol error: incomplete envelope",Fe.InvalidArgument)),n.close();else for(const s of r.decode(i.value))n.enqueue(s),o=!0}}})}

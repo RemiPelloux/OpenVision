@@ -1,0 +1,44 @@
+import { init_any_pb } from "./google/protobuf/any_pb.js";
+import { init_api_pb } from "./google/protobuf/api_pb.js";
+import { init_plugin_pb } from "./google/protobuf/compiler/plugin_pb.js";
+import { init_descriptor_pb } from "./google/protobuf/descriptor_pb.js";
+import { init_duration_pb } from "./google/protobuf/duration_pb.js";
+import { init_empty_pb } from "./google/protobuf/empty_pb.js";
+import { init_field_mask_pb } from "./google/protobuf/field_mask_pb.js";
+import { init_source_context_pb } from "./google/protobuf/source_context_pb.js";
+import { init_struct_pb } from "./google/protobuf/struct_pb.js";
+import { init_timestamp_pb } from "./google/protobuf/timestamp_pb.js";
+import { init_type_pb } from "./google/protobuf/type_pb.js";
+import { init_wrappers_pb } from "./google/protobuf/wrappers_pb.js";
+import { init_is_message } from "./is-message.js";
+import { init_message } from "./message.js";
+import { init_proto_base64 } from "./proto-base64.js";
+import { init_proto_int64 } from "./proto-int64.js";
+import { init_proto3 } from "./proto3.js";
+import { init_scalar } from "./scalar.js";
+import { init_service_type } from "./service-type.js";
+var __wakaru_init_esm2_initialized = false;
+export function init_esm2() {
+if (__wakaru_init_esm2_initialized) return;
+__wakaru_init_esm2_initialized = true;
+init_proto3();
+init_proto_int64();
+init_proto_base64();
+init_message();
+init_is_message();
+init_scalar();
+init_service_type();
+init_plugin_pb();
+init_api_pb();
+init_any_pb();
+init_descriptor_pb();
+init_duration_pb();
+init_empty_pb();
+init_field_mask_pb();
+init_source_context_pb();
+init_struct_pb();
+init_timestamp_pb();
+init_type_pb();
+init_wrappers_pb();
+
+}

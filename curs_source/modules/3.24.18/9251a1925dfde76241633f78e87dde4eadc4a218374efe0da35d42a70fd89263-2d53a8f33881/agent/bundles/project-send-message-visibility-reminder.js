@@ -1,0 +1,12 @@
+var PROJECT_SEND_MESSAGE_REQUEST_BOUNDARY_PROVIDER_KEY, PROJECT_SEND_MESSAGE_REMINDER_PROVIDER_KEY, PROJECT_SEND_MESSAGE_CONTINUATION_MESSAGE;
+export { PROJECT_SEND_MESSAGE_CONTINUATION_MESSAGE, PROJECT_SEND_MESSAGE_REMINDER_PROVIDER_KEY, PROJECT_SEND_MESSAGE_REQUEST_BOUNDARY_PROVIDER_KEY };
+var __wakaru_init_project_send_message_visibility_reminder_initialized = false;
+export function init_project_send_message_visibility_reminder() {
+if (__wakaru_init_project_send_message_visibility_reminder_initialized) return;
+__wakaru_init_project_send_message_visibility_reminder_initialized = true;
+"use strict";
+PROJECT_SEND_MESSAGE_REQUEST_BOUNDARY_PROVIDER_KEY = "projectSendMessageRequestBoundary";
+PROJECT_SEND_MESSAGE_REMINDER_PROVIDER_KEY = "projectSendMessageReminder";
+PROJECT_SEND_MESSAGE_CONTINUATION_MESSAGE = "<system_reminder>Your response was not visible to the user. Call SendMessage to send a user-visible update or final response.</system_reminder>";
+
+}

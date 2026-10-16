@@ -1,0 +1,1 @@
+function UC(e,t){return e===null||!e.enabled||e.amount.unitMicros<=0||t.balance.unitMicros>=e.threshold.unitMicros||t.availability.kind!=="available"||t.availability.topUpMethod!=="saved-payment-method"?!1:e.monthlyCap===null||t.autoTopUpSpentThisPeriod.unitMicros+e.amount.unitMicros<=e.monthlyCap.unitMicros}

@@ -1,0 +1,13 @@
+var CUSTOM_AGENTS_ROUTE_SEGMENT, CUSTOM_AGENTS_BASE_PATH, LEGACY_AUTOMATIONS_ROUTE_SEGMENT, LEGACY_AUTOMATIONS_BASE_PATH;
+export { CUSTOM_AGENTS_BASE_PATH, CUSTOM_AGENTS_ROUTE_SEGMENT, LEGACY_AUTOMATIONS_BASE_PATH, LEGACY_AUTOMATIONS_ROUTE_SEGMENT };
+var __wakaru_init_automations_initialized = false;
+export function init_automations() {
+if (__wakaru_init_automations_initialized) return;
+__wakaru_init_automations_initialized = true;
+"use strict";
+CUSTOM_AGENTS_ROUTE_SEGMENT = "custom-agents";
+CUSTOM_AGENTS_BASE_PATH = `/${CUSTOM_AGENTS_ROUTE_SEGMENT}`;
+LEGACY_AUTOMATIONS_ROUTE_SEGMENT = "automations";
+LEGACY_AUTOMATIONS_BASE_PATH = `/${LEGACY_AUTOMATIONS_ROUTE_SEGMENT}`;
+
+}

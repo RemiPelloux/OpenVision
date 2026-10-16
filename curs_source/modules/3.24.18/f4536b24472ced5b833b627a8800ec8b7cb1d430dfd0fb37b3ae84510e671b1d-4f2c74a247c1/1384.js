@@ -1,0 +1,1 @@
+var h5=new Set(["color","backgroundColor","outlineColor","fill","stroke","borderColor","borderTopColor","borderRightColor","borderBottomColor","borderLeftColor"]),N8=Ch(()=>Object.hasOwnProperty.call(Element.prototype,"animate"));

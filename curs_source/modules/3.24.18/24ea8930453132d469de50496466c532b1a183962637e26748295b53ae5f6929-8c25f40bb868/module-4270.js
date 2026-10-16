@@ -1,0 +1,11 @@
+var call = require("./module-9565.js");
+var isCallable = require("./module-4901.js");
+var isObject = require("./module-34.js");
+var $TypeError = TypeError;
+module.exports = function(input, pref) {
+    var fn, val;
+    if (pref === "string" && isCallable(fn = input.toString) && !isObject(val = call(fn, input))) return val;
+    if (isCallable(fn = input.valueOf) && !isObject(val = call(fn, input))) return val;
+    if (pref !== "string" && isCallable(fn = input.toString) && !isObject(val = call(fn, input))) return val;
+    throw new $TypeError("Can't convert object to primitive value");
+};

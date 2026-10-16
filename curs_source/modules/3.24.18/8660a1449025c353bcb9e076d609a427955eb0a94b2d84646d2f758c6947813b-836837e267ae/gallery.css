@@ -1,0 +1,6 @@
+var __wakaru_foC_initialized = false;
+export function foC() {
+if (__wakaru_foC_initialized) return;
+__wakaru_foC_initialized = true;
+
+}

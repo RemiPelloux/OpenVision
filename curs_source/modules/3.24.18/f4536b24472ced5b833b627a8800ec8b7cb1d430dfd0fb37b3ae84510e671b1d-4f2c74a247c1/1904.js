@@ -1,0 +1,1 @@
+function a0(e,t,r){const{props:n}=e;if(e.current instanceof HTMLButtonElement&&e.current.disabled)return;e.animationState&&n.whileTap&&e.animationState.setActive("whileTap",r==="Start");const o="onTap"+(r==="End"?"":r),i=n[o];i&&Ze.postRender(()=>i(t,as(t)))}

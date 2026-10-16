@@ -1,0 +1,6 @@
+var __wakaru_FEw_initialized = false;
+export function FEw() {
+if (__wakaru_FEw_initialized) return;
+__wakaru_FEw_initialized = true;
+
+}

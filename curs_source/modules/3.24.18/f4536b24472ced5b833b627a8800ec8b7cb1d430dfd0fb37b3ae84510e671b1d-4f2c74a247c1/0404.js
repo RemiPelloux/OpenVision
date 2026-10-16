@@ -1,0 +1,1 @@
+function mo(e,t){if(e===t)return!0;if(typeof e!=typeof t)return!1;if(e&&t&&typeof e=="object"&&typeof t=="object"){if(Array.isArray(e)&&Array.isArray(t)){if(t.length>e.length)return!1;for(let n=0;n<t.length;n++)if(!mo(e[n],t[n]))return!1;return!0}const r=Object.keys(t);for(const n of r)if(!mo(e[n],t[n]))return!1;return!0}return!1}

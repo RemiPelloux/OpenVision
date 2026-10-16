@@ -1,0 +1,6 @@
+var __wakaru_tkw_initialized = false;
+export function tkw() {
+if (__wakaru_tkw_initialized) return;
+__wakaru_tkw_initialized = true;
+
+}

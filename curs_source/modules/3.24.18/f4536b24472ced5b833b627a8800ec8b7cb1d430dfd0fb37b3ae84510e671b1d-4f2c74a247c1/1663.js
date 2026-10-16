@@ -1,0 +1,1 @@
+function PA(e,t=0,r=1,n=.5,o,i=e,s=e){if(tn.test(t)&&(t=parseFloat(t),t=nt(s.min,s.max,t/100)-s.min),typeof t!="number")return;let c=nt(i.min,i.max,n);e===i&&(c-=t),e.min=hg(e.min,t,r,c,o),e.max=hg(e.max,t,r,c,o)}

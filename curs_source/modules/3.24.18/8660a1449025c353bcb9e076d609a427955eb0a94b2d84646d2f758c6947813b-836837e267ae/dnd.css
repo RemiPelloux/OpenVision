@@ -1,0 +1,6 @@
+var __wakaru_fNy_initialized = false;
+export function fNy() {
+if (__wakaru_fNy_initialized) return;
+__wakaru_fNy_initialized = true;
+
+}

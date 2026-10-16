@@ -1,0 +1,6 @@
+var __wakaru_wlw_initialized = false;
+export function wlw() {
+if (__wakaru_wlw_initialized) return;
+__wakaru_wlw_initialized = true;
+
+}

@@ -1,0 +1,6 @@
+var __wakaru_NUk_initialized = false;
+export function NUk() {
+if (__wakaru_NUk_initialized) return;
+__wakaru_NUk_initialized = true;
+
+}

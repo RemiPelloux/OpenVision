@@ -1,0 +1,119 @@
+import { n1m } from "./subagent-lifecycle-state-machine.ts";
+import { E } from "./tslib.es6.js";
+import { X91, Z91, t1m } from "./yBp.js";
+var i1m;
+export { i1m };
+var __wakaru_tB1_initialized = false;
+export function tB1() {
+if (__wakaru_tB1_initialized) return;
+__wakaru_tB1_initialized = true;
+"use strict";
+E(), n1m(), i1m = class {
+    constructor(t = {}){
+        this.options = t, this.states = new Map, this.runCounterBySession = new Map, this.dispatchQueueBySession = new Map, this.dispatchInProgress = new Set, this.releaseRequestedBySession = new Set;
+    }
+    getState(t) {
+        return this.states.get(t) ?? t1m();
+    }
+    isBusy(t) {
+        return X91(this.getState(t));
+    }
+    startRun(t, e) {
+        const n = this.nextRunId(t);
+        return this.enqueueEvent(t, {
+            type: "startRun",
+            runId: n,
+            abort: e?.abort
+        }), n;
+    }
+    queueResume(t, e) {
+        this.enqueueEvent(t, {
+            type: "queueResume",
+            queuedResume: e.queuedResume,
+            targetRunId: e.targetRunId,
+            mergeQueuedResume: e.mergeQueuedResume
+        });
+    }
+    finishRun(t, e) {
+        this.enqueueEvent(t, {
+            type: "runFinished",
+            runId: e
+        });
+    }
+    clearQueuedResume(t) {
+        this.enqueueEvent(t, {
+            type: "clearQueuedResume"
+        });
+    }
+    abort(t) {
+        this.enqueueEvent(t, {
+            type: "abort"
+        });
+    }
+    release(t) {
+        this.enqueueEvent(t, {
+            type: "release"
+        });
+    }
+    nextRunId(t) {
+        const n = (this.runCounterBySession.get(t) ?? 0) + 1;
+        return this.runCounterBySession.set(t, n), n;
+    }
+    enqueueEvent(t, e) {
+        const n = this.dispatchQueueBySession.get(t) ?? [];
+        n.push(e), this.dispatchQueueBySession.set(t, n), this.drainEventQueue(t);
+    }
+    drainEventQueue(t) {
+        if (this.dispatchInProgress.has(t)) return;
+        this.dispatchInProgress.add(t);
+        let e;
+        try {
+            const n = this.dispatchQueueBySession.get(t);
+            if (!n) return;
+            for(; n.length > 0;){
+                const i = n.shift();
+                if (i) try {
+                    this.processEvent(t, i);
+                } catch (r) {
+                    e ??= r;
+                }
+            }
+        } finally{
+            this.dispatchQueueBySession.delete(t), this.dispatchInProgress.delete(t);
+        }
+        if (e) throw e;
+    }
+    processEvent(t, e) {
+        const n = this.getState(t), { nextState: i, effects: r } = Z91(n, e);
+        this.states.set(t, i), this.options.onStateChange?.({
+            sessionId: t,
+            previousState: n,
+            nextState: i
+        });
+        for (const o of r)switch(o.type){
+            case "abortActiveRun":
+                {
+                    o.abort?.();
+                    break;
+                }
+            case "startQueuedRun":
+                {
+                    this.options.onQueuedRunReady?.({
+                        sessionId: t,
+                        sourceRunId: o.sourceRunId,
+                        queuedResume: o.queuedResume
+                    });
+                    break;
+                }
+            default:
+                {
+                    const a = o;
+                    throw new Error(`Unhandled lifecycle manager effect: ${String(a)}`);
+                }
+        }
+        const s = this.getState(t);
+        e.type === "release" && s.status !== "idle" && this.releaseRequestedBySession.add(t), s.status === "idle" && (e.type === "release" || this.releaseRequestedBySession.has(t)) && (this.states.delete(t), this.runCounterBySession.delete(t), this.releaseRequestedBySession.delete(t));
+    }
+};
+
+}

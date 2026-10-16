@@ -1,0 +1,1 @@
+function gC(e,t){function r(){Ub(e),t()?.focus({preventScroll:!0})}if(a(r,"swap"),!("startViewTransition"in document)||window.matchMedia("(prefers-reduced-motion: reduce)").matches){r();return}document.startViewTransition(r)}

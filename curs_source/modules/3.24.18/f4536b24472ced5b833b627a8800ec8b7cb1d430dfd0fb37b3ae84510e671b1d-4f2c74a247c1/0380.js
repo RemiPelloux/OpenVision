@@ -1,0 +1,1 @@
+function Yt(e,t,{trailingZeroDisplay:r="auto",wholeUnits:n,minorUnits:o}={}){const i=n===void 0?{trailingZeroDisplay:r,roundingMode:o}:{maximumFractionDigits:0,roundingMode:n};return new Intl.NumberFormat(t,{style:"currency",currency:e.currencyCode,...i}).format(e.unitMicros/Tc)}

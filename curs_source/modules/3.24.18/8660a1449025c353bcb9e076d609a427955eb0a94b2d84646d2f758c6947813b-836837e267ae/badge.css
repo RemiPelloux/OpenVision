@@ -1,0 +1,6 @@
+var __wakaru_Oqv_initialized = false;
+export function Oqv() {
+if (__wakaru_Oqv_initialized) return;
+__wakaru_Oqv_initialized = true;
+
+}

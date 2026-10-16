@@ -1,0 +1,1 @@
+function Yw(e){if(e.length===0)return null;let t=1,r=1;for(let n=0;n<e.length;){const o=e.charCodeAt(n);switch(o){case 35:case 39:case 60:case 123:case 125:return null}if(o===10)t++,r=1,n++;else if(r++,o>=55296&&o<=56319&&n+1<e.length){const i=e.charCodeAt(n+1);n+=i>=56320&&i<=57343?2:1}else n++}return{offset:e.length,line:t,column:r}}

@@ -1,0 +1,6 @@
+var __wakaru_$My_initialized = false;
+export function $My() {
+if (__wakaru_$My_initialized) return;
+__wakaru_$My_initialized = true;
+
+}

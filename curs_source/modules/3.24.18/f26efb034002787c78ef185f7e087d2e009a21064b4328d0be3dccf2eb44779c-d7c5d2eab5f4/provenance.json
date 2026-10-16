@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "pdf.worker.min.mjs": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\glass\\browser\\media\\pdf.worker.min.mjs", "ranges": [[0,1046529]], "extraction": "structural"}
+  }
+}

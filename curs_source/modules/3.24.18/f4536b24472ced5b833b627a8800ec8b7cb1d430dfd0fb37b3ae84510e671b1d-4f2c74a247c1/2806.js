@@ -1,0 +1,1 @@
+function xO(e,t,r=!1){if(t>e){let n=`message size is larger than configured readMaxBytes ${e}`;throw r&&(n=`message size ${t} is larger than configured readMaxBytes ${e}`),new vt(n,Fe.ResourceExhausted)}}

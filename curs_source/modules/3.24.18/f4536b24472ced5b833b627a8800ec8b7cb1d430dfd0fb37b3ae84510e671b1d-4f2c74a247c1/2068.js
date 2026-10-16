@@ -1,0 +1,1 @@
+function I0({onClose:e,onToppedUp:t,onBack:r,onSubmittingChange:n,titleRef:o}){return ze(hh,{view:"auto-top-up",holdDueTopUp:!0,onSubmittingChange:n,onSettled:a(i=>{i.kind==="rule-saved"?e():t(i)},"onSettled"),children:ze(YN,{onClose:e,onBack:r,titleRef:o})})}

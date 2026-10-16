@@ -1,0 +1,1 @@
+function QP({prepaidClient:e,themeType:t,skin:r,locale:n,onOpenUrl:o,returnUrl:i,className:s}){return qy(ds,{className:s,locale:n,onOpenUrl:o,prepaidClient:e,skin:r,themeType:t,children:qy($P,{returnUrl:i})})}

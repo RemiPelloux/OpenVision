@@ -1,0 +1,6 @@
+var __wakaru_k8w_initialized = false;
+export function k8w() {
+if (__wakaru_k8w_initialized) return;
+__wakaru_k8w_initialized = true;
+
+}

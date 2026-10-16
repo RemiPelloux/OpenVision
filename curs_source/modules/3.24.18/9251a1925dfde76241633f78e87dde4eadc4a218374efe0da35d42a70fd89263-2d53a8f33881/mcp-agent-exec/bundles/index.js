@@ -1,0 +1,45 @@
+import { init_mcp4 } from "../../coerce_exports.js";
+import { init_approval_store } from "./approval-store.js";
+import { init_cache } from "./cache.js";
+import { init_common5 } from "./common.js";
+import { init_config } from "./config.js";
+import { init_elicitation } from "./elicitation.js";
+import { init_env_expansion2 } from "./env-expansion.js";
+import { init_in_memory_token_storage } from "./in-memory-token-storage.js";
+import { init_loader2 } from "./loader.js";
+import { init_mcp_agent_policy } from "./mcp-agent-policy.js";
+import { init_mcp_sandbox_policy2 } from "./mcp-sandbox-policy.js";
+import { init_mcp_session_termination } from "./mcp-session-termination.js";
+import { init_network_controls } from "./network-controls.js";
+import { init_oauth_logging2 } from "./oauth-logging.js";
+import { init_plugin_mcp_server_config } from "./plugin-mcp-server-config.js";
+import { init_sse_fallback2 } from "./sse-fallback.js";
+import { init_stdio_stderr } from "./stdio-stderr.js";
+import { init_token_store } from "./token-store.js";
+import { init_dist15 } from "../../mcp-core/dist/index.js";
+var __wakaru_init_dist19_initialized = false;
+export function init_dist19() {
+if (__wakaru_init_dist19_initialized) return;
+__wakaru_init_dist19_initialized = true;
+"use strict";
+init_dist15();
+init_approval_store();
+init_cache();
+init_common5();
+init_config();
+init_elicitation();
+init_env_expansion2();
+init_in_memory_token_storage();
+init_loader2();
+init_mcp4();
+init_mcp_agent_policy();
+init_mcp_sandbox_policy2();
+init_mcp_session_termination();
+init_network_controls();
+init_oauth_logging2();
+init_plugin_mcp_server_config();
+init_sse_fallback2();
+init_stdio_stderr();
+init_token_store();
+
+}

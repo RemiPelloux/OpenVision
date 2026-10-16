@@ -1,0 +1,1 @@
+function vR(e,t){const r={},n=gR(e,t);return e.drag&&e.dragListener!==!1&&(r.draggable=!1,n.userSelect=n.WebkitUserSelect=n.WebkitTouchCallout="none",n.touchAction=e.drag===!0?"none":`pan-${e.drag==="x"?"y":"x"}`),e.tabIndex===void 0&&(e.onTap||e.onTapStart||e.whileTap)&&(r.tabIndex=0),r.style=n,r}

@@ -1,0 +1,1 @@
+function iC({backdropBlur:e,className:t,backdropRef:r}){const{dismissOnBackdropPress:n,requestClose:o}=no(go);return mt("div",{role:"presentation",ref:r,className:_e("bg-overlay-normal fixed inset-0 z-50",e&&"backdrop-blur-xs",t),onClick:a(i=>{n&&o({...Ht(_t.outsidePress,i.nativeEvent),preventUnmountOnClose(){}})},"onClick")})}

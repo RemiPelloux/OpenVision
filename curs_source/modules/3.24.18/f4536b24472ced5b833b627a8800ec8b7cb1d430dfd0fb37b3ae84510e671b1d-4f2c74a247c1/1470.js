@@ -1,0 +1,1 @@
+function $l(e,{step:t,...r}={}){const n=new WeakMap;return Object.assign(a((i,s)=>{const c=n.get(i)??new Z8(t);n.set(i,c);const l=[];for(const m in s){const u=s[m],d=e(i,c,m,u);l.push(d)}return()=>{for(const m of l)m()}},"effect"),r,{get:a((i,s)=>n.get(i)?.get(s),"get"),flush:a(i=>n.get(i)?.flush(),"flush"),state:a(i=>n.get(i),"state")})}

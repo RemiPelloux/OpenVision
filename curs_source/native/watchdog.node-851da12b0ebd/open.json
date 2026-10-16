@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "provenance": {
+      "untrusted_content": true,
+      "source": "analysis_target"
+    }
+  },
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"result\":{\"path\":\"C:\\\\Users\\\\User\\\\Documents\\\\ChatGPT\\\\REA\\\\cursor\\\\artifacts\\\\installation\\\\resources\\\\app\\\\node_modules\\\\native-watchdog\\\\build\\\\Release\\\\watchdog.node\",\"format\":\"pe\",\"kind\":\"executable\",\"sha256\":\"851da12b0ebdd5415a0cb083db700570938afdcdbdf6f00c23b3607c2f22fa79\",\"architecture\":\"x86_64\"}}"
+    }
+  ],
+  "structuredContent": {
+    "result": {
+      "path": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\cursor\\artifacts\\installation\\resources\\app\\node_modules\\native-watchdog\\build\\Release\\watchdog.node",
+      "format": "pe",
+      "kind": "executable",
+      "sha256": "851da12b0ebdd5415a0cb083db700570938afdcdbdf6f00c23b3607c2f22fa79",
+      "architecture": "x86_64"
+    }
+  }
+}

@@ -1,5 +1,12 @@
 # Native recovery checklist
 
+**16 October update:** this page preserves the original per-file audit below.
+Historical 3.21.13 recovery now includes nine modules and 4,647 identified
+procedures. See the [published native archive](../curs_source/native/README.md),
+[current recovery coverage](recovery-status.md) and
+[percentages, points and delivery gates](progress.md). The newer 3.24.18 native
+inputs have no matching pseudocode in this historical export.
+
 The original audit below is retained. The [14 October WASM follow-up](rea-wasm-inventory.md)
 updates complete record coverage to **14/15**; decoded-WAT coverage remains **15/15**.
 

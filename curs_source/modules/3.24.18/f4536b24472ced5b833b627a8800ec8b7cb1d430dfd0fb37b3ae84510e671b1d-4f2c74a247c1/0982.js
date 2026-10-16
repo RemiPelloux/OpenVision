@@ -1,0 +1,1 @@
+a(jT,"registerFadeProperties");

@@ -1,0 +1,1 @@
+function Ym(e,t){switch(e.kind){case"file":for(const r of e.proto.extension){const n=Zm(r,e,t);e.extensions.push(n),t.add(n)}break;case"message":for(const r of e.proto.extension){const n=Zm(r,e,t);e.nestedExtensions.push(n),t.add(n)}for(const r of e.nestedMessages)Ym(r,t);break}}

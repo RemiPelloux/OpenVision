@@ -1,0 +1,6 @@
+var __wakaru_cb__initialized = false;
+export function cb_() {
+if (__wakaru_cb__initialized) return;
+__wakaru_cb__initialized = true;
+
+}

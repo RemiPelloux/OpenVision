@@ -1,0 +1,6 @@
+var __wakaru_iNo_initialized = false;
+export function iNo() {
+if (__wakaru_iNo_initialized) return;
+__wakaru_iNo_initialized = true;
+
+}

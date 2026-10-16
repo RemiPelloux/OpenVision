@@ -1,0 +1,1 @@
+function ya(){const{client:e}=gl(),t=G4(()=>e.observeWallet(),[e]);H4(()=>()=>t.dispose(),[t]);const r=$4(t.subscribe,t.getSnapshot,t.getSnapshot);return{status:r.status,wallet:r.data,isRevalidating:r.isRevalidating,error:r.error,refresh:t.refresh}}

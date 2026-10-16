@@ -1,0 +1,6 @@
+var __wakaru_l3y_initialized = false;
+export function l3y() {
+if (__wakaru_l3y_initialized) return;
+__wakaru_l3y_initialized = true;
+
+}

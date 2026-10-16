@@ -1,0 +1,47 @@
+import { init_constants6 } from "../constants.js";
+import { init_claude_helpers } from "./claude-helpers.js";
+import { init_cloud_meta_agent } from "./cloud-meta-agent/index.js";
+import { init_available_secret_names_list_item } from "./cloud/available-secret-names-list-item.js";
+import { init_background_setup_status } from "./cloud/background-setup-status.js";
+import { init_cloud_environment_setup } from "./cloud/cloud-environment-setup.js";
+import { init_no_repository_access } from "./cloud/no-repository-access.js";
+import { init_self_hosted_machine } from "./cloud/self-hosted-machine.js";
+import { init_gpt_helpers } from "./gpt-helpers.js";
+import { init_host_environment } from "./host-environment.js";
+import { init_shared2 } from "./shared.js";
+import { init_slack_prompt_flags } from "./slack-prompt-flags.js";
+import { init_slack_sender_types } from "./slack-sender-types.js";
+import { init_core5 } from "../tools/core.js";
+import { init_agent_config } from "../utils/agent-config.js";
+import { init_environment_setup_source } from "../utils/environment-setup-source.js";
+import { init_git_repo } from "../utils/git-repo.js";
+import { init_dist2 } from "../../../constants/dist/index.js";
+import { init_jsx_runtime } from "../../../prompt-jsx/dist/jsx-runtime.js";
+import { init_background_composer_pb } from "../../../proto/dist/generated/aiserver/v1/background_composer_pb.js";
+var __wakaru_init_cloud_agent2_initialized = false;
+export function init_cloud_agent2() {
+if (__wakaru_init_cloud_agent2_initialized) return;
+__wakaru_init_cloud_agent2_initialized = true;
+"use strict";
+init_jsx_runtime();
+init_dist2();
+init_background_composer_pb();
+init_constants6();
+init_core5();
+init_agent_config();
+init_environment_setup_source();
+init_git_repo();
+init_claude_helpers();
+init_available_secret_names_list_item();
+init_background_setup_status();
+init_self_hosted_machine();
+init_cloud_environment_setup();
+init_no_repository_access();
+init_cloud_meta_agent();
+init_gpt_helpers();
+init_host_environment();
+init_shared2();
+init_slack_prompt_flags();
+init_slack_sender_types();
+
+}

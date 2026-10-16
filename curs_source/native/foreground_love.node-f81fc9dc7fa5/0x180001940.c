@@ -1,0 +1,10 @@
+
+/* Address: 0x180001940; Evidence: ev_f86e8fa97212771c672d99b4d76322df15c29d5d623e453942a9434af9367a5f */
+
+void FUN_180001940(void)
+
+{
+  FUN_180002358((PSLIST_HEADER)&DAT_18001b010);
+  return;
+}
+

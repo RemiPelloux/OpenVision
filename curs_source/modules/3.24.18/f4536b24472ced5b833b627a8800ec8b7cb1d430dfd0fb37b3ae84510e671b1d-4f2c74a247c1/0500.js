@@ -1,0 +1,1 @@
+function YS(e,t){return a(function(n,...o){const i=new URL(e);return i.searchParams.set("code",n.toString()),o.forEach(s=>i.searchParams.append("args[]",s)),`${t} error #${n}; visit ${i} for the full message.`},"formatErrorMessage")}

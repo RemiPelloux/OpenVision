@@ -1,0 +1,1 @@
+a(fm,"getPanInfo");

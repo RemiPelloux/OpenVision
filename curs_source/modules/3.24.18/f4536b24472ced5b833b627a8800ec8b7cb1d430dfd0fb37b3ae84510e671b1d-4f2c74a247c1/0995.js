@@ -1,0 +1,1 @@
+function rh(e,t,r,n){const o=n?Bi:"0px",i=e.style.getPropertyValue(r);if(i===o)return;e.style.setProperty(r,o);const s=t.get(r),c=s?.playState==="running"&&getComputedStyle(e).getPropertyValue(r)||i;s?.cancel(),"animate"in e&&t.set(r,e.animate({[r]:[c,o]},{duration:kU,easing:"ease-out"}))}

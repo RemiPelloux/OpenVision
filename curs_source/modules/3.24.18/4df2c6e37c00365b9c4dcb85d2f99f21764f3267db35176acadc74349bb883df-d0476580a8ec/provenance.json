@@ -1,0 +1,9 @@
+{
+  "format": "esbuild",
+  "strategy": "structural",
+  "modules": {
+    "entry.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\dist\\agent-host-daemon\\dist\\bin\\worker.js", "ranges": [[0,13],[14,65],[4159,4627],[4628,4845],[4846,5180],[5181,5243],[5244,5303],[5304,5341],[5342,5376],[5377,5409],[5410,5453],[5454,5521],[5522,5567],[5568,5629],[5630,5650],[5651,5821],[5822,6614],[6615,7371],[7372,7393],[7394,7423],[7424,7869],[7870,9243],[9244,9329]], "extraction": "structural"},
+    "node_modules/.pnpm/piscina@4.9.3/node_modules/piscina/dist/common.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\dist\\agent-host-daemon\\dist\\bin\\worker.js", "ranges": [[1196,4078]], "extraction": "structural"},
+    "node_modules/.pnpm/piscina@4.9.3/node_modules/piscina/dist/symbols.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\extensions\\cursor-agent-host\\dist\\agent-host-daemon\\dist\\bin\\worker.js", "ranges": [[308,1111]], "extraction": "structural"}
+  }
+}

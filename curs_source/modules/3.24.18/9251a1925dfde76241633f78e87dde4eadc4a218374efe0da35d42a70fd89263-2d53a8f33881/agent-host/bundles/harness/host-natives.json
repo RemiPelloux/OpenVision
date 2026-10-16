@@ -1,0 +1,18 @@
+var host_natives_default;
+export { host_natives_default };
+var __wakaru_init_host_natives_initialized = false;
+export function init_host_natives() {
+if (__wakaru_init_host_natives_initialized) return;
+__wakaru_init_host_natives_initialized = true;
+host_natives_default = {
+    $schema: "./host-natives.schema.json",
+    $comment: "Host-provided natives of the agent harness. A packed generation bundles every JavaScript dependency (its own @anysphere/proto, agent-core, chat-inference, prompt-jsx, connect, protobuf ...); only `node:` builtins and the native addons listed here are `require`d from the host, by the entry and by the worker threads it starts. These are exactly the N-API addons the harness dlopens: tree-sitter and tree-sitter-bash for shell command parsing, tree-chunk-napi for semantic-search chunking, and @napi-rs/canvas, which pdfjs loads in the PDF worker for the DOMMatrix it evaluates at module scope. The list is what a generation may require from its host, not what every host ships: a built host (the extension, Remote SSH, the dev extension host) serves only what cursor-agent-exec's shared native payload carries (`sharedNativeRuntime.packageNames` in its webpack config), and a native the host lacks fails when required, as it does in the host's own loop. The whichlang language-detection addon is reachable only through the @anysphere/agent all-modules barrel, which the harness entry does not import, and better-sqlite3 is host-only (agent store); neither is served. (Its package name is spelled out nowhere in this file on purpose: the agent-host-daemon bundle embeds this registry and its build refuses any mention of that addon.) A generation whose manifest names a native outside this list is refused by the loader before its entry is evaluated.",
+    natives: [
+        "@anysphere/tree-chunk-napi",
+        "@napi-rs/canvas",
+        "tree-sitter",
+        "tree-sitter-bash"
+    ]
+};
+
+}

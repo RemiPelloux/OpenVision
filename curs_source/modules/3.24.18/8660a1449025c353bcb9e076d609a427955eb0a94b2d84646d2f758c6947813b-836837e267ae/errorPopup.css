@@ -1,0 +1,6 @@
+var __wakaru_NYw_initialized = false;
+export function NYw() {
+if (__wakaru_NYw_initialized) return;
+__wakaru_NYw_initialized = true;
+
+}

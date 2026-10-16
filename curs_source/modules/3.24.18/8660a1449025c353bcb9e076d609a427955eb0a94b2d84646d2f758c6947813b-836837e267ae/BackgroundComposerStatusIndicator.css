@@ -1,0 +1,6 @@
+var __wakaru_WcC_initialized = false;
+export function WcC() {
+if (__wakaru_WcC_initialized) return;
+__wakaru_WcC_initialized = true;
+
+}

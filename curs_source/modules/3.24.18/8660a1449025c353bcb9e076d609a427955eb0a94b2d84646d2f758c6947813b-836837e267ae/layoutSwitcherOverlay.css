@@ -1,0 +1,6 @@
+var __wakaru_iLk_initialized = false;
+export function iLk() {
+if (__wakaru_iLk_initialized) return;
+__wakaru_iLk_initialized = true;
+
+}

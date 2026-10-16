@@ -1,0 +1,1 @@
+function CI({hue:e,saturation:t,lightness:r,alpha:n}){e/=360,t/=100,r/=100;let o=0,i=0,s=0;if(!t)o=i=s=r;else{const c=r<.5?r*(1+t):r+t-r*t,l=2*r-c;o=Cl(l,c,e+1/3),i=Cl(l,c,e),s=Cl(l,c,e-1/3)}return{red:Math.round(o*255),green:Math.round(i*255),blue:Math.round(s*255),alpha:n}}

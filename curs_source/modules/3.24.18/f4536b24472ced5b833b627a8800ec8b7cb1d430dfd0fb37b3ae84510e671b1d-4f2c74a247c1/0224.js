@@ -1,0 +1,1 @@
+function Lw(e){if(e.length===0)throw new Error("Number skeleton cannot be empty");const t=e.split(jw).filter(n=>n.length>0),r=[];for(const n of t){let o=n.split("/");if(o.length===0)throw new Error("Invalid number skeleton");const[i,...s]=o;for(const c of s)if(c.length===0)throw new Error("Invalid number skeleton");r.push({stem:i,options:s})}return r}

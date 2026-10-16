@@ -1,0 +1,1 @@
+function S_(e,t){const r=t.localName;if(t.oneof){const n=t.oneof.localName;e[n].case===r&&(e[n]={case:void 0})}else if(t.presence!=g_)delete e[r];else switch(t.fieldKind){case"map":e[r]={};break;case"list":e[r]=[];break;case"enum":e[r]=t.enum.values[0].number;break;case"scalar":e[r]=on(t.scalar,t.longAsString);break}}

@@ -1,0 +1,1 @@
+function nh(e){const t=dn(null);return I4(r=>{if(t.current?.(),t.current=null,!r)return;const n=r.closest('[data-slot="xds-modal-surface"]');if(!n)return;const o=new ResizeObserver(([i])=>{const s=i?.borderBoxSize[0]?.blockSize;s!==void 0&&n.style.setProperty(e,`${s}px`)});o.observe(r),t.current=()=>{o.disconnect(),n.style.removeProperty(e)}},[e])}

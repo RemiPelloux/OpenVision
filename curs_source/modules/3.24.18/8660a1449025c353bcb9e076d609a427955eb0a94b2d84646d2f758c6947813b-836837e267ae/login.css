@@ -1,0 +1,6 @@
+var __wakaru_PYw_initialized = false;
+export function PYw() {
+if (__wakaru_PYw_initialized) return;
+__wakaru_PYw_initialized = true;
+
+}

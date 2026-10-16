@@ -1,0 +1,6 @@
+var __wakaru_ASg_initialized = false;
+export function ASg() {
+if (__wakaru_ASg_initialized) return;
+__wakaru_ASg_initialized = true;
+
+}

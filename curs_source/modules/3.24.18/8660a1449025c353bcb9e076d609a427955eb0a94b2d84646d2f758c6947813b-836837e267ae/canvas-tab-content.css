@@ -1,0 +1,6 @@
+var __wakaru_c7w_initialized = false;
+export function c7w() {
+if (__wakaru_c7w_initialized) return;
+__wakaru_c7w_initialized = true;
+
+}

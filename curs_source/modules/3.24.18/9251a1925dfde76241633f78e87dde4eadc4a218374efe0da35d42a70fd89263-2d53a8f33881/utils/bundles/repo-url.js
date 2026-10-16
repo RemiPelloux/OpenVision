@@ -1,0 +1,16 @@
+var sanitizedRemoteUrlCache, SANITIZED_REMOTE_URL_CACHE_MAX_SIZE, originRepoClonePartsCache, ORIGIN_REPO_CLONE_PARTS_CACHE_MAX_SIZE, AGENT_TEMP_DRAFT_REPO_NAME_PREFIX, AGENT_TEMP_DRAFT_REPO_NAME_HEX_LENGTH, AGENT_TEMP_DRAFT_REPO_NAME_PATTERN;
+export { AGENT_TEMP_DRAFT_REPO_NAME_HEX_LENGTH, AGENT_TEMP_DRAFT_REPO_NAME_PATTERN, AGENT_TEMP_DRAFT_REPO_NAME_PREFIX, ORIGIN_REPO_CLONE_PARTS_CACHE_MAX_SIZE, SANITIZED_REMOTE_URL_CACHE_MAX_SIZE, originRepoClonePartsCache, sanitizedRemoteUrlCache };
+var __wakaru_init_repo_url_initialized = false;
+export function init_repo_url() {
+if (__wakaru_init_repo_url_initialized) return;
+__wakaru_init_repo_url_initialized = true;
+"use strict";
+sanitizedRemoteUrlCache = new Map();
+SANITIZED_REMOTE_URL_CACHE_MAX_SIZE = 2048;
+originRepoClonePartsCache = new Map();
+ORIGIN_REPO_CLONE_PARTS_CACHE_MAX_SIZE = 2048;
+AGENT_TEMP_DRAFT_REPO_NAME_PREFIX = "tmp-";
+AGENT_TEMP_DRAFT_REPO_NAME_HEX_LENGTH = 16;
+AGENT_TEMP_DRAFT_REPO_NAME_PATTERN = new RegExp(`^${AGENT_TEMP_DRAFT_REPO_NAME_PREFIX}[0-9a-f]{${AGENT_TEMP_DRAFT_REPO_NAME_HEX_LENGTH}}$`);
+
+}

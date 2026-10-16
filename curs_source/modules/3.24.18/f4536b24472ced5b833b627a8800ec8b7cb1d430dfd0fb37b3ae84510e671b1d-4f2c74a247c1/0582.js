@@ -1,0 +1,1 @@
+a(Ci,"hasWindow");

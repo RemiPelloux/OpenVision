@@ -1,0 +1,6 @@
+var __wakaru_GDy_initialized = false;
+export function GDy() {
+if (__wakaru_GDy_initialized) return;
+__wakaru_GDy_initialized = true;
+
+}

@@ -1,0 +1,1 @@
+function wi(e,t){return e===null||t===null?e===t:e.enabled===t.enabled&&Ln(e.threshold,t.threshold)&&Ln(e.amount,t.amount)&&(e.monthlyCap===null||t.monthlyCap===null?e.monthlyCap===t.monthlyCap:Ln(e.monthlyCap,t.monthlyCap))}

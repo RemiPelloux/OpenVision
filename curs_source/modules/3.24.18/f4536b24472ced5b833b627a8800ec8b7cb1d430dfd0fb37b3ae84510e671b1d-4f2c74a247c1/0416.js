@@ -1,0 +1,1 @@
+a(Rp,"hasObjectPrototype");

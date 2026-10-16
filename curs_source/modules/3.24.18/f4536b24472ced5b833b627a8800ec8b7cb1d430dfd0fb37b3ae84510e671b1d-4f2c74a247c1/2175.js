@@ -1,0 +1,1 @@
+var NP=new Map;

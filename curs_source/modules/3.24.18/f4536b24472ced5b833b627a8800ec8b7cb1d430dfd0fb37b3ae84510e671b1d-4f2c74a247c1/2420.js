@@ -1,0 +1,1 @@
+function Vm(e,t){return Pm(t)?E_(t.message)&&!e.oneof&&e.fieldKind=="message"?t.message.value:t.desc.typeName=="google.protobuf.Struct"&&e.parent.typeName!="google.protobuf.Value"?Fm(t.message):t.message:t}

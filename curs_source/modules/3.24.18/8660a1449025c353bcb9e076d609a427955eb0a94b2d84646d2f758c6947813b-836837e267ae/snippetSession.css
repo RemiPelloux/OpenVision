@@ -1,0 +1,6 @@
+var __wakaru_cx1_initialized = false;
+export function cx1() {
+if (__wakaru_cx1_initialized) return;
+__wakaru_cx1_initialized = true;
+
+}

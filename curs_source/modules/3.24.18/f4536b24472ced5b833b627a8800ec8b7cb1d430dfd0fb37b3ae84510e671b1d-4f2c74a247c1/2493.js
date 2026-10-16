@@ -1,0 +1,1 @@
+function hM(e){switch(e.syntax){case"":case"proto2":return RH;case"proto3":return NH;case"editions":if(e.edition===PH)return jH;if(e.edition in uM)return e.edition;throw new Error(`${e.name}: unsupported edition`);default:throw new Error(`${e.name}: unsupported syntax "${e.syntax}"`)}}

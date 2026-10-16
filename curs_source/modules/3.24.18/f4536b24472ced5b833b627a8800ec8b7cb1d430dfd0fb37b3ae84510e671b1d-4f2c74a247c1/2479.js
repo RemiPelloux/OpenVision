@@ -1,0 +1,1 @@
+function Xm(e,t,r){const n=e.proto.oneofDecl.map(i=>fM(i,e)),o=new Set;for(const i of e.proto.field){const s=bM(i,n),c=Zm(i,e,t,s,r);e.fields.push(c),e.field[c.localName]=c,s===void 0?e.members.push(c):(s.fields.push(c),o.has(s)||(o.add(s),e.members.push(s)))}for(const i of n.filter(s=>o.has(s)))e.oneofs.push(i);for(const i of e.nestedMessages)Xm(i,t,r)}

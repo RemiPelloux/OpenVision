@@ -1,0 +1,1 @@
+function rr(e,t){const r=e.trim().replace(VU,"");if(!BU.test(r))return null;const[n="0",o=""]=r.replaceAll(",","").split(".");if(o.length>sa(t))return null;const i=Number(n)*UU+Number(o.padEnd(6,"0"));return Number.isSafeInteger(i)?{currencyCode:t,unitMicros:i}:null}

@@ -1,0 +1,1 @@
+function aS({className:e}){const{t}=Be(),r=Nt();if(!r.busy)return null;const n=r.add.status==="submitting"||r.add.status==="requires-action";return qt("p",{role:"status",className:e,children:t(n?"Saving your payment method.":"Updating your payment methods.")})}

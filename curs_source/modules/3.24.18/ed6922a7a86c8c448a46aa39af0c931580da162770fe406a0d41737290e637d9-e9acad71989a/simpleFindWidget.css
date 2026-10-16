@@ -1,0 +1,6 @@
+var __wakaru_lb__initialized = false;
+export function lb_() {
+if (__wakaru_lb__initialized) return;
+__wakaru_lb__initialized = true;
+
+}

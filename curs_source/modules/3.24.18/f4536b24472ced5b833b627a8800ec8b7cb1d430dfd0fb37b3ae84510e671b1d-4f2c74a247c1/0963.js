@@ -1,0 +1,1 @@
+function IT(e,t){return qr({kind:"schema",type:"picklist",reference:IT,expects:bT(e.map(ha),"|"),async:!1,options:e,message:t,"~run"(r,n){return this.options.includes(r.value)?r.typed=!0:Nr(this,"type",r,n),r}})}

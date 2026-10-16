@@ -1,0 +1,1 @@
+function Jk(e){const t=wt(e),r=t.documentElement,n=t.body,o=Li(r,n),i={overflowY:o.style.overflowY,overflowX:o.style.overflowX};return Object.assign(o.style,{overflowY:"hidden",overflowX:"hidden"}),()=>{Object.assign(o.style,i)}}

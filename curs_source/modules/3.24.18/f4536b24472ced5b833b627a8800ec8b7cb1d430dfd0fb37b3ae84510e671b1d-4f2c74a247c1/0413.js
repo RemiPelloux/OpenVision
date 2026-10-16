@@ -1,0 +1,1 @@
+function Nc(e){if(!Rp(e))return!1;const t=Object.getPrototypeOf(e),r=t?.constructor;if(r===void 0)return!0;if(typeof r!="function")return!1;const n=r.prototype;return!(!Rp(n)||!n.hasOwnProperty("isPrototypeOf")||t!==Object.prototype)}

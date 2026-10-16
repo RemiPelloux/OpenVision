@@ -1,0 +1,1 @@
+a(Wx,"setupGesture");

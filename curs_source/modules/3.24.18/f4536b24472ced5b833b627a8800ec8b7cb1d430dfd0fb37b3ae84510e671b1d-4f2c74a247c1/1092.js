@@ -1,0 +1,1 @@
+function IC(e,t,r,n){const o=ga(n),i=e[r];if(o.group===""||i!==o.group||t!==e.slice(0,r)+e.slice(r+1))return null;const s=t[r];return s===void 0||!sh(s,o)?null:{value:t.slice(0,r)+t.slice(r+1),caret:r}}

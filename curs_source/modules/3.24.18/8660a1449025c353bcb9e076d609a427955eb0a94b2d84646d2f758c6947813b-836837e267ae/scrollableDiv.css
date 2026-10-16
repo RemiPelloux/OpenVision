@@ -1,0 +1,6 @@
+var __wakaru_hIk_initialized = false;
+export function hIk() {
+if (__wakaru_hIk_initialized) return;
+__wakaru_hIk_initialized = true;
+
+}

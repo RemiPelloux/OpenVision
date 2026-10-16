@@ -1,0 +1,6 @@
+var __wakaru_DIg_initialized = false;
+export function DIg() {
+if (__wakaru_DIg_initialized) return;
+__wakaru_DIg_initialized = true;
+
+}

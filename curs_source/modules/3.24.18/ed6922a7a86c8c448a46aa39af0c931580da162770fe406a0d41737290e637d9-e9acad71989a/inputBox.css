@@ -1,0 +1,6 @@
+var __wakaru_ykg_initialized = false;
+export function ykg() {
+if (__wakaru_ykg_initialized) return;
+__wakaru_ykg_initialized = true;
+
+}

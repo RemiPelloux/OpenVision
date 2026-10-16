@@ -1,0 +1,6 @@
+var __wakaru_ebg_initialized = false;
+export function ebg() {
+if (__wakaru_ebg_initialized) return;
+__wakaru_ebg_initialized = true;
+
+}

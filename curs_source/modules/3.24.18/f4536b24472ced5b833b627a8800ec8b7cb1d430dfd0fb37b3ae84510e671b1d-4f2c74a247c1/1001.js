@@ -1,0 +1,1 @@
+function YT(e){return sy("svg",{xmlns:"http://www.w3.org/2000/svg",fill:"currentColor","data-icon":"icon-close-md",viewBox:"0 0 24 24",display:"flex",role:"img",width:"1em",height:"1em",...e,children:sy("path",{d:"M18.7 6.7 13.42 12l5.3 5.3-1.42 1.4-5.3-5.29-5.28 5.3-1.42-1.42L10.6 12 5.3 6.7l1.42-1.4L12 10.58l5.3-5.3z"})})}

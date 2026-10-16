@@ -1,0 +1,7 @@
+{
+  "format": "unknown",
+  "strategy": "structural",
+  "modules": {
+    "processExplorer.js": {"input": "C:\\Users\\User\\Documents\\ChatGPT\\REA\\openvision\\curs_source\\snapshots\\3.24.18\\artifacts\\installation\\resources\\app\\out\\vs\\code\\electron-sandbox\\processExplorer\\processExplorer.js", "ranges": [[0,22867]], "extraction": "structural"}
+  }
+}

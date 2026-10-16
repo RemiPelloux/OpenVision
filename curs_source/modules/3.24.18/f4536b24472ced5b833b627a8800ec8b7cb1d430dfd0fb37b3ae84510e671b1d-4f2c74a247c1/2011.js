@@ -1,0 +1,1 @@
+function IN(e,t,r,n,o=!0,i){const{registerFieldControl:s}=w0(),c=Rr(()=>Symbol());Ke(()=>{const l=c.current;if(!o){s(l,void 0);return}s(l,{controlRef:e,getValue:n,id:t,name:i,value:r})},[e,o,n,t,i,s,c,r]),Ke(()=>{const l=c.current;return()=>{s(l,void 0)}},[s,c])}
