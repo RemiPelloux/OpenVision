@@ -148,14 +148,22 @@ test('failed cleanup remains owned across restart and can be explicitly retried 
   assert.deepEqual(removedRestart.state.credentialCleanup, []);
 });
 
-test('failed save and rollback retain staged secrets and block further mutations until restart', async () => {
+test('failed save and rollback retain staged secrets and block further mutations until the rollback is saved', async () => {
   const f = fixture(), first = await f.providers.save(options);
-  let flushes = 0;
-  f.bridge.storage.flush = async () => { if (++flushes >= 2) throw new Error('Injected persistent flush failure'); };
-  await assert.rejects(f.providers.save({ ...options, id: first.id, headers: { 'X-API-Key': 'header-two' } }), /save and rollback failed/);
+  let flushes = 0, failing = true;
+  const flush = f.bridge.storage.flush;
+  f.bridge.storage.flush = async () => { if (failing && ++flushes >= 2) throw new Error('Injected persistent flush failure'); return flush?.(); };
+  await assert.rejects(f.providers.save({ ...options, id: first.id, headers: { 'X-API-Key': 'header-two' } }),
+    /Provider save failed \(Injected persistent flush failure\)/);
   assert.equal([...f.secrets.keys()].filter(key => key.startsWith('openvision.provider.headers.')).length, 2);
-  await assert.rejects(f.providers.save(options), /Restart/);
-  await assert.rejects(f.providers.cleanupCredentials(), /Restart/);
+  await assert.rejects(f.providers.save(options), /not saved yet: Injected persistent flush failure/);
+  await assert.rejects(f.providers.cleanupCredentials(), /not saved yet/);
+  // Once storage accepts writes again, the rolled-back state is saved first and
+  // retired header secrets are cleaned without a restart.
+  failing = false;
+  await f.providers.cleanupCredentials();
+  assert.equal([...f.secrets.keys()].filter(key => key.startsWith('openvision.provider.headers.')).length, 1);
+  assert.equal(f.providers.state.providers[0].customHeaderRevision, first.customHeaderRevision);
 });
 
 test('turn snapshots read headers once per provider; child routing replaces and clears inherited headers', async () => {
