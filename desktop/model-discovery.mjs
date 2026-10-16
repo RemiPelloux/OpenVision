@@ -63,7 +63,9 @@ async function discover(configuration, fetch, controller) {
     headers,
   });
   if (!response.ok) {
-    const failure = new DiscoveryFailure(`Model discovery failed (HTTP ${response.status}). Check the URL, key and provider access.`);
+    const reason = await providerReason(response, [configuration.key, ...Object.values(configuration.headers ?? {})]);
+    const failure = new DiscoveryFailure(`Model discovery failed (HTTP ${response.status}). Check the URL, key and provider access.` +
+      (reason ? ` Provider message: ${reason}` : ''));
     controller.abort(failure);
     await response.body?.cancel().catch(() => {});
     throw failure;
@@ -75,6 +77,43 @@ async function discover(configuration, fetch, controller) {
   // Model/capability interpretation remains owned by the existing parser.
   try { return parseModels(body); }
   catch (error) { throw new DiscoveryFailure(error.message); }
+}
+
+// A provider's own reason (for example an exhausted balance) is shown only when
+// it arrives as a small, complete JSON error within a short bound. Anything else
+// keeps the generic message; credentials are redacted and the text is capped.
+const REASON_BYTES = 4096, REASON_MS = 500, REASON_CHARS = 200;
+async function providerReason(response, secrets) {
+  if (!response.body || !/\bjson\b/iu.test(response.headers.get('content-type') ?? '')) return '';
+  const reader = response.body.getReader(), chunks = [];
+  let bytes = 0, timer;
+  try {
+    const read = (async () => {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) return true;
+        bytes += value.byteLength;
+        if (bytes > REASON_BYTES) return false;
+        chunks.push(value);
+      }
+    })();
+    read.catch(() => {});
+    const complete = await Promise.race([read, new Promise(resolve => { timer = setTimeout(resolve, REASON_MS, false); })]);
+    if (!complete) return '';
+    const body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks, bytes)));
+    const message = [body?.error?.message, body?.message, body?.error]
+      .find(value => typeof value === 'string' && value.trim());
+    if (!message) return '';
+    let text = message.replace(/[\p{Cc}\p{Cf}]+/gu, ' ').replace(/\s+/gu, ' ').trim();
+    for (const secret of secrets)
+      if (typeof secret === 'string' && secret) text = text.replaceAll(secret, '[redacted]');
+    return text.length > REASON_CHARS ? `${text.slice(0, REASON_CHARS - 1)}…` : text;
+  } catch { return ''; }
+  finally {
+    clearTimeout(timer);
+    await reader.cancel().catch(() => {});
+    reader.releaseLock();
+  }
 }
 
 async function readCatalog(response, controller) {

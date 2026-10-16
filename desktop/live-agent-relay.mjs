@@ -73,7 +73,7 @@ async function providerFailureBody(upstream, record, redact) {
 
 export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest,
   allowDownstreamCancellation = false, expectInitialUnauthorized = false, initialStall,
-  requestLimit = defaultRequestLimit }) {
+  requestLimit = defaultRequestLimit, forwardProviderFailures = false }) {
   if (!Number.isInteger(requestLimit) || requestLimit < 1 || requestLimit > 32)
     throw new Error('Live verification request limit must be an integer from 1 to 32');
   if (initialStall !== undefined) {
@@ -144,6 +144,14 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
             'x-request-id': record.requestId });
           response.end(failureBody); return;
         }
+        // Opt-in: show the native app the real (redacted) provider failure so its
+        // error UI can be inspected. The probe still fails on this request.
+        if (forwardProviderFailures && !record.errorTruncated) {
+          record.forwardedToNative = true;
+          response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'text/plain',
+            'x-request-id': record.requestId });
+          response.end(failureBody);
+        }
         throw new Error(`Live provider returned HTTP ${upstream.status}`);
       }
       if (record === requests[unauthorizedIndex]) {
@@ -173,7 +181,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
     const work = handle(request, response).catch(error => {
       failed.resolve(redact(error.message));
       if (!response.headersSent) { response.writeHead(502, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: { message: 'Live verification request failed; see the sanitized evidence.' } })); }
-      else response.destroy();
+      else if (!response.writableEnded) response.destroy();
     }).finally(() => pending.delete(work));
     pending.add(work);
   });

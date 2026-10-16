@@ -197,6 +197,20 @@ test('provider failures are redacted, retained and never automatically retried',
   assert.equal(relay.requests[0].requestId, '[redacted]');
 });
 
+test('opt-in failure forwarding shows the real redacted status/body once and still fails the probe', async t => {
+  let calls = 0;
+  const relay = await fixture(t, (_request, response) => {
+    calls++; response.writeHead(403, { 'content-type': 'application/json', 'x-request-id': 'balance-request' });
+    response.end(JSON.stringify({ code: 'INSUFFICIENT_BALANCE', message: `Insufficient account balance ${key}` }));
+  }, { forwardProviderFailures: true });
+  const response = await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) });
+  assert.equal(response.status, 403); assert.equal(response.headers.get('x-request-id'), 'balance-request');
+  assert.deepEqual(await response.json(), { code: 'INSUFFICIENT_BALANCE', message: 'Insufficient account balance [redacted]' });
+  assert.equal(await relay.failure, 'Live provider returned HTTP 403');
+  assert.equal(calls, 1);
+  assert.equal(relay.requests[0].forwardedToNative, true);
+});
+
 test('opt-in initial 401 preserves the real status/body and manual credential replacement permits inference', async t => {
   const received = [];
   const relay = await fixture(t, async (request, response) => {

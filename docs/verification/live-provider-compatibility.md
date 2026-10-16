@@ -13,6 +13,8 @@ The failed and successful native runs are retained in that report. Its real
 HTTP 401/manual retry coverage is distinct from simulated failures and from
 the still-open native inference timeout gate.
 
+16 October Linux follow-up: [live Codex Easy on Linux](live-provider-linux.md) records the real 401/403 failure, restart and retry paths. Every success path was blocked by an insufficient account balance.
+
 ## Native Stop and same-chat resubmission
 
 The native `--stop` check first completes a real Read roundtrip, then asks for

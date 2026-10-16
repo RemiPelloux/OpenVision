@@ -12,7 +12,31 @@ export function inspectRetryPrompt(body, result) {
   result.promptOccurrences.push(occurrences);
 }
 
-export async function retryAuthenticationFailure({ page, relay, restoreCredential, result }) {
+const unauthorizedText = /401|unauthorized|invalid.*key|authentication/i;
+
+function composerId(page) {
+  return page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first()
+    .evaluate(element => element.closest('[data-composer-id]')?.getAttribute('data-composer-id'));
+}
+
+// Restart between the real failure and the retry: the unresolved error and Try again
+// must be restored from the saved chat without sending any request.
+export async function restoreFailureAfterRestart({ page, relay, restart, result }) {
+  const source = await composerId(page), before = relay.requests.length;
+  page = await restart();
+  await page.getByText(liveReadPrompt, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
+  const retry = page.getByText('Try again', { exact: true }).filter({ visible: true });
+  await retry.last().waitFor({ timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(2500);
+  const body = await page.locator('body').innerText();
+  result.afterRestart = { sameChat: await composerId(page) === source, failureVisible: unauthorizedText.test(body),
+    tryAgainVisible: await retry.count() > 0, requestsOnRestore: relay.requests.length - before };
+  assert.deepEqual(result.afterRestart, { sameChat: true, failureVisible: true, tryAgainVisible: true, requestsOnRestore: 0 },
+    'Restart must restore the same chat, the real provider failure and Try again without sending a request');
+  return page;
+}
+
+export async function retryAuthenticationFailure({ page, relay, restoreCredential, result, restart }) {
   await Promise.race([
     page.getByText('Try again', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 90000 }),
     relay.failure.then(message => { throw Error(message); }),
@@ -22,10 +46,12 @@ export async function retryAuthenticationFailure({ page, relay, restoreCredentia
   assert.equal(relay.requests.length, 1, 'Authentication failure must not trigger automatic retries');
   assert.equal(relay.requests[0].httpStatus, 401);
   assert.equal(relay.requests[0].expectedAuthenticationFailure, true);
-  assert.match(await page.locator('body').innerText(), /401|unauthorized|invalid.*key|authentication/i);
+  assert.match(await page.locator('body').innerText(), unauthorizedText);
   assert.deepEqual(result.promptOccurrences, [1]);
   result.upstreamUnauthorizedShown = true;
+  if (restart) page = await restoreFailureAfterRestart({ page, relay, restart, result });
   restoreCredential();
+  result.retryClickedAtRequest = relay.requests.length;
   await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
 }
 

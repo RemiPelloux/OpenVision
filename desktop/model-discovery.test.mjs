@@ -52,6 +52,18 @@ test('non-OK unfinished body closes promptly without exposing its content', asyn
   assert.equal((await request('healthy')).ok, true);
 });
 
+test('a complete JSON provider reason is shown, redacted and bounded; other bodies stay generic', async t => {
+  const { source, request } = await setup(t);
+  const balance = await request('balance');
+  assert.equal(balance.error, 'Model discovery failed (HTTP 403). Check the URL, key and provider access. Provider message: Insufficient account balance');
+  const reflected = await request('reflected');
+  assert.ok(!reflected.error.includes('discovery-fixture') && !reflected.error.includes('\u0007'));
+  assert.match(reflected.error, /Provider message: Key \[redacted\] rejected x+…$/);
+  assert.ok(reflected.error.split('Provider message: ')[1].length <= 200);
+  assert.equal((await request('plain')).error, 'Model discovery failed (HTTP 403). Check the URL, key and provider access.');
+  released(source);
+});
+
 for (const [mode, pattern] of [['invalid', /invalid JSON/], ['utf8', /UTF-8/],
   ['catalog', /valid ID/], ['large', /4 MiB/]]) {
   test(`rejects ${mode} catalog before returning models and releases the reader`, async t => {
