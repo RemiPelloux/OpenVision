@@ -5,7 +5,7 @@
 
 Updated 16 October 2026; latest portable release **0.2.0-preview.7**, with Linux x64 source support. The verified-coverage target is **80%**.
 The denominator remains **42 acceptance stories**, so **34 must be fully
-Verified**. Current ledger: **6 Verified, 22 Partial, 12 Planned, 2 Unknown**,
+Verified**. Current ledger: **6 Verified, 23 Partial, 12 Planned, 1 Unknown**,
 or **14.29%**. Twenty-eight additional stories must pass to reach the numeric target.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
