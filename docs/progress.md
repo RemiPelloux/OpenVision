@@ -17,7 +17,7 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **6/42 · 14.29%** | **36/42 · 85.71%** are not fully verified: 22 Partial, 12 Planned, 2 Unknown |
+| Fully verified local-feature stories | **6/42 · 14.29%** | **36/42 · 85.71%** are not fully verified: 23 Partial, 12 Planned, 1 Unknown |
 | Recorded 80% verification milestone | Requires **34/42** Verified | **28** additional stories must pass |
 | All accepted features | Requires **42/42** Verified | **36** additional stories must pass |
 
@@ -54,7 +54,7 @@ the existing status and points; the preview.7 portable payload is unchanged.
 producer in source (Linux native pass); OV-302 stays Partial.
 [Global path isolation](recovery/rea-global-path-isolation.md) moves user skills, commands,
 hooks and third-party user folders into the profile (Linux native pass); OV-302 stays Partial.
-The [project-data destination trace](recovery/rea-project-data-destinations.md) maps indexing/file-sync/upload owners and adds capture tooling (Linux x64); OV-501 stays Unknown.
+The [project-data destination trace](recovery/rea-project-data-destinations.md) maps indexing/file-sync/upload owners and blocks hosted Quick Edit reranking and file sync after native capture (Linux x64); OV-501 is Partial.
 
 The [ranked feature roadmap](planning/roadmap.md#ranked-rea-implementation-and-verification-work)
 owns story order, dependencies and point estimates. The following groups link to
