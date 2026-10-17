@@ -73,6 +73,8 @@
     "verify:local-metadata": "node desktop/verify-local-metadata.mjs",
     "verify:local-startup": "node desktop/verify-local-startup.mjs",
     "verify:utility-listeners": "node desktop/verify-utility-listeners.mjs",
+    "verify:idle-memory": "node desktop/verify-idle-memory.mjs",
+    "test:idle-memory": "node --test desktop/process-family-linux.test.mjs desktop/pty-kill-release.test.mjs",
     "test:feature-status": "node --test desktop/feature-status.test.mjs",
     "test:agent-process": "node --test desktop/agent-process.test.mjs",
     "test:context-work": "node --test desktop/context-customization.test.mjs desktop/context-work.test.mjs",
@@ -132,7 +134,7 @@
     "verify:git": "node desktop/verify-git.mjs",
     "verify:development": "node desktop/verify-development.mjs",
     "verify:shutdown-cycles": "node desktop/verify-shutdown-cycles.mjs",
-    "test:shutdown": "node --test desktop/shutdown.test.mjs desktop/utility-process.test.mjs desktop/agent-command-exit.test.mjs desktop/owned-process-journal.test.mjs desktop/pty-exec.test.mjs desktop/pty-host-ownership.test.mjs"
+    "test:shutdown": "node --test desktop/shutdown.test.mjs desktop/utility-process.test.mjs desktop/agent-command-exit.test.mjs desktop/owned-process-journal.test.mjs desktop/pty-exec.test.mjs desktop/pty-host-ownership.test.mjs desktop/pty-kill-release.test.mjs"
   },
   "engines": {
     "node": ">=24.18.0"
