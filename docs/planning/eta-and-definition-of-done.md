@@ -199,3 +199,26 @@ describe exactly the delivered product.
 - Keep the shared recovery input on disk, not in `/tmp`: a reboot wiped the
   first copy.
 - Run heavy native verifiers with less parallel load, or mark them load-sensitive.
+
+## 7. Verification of this checkpoint (merged `main`, 17 October 2026, Linux x64)
+
+Clean rebuild from the prepared 3.21.13 input, run sequentially with no other
+native workload.
+
+- **Unit and integration suites (28 commands):** all pass, 0 failures. This
+  includes `test:desktop` 171/171, `test:agent-review` 95/95,
+  `test:provider-storage` 72/72, `test:completion` 43/43 and `test:shutdown` 34/34.
+- **Native, passed first time:** `verify:explorer`, `verify:agent-context-budget`,
+  `verify:shutdown-cycles`, `verify:agent -- --review-recovery`,
+  `verify:provider-matrix`.
+- **Native, passed on rerun after one intermittent failure:**
+  `verify:language-matrix`; `verify:completion -- --acceptance` (the known
+  intermittent multiline Tab); `verify:data-destinations` (an unexplained clean
+  app quit during idle indexing, seen once before). These are recorded as open
+  flakiness, not as passes on first attempt.
+- **Native, known failure:** `verify:global-paths` reports only `~/.bash_history`,
+  which was already present before these merges (OV-302 item in §6). Project and
+  profile customizations are listed correctly.
+- **Data destinations, without the held telemetry fix:** `api2.cursor.sh`,
+  `registry.npmjs.org` and the spellcheck download remain. That is expected until
+  `telemetry-ov1005-blocked` is fixed and merged.
