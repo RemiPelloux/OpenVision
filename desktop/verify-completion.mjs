@@ -10,6 +10,7 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { writeCompletionFailure, verifyCompletionFailures } from './verify-completion-failures.mjs';
 import { fileHash } from './import-files.mjs';
 import { createCompletionEditingFixture, verifyCompletionEditing } from './verify-completion-editing.mjs';
+import { createCompletionAcceptanceFixture, verifyCompletionAcceptance } from './verify-completion-acceptance.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -18,6 +19,7 @@ await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/completion-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 const editing = process.argv.includes('--editing'), editingFixture = createCompletionEditingFixture();
+const acceptance = process.argv.includes('--acceptance'), acceptanceFixture = createCompletionAcceptanceFixture();
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never',
@@ -32,12 +34,13 @@ const server = createServer(async (request, response) => {
   if (request.url === '/v1/models') return response.end(JSON.stringify({ data: [{ id: 'fixture-coder' }] }));
   if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end('{}'); }
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
-  const payload = JSON.parse(Buffer.concat(chunks).toString());
+  const body = Buffer.concat(chunks), payload = JSON.parse(body.toString());
   const context = JSON.parse(payload.messages.at(-1).content);
   requests.push({ phase, model: payload.model, authorized: request.headers.authorization === 'Bearer fixture-key',
     context, stream: payload.stream });
   if (writeCompletionFailure(phase, response)) return;
   if (phase === 'editing' && editingFixture.respond(context, response)) return;
+  if (phase === 'acceptance' && acceptanceFixture.respond(context, response, body.length)) return;
   const matchesMultiline = phase === 'multiline' && /const items = \[\r?\n  $/.test(context.prefix);
   const content = phase === 'simple' ? '42' : matchesMultiline ? '"café 日本語",\n  "😀"' : '';
   response.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }] }));
@@ -117,6 +120,10 @@ try {
     phase = 'editing';
     result.editing = {};
     editingResult = await verifyCompletionEditing({ page, file, directory, fixture: editingFixture }, result.editing);
+  } else if (acceptance) {
+    phase = 'acceptance';
+    result.acceptance = {};
+    await verifyCompletionAcceptance({ page, file, directory, fixture: acceptanceFixture }, result.acceptance);
   } else failures = await verifyCompletionFailures({ page, file, directory, requests, setPhase: value => { phase = value; } });
   phase = 'simple';
   await page.keyboard.press('Escape'); await page.keyboard.press('ControlOrMeta+a');
@@ -124,13 +131,15 @@ try {
   await page.keyboard.insertText(' ');
   await page.waitForTimeout(2500);
   await page.keyboard.press('Tab'); await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(500);
+  // Saves can be held by save participants; wait for the write instead of a fixed delay.
+  for (let attempt = 0; attempt < 50 && !(await readFile(file, 'utf8')).startsWith('const recovered'); attempt++)
+    await page.waitForTimeout(200);
   assert.equal((await readFile(file, 'utf8')).trim(), 'const recovered = 42', 'Valid completion recovers after rejection');
   assert.ok(requests.every(request => request.model === 'fixture-coder' && request.authorized));
   assert.deepEqual(errors, []);
   Object.assign(result, { success: true, checked_at: new Date().toISOString(), platform: process.platform,
     native_suggestion: true, tab_accept: true, undo: true, multiline_unicode_accept_undo: true, failures,
-    ...(editing ? { editing: editingResult } : { recovery_after_rejection: true }), requests, errors,
+    ...(editing ? { editing: editingResult } : acceptance ? { acceptance: result.acceptance } : { recovery_after_rejection: true }), requests, errors,
     hashes: { completionHttp: await fileHash(join(runtimeRoot, 'desktop/completion-http.mjs')),
       completionIpc: await fileHash(join(appRoot, 'out/openvision-completion-ipc.js')),
       workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),

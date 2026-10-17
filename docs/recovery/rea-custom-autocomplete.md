@@ -176,5 +176,7 @@ Ctrl+Right accepts the next word when it is enabled. Line acceptance is unverifi
 OV-603 remains Partial for broader editing/latency workloads and platform checks;
 OV-602 retains its separate live-quality/native-live-acceptance gaps.
 
+Linux x64 acceptance-safety cases and the full-accept undo fix: [Linux acceptance report](rea-autocomplete-acceptance-linux.md).
+
 Verified Windows workbench SHA-256:
 `7616cbe676459332496caae085d0cfc7120777ab9ec11dfa60ce03293a35632a`.
