@@ -37,6 +37,7 @@ import { installMcpWindowRelease } from './mcp-window-release-customization.mjs'
 import { installAgentProviders } from './agent-provider-customization.mjs';
 import { installProviderErrorPolicy } from './provider-error-customization.mjs';
 import { installRetryHistory } from './agent-retry-history-customization.mjs';
+import { installLoopRetryPolicy } from './agent-loop-retry-customization.mjs';
 import { installAccountIntegrations } from './account-integration-customization.mjs';
 import { installAccountProfiles } from './account-profile-customization.mjs';
 import { installWelcomeStartup } from './welcome-customization.mjs';
@@ -99,6 +100,7 @@ await installAccountIntegrations(root);
 await installAccountProfiles(root);
 await installProviderErrorPolicy(root);
 await installRetryHistory(root);
+await installLoopRetryPolicy(root);
 await installOwnedShellProcesses(root);
 await installAgentCommandExit(root);
 await installContextRuntime(root);

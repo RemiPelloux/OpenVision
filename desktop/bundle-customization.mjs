@@ -22,6 +22,7 @@ import { fixSaveAllCommands } from './save-all-commands.mjs';
 import { customInlineEdit } from './inline-edit-customization.mjs';
 import { customizeProjectHome } from './project-home-customization.mjs';
 import { customizeThemes } from './theme-customization.mjs';
+import { cancelClosedRunningChat } from './chat-close-cancellation.mjs';
 
 async function customize(root, variant) {
   const relative = `out/vs/workbench/workbench.${variant}.main.js`;
@@ -33,7 +34,7 @@ async function customize(root, variant) {
   const providers = providerSelectionErrors(requestProviderRouting(stream.text, variant));
   const welcome = customizeWelcome(persistProviderFailures(providerManualRetry(completionCancellation(localUserRules(subagentModelParameters(providers, variant), variant)))), variant);
   const home = customizeProjectHome(customInlineEdit(fixSaveAllCommands(fixWorkspaceSaveAll(customizeLegacyMemories(customizeMemory(customizePaste(welcome, variant), variant), variant))), variant), variant);
-  const after = customizeThemes(home, variant);
+  const after = cancelClosedRunningChat(customizeThemes(home, variant));
   if (before === after) return;
   const backup = join(root, 'backups/bundle-customizations', relative);
   await mkdir(dirname(backup), { recursive: true });
@@ -60,6 +61,7 @@ export async function customizeBundles(root) {
     'desktop/inline-edit-customization.mjs',
     'desktop/project-home-customization.mjs',
     'desktop/theme-customization.mjs',
+    'desktop/chat-close-cancellation.mjs',
     'desktop/reasoning-selection-customization.mjs',
     'desktop/model-picker-pagination.mjs',
     'desktop/model-picker-labels.mjs',
