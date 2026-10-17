@@ -30,6 +30,10 @@ accounts, billing and cloud agents are excluded from this ledger.
 
 ## Critical-first delivery plan
 
+The [ETA, remaining work and Definition of Done](planning/eta-and-definition-of-done.md)
+summarizes points, blocking gate types (Linux, Windows, macOS, live provider) and
+the story, release and project DoD as of 17 October 2026.
+
 The [16 October Linux reliability session](verification/linux-session-2026-10-16.md)
 summarizes the fixes, evidence, behavior changes and open gates below. All are
 Linux x64 source-build evidence; the ledger stays at 6/42 and preview.7 is unchanged.
