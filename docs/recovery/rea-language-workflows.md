@@ -88,6 +88,8 @@ profiles; the normal profile is untouched.
 
 ## Remaining acceptance gates
 
+Linux x64 matrix, scan measurements and the unopened-target rename fix: [rea-language-matrix-linux.md](rea-language-matrix-linux.md).
+
 OV-402 remains **Partial**. This narrows its previously missing evidence substantially, but does not finish its full acceptance contract:
 
 - Additional explicitly supported languages and extension versions; JavaScript cross-file navigation/references/rename now have the scoped native evidence above.

@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableAppDirectory } from './recovered-source.mjs';
-import { guardRenameVersions } from './rename-version-customization.mjs';
+import { guardRenameVersions, guardRenameDiskChanges } from './rename-version-customization.mjs';
 
 function adapter(source, context) {
   const offset = source.indexOf('async provideRenameEdits(');
@@ -75,7 +75,44 @@ for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWork
     const rejected = new Adapter(documents, { provideRenameEdits: async () => { throw 'Provider refused rename'; } }, {});
     assert.equal((await rejected.provideRenameEdits(uri, {}, '', { isCancellationRequested: false })).rejectReason, 'Provider refused rename');
   });
+  test(`${variant}: unopened rename targets changed on disk reject the whole rename`, async () => {
+    const guarded = guardRenameDiskChanges(patched);
+    assert.equal(guardRenameDiskChanges(guarded), guarded, 'idempotent');
+    assert.equal(guardRenameDiskChanges(guardRenameVersions(guarded)), guarded, 'v1 guard stays idempotent');
+    const uri = { toString: () => 'source' }, doc = { uri, version: 3 };
+    const documents = { getDocument: () => doc, getAllDocumentData: () => [{ document: doc }],
+      getDocumentData: value => value === uri ? { document: doc } : undefined };
+    const target = path => ({ toString: () => path, scheme: 'file', fsPath: path });
+    const statted = [];
+    const disk = new Map();
+    const process = { getBuiltinModule: name => name === 'node:fs' ? { promises: { stat: async path => {
+      statted.push(path);
+      if (!disk.has(path)) throw Object.assign(Error('missing'), { code: 'ENOENT' });
+      return disk.get(path)();
+    } } } : undefined };
+    const run = (edits, context = { process }) => new (adapter(guarded, context))(documents,
+      { provideRenameEdits: async () => edits }, {}).provideRenameEdits(uri, {}, 'renamed', { isCancellationRequested: false });
+    disk.set('/old', () => ({ mtimeMs: 1, ctimeMs: 1 }));
+    disk.set('/new', () => ({ mtimeMs: Date.now() + 5, ctimeMs: Date.now() + 5 }));
+    const healthy = await run([{ resource: uri, textEdit: {} }, { resource: target('/old'), textEdit: {} }]);
+    assert.equal(healthy.edits.length, 2);
+    assert.deepEqual(statted, ['/old'], 'loaded documents use versions, not disk metadata');
+    const stale = await run([{ resource: uri, textEdit: {} }, { resource: target('/new'), textEdit: {} }]);
+    assert.match(stale.rejectReason, /changed on disk/); assert.equal(stale.edits, undefined);
+    assert.match((await run([{ resource: target('/gone'), textEdit: {} }])).rejectReason, /changed on disk/);
+    statted.length = 0;
+    const virtual = { toString: () => 'untitled:1', scheme: 'untitled', fsPath: '/new' };
+    assert.equal((await run([{ resource: virtual, textEdit: {} }])).edits.length, 1);
+    assert.deepEqual(statted, [], 'non-file schemes are not stat-ed');
+    assert.equal((await run([{ resource: target('/new'), textEdit: {} }], {})).edits.length, 1,
+      'hosts without node:fs keep the version-only guard');
+  });
 }
+
+test('disk guard requires the version guard and an unchanged shape', () => {
+  assert.throws(() => guardRenameDiskChanges('class Other {}'), /must be installed first/);
+  assert.throws(() => guardRenameDiskChanges('/* OpenVision rename document versions v1 */'), /shape changed/);
+});
 
 test('changed adapter contract fails closed', () => {
   assert.throws(() => guardRenameVersions('class Other {}'), /missing or ambiguous/);

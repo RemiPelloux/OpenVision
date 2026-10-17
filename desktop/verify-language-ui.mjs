@@ -142,7 +142,8 @@ async function renameUI() {
   await command('File: Save All');
   await savedExactly(original, 'rename_undo_save_all');
   await page.locator('.editor-instance .monaco-editor .inputarea').first().focus();
-  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Shift+z' : 'Control+y');
+  // Ctrl+Y is redo only on Windows; Linux/macOS bind it to Focus Chat Followup (weight 410).
+  await page.keyboard.press(process.platform === 'win32' ? 'Control+y' : 'ControlOrMeta+Shift+z');
   await command('File: Save All');
   await savedExactly(renamed, 'rename_redo_save_all');
 }
