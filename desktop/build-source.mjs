@@ -3,6 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installLocalProfile } from './local-workbench.mjs';
 import { installProjectWindows } from './project-window-customization.mjs';
+import { installSymlinkCycleListing } from './symlink-cycle-customization.mjs';
 import { projectWorkspace } from './project-workspace.mjs';
 import { installModelSettings } from './custom-models.mjs';
 import { installCursorImport } from './install-import.mjs';
@@ -81,6 +82,7 @@ await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.exe
 await customizeBundles(root);
 await installWelcomeStartup(root);
 await installProjectWindows(root);
+await installSymlinkCycleListing(root);
 await installProfilePathIsolation(root);
 await installLazyMcpChannels(root);
 await installMcpAttemptCleanup(root);

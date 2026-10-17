@@ -33,6 +33,7 @@ summarizes the fixes, evidence, behavior changes and open gates below. All are
 Linux x64 source-build evidence; the ledger stays at 6/42 and preview.7 is unchanged.
 [Provider import from pi and user-specified capabilities](verification/provider-import-linux.md)
 adds an explicit import, manual capabilities and a text-only image gate; Linux x64 only, no story promoted.
+The Linux [Explorer matrix](recovery/rea-explorer-linux.md) passes every OV-401 clause and fixes hidden symlink cycles (Linux x64 only); OV-401 stays Partial for its Windows cells.
 
 The [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and

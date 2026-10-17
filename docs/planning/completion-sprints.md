@@ -467,6 +467,9 @@ junction edits, actual ACL-denied writes/retry, and restoration of unsaved edits
 after normal shutdown. OV-401 remains Partial for file-symlink and large-project
 watcher/filesystem work; no crash or other-platform guarantee is inferred.
 
+17 October Linux follow-up: the [Linux Explorer matrix](../recovery/rea-explorer-linux.md)
+passes every OV-401 clause on Linux x64; OV-401 remains Partial until its Windows cells pass.
+
 ## Sprint 5 — Build local project intelligence
 
 Outcome: understood, incremental indexing and useful retrieval without hidden uploads.

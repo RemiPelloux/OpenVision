@@ -31,6 +31,7 @@ fixtures; no paid inference. `logs/` paths are private run artifacts.
 | `verify:project-home`, `verify:project-themes`, `verify:project-clone` | Pass |
 | `verify:project` (two-root search, Unicode edit/undo/redo/save, task) | Pass |
 | `verify:project:lifecycle` (POSIX write denial), `verify:project:scale` (inotify watchers) | Pass |
+| `verify:explorer` (17 October: OV-401 Explorer matrix, symlinks, permissions, abrupt-exit restore, inotify/strace per-edit work) | Pass after the symlink-cycle fix ([report](../recovery/rea-explorer-linux.md)) |
 | `verify:git` (worktrees, diff review, conflicts) | Pass |
 | `verify:development` (bash/sh terminals, resize, Unicode, Ctrl+C, tasks, Node debugger, child cleanup) | Pass |
 | `verify:agent` (stream, read, multi-file edits, command deny/allow/Stop with approval, restart) | Pass |
