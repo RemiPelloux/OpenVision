@@ -26,6 +26,8 @@ not a percentage of broken features, missing code or original-product parity.
 Recovery work alone does not promote a feature to Verified. Original hosted
 accounts, billing and cloud agents are excluded from this ledger.
 
+17 October: [Linux language matrix](recovery/rea-language-matrix-linux.md) (OV-402 stays Partial).
+
 ## Critical-first delivery plan
 
 The [16 October Linux reliability session](verification/linux-session-2026-10-16.md)

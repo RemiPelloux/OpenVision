@@ -46,10 +46,41 @@ export function guardRenameVersions(text) {
     patched.slice(bodyStart) + text.slice(method.end);
 }
 
+const diskMarker = '/* OpenVision rename disk changes v1 */';
+const versionLoop = `          if (!before || !current || current !== before.document.deref() || current.version !== before.version)
+            throw new Error("A file changed while computing the rename. Try again.");
+        }
+        return openvisionRenameEdit;`;
+const versionSnapshot = `[data.document.uri.toString(), { document: new WeakRef(data.document), version: data.document.version }]));
+`;
+
+// Targets that are not loaded documents carry no version, so the version guard
+// cannot see an external writer. Reject the whole rename when such a file:
+// target was modified on disk after the provider started (50 ms covers coarse
+// filesystem timestamps). Web worker hosts have no node:fs and keep v1 behavior.
+export function guardRenameDiskChanges(text) {
+  if (text.includes(diskMarker)) return text;
+  if (!text.includes(marker)) throw Error('Rename version guard must be installed first');
+  if (text.split(versionLoop).length !== 2 || text.split(versionSnapshot).length !== 2)
+    throw Error('Rename version guard shape changed');
+  return diskMarker + '\n' + text
+    .replace(versionSnapshot, `${versionSnapshot}      const openvisionRenameStarted = Date.now();\n`)
+    .replace(versionLoop, versionLoop.replace('return openvisionRenameEdit;', `const openvisionRenameFs = globalThis.process?.getBuiltinModule?.("node:fs")?.promises;
+        if (openvisionRenameFs) {
+          const unopened = new Map();
+          for (const edit of openvisionRenameEdit.edits)
+            if (edit.textEdit && typeof edit.versionId !== "number" && edit.resource?.scheme === "file") unopened.set(edit.resource.toString(), edit.resource);
+          const changed = await Promise.all([...unopened.values()].map(uri => openvisionRenameFs.stat(uri.fsPath).then(
+            info => Math.max(info.mtimeMs, info.ctimeMs) >= openvisionRenameStarted - 50, () => true)));
+          if (changed.some(Boolean)) throw new Error("A file changed on disk while computing the rename. Try again.");
+        }
+        return openvisionRenameEdit;`));
+}
+
 export async function installRenameVersionGuard(root) {
   for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWorkerMain.js']) {
     const path = join(root, 'source/app/out/vs/workbench/api', variant);
-    const before = await readFile(path, 'utf8'), after = guardRenameVersions(before);
+    const before = await readFile(path, 'utf8'), after = guardRenameDiskChanges(guardRenameVersions(before));
     if (before === after) continue;
     const backup = join(root, 'backups/rename-versions', `${digest(before)}.js`);
     await mkdir(dirname(backup), { recursive: true });
