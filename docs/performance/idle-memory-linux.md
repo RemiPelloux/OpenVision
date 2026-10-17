@@ -255,8 +255,13 @@ CPU and allocation stop with it, or only fail faster, is open.
 Three earlier after runs (`logs/idle-memory-after-8FTNKm`, `-iJK3rO`, `-CiBgKp`)
 lost the app to an **unrequested exit with code 0**: 2 and 11 minutes into idle, and
 34 s after the warm start. The main log shows the extension hosts exiting at that
-moment and nothing else. The kernel and journal show no OOM kill. The cause is
-**unknown**; other agents' applications were running in the same Wayland session.
+moment and nothing else. The kernel and journal show no OOM kill. For
+`-iJK3rO` and `-CiBgKp` the cause is now known: the agent harness stopped the
+background shell running the verifier because the host was critically low on
+memory. The app then lost its automation parent and exited cleanly. This is a
+measurement-harness interruption, not an application defect. The cause of the
+first (`-8FTNKm`) is **unknown**; it is consistent with the same reaping but was
+not confirmed.
 The verifier now records every host exit (requested or not) and fails at the next
 idle mark. With `--signal-trace` it runs the owned host under `strace` (signals of
 the main process only) to name a sender. The traced run completed without any
