@@ -45,6 +45,8 @@ The [profile I/O-fault report](recovery/rea-profile-io-faults.md) fixes lost pro
 The Linux [MCP ownership matrix](recovery/rea-mcp-ownership-matrix.md) fixes STDIO children surviving window close and profile switch; OV-303 stays Partial.
 The Linux [provider failure matrix](recovery/rea-provider-failure-matrix.md) verifies certificate expiry/hostname, mid-stream, capability and restart cells, and fixes unfinished-stream automatic repeats; its follow-up saves an unresolved failure, Try again/Resume and dismissal across restart. OV-102/204 stay Partial.
 
+[Idle and long-session memory](performance/idle-memory-linux.md) inventories the process family, attributes the cold-start Node peak to a js-debug fixture scan and releases killed terminals' shells (Linux x64); OV-1003 stays Partial.
+
 The [Agent interruption report](recovery/rea-agent-interruption.md) covers Stop, close and abrupt
 exit during outstanding writes/tools (Linux x64 evidence); OV-103 status and points are unchanged.
 

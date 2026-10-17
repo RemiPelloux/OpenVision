@@ -14,6 +14,7 @@ Measured optimization results, workload boundaries and unfinished performance ch
 - [Model discovery: request ownership and native evidence](model-discovery-resources.md)
 - [Model catalog memory and repeated-work optimization](model-memory-optimization.md)
 - [Model picker scale and accessibility — 13 October 2026](model-picker-scale.md)
+- [Idle and long-session memory on Linux — 17 October 2026](idle-memory-linux.md)
 - [Native Windows performance baseline](native-performance-baseline.md)
 - [Performance review — 2026-10-12](performance.md)
 
