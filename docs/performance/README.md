@@ -5,6 +5,7 @@ Measured optimization results, workload boundaries and unfinished performance ch
 ## Documents
 
 - [Account routing and stream performance](account-performance.md)
+- [Agent context, duplicate requests and session disposal on Linux — 17 October 2026](agent-context-linux.md)
 - [Autocomplete and stream performance review — 15 October 2026](autocomplete-stream-performance.md)
 - [Agent workspace context: bounded memory and shared Git reads](context-memory-optimization.md)
 - [Control-plane HTTP resource ownership](control-plane-http-resources.md)

@@ -1,0 +1,39 @@
+{
+  "description": "OV-1001 numeric budgets, set from the Linux x64 pre-change baseline logs/agent-context-5IGIXx (commit 935771e4) before the fixes were accepted. Byte and token budgets are the larger cold/warm baseline value plus 5% for run-specific environment text (git warm-up state, MCP catalog timing); request, duplicate and tool-history budgets are exact. Token counts are estimates. Applies to every pass (cold and warm). See docs/performance/agent-context-linux.md.",
+  "workloads": {
+    "single": {
+      "requests": 1, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 78883, "estimatedInputTokens": 21047, "maxRequestBytes": 78883
+    },
+    "reads": {
+      "requests": 6, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 516238, "estimatedInputTokens": 141212, "maxRequestBytes": 92140,
+      "repeatedFileOccurrences": 3, "min:toolCallsReplayed": 3
+    },
+    "edit": {
+      "requests": 5, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 418999, "estimatedInputTokens": 114544, "maxRequestBytes": 86611,
+      "min:toolCallsReplayed": 4
+    },
+    "long": {
+      "requests": 22, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 1999857, "estimatedInputTokens": 538277, "maxRequestBytes": 102990,
+      "lastHistoryBytes": 33046, "persistedHistoryBytes": 190747
+    }
+  },
+  "session": {
+    "maxStopToTransportCloseMs": 250,
+    "stopExtraRequests": 0,
+    "loopRequests": 2,
+    "loopDuplicateRequests": 0,
+    "loopRecoveryRequests": 1,
+    "unscriptedRequests": 0,
+    "min:chatCloseCancelsInFlight": 1,
+    "chatCloseToTransportCloseMs": 250,
+    "heapMarkerStringsAfterClose": 46,
+    "heapMarkerStringsAfterRelease": 46,
+    "min:windowCloseCancelsInFlight": 1,
+    "windowCloseToTransportCloseMs": 900,
+    "min:ownedHostExitedCleanly": 1
+  }
+}

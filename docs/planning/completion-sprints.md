@@ -556,6 +556,8 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+17 October 2026, OV-1001 (owner: OpenVision): [Linux Agent context budgets](../performance/agent-context-linux.md) add a native budget verifier and fix loop-retry repeats and running-chat close; controlled fixtures only, OV-1001 stays Partial.
+
 14 October 2026, OV-302/OV-701 import follow-up (owner: OpenVision):
 [Native import ownership](../verification/import-profile-verification.md) resolves the requesting
 window's actual profile and extension paths, preserves scoped backup ownership,
