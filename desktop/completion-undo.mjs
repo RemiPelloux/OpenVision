@@ -21,3 +21,42 @@ export function isolatePartialCompletionUndo(text, variant) {
   return text.slice(0, start) + marker + '\n' + boundary + text.slice(start, call.end + 1) +
     '\n' + boundary + text.slice(call.end + 1);
 }
+
+const fullMarker = '/* OpenVision full completion undo boundary v1 */';
+
+function visit(node, callback) {
+  if (!node || typeof node.type !== 'string') return;
+  callback(node);
+  for (const value of Object.values(node))
+    if (Array.isArray(value)) value.forEach(item => visit(item, callback));
+    else if (value && typeof value.type === 'string') visit(value, callback);
+}
+
+const modelCall = (node, model, name) => node?.type === 'CallExpression' &&
+  node.callee?.type === 'MemberExpression' && node.callee.object?.name === model &&
+  node.callee.property?.name === name;
+
+// The recovered full-accept owner closes an undo element after its edit but not
+// before it, so Tab acceptance merged with the typing that triggered it.
+export function isolateFullCompletionUndo(text, variant) {
+  if (text.includes(fullMarker)) return text;
+  const anchor = text.indexOf('updateVisibleSuggestionText(');
+  if (anchor < 0) throw new Error('Full completion edit owner missing.');
+  const owner = parseExpressionAt(text, text.lastIndexOf('class ', anchor), { ecmaVersion: 'latest' });
+  const methods = owner.body?.body?.filter(item => item.key?.name === 'updateVisibleSuggestionText') ?? [];
+  if (methods.length !== 1) throw new Error('Full completion edit owner missing or ambiguous.');
+  const model = methods[0].value.params[3]?.name;
+  if (!model) throw new Error('Full completion model owner changed.');
+  const edits = [];
+  visit(methods[0].value.body, node => {
+    if (node.type !== 'SequenceExpression') return;
+    node.expressions.forEach((item, index) => {
+      if (modelCall(item, model, 'pushEditOperations') && modelCall(node.expressions[index + 1], model, 'pushStackElement'))
+        edits.push(item);
+    });
+  });
+  if (edits.length !== 1) throw new Error('Full completion edit statement changed.');
+  const local = variant === 'desktop' ? 'zc.localMode' : 'Rl.localMode';
+  const start = edits[0].start;
+  return text.slice(0, start) + `${fullMarker} (${local} && ${model}.pushStackElement()), ` + text.slice(start);
+}

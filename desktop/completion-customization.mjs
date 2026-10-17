@@ -5,7 +5,7 @@ import { backedWrite } from './telemetry-settings.mjs';
 import { cachedFile } from './build-cache.mjs';
 import { digest, fileHash } from './import-files.mjs';
 import { cancelPendingCompletionOnEscape } from './completion-keyboard.mjs';
-import { isolatePartialCompletionUndo } from './completion-undo.mjs';
+import { isolatePartialCompletionUndo, isolateFullCompletionUndo } from './completion-undo.mjs';
 import { debounceCompletionPreparation } from './completion-preparation.mjs';
 
 const marker = '/* OpenVision custom autocomplete v1 */';
@@ -35,6 +35,7 @@ export function customCompletion(text, variant) {
   text = debounceCompletionPreparation(text, variant);
   text = cancelPendingCompletionOnEscape(text, variant);
   text = isolatePartialCompletionUndo(text, variant);
+  text = isolateFullCompletionUndo(text, variant);
   const anchor = text.indexOf('async getStream({');
   if (anchor < 0 || text.indexOf('async getStream({', anchor + 1) >= 0)
     throw new Error('Completion request owner missing or ambiguous.');

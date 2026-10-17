@@ -36,6 +36,7 @@ Linux x64 source-build evidence; the ledger stays at 6/42 and preview.7 is uncha
 [Provider import from pi and user-specified capabilities](verification/provider-import-linux.md)
 adds an explicit import, manual capabilities and a text-only image gate; Linux x64 only, no story promoted.
 The Linux [Explorer matrix](recovery/rea-explorer-linux.md) passes every OV-401 clause and fixes hidden symlink cycles (Linux x64 only); OV-401 stays Partial for its Windows cells.
+[Autocomplete acceptance safety](recovery/rea-autocomplete-acceptance-linux.md) adds stale-range, wrong-tab, external-change, multi-cursor, CRLF and typing-burst checks and fixes full-accept undo grouping; Linux x64 only, OV-603 stays Partial.
 
 The [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
 preserves retry/history ownership after cancellation or disposal failure and

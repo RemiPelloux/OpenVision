@@ -29,13 +29,13 @@ export function createCompletionEditingFixture() {
   };
 }
 
-async function until(page, predicate, message, timeout = requestTimeoutMs) {
+export async function until(page, predicate, message, timeout = requestTimeoutMs) {
   const deadline = performance.now() + timeout;
   while (performance.now() < deadline) { const value = predicate(); if (value) return value; await page.waitForTimeout(25); }
   throw Error(message);
 }
 
-async function typePrefix(page, text) {
+export async function typePrefix(page, text) {
   await page.keyboard.press('Escape');
   await page.locator('.monaco-editor .inputarea').first().focus();
   await page.keyboard.press('ControlOrMeta+a');
@@ -43,7 +43,7 @@ async function typePrefix(page, text) {
   await page.keyboard.press('End'); await page.keyboard.insertText(' ');
 }
 
-async function savedText(page, file) {
+export async function savedText(page, file) {
   await page.keyboard.press('ControlOrMeta+s');
   await page.waitForTimeout(250);
   return (await readFile(file, 'utf8')).replaceAll('\r\n', '\n');
