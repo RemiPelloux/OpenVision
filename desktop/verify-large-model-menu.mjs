@@ -117,7 +117,7 @@ try {
     await tail.waitFor(); assert.equal(await settings.locator('.openvision-model-row').count(), 1);
     await settings.getByRole('region', { name: 'Provider 2', exact: true }).getByRole('button', { name: 'Discover Models', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('.openvision-model-settings')?.dataset.busy === 'false');
-    result.failedDiscoveryMessage = await settings.locator(':scope > .openvision-model-status').innerText();
+    result.failedDiscoveryMessage = await settings.locator('.openvision-api-settings > .openvision-model-status').innerText();
     assert.notEqual(result.failedDiscoveryMessage, 'Saved');
     await tail.waitFor(); result.failedDiscoveryRetainedChoices = true;
     await tail.uncheck();
