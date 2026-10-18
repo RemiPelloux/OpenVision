@@ -1,0 +1,19 @@
+{
+  "description": "OV-1002 numeric budgets for npm run verify:responsiveness, Linux x64 only, controlled loopback fixture. Set from the pre-change baselines logs/responsiveness-dPm64f and logs/responsiveness-ED40At (commit e4621369, workbench 9779aebc). Timing budgets: worse baseline value x1.5, rounded up (host load 3-7 during the baselines). Structural budgets (rows, nodes, chunks, restored catalog): baseline plus a small margin, or exact. Persisted application storage: set after the measured waste was fixed; both baselines exceed it. See docs/performance/responsiveness-linux.md.",
+  "phases": {
+    "picker": { "openMs": 600, "pickerRowsOpen": 40, "pickerElements": 120, "latencyP95Ms": 190 },
+    "typingIdle": { "frameP95Ms": 33.4, "longTasks": 2, "latencyP95Ms": 50, "mountedRows": 24, "transcriptNodes": 1300 },
+    "stream": {
+      "min:chunksSent": 2000, "lastChunkToPaintMs": 1000, "frameP95Ms": 50, "framesOver100Ms": 3,
+      "longTaskTotalMs": 600, "latencyP95Ms": 60, "rowsMutated": 16, "mountedRows": 16, "transcriptNodes": 12500,
+      "heapUsedMiB": 330, "fsWriteChars": 3000000
+    },
+    "scroll": { "frameP95Ms": 50, "longTaskMaxMs": 400, "mountedRowsAtTop": 24, "transcriptNodesAtTop": 1300 },
+    "turn": { "submitToReplyPaintMs": 3500, "longTaskTotalMs": 400, "latencyP95Ms": 110 },
+    "editorSmall": { "longTaskTotalMs": 300, "latencyP95Ms": 360 },
+    "editorLarge": { "openMs": 900, "frameP95Ms": 50, "longTaskTotalMs": 300, "latencyP95Ms": 450 },
+    "closedChat": { "domNodesLiveClosed": 5000, "markerStringsClosed": 700, "heapClosedMiB": 330 },
+    "persisted": { "applicationUserBytes": 2000000, "persistedCatalogBytes": 0 },
+    "restart": { "min:selectedModelRestored": 1, "min:catalogModelsAfterRestart": 10001, "launchToSelectedModelMs": 31000 }
+  }
+}
