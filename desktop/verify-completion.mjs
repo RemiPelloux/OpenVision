@@ -13,6 +13,9 @@ import { createCompletionEditingFixture, verifyCompletionEditing, saveFile, pres
 import { createCompletionAcceptanceFixture, verifyCompletionAcceptance, prepareCompletionAcceptanceProject } from './verify-completion-acceptance.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
+// Live saved-provider editor acceptance has its own owner module (verify-completion-live.mjs).
+if (process.argv.includes('--live')) { await import('./verify-completion-live.mjs'); process.exit(); }
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { portable, runtimeRoot, appRoot, layout } = await verificationRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
