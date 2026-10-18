@@ -207,24 +207,28 @@ current retention and does not establish release.
 npm ci --prefix tooling
 export OPENVISION_RECOVERY_DIR=<prepared 3.21.13 input>
 npm run build:desktop
-npm run verify:responsiveness              # logs/responsiveness-y46mxf: all budgets pass
-node desktop/verify-responsiveness.mjs --no-budgets   # record a baseline
-# diagnostics: --turns=N, --chunks=N, --trace-storage, --profile=stream,editorLarge, --dump-dom, --save-closed-snapshot
-npm run verify:model-menu:large            # logs/large-model-menu-TO3vVs: fails, see below
+npm run verify:responsiveness              # smoke: every phase, 30 turns, 500 chunks, 10,000 lines, 2,000 models
+npm run verify:responsiveness -- --full    # the datasets the budgets were set on (logs/responsiveness-y46mxf)
+npm run verify:responsiveness -- --phases=editorSmall,editorLarge   # repeat one flaky phase only
+node desktop/verify-responsiveness.mjs --full --no-budgets   # record a baseline
+# diagnostics: --turns=N, --chunks=N, --lines=N, --bursts=N, --trace-storage, --profile=stream,editorLarge, --dump-dom, --save-closed-snapshot
+npm run verify:model-menu:large            # selector fixed, see below
 npm run test:desktop                       # 184/184
 npm run test:agent-review                  # 95/95
 npm run test:build-integrity               # 26/26
 npm run check:desktop && npm run docs:check
 ```
 
-`verify:model-menu:large` passed its picker and settings checks after this
-change: 40 rows, opened in 215 ms, keyboard paging, tail-model selection,
-reopening on the selected page, and 80 settings rows. It then failed reading the
-failed-discovery status. The app showed "Connection failed. Check the API base
-URL and network.", but the verifier looks for the status as a direct child of
-`.openvision-model-settings`, and since `658b8f4d1` (15 October) the status sits
-inside the API section. The selector is stale and does not involve this change
-(observed in the DOM layout code). It is left to the verifier owner.
+Smoke mode checks every budget except the two dataset-sized minimums in
+`fullOnly` (replaced by exact dataset checks), but its datasets are smaller, so
+only `--full` establishes the full-dataset budgets. Editor latency now covers
+typing only, with Go to Line outside the window, and is the median of three burst
+p95 values. Cause, runs and wall times are in the
+[verifier stability report](../verification/verifier-stability-linux.md#5-responsiveness-verifyresponsiveness).
+
+`verify:model-menu:large` read the failed-discovery status as a direct child of
+`.openvision-model-settings`; since `658b8f4d1` (15 October) it sits inside the
+API section. The selector is now `.openvision-api-settings > .openvision-model-status`.
 
 ## Status
 

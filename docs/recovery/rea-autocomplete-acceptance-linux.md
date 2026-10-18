@@ -163,10 +163,7 @@ tokens were not measured, and the fixture has no model latency.
 
 ## Open items
 
-- **Intermittent multiline Tab.** In one of the multiline runs this session
-  (`HuA47M`), the multiline ghost text was visible and Tab neither accepted it
-  nor inserted indentation. The cause is not established. The other runs of the
-  same step passed.
+- **Intermittent multiline Tab (resolved 18 October).** Tab accepted; the harness read the file before the asynchronous accept and the save landed, see [verifier stability](../verification/verifier-stability-linux.md#1-completion-acceptance).
 - These are Linux x64 source-build results. Windows was not rerun after the
   undo fix. macOS and the packaged build were not run.
 - Line-wise accept, split editors showing the same document, and IME

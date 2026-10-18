@@ -187,6 +187,8 @@ review-persistence fix.
   the extension host alone and live providers. Windows and macOS behavior is
   unverified.
 
+- The `write-kill` retry now runs in a new chat; before 18 October it could land in the restored chat, see [verifier stability](../verification/verifier-stability-linux.md#3-agent-interruption-write-kill-retry-verifyagent-interruption).
+
 These are source-build results; the published preview.7 package is unchanged.
 OV-103 stays Partial and no story is promoted. The ledger stays **6/42 Verified
 (14.29%)**.

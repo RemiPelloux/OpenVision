@@ -185,8 +185,7 @@ describe exactly the delivered product.
 - Integrated or Agent shells write `~/.bash_history` into HOME on graceful exit
   (OV-302 policy).
 - `verify:utility-listeners` fails on Linux (never verified there).
-- Timing-sensitive checks under heavy parallel load: the interruption `write-kill`
-  retry, the provider-deadline socket test, the multiline Tab acceptance.
+- Timing-sensitive checks: causes found and fixed in the harnesses (18 October), see [verifier stability](../verification/verifier-stability-linux.md).
 - Startup whole-tree scans: `cursorsandbox --preflight-only` ×5 and ripgrep ×30;
   per-root config polling every 5 s; a system-wide process scan every 10 s.
 - Closed chats keep their history in renderer memory.
