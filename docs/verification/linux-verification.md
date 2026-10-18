@@ -38,6 +38,7 @@ fixtures; no paid inference. `logs/` paths are private run artifacts.
 | `verify:completion` (Unicode accept/undo, cancellation, 13-case response-failure matrix) | Pass |
 | `verify:language`, `verify:inline-edit`, `verify:save-all`, `verify:local-rules`, `verify:telemetry`, `verify:import` | Pass |
 | `verify:language-ui`, `verify:language-matrix` (17 October, source build) | Pass; see [language matrix](../recovery/rea-language-matrix-linux.md) |
+| `verify:extensions` (18 October, source build: OV-702 lifecycle, 16 cases) | Pass after three fixes ([report](../recovery/rea-extension-lifecycle-linux.md)) |
 | `verify:memory`, `verify:legacy-memory`, `verify:mcp-cleanup`, `verify:model-menu`, `verify:provider-errors` | Pass |
 | `verify:model-menu:large`, `verify:catalog-retention`, `verify:reasoning-capabilities`, `verify:subagent-reasoning` | Pass |
 | `verify:paste`, `verify:rules-isolation` (16 October, source build) | Pass. The earlier project-rule failure came from rules discovered in parent folders and the home directory; discovery now stays inside the opened folder ([rule isolation](../recovery/rea-rules-isolation.md)) |

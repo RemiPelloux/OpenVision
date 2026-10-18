@@ -27,6 +27,7 @@ Recovery work alone does not promote a feature to Verified. Original hosted
 accounts, billing and cloud agents are excluded from this ledger.
 
 17 October: [Linux language matrix](recovery/rea-language-matrix-linux.md) (OV-402 stays Partial).
+18 October: [Linux extension lifecycle](recovery/rea-extension-lifecycle-linux.md) (OV-702 stays Partial).
 
 ## Critical-first delivery plan
 
