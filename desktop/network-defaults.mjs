@@ -97,6 +97,25 @@ export function disableWorkbenchHostedReports(text) {
   ]);
 }
 
+// Without the anonymous Statsig bootstrap above, a fresh profile evaluates
+// every client gate at its bundled default. Local features that the anonymous
+// bootstrap used to switch on keep their previous value here. The Customize
+// manage scope selector is single-scope ("User") when this gate is off, which
+// hides project skills, commands and rules.
+export const localGateDefaults = { customize_manage_scope_multiselect: true };
+export function setLocalGateDefaults(text) {
+  let result = text;
+  for (const [gate, value] of Object.entries(localGateDefaults)) {
+    const pattern = new RegExp(`\\b${gate}: \\{ client: !0, default: (!0|!1) \\}`, 'g');
+    const matches = [...result.matchAll(pattern)];
+    if (matches.length !== 1) throw new Error(`Client gate default missing or ambiguous: ${gate}`);
+    const [match] = matches;
+    result = result.slice(0, match.index) + `${gate}: { client: !0, default: ${value ? '!0' : '!1'} }` +
+      result.slice(match.index + match[0].length);
+  }
+  return result;
+}
+
 // Node-side Cursor backend transports (always-local, agent host, daemon) send
 // RPCs such as BootstrapStatsig, GetTeamAdminSettings, ListMarketplacePlugins and
 // GetKnownServers without credentials when no Cursor account is configured.
@@ -140,7 +159,7 @@ export async function installNetworkDefaults(root) {
 
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
-    await backedWrite(root, `${app}/${relative}`, text, disableWorkbenchHostedReports(text));
+    await backedWrite(root, `${app}/${relative}`, text, setLocalGateDefaults(disableWorkbenchHostedReports(text)));
   }
   for (const relative of transportTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
@@ -160,5 +179,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate default`);
 }

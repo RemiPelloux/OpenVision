@@ -5,7 +5,8 @@ import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { disableSpellcheckDownloads, removeControlUrl, controlManifestGuard, setContributedDefaults, extensionDefaults,
-  disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile } from './network-defaults.mjs';
+  disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile,
+  localGateDefaults, setLocalGateDefaults } from './network-defaults.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'source/app');
@@ -93,6 +94,17 @@ for (const [name, text] of [['minified', minified], ['daemon', daemon]]) {
   });
 }
 
+test('local gate defaults keep project scopes in Customize without a Statsig bootstrap', () => {
+  assert.deepEqual(localGateDefaults, { customize_manage_scope_multiselect: true });
+  const table = 'F = { customize_page: { client: !0, default: !1 },\n customize_manage_scope_multiselect: { client: !0, default: !1 },\n x: 1 };';
+  const once = setLocalGateDefaults(table);
+  assert.match(once, /customize_manage_scope_multiselect: \{ client: !0, default: !0 \}/);
+  assert.match(once, /customize_page: \{ client: !0, default: !1 \}/, 'other gates are unchanged');
+  assert.equal(setLocalGateDefaults(once), once);
+  assert.throws(() => setLocalGateDefaults('F = {};'), /gate default missing/);
+  assert.throws(() => setLocalGateDefaults(table + table), /ambiguous/);
+});
+
 test('anonymous-call guard refuses a changed transport contract', () => {
   assert.throws(() => refuseAnonymousHostedCalls(minified.replace('Authorization header omitted', 'changed')), /authorization owner/);
 });
@@ -117,6 +129,7 @@ test('built source carries every network-default owner change', { skip: !built &
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await read(relative);
     assert.ok(disableWorkbenchHostedReports(text) === text, relative);
+    assert.ok(setLocalGateDefaults(text) === text, `${relative} local gate defaults`);
   }
   for (const relative of transportTargets) {
     const text = await read(relative);
