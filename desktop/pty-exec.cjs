@@ -9,6 +9,7 @@
 'use strict';
 const fs = require('node:fs');
 const path = require('node:path');
+const util = require('node:util');
 const { constants } = require('node:os');
 
 const separator = process.argv.indexOf('--');
@@ -40,13 +41,29 @@ const ignored = BigInt(`0x${/^SigIgn:\s+([0-9a-f]+)/m.exec(fs.readFileSync('/pro
 for (const [name, number] of Object.entries(constants.signals))
   if (ignored & (1n << BigInt(number - 1))) try { process.on(name, () => {}); } catch {}
 
+// Resolve like execvp(3) and report a failure the way node-pty's fork path does
+// (`perror("execvp(3) failed.")`, exit 1) before calling process.execve: Node
+// treats a failed execve(2) as fatal and aborts (SIGABRT) instead of throwing.
 function resolve(command) {
-  if (command.includes('/')) return command;
+  const usable = candidate => {
+    fs.accessSync(candidate, fs.constants.X_OK);
+    if (!fs.statSync(candidate).isFile()) throw Object.assign(new Error('not a file'), { errno: -constants.errno.EACCES });
+    return candidate;
+  };
+  if (command.includes('/')) return usable(command);
+  let denied;
   for (const directory of (env.PATH ?? '/usr/local/bin:/usr/bin:/bin').split(':')) {
-    const candidate = path.join(directory || '.', command);
-    try { fs.accessSync(candidate, fs.constants.X_OK); if (fs.statSync(candidate).isFile()) return candidate; } catch {}
+    try { return usable(path.join(directory || '.', command)); }
+    catch (error) { if (error.errno === -constants.errno.EACCES) denied = error; }
   }
-  return command;
+  throw denied ?? Object.assign(new Error('not found'), { errno: -constants.errno.ENOENT });
 }
-try { process.execve(resolve(file), [file, ...args], env); }
-catch (error) { process.stderr.write(`execvp(3) failed.: ${error.message}\n`); process.exit(1); }
+function fail(error) {
+  // libuv's wording, capitalized like strerror(3).
+  const message = typeof error.errno === 'number' ? util.getSystemErrorMessage(error.errno) : error.message;
+  process.stderr.write(`execvp(3) failed.: ${message[0].toUpperCase()}${message.slice(1)}\n`);
+  process.exit(1);
+}
+let resolved;
+try { resolved = resolve(file); } catch (error) { fail(error); }
+try { process.execve(resolved, [file, ...args], env); } catch (error) { fail(error); }
