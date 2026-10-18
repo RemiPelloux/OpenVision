@@ -289,7 +289,8 @@ live clauses move out of every story into four dedicated stories:
 | OV-205 Live providers and accounts (new) | Every live GPT/DeepSeek/Grok clause and optional signed-in account workloads; needs Codex Easy balance |
 
 Other stories are promoted when all remaining clauses pass on Linux x64. The
-denominator grows from 42 to **44**; 80% needs **36**.
+denominator grows from 42 to **44**; 80% needs **36**. The exact commands for the
+four platform/live stories are in the [platform and live test plan](platform-and-live-test-plan.md).
 
 **Result so far:** OV-702 is Verified (Ubuntu/X11 runs `qQAjRu` and `zdi9V9` on merged
 `main`, after Arch/Wayland `B5m8yT`). Ledger: **7/44 Verified (15.91%)**.

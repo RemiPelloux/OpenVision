@@ -11,5 +11,6 @@ The [Rust plan](rust/README.md) is a separate migration scope; its points are no
 - [OpenVision completion sprints and user stories](completion-sprints.md)
 - [OpenVision ETA and priorities](remaining-work-estimates.md)
 - [OpenVision feature roadmap](roadmap.md)
+- [Platform and live test plan](platform-and-live-test-plan.md) (Windows, macOS, other Linux and live-provider runs moved out by the baseline v3 re-scope)
 
 [Documentation index](../README.md) · [Progress dashboard](../progress.md)
