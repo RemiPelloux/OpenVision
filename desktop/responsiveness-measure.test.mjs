@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { applicableBudgets, checkBudgets, ioDelta, parseProcIo, percentile, summarizeFrames, summarizeLatency } from './responsiveness-measure.mjs';
+import { applicableBudgets, checkBudgets, editTraffic, ioDelta, parseProcIo, percentile, refreshHistogram, sizeRatios, summarizeFrames, summarizeLatency, waitForStreamPaint } from './responsiveness-measure.mjs';
 
 test('percentiles use nearest rank', () => {
   assert.equal(percentile([], 50), null);
@@ -15,6 +15,11 @@ test('frame summary counts slow frames and long-frame layout', () => {
   assert.equal(summary.frames, 4); assert.equal(summary.framesOver50Ms, 2); assert.equal(summary.framesOver100Ms, 1);
   assert.equal(summary.longTaskTotalMs, 150); assert.equal(summary.longTaskMaxMs, 80);
   assert.equal(summary.longAnimationFrameBlockingMs, 20); assert.equal(summary.forcedLayoutMs, 3);
+  assert.deepEqual(summary.frameRefreshHistogram, [2, 0, 0, 1, 1]);
+});
+
+test('refresh histogram buckets gaps by whole 60 Hz intervals', () => {
+  assert.deepEqual(refreshHistogram([16.6, 16.8, 33.3, 49.9, 50.1, 66.7, 120, 3]), [3, 1, 2, 1, 1]);
 });
 
 test('latency summary reports Event Timing separately', () => {
@@ -30,6 +35,42 @@ test('filesystem deltas sum process-family counters by role and ignore exited pr
   const delta = ioDelta(before, after);
   assert.equal(delta.syscw, 12); assert.equal(delta.wchar, 120); assert.equal(delta.byRole.main.syscw, 10);
   assert.equal(delta.byRole['shared-process'].write_bytes, 4096);
+});
+
+test('filesystem deltas carry reads and CPU time by role', () => {
+  const before = new Map([['1:1', { role: 'renderer', rchar: 100, wchar: 0, cpuTicks: 50 }]]);
+  const after = new Map([['1:1', { role: 'renderer', rchar: 400, wchar: 0, cpuTicks: 57 }], ['2:2', { role: 'child:tsserver', rchar: 90, cpuTicks: 3 }]]);
+  const delta = ioDelta(before, after);
+  assert.equal(delta.byRole.renderer.rchar, 300); assert.equal(delta.byRole.renderer.cpuMs, 70);
+  assert.equal(delta.byRole['child:tsserver'].cpuMs, 30); assert.equal(delta.rchar, 390);
+});
+
+test('edit traffic is reported per key by role, and compared with the control file', () => {
+  const byRole = { renderer: { wchar: 11000, cpuMs: 330 }, 'extension-host': { rchar: 22000, wchar: 5500, cpuMs: 110 },
+    'child:tsserver': { rchar: 16500, wchar: 3300, cpuMs: 55 } };
+  const traffic = editTraffic(byRole, 110);
+  assert.deepEqual([traffic.rendererWritePerKey, traffic.extensionHostReadPerKey, traffic.tsserverReadPerKey, traffic.tsserverWritePerKey],
+    [100, 200, 150, 30]);
+  assert.deepEqual([traffic.rendererCpuMsPerKey, traffic.tsserverCpuMsPerKey], [3, 0.5]);
+  assert.equal(editTraffic({ renderer: { wchar: 10, cpuMs: 0 } }, 10).tsserverReadPerKey, null);
+  assert.equal(editTraffic(byRole, 0).rendererWritePerKey, null);
+  assert.deepEqual(sizeRatios({ a: 300, b: 0, c: 5 }, { a: 100, b: 0 }, ['a', 'b', 'c']), { aRatio: 3, bRatio: 0, cRatio: null });
+});
+
+test('stream paint waits for the text in the reply row, then one more frame', async () => {
+  const frames = []; let now = 0;
+  const row = { isConnected: true, textContent: 'T stream begins' };
+  const container = { textContent: row.textContent, querySelectorAll: () => [row] };
+  Object.assign(globalThis, { document: { querySelectorAll: () => [container] }, requestAnimationFrame: callback => frames.push(callback) });
+  const realNow = performance.now; performance.now = () => now;
+  try {
+    const painted = waitForStreamPaint({ text: 'T stream done', begins: 'T stream begins', rowSelector: 'r', containerSelector: 'c', timeoutMs: 1000 });
+    const step = ms => { now += ms; frames.shift()(); };
+    step(16); step(16); row.textContent += ' T stream done'; step(16); step(16);
+    const { paintedEpoch, foundEpoch, frames: checks } = await painted;
+    assert.equal(checks, 3); assert.equal(Math.round(foundEpoch - performance.timeOrigin), 48);
+    assert.equal(Math.round(paintedEpoch - foundEpoch), 16); assert.equal(frames.length, 0);
+  } finally { performance.now = realNow; delete globalThis.document; delete globalThis.requestAnimationFrame; }
 });
 
 test('budgets fail on excess, shortfall and missing measurements', () => {

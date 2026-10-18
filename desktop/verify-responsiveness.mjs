@@ -13,7 +13,7 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { electronNames, hostLoad, processFamily } from './process-family-linux.mjs';
-import { applicableBudgets, checkBudgets, collectProbe, installProbe, ioDelta, parseProcIo, percentile, profileHotspots, summarizeFrames, summarizeLatency } from './responsiveness-measure.mjs';
+import { applicableBudgets, checkBudgets, collectProbe, editTraffic, installProbe, ioDelta, parseProcIo, percentile, profileHotspots, sizeRatios, summarizeFrames, summarizeLatency, waitForStreamPaint } from './responsiveness-measure.mjs';
 
 // OV-1002 fixed responsiveness datasets on the native application. Every model
 // response is scripted by a loopback fixture (not live inference). Datasets:
@@ -78,8 +78,11 @@ for (let index = 0; streamPieces.length < STREAM_CHUNKS - 1; index++) {
 }
 streamPieces.push(`\n\n${marker} stream done`);
 
-let script; // { kind: 'turn', reply } | { kind: 'stream' }
-const fixture = { requests: 0, streamChunksSent: 0, streamStartedAt: 0, streamEndedAt: 0, unscripted: 0 };
+let script; // { kind: 'turn', reply } | { kind: 'stream', sentLast }
+// Wall-clock milliseconds with sub-millisecond resolution, comparable with the renderer's
+// performance.timeOrigin + performance.now() on the same host.
+const epochNow = () => performance.timeOrigin + performance.now();
+const fixture = { requests: 0, streamChunksSent: 0, streamStartedAt: 0, streamEndedAt: 0, lastChunkSentEpoch: 0, unscripted: 0 };
 const sse = (response, model, delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: 'fixture-responsiveness',
   object: 'chat.completion.chunk', model, choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
 const server = createServer(async (request, response) => {
@@ -99,6 +102,7 @@ const server = createServer(async (request, response) => {
     for (const piece of streamPieces) {
       if (response.destroyed) break;
       sse(response, payload.model, { content: piece }); fixture.streamChunksSent++;
+      if (fixture.streamChunksSent === streamPieces.length) { fixture.lastChunkSentEpoch = epochNow(); current.sentLast(); }
       await new Promise(resolveWait => setTimeout(resolveWait, 4));
     }
     fixture.streamEndedAt = performance.now();
@@ -136,7 +140,7 @@ async function familyIo() {
   const samples = new Map();
   for (const member of members) {
     const text = await readFile(`/proc/${member.pid}/io`, 'utf8').catch(() => '');
-    if (text) samples.set(`${member.pid}:${member.start}`, { role: member.role, ...parseProcIo(text) });
+    if (text) samples.set(`${member.pid}:${member.start}`, { role: member.role, cpuTicks: member.cpuTicks, ...parseProcIo(text) });
   }
   return { samples, members: members.length, readable: samples.size };
 }
@@ -346,24 +350,35 @@ try {
 
   // Stream dataset: STREAM_CHUNKS deltas while the user types the next prompt.
   if (wants('stream')) await measure('stream', async () => {
-    script = { kind: 'stream' };
+    let sentLast; const lastChunkSent = new Promise(resolveSent => { sentLast = resolveSent; });
+    script = { kind: 'stream', sentLast };
     await input().fill(`${marker} stream: reply with the long fixture stream.`);
     const submitted = performance.now(); await input().press('Enter');
     // Light polling (250 ms textContent check) instead of Playwright's per-frame text matching,
     // which itself costs renderer time inside the measured window.
-    const transcriptText = (text, timeout) => page.waitForFunction(({ text, container }) =>
-      [...document.querySelectorAll(container)].some(node => node.textContent.includes(text)), { text, container: CONTAINER_SELECTOR },
-    { polling: 250, timeout });
-    await transcriptText(`${marker} stream begins`, 60000);
+    await page.waitForFunction(({ text, container }) =>
+      [...document.querySelectorAll(container)].some(node => node.textContent.includes(text)), { text: `${marker} stream begins`, container: CONTAINER_SELECTOR },
+    { polling: 250, timeout: 60000 });
     const firstPaintMs = Math.round(performance.now() - submitted);
+    // The last chunk is detected in the page, per frame, from the moment the fixture sends
+    // it, concurrently with the typing below. It used to be polled only after the typing:
+    // with 500 chunks (about 2.3 s) the stream ends before the 56 keys (about 4 s) do, so
+    // the old figure was mostly the remaining typing time (smoke run xXcKIA: 1,789 ms).
+    const lastPaint = lastChunkSent.then(() => page.evaluate(waitForStreamPaint, { text: `${marker} stream done`, begins: `${marker} stream begins`,
+      rowSelector: ROW_SELECTOR, containerSelector: CONTAINER_SELECTOR, timeoutMs: 120000 }));
+    lastPaint.catch(() => {});
     await input().click();
+    const typingStarted = performance.now();
     await typeKeys('typing during the long fixture stream to measure latency', 60);
-    await transcriptText(`${marker} stream done`, 120000);
-    const donePaintAt = performance.now();
+    const typingEndedEpoch = epochNow(), typingMs = Math.round(performance.now() - typingStarted);
+    const painted = await lastPaint;
     await idle();
     return { firstChunkPaintMs: firstPaintMs, chunksSent: fixture.streamChunksSent,
       fixtureStreamMs: Math.round(fixture.streamEndedAt - fixture.streamStartedAt),
-      lastChunkToPaintMs: Math.round(donePaintAt - fixture.streamEndedAt) };
+      lastChunkToPaintMs: Math.round(painted.paintedEpoch - fixture.lastChunkSentEpoch),
+      lastChunkToFoundMs: Math.round(painted.foundEpoch - fixture.lastChunkSentEpoch), lastChunkCheckFrames: painted.frames,
+      // Positive: the stream outlasted the typing; negative: typing continued after the last chunk.
+      lastChunkAfterTypingMs: Math.round(fixture.lastChunkSentEpoch - typingEndedEpoch), typingMs };
   }, { transcript: true });
   await input().fill('');
 
@@ -447,7 +462,8 @@ try {
     let bursts;
     const phase = await measure(name, async () => { bursts = await typeBursts(); return { openMs, navigateMs }; });
     const burstP95Ms = bursts.map(samples => percentile(samples, 95));
-    Object.assign(phase, { allKeysLatencyP95Ms: phase.latencyP95Ms, burstP95Ms, latencyP95Ms: percentile(burstP95Ms, 50) });
+    Object.assign(phase, { allKeysLatencyP95Ms: phase.latencyP95Ms, burstP95Ms, latencyP95Ms: percentile(burstP95Ms, 50),
+      ...editTraffic(phase.fsByRole, bursts.reduce((sum, samples) => sum + samples.length, 0)) });
     console.log(`${name} bursts: ${JSON.stringify({ burstP95Ms, median: phase.latencyP95Ms, navigateMs,
       hostLoad1m: phase.hostLoad1m, cpuBusyPercent: phase.cpuBusyPercent, cpuStealPercent: phase.cpuStealPercent })}`);
     return phase;
@@ -465,11 +481,23 @@ try {
     const second = await editorAttempt(name, line, openMs);
     second.attempts = [{ ...summary(first), budgetMisses: missed }, summary(second)];
   }
+  // Incremental editing: the same keys typed into the large file must cost about what they
+  // cost in the 40-line control file (per-key synchronisation bytes, per-role CPU, long tasks).
+  const SIZE_COMPARED = ['rendererWritePerKey', 'extensionHostReadPerKey', 'tsserverReadPerKey', 'rendererCpuMsPerKey',
+    'extensionHostCpuMsPerKey', 'tsserverCpuMsPerKey', 'longTaskTotalMs'];
   if (wants('editorSmall')) await editorPhase('editorSmall', 20, await openFile('small.js'));
   if (wants('editorLarge')) {
     const largeOpenMs = await openFile('large.js');
     await page.waitForTimeout(3000);
     await editorPhase('editorLarge', Math.floor(LARGE_LINES / 2), largeOpenMs);
+    const large = result.phases.editorLarge;
+    large.largeFileBytes = Buffer.byteLength(largeFile);
+    // Largest per-key synchronisation payload as a share of the file (1 = the whole file per key).
+    large.syncBytesPerKeyFileShare = Math.round(Math.max(large.rendererWritePerKey ?? 0, large.extensionHostReadPerKey ?? 0,
+      large.tsserverReadPerKey ?? 0) / large.largeFileBytes * 1e5) / 1e5;
+    if (result.phases.editorSmall) Object.assign(large, sizeRatios(large, result.phases.editorSmall, SIZE_COMPARED));
+    console.log(`editorLarge sync: ${JSON.stringify(Object.fromEntries(Object.entries(large).filter(([key]) =>
+      /PerKey|Ratio$|FileShare|editKeys/.test(key))))}`);
   }
 
   // Closed chat: renderer heap and marker strings before and after closing the transcript chat.
