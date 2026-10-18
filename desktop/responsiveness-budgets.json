@@ -1,5 +1,7 @@
 {
   "description": "OV-1002 numeric budgets for npm run verify:responsiveness, Linux x64 only, controlled loopback fixture. Set from the pre-change baselines logs/responsiveness-dPm64f and logs/responsiveness-ED40At (commit e4621369, workbench 9779aebc). Timing budgets: worse baseline value x1.5, rounded up (host load 3-7 during the baselines). Structural budgets (rows, nodes, chunks, restored catalog): baseline plus a small margin, or exact. Persisted application storage: set after the measured waste was fixed; both baselines exceed it. See docs/performance/responsiveness-linux.md.",
+  "fullOnly": ["stream.min:chunksSent", "restart.min:catalogModelsAfterRestart"],
+  "fullOnlyNote": "Default (smoke) runs use 30 turns, 500 chunks, a 10,000-line file and 2,000 saved models; the minimums above are replaced there by exact dataset checks. Every other budget is still checked in smoke mode, but it was set on the --full datasets, so a smoke pass does not establish the full-dataset result. editorSmall and editorLarge latencyP95Ms are the median of the per-burst typing p95 (Go to Line is outside the window).",
   "phases": {
     "picker": { "openMs": 600, "pickerRowsOpen": 40, "pickerElements": 120, "latencyP95Ms": 190 },
     "typingIdle": { "frameP95Ms": 33.4, "longTasks": 2, "latencyP95Ms": 50, "mountedRows": 24, "transcriptNodes": 1300 },

@@ -79,12 +79,27 @@ export function checkBudgets(result, budgets) {
   return failures;
 }
 
+/**
+ * Budgets that apply to one run: only the selected phases, and outside `--full`
+ * without the metrics listed in `budgets.fullOnly` (dataset-sized minimums and
+ * timings that are only meaningful on the full datasets).
+ */
+export function applicableBudgets(budgets, { full = true, selectedPhases } = {}) {
+  const fullOnly = new Set(full ? [] : budgets.fullOnly ?? []);
+  const phases = {};
+  for (const [phase, limits] of Object.entries(budgets.phases ?? {})) {
+    if (selectedPhases && !selectedPhases.includes(phase)) continue;
+    phases[phase] = Object.fromEntries(Object.entries(limits).filter(([key]) => !fullOnly.has(`${phase}.${key}`)));
+  }
+  return { ...budgets, phases };
+}
+
 // In-page probe, serialized into the renderer with page.evaluate. Records rAF
 // gaps, long tasks, long animation frames (with forced layout time), Event
 // Timing entries and keydown-to-next-frame latency; optionally counts mutation
 // records under a transcript container, attributed to the row they touch.
 export function installProbe({ rowSelector, containerSelector } = {}) {
-  const state = { gaps: [], longTasks: [], longFrames: [], eventTimings: [], latency: [], mutations: 0,
+  const state = { gaps: [], longTasks: [], longFrames: [], eventTimings: [], latency: [], latencyKeys: [], mutations: 0,
     mutatedRows: new Map(), started: performance.now(), running: true, observers: [] };
   let last = performance.now();
   const frame = now => { if (!state.running) return; state.gaps.push(now - last); last = now; requestAnimationFrame(frame); };
@@ -100,9 +115,11 @@ export function installProbe({ rowSelector, containerSelector } = {}) {
   observe('event', entry => { if (entry.name === 'keydown' || entry.name === 'keypress' || entry.name === 'input') state.eventTimings.push(entry.duration); }, { durationThreshold: 16 });
   const channel = new MessageChannel();
   const pending = [];
-  channel.port1.onmessage = () => { const at = pending.shift(); if (at !== undefined) state.latency.push(performance.now() - at); };
-  const onKey = event => { if (!event.isTrusted) return; const at = event.timeStamp;
-    requestAnimationFrame(() => { pending.push(at); channel.port2.postMessage(0); }); };
+  channel.port1.onmessage = () => { const entry = pending.shift(); if (entry === undefined) return;
+    const latency = performance.now() - entry.at; state.latency.push(latency);
+    state.latencyKeys.push([entry.key, Math.round(latency * 10) / 10]); };
+  const onKey = event => { if (!event.isTrusted) return; const at = event.timeStamp, key = event.key;
+    requestAnimationFrame(() => { pending.push({ at, key }); channel.port2.postMessage(0); }); };
   document.addEventListener('keydown', onKey, true);
   state.removeKey = () => document.removeEventListener('keydown', onKey, true);
   if (containerSelector) {
@@ -146,6 +163,6 @@ export function collectProbe() {
   for (const observer of state.observers) observer.disconnect();
   window.__openvisionResponsivenessProbe = undefined;
   return { gaps: state.gaps, longTasks: state.longTasks, longFrames: state.longFrames, eventTimings: state.eventTimings,
-    latency: state.latency, mutations: state.mutations, mutatedRows: Object.fromEntries(state.mutatedRows),
+    latency: state.latency, latencyKeys: state.latencyKeys, mutations: state.mutations, mutatedRows: Object.fromEntries(state.mutatedRows),
     elapsedMs: performance.now() - state.started };
 }

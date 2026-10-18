@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { checkBudgets, ioDelta, parseProcIo, percentile, summarizeFrames, summarizeLatency } from './responsiveness-measure.mjs';
+import { readFileSync } from 'node:fs';
+import { applicableBudgets, checkBudgets, ioDelta, parseProcIo, percentile, summarizeFrames, summarizeLatency } from './responsiveness-measure.mjs';
 
 test('percentiles use nearest rank', () => {
   assert.equal(percentile([], 50), null);
@@ -36,4 +37,13 @@ test('budgets fail on excess, shortfall and missing measurements', () => {
   assert.deepEqual(checkBudgets(result, { phases: { stream: { frameP95Ms: 50, mountedRows: 40 } } }), []);
   assert.deepEqual(checkBudgets(result, { phases: { stream: { frameP95Ms: 30, 'min:mountedRows': 31, latencyP95Ms: 10 }, editor: {} } }),
     ['stream.frameP95Ms: 40 > 30', 'stream.mountedRows: 30 < 31', 'stream.latencyP95Ms: not measured', 'editor: not measured']);
+});
+
+test('applicable budgets keep selected phases and drop full-only metrics outside full mode', () => {
+  const budgets = { fullOnly: ['stream.min:chunksSent'], phases: { stream: { 'min:chunksSent': 2000, frameP95Ms: 50 }, editorSmall: { latencyP95Ms: 360 } } };
+  assert.deepEqual(applicableBudgets(budgets, { full: true }).phases, budgets.phases);
+  assert.deepEqual(applicableBudgets(budgets, { full: false }).phases, { stream: { frameP95Ms: 50 }, editorSmall: { latencyP95Ms: 360 } });
+  assert.deepEqual(applicableBudgets(budgets, { full: false, selectedPhases: ['editorSmall'] }).phases, { editorSmall: { latencyP95Ms: 360 } });
+  const real = JSON.parse(readFileSync(new URL('./responsiveness-budgets.json', import.meta.url), 'utf8'));
+  for (const entry of real.fullOnly) { const [phase, key] = entry.split('.'); assert.ok(key in real.phases[phase], entry); }
 });
