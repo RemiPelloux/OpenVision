@@ -54,7 +54,12 @@ test('owned proxy refuses non-loopback CONNECT and records it', async () => {
     const status = await new Promise(resolve => get({ host: '127.0.0.1', port: proxy.port, path: 'http://example.com/x' },
       response => { response.resume(); resolve(response.statusCode); }));
     assert.equal(status, 403);
+    const upgrade = await new Promise((resolve, reject) => {
+      const socket = connect(proxy.port, '127.0.0.1', () => socket.write('GET http://example.com/ws HTTP/1.1\r\nHost: example.com\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\n'));
+      socket.once('data', data => { resolve(String(data)); socket.destroy(); }).once('error', reject);
+    });
+    assert.match(upgrade, /^HTTP\/1\.1 403/);
     assert.deepEqual(proxy.events.map(event => [event.method, event.host, event.allowed]),
-      [['CONNECT', 'example.com', false], ['GET', 'example.com', false]]);
+      [['CONNECT', 'example.com', false], ['GET', 'example.com', false], ['UPGRADE GET', 'example.com', false]]);
   } finally { await proxy.close(); }
 });

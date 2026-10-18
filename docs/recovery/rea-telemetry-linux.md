@@ -89,15 +89,113 @@ observation of startup and project phases only.
 - Extension host, utility, GPU and crashpad activity were included in the traced
   family, but only for startup and project phases.
 
-## Remaining gates (OV-1005 not promoted)
 
-1. Fix the settings step selector (use `Preferences: Open User Settings`).
-   Then complete the full workload with idle at 600 s or more.
-2. Land the three prepared owner fixes (spellcheck downloads, extension control
-   manifest, ATA/npm defaults) with drift guards, first backups and tests. Then
-   rebuild and repeat the extended capture to zero automatic destinations. The
-   fixes were not committed because they were not natively verified before the
-   stop request.
-3. Record a pid-to-command map in the result. Run authenticated/optional account
-   integrations and the packaged release.
-4. macOS native checks remain open. Windows evidence remains in the earlier audit.
+## Full workload before and after the owner fixes (16 October 2026, Linux x64 only)
+
+### Changes
+
+- **Capture boundary.** `desktop/verify-telemetry-extended.sh`
+  (`npm run verify:telemetry:extended`) runs the verifier inside a
+  **loopback-only network namespace** (`unshare -rn`, then back to the invoking
+  uid/gid), so no packet from the owned process family can leave the host.
+  The observers record every attempted destination: `strace -f -yy` connects,
+  systemd-resolved hostname queries over its Unix socket, `/proc` sockets of the
+  owned process tree, and the Chromium net log. Each process in the result has
+  its command line (`processFamily.byPid`). `XDG_CACHE_HOME` points into the run
+  directory so a machine-wide identifier write is detectable.
+- **Proxy observer is opt-in.** Pass `--proxy` (and `--proxy-loopback` for
+  `--proxy-bypass-list=<-loopback>`) to enable it. **Observed:** with any
+  `--proxy-server`, the BYOK Agent turn stays at "Preparing" and never reaches
+  the loopback model fixture. Reproduced three times, including with the fixture
+  port bypassed. Without the proxy, in both the host and loopback-only
+  namespaces, the same turn completes. The cause was not isolated. It may affect
+  users behind a system proxy and is recorded for the provider owner (OV-102).
+- **Workload steps.**
+  - Settings now opens through the command palette (`Preferences: Open User
+    Settings`).
+  - The terminal uses a controlled `bash --noprofile --norc` profile and
+    verifies a marker file.
+  - Search runs through `Search: Find in Files`.
+  - Opening the Extensions view is classified as an explicit Marketplace
+    request. The gallery query counts as user-initiated only inside that phase,
+    and only when every name resolved in it is the gallery host.
+- **Owner fixes.** `desktop/network-defaults.mjs` is wired into `build:desktop`
+  after the extension telemetry policy. Each fix has a drift guard, first
+  backups under `backups/network-defaults/`, and idempotent markers. A repeat
+  build kept `main.js`, `product.json` and the always-local bundle hashes
+  unchanged.
+
+| Owner | Change |
+| --- | --- |
+| `out/main.js` | On `session-created`, the session spellchecker is disabled and its language list emptied. This stops the Hunspell dictionary download from `redirector.gvt1.com` |
+| `out/main.js`, `out/vs/code/node/cliProcessMain.js` | `getDevDeviceId` returns its own UUID fallback instead of `@vscode/deviceid`, which wrote `~/.cache/Microsoft/DeveloperTools/deviceid` (also found by OV-302) |
+| `product.json` | `extensionsGallery.controlUrl` removed. The gallery's own guard returns an empty control manifest without a request. Marketplace browsing remains |
+| Workbench (desktop and glass) | Experiment refresh (`AnalyticsService/BootstrapStatsig` polling) and `CppService/RecordCppFate` reporting are inert |
+| Cursor backend transports (always-local, agent host, agent-host daemon) | An RPC is refused before sending when there is no Cursor access token or override and the base URL is not loopback. That covers `BootstrapStatsig`, `GetTeamAdminSettingsOrEmptyIfNotInTeam`, `ListMarketplacePlugins` and `GetKnownServers` in the local profile. Signed-in optional integrations are unchanged |
+| Bundled TypeScript and npm extensions | Contributed defaults changed: Automatic Type Acquisition off, `npm.fetchOnlinePackageInfo` false. Users can re-enable them |
+
+### Commands
+
+```sh
+npm run build:desktop                       # before: main 7ae32961 without the fixes
+desktop/verify-telemetry-extended.sh --idle-seconds 600
+npm run build:desktop                       # after: with desktop/network-defaults.mjs
+desktop/verify-telemetry-extended.sh --idle-seconds 600
+```
+
+Both runs cover the full workload:
+1. startup
+2. project file edit and save
+3. VS Code and OpenVision settings, including adding a loopback provider
+4. Extensions view
+5. Agent chat with the controlled loopback fixture (1 model request)
+6. terminal
+7. search
+8. 600 s idle
+9. quit, with the process family drained
+
+Each run took 11 minutes. The model response was a controlled fixture, not live
+inference.
+
+### Observed
+
+| Destination | Before (`logs/telemetry-extended-LKe2nT`) | After (`logs/telemetry-extended-5MABkY`) | Classification |
+| --- | --- | --- | --- |
+| `api2.cursor.sh` (resolved; connects to 3.92.129.183, 34.225.159.174, 52.21.130.202) | Startup, Agent and idle. Chromium `extensions-control`, plus Node RPCs from the always-local extension host and an agent-host utility process | None | Automatic vendor calls. Removed |
+| `redirector.gvt1.com` (Google 66.102.1.x, 2a00:1450:…) | Startup, Chromium network service | None | Automatic spellcheck dictionary download. Removed |
+| `registry.npmjs.org` (Cloudflare 104.16.x.34, 2606:4700::6810:*) | Startup, `npm install types-registry@latest` from the TypeScript typings installer | None | Automatic project-derived package fetch. Removed |
+| `marketplace.cursorapi.com` (Cloudflare 104.20.38.66, 172.66.144.201, 2606:4700:10::…) | Extensions phase only | Extensions phase only | User-initiated: the Extensions Marketplace view was opened. Kept |
+| Loopback (fixture, DevTools/inspector, IPC) | All phases | All phases | Owned harness. Allowed |
+
+Totals:
+- **Before:** 40 non-user destinations, 67 direct non-loopback socket attempts,
+  4 automatic hostnames resolved, 85 processes.
+- **After:** 0 non-user destinations, 0 direct remote sockets, 0 telemetry
+  matches, 1 hostname resolved (the gallery, in the Extensions phase), 65
+  processes, no `Microsoft/DeveloperTools/deviceid` written. The verifier
+  passed.
+
+The after capture also covers the destinations ov501-data-destinations found
+with a decrypting proxy: `RecordCppFate`, `BootstrapStatsig`, the spellcheck
+download and the ATA registry calls. Its `CmdKService/RerankCmdKContext` fix is
+OV-501's own change.
+
+### Inferred, not observed
+
+- Attribution of api2.cursor.sh RPC names to the Node connects comes from the
+  structured logs ("Authorization omitted" entries name each RPC) and from
+  process command lines. The trace does not decode TLS.
+- Quick Edit/Cursor Tab was not part of this workload. `RecordCppFate` removal
+  is established by the owner change and its unit test, not by a native trigger.
+
+### Remaining gates (OV-1005 stays Partial)
+
+- macOS native checks.
+- The packaged release. This evidence covers the source build (`source/app`)
+  only, and preview.7 does not contain these fixes.
+- Workloads with a signed-in optional account integration, where hosted calls
+  are user-configured.
+- The `--proxy-server` Agent stall above.
+
+Third-party extensions the user installs and MCP servers the user configures
+remain out of scope.
