@@ -12,6 +12,18 @@ The [feature gap audit](../recovery/feature-gap-audit.md) is the recovery baseli
 
 ## Current baseline
 
+**18 October 2026 re-scope (owner decision, baseline v3).** Clauses that need
+Windows, macOS, other Linux distributions/architectures, a funded live provider
+or an official account move out of every story into four platform/live stories:
+[OV-901](#sprint-9--package-and-verify-supported-platforms) (Windows),
+OV-902 (macOS), OV-905 (Linux distributions, displays and architectures) and
+[OV-205](#sprint-2--complete-provider-settings-and-model-interaction) (live
+providers and official accounts). Every other story is promoted when all its
+remaining clauses pass on **Linux x64** with committed verifiers and dated
+evidence. No requirement is removed: each moved clause is listed under its new
+story. The denominator grows from 42 to **44**; 80% needs **36** Verified. See
+[ETA §10](eta-and-definition-of-done.md#10-re-scope--18-october-2026).
+
 16 October source follow-up: [resumable review removal](../recovery/rea-agent-review-removal.md)
 fixes premature history advancement after cancellation failure and retains
 handlers through failed cleanup. The model-overlap and review callback share
@@ -416,6 +428,7 @@ retain Partial status.
 | OV-202 / Verified | As a user, I can quickly select any available model. | OV-201 | Native Agent picker and settings: provider separators, search, keyboard navigation, focus restoration, screen-reader labels and stale discovery handling. Exercise 10,000 entries; record visible row/DOM bounds separately for both selectors. [Native Windows acceptance and limits](../performance/model-picker-scale.md). |
 | OV-203 / Partial | As a user, I choose reasoning levels that my model actually supports. | OV-104; OV-201 | Provider-specific capabilities drive the UI, including extended levels when advertised; no universal low/medium/high assumption. Verify every advertised value or mark it unverified; test changed capabilities and invalid persisted choices. |
 | OV-204 / Partial | As a user, I understand why a model request failed. | OV-102; OV-201 | Exercise 401/403/429/5xx, offline, malformed streams, unsupported tools/images and context limits. Useful errors preserve retryability and request ownership; logs/UI omit secrets, request cancellation releases sockets and timers. |
+| OV-205 / Planned | As a developer, my real configured providers and optional official accounts work end to end. | Funded provider balance; OV-102–OV-104, OV-203, OV-204, OV-602 | Baseline v3 live story. Owns every live clause moved out of other stories: GPT, DeepSeek and Grok stream, Stop, retry ending in success, history and fork, timeouts, live edits, subagent overrides, per-level reasoning, provider rejection of tools/images, autocomplete quality corpus and live editor acceptance, live context budgets with provider-reported usage, rules and memories in the first live request, and optional signed-in account workloads. Each uses the committed live modes (`verify:agent:live`, `verify:providers:live`, and the live flags added to the fixture verifiers); record real model and request identity and sanitized results. |
 
 Sprint exit: a provider matrix distinguishes discovery, chat, tools, reasoning,
 images and autocomplete support. Listing a model alone never earns a support tick.
@@ -505,7 +518,7 @@ Outcome: imports, extensions and supported remote/AI tools work beyond one fixtu
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
 | OV-701 / Partial | As a user, I can import settings without losing my OpenVision setup. | OV-302 | Real-profile/platform fixtures: preview, JSONC, snippets, protected settings, extension registration, idempotency and exact restore. Declare excluded accounts/secrets/chat databases/enablement state/profile registries; preserve source data. |
-| OV-702 / Partial | As a developer, extensions install and activate predictably. | OV-402; OV-403 | Install/update/uninstall, language packs and native addons on supported ABI/platforms; incompatible packages fail clearly. Validate local integrity after assembly, with no claim of vendor authenticity. Linux x64: [lifecycle matrix](../recovery/rea-extension-lifecycle-linux.md), all clauses pass; Windows/macOS remain. |
+| OV-702 / Verified | As a developer, extensions install and activate predictably. | OV-402; OV-403 | Install/update/uninstall, language packs and native addons on supported ABI/platforms; incompatible packages fail clearly. Validate local integrity after assembly, with no claim of vendor authenticity. Linux x64: [lifecycle matrix](../recovery/rea-extension-lifecycle-linux.md), all 16 clauses pass on Arch/Wayland (`B5m8yT`) and on merged `main` `b4f52a56` in Ubuntu 24.04/X11 (`qQAjRu`, `zdi9V9`, both first-time). Verified on Linux x64 under baseline v3; Windows and macOS runs moved to OV-901/OV-902. |
 | OV-703 / Planned | As a developer, I can work through supported remote environments. | OV-303; OV-403; OV-702 | SSH, WSL and containers each get a declared host matrix: connect/reconnect, filesystem, remote extension host, terminals, secrets and custom-provider routing. Verify local/remote process ownership and cleanup. |
 | OV-704 / Unknown | As a user, supported image/browser/computer workflows behave predictably. | OV-103; OV-204 | Inventory intended specialized modes and required helpers/providers; scope explicitly. For each included mode, test input/result handling, permissions, cancellation and cleanup; unavailable capability gets a useful explanation. |
 
@@ -533,10 +546,11 @@ Outcome: installable OpenVision with platform-specific execution evidence.
 
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
-| OV-901 / Partial | As a Windows user, I can install and use the complete supported product. | OV-804; core workflow stories | Clean install on each claimed architecture; native editor, secrets, import, terminal, Agent, autocomplete, MCP and extension workflows. Confirm OpenVision identity in all dialogs, launchers and process metadata. |
-| OV-902 / Planned | As a macOS user, I can run the same supported workflows. | OV-804 | Real target-machine/architecture suite, keychain, permissions, sandboxing, paths and native addons; signed/notarized distribution if claimed. Ad-hoc signing and portable fixtures do not close this story. |
+| OV-901 / Partial | As a Windows user, I can install and use the complete supported product, and every accepted story passes on Windows. | OV-804; core workflow stories | Clean install on each claimed architecture; native editor, secrets, import, terminal, Agent, autocomplete, MCP and extension workflows. Confirm OpenVision identity in all dialogs, launchers and process metadata. **Baseline v3:** also owns every Windows clause moved out of other stories: rerun each story's Linux verifiers (or their Windows equivalents) on the current source, diagnose the intermittent exit 134 and the utility worker `0xC0000005`, and port the Linux-only verifiers listed in [ETA §10](eta-and-definition-of-done.md#10-re-scope--18-october-2026). |
+| OV-902 / Planned | As a macOS user, I can run the same supported workflows, and every accepted story passes on macOS. | OV-804 | Real target-machine/architecture suite, keychain, permissions, sandboxing, paths and native addons; signed/notarized distribution if claimed. Ad-hoc signing and portable fixtures do not close this story. **Baseline v3:** also owns every macOS clause moved out of other stories. A formal owner decision not to claim macOS removes this story and those clauses. |
 | OV-903 / Partial | As a Linux user, I can run the same supported workflows. | OV-804 | Real supported distributions/architectures and declared display environments; secrets, sandbox, shell, native addons and complete critical suite. Document packaging prerequisites and any capability differences. |
 | OV-904 / Planned | As a user, upgrades and rollback preserve my work. | OV-901–OV-903 on claimed targets | Manual/local packaging pipeline; installer/uninstaller, signed release provenance, interrupted upgrade, profile migration, rollback and user-data retention tests. Exclude original update endpoints and verify the selected update strategy. |
+| OV-905 / Planned | As a Linux user on another distribution, display server or architecture, I can run the same supported workflows. | OV-903 | Baseline v3 platform story. Run the Linux critical suite on each claimed distribution beyond the verified ones, on real GNOME and KDE sessions (including KWallet), on Ubuntu desktop with its AppArmor user-namespace policy, and on ARM64 with its own pinned input. Each cell needs its own dated evidence; unavailable machines are blockers, not passes. |
 
 Sprint exit: a platform is supported only when its required native checks pass.
 Record unavailable machines/signing prerequisites as blockers, not successful tests.
@@ -558,6 +572,8 @@ gate is unknown, and performance budgets pass. Any narrowed scope requires an
 explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
+
+18 October 2026, baseline v3 re-scope (owner decision): platform and live clauses move into OV-901 (Windows), OV-902 (macOS), new OV-905 (Linux distributions, displays and architectures) and new OV-205 (live providers and official accounts); the denominator becomes 44. OV-702 is promoted to Verified on Linux x64 after first-time Ubuntu 24.04/X11 runs `qQAjRu` and `zdi9V9` on merged `main` ([evidence](../recovery/rea-extension-lifecycle-linux.md#ubuntu-2404--x11-rerun-on-merged-main)). The OV-401 and OV-403 reruns found four new failures, so both stay Partial ([ETA §10](eta-and-definition-of-done.md#10-re-scope--18-october-2026)).
 
 18 October 2026, OV-1002 (owner: OpenVision): [Linux responsiveness budgets](../performance/responsiveness-linux.md) add fixed large-session datasets and a native budget verifier, and stop rewriting the 12.4 MB published model catalog on every application save; controlled fixture only, OV-1002 stays Partial.
 
