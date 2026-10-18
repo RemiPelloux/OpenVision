@@ -7,6 +7,7 @@ import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
+import { attributeTerminalHistory, parseShellRecord, terminalHistoryFile, unattributedAdditions } from './shell-history-policy.mjs';
 
 // Native user-global path isolation. HOME points at a disposable directory
 // holding marker skills, commands, subagents, rules and hooks in every
@@ -21,7 +22,12 @@ import { enterWorkspace } from './verification-workspace.mjs';
 // adds a local fixture provider, completes an Agent chat, runs an approved Agent
 // shell command, creates a plan in Plan mode and uses an integrated terminal.
 // Afterwards no file or directory under HOME may be created, changed or removed,
-// and each run's agent data must be inside its own profile home.
+// and each run's agent data must be inside its own profile home. The one
+// exception is the integrated terminal's own shell history (see
+// shell-history-policy.mjs): allowed only when every recorded line is a command
+// typed into an integrated terminal whose interactive shell reported that file.
+// HOME startup files add a history entry in interactive `-c` shells, so an Agent state
+// shell that saved history would add an unattributable line and fail the run.
 // The fixture model is a local HTTP server: no AI provider request is made.
 const root = resolve(import.meta.dirname, '..');
 const { layout } = await loadRuntime(root);
@@ -67,13 +73,22 @@ const projectItems = {
   'project-openvision-command': ['.openvision/commands/project-openvision-command.md', plain],
   'project-openvision-rule': ['.openvision/rules/project-openvision-rule.mdc', rule],
 };
+// Startup files like a user's: an interactive `-c` shell (the Agent's state
+// shell) records a history entry; integrated terminals (no `c` flag) do not.
+const shellStartup = {
+  'bash-profile': ['.bash_profile', () => '[ -f ~/.bashrc ] && . ~/.bashrc\n'],
+  'bashrc': ['.bashrc', () => 'case $- in *c*) history -s "ov-startup-history $$" ;; esac\n' +
+    // Attribution outside HOME: which process started each interactive shell.
+    `case $- in *i*) { printf '%s\\t%s\\t%s\\t%s\\t' "$$" "$-" "$PPID" "\${BASH_EXECUTION_STRING:0:160}" | tr '\\n' ' '; ` +
+    `tr '\\0' ' ' < /proc/$PPID/cmdline | cut -c1-200; } >> '${join(directory, 'shell-startups.tsv')}' ;; esac\n`],
+};
 const write = async (base, items) => {
   for (const [name, [relative, body]] of Object.entries(items)) {
     await mkdir(resolve(join(base, relative), '..'), { recursive: true });
     await writeFile(join(base, relative), body(name));
   }
 };
-await write(home, { ...leaks, ...homeData });
+await write(home, { ...leaks, ...homeData, ...shellStartup });
 await mkdir(xdg, { recursive: true });
 
 const runs = [
@@ -136,7 +151,7 @@ const server = createServer(async (request, response) => {
     function: { name, arguments: JSON.stringify(args) } }] }); event({}, 'tool_calls'); };
   if (!run) say('Fixture.');
   else if (text.includes('shell step') && !toolResult)
-    call('Shell', { command: `node -e "require('fs').writeFileSync('agent-${run.name}.txt', 'ok')"`, working_directory: run.project,
+    call('Shell', { command: `${agentShellRecord(run.name)}; node -e "require('fs').writeFileSync('agent-${run.name}.txt', 'ok')"`, working_directory: run.project,
       description: `Write OV-${run.name} agent marker`, block_until_ms: 30000 });
   else if (text.includes('plan step') && !toolResult) {
     const plan = payload.tools?.find(tool => /plan/i.test(tool.function?.name ?? '') && /create/i.test(tool.function.name));
@@ -156,6 +171,11 @@ const server = createServer(async (request, response) => {
 });
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 
+// Self-reports: PID, shell flags ($- has `i` when interactive) and HISTFILE.
+const shellRecord = '"$$" "$-" "${HISTFILE-}"';
+const agentShellRecord = name => `printf '%s|%s|%s|%s' ${shellRecord} "$(builtin shopt -qo history && echo on || echo off)" > agent-shell-${name}.txt`;
+const terminalCommand = name => `echo ov-terminal > terminal-${name}.txt; printenv VSCODE_OPENVISION_PROFILE_HOME > terminal-env-${name}.txt; ` +
+  `printf '%s|%s|%s\\n' ${shellRecord} > terminal-shell-${name}.txt; echo done`;
 const sections = ['Skills', 'Commands', 'Subagents', 'Hooks', 'Rules', 'Plugins'];
 async function execute(run) {
   const { name, profile } = run, result = { profile: name, installation: run.installation, userDataDir: profile };
@@ -263,6 +283,7 @@ async function execute(run) {
       await page.getByRole('button', { name: 'Run', exact: true }).filter({ visible: true }).click();
       await page.getByText(`OV-${name} tool finished.`, { exact: true }).first().waitFor({ timeout: 45000 });
       assert.equal(await readFile(join(run.project, `agent-${name}.txt`), 'utf8'), 'ok');
+      result.agentShell = parseShellRecord(await readFile(join(run.project, `agent-shell-${name}.txt`), 'utf8'));
     });
     await step('plan', async () => {
       // Select Plan from the composer mode menu (the control left of the model picker).
@@ -286,12 +307,15 @@ async function execute(run) {
       await palette('Terminal: Create New Terminal');
       await page.locator('.terminal-wrapper .xterm').filter({ visible: true }).first().waitFor({ timeout: 30000 });
       await page.waitForTimeout(3000);
-      await page.keyboard.type(`echo ov-terminal > terminal-${name}.txt; printenv VSCODE_OPENVISION_PROFILE_HOME > terminal-env-${name}.txt; echo done\n`);
+      await page.keyboard.type(`${terminalCommand(name)}\n`);
       const marker = join(run.project, `terminal-${name}.txt`), deadline = Date.now() + 20000;
       while (Date.now() < deadline && !await readFile(marker, 'utf8').catch(() => '')) await page.waitForTimeout(500);
       assert.equal((await readFile(marker, 'utf8')).trim(), 'ov-terminal');
       // Integrated terminals do not inherit the internal VSCODE_* variable.
       result.terminalProfileVariable = (await readFile(join(run.project, `terminal-env-${name}.txt`), 'utf8').catch(() => '')).trim();
+      const shellFile = join(run.project, `terminal-shell-${name}.txt`);
+      while (Date.now() < deadline && !await readFile(shellFile, 'utf8').catch(() => '')) await page.waitForTimeout(500);
+      result.terminalShell = parseShellRecord(await readFile(shellFile, 'utf8').catch(() => ''));
     });
     await page.screenshot({ path: join(directory, `${name}-session.png`) }).catch(() => {});
   } catch (error) {
@@ -306,7 +330,7 @@ async function execute(run) {
       const window = app.windows()[0], closing = app.close();
       await window?.getByText('Quit Anyway', { exact: true }).click({ timeout: 5000 }).catch(() => {});
       await closing; if (child.exitCode === null && child.signalCode === null) await exited;
-      result.ownedHostExit = { exitCode: child.exitCode, signalCode: child.signalCode };
+      result.ownedHostExit = { exitCode: child.exitCode, signalCode: child.signalCode, at: Date.now() };
     }
   }
   // Agent data that earlier builds wrote to HOME must now be in this profile home.
@@ -328,8 +352,18 @@ try {
   result.runs = await Promise.all(runs.map(execute));
   const homeAfter = await snapshot(home);
   result.homeAdded = Object.keys(homeAfter).filter(key => !(key in homeBefore));
+  const history = join(home, terminalHistoryFile);
+  const historyInfo = await lstat(history).catch(() => undefined);
+  result.shellHistory = {
+    content: historyInfo?.isFile() ? await readFile(history, 'utf8') : undefined,
+    mtimeMs: historyInfo?.mtimeMs, mode: historyInfo && (historyInfo.mode & 0o777).toString(8),
+  };
+  result.shellHistory.attribution = attributeTerminalHistory({ home, added: result.homeAdded, content: result.shellHistory.content,
+    typed: runs.map(run => terminalCommand(run.name)), terminals: result.runs.map(run => run.terminalShell).filter(Boolean) });
   result.homeRemoved = Object.keys(homeBefore).filter(key => !(key in homeAfter));
   result.homeChanged = Object.keys(homeBefore).filter(key => key in homeAfter && homeBefore[key] !== homeAfter[key]);
+  result.shellStartups = (await readFile(join(directory, 'shell-startups.tsv'), 'utf8').catch(() => '')).split('\n').filter(Boolean)
+    .map(line => { const [pid, flags, parent, command, parentCommand] = line.split('\t'); return { pid, flags, parent, command, parentCommand }; });
   result.xdgFiles = [...new Set((await list(xdg)).map(path => path.split('/').slice(0, 4).join('/')))].sort();
   result.requests = { total: requests.length, unauthorized: requests.filter(item => !item.authorized).length };
   for (const run of result.runs) {
@@ -341,8 +375,14 @@ try {
     assert.deepEqual(run.profileData, { projects: true, plans: true, gitignore: true, ideState: true, argv: true },
       `${run.profile}: agent data missing from the profile home`);
     assert.equal(run.terminalProfileVariable, '', `${run.profile}: integrated terminal inherited the profile variable`);
+    // The user's terminal shell is unchanged: interactive, with its own default HISTFILE.
+    assert.equal(run.terminalShell?.interactive, true, `${run.profile}: integrated terminal shell is not interactive`);
+    // Agent commands run in a non-interactive shell with history off.
+    assert.equal(run.agentShell?.interactive, false, `${run.profile}: Agent command shell is interactive`);
+    assert.equal(run.agentShell?.history, 'off', `${run.profile}: Agent command shell has history enabled`);
   }
-  assert.deepEqual({ added: result.homeAdded, removed: result.homeRemoved, changed: result.homeChanged },
+  assert.deepEqual(result.shellHistory.attribution.unattributed, [], 'HOME shell history records non-terminal commands');
+  assert.deepEqual({ added: unattributedAdditions(result.homeAdded, result.shellHistory.attribution), removed: result.homeRemoved, changed: result.homeChanged },
     { added: [], removed: [], changed: [] }, 'HOME was modified during the session');
   assert.equal(result.requests.unauthorized, 0);
   result.success = true;

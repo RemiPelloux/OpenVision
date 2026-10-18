@@ -378,3 +378,96 @@ Command: `npm run verify:global-paths`, extended in this pass.
   portable payload, which predates this change.
 - **Unconfirmed precondition:** that `VSCODE_*` sanitization holds for every terminal
   backend other than the default local pty host.
+
+## 18 October 2026: shell history in HOME (Linux x64 only)
+
+Source build of the 3.21.13 runtime input. On main, `verify:global-paths` failed with
+`homeAdded: ["/.bash_history"]`. OV-302 stays **Partial**.
+
+### Observed
+
+- **Content on main.** Three earlier main runs on 17 October (`logs/global-paths-1Qwwcs`,
+  `0pixAu`, `o7p0R7`, in the main checkout) each held only `#<epoch>` lines and the three
+  commands the verifier typed into integrated terminals. The Agent's `node -e …` command never
+  appeared. The timestamp lines come from `HISTTIMEFORMAT`, which this host exports and the
+  verifier passes on.
+- **Timeline.** None of the 15 runs from 16 October 20:22 to 22:28 has the file. Those runs came
+  before the OV-403 pty fix (`2d40c1c2`) reached main at 22:33. All three runs on 17 October have
+  it. One run at 22:40 (`4suWm3`) passed without it, but which build it used is unknown.
+- **Writers, using a stronger fixture.** HOME `.bash_profile`/`.bashrc` add a history entry
+  only in interactive `-c` shells, as some users' startup files do. They also log every
+  interactive shell's PID, flags, command and parent outside HOME. Unfixed build
+  (`global-paths-DBACmY`): the HOME history held 6 startup entries plus the 3 terminal
+  commands.
+  - Agent state shells (`bash -O extglob -ilc <dump script>`) wrote 3 entries at startup and 3
+    at the first Agent command.
+  - Agent commands themselves run non-interactively (`$-` = `hBHc`), but with `history` **on**,
+    restored from the state snapshot.
+  - Integrated terminal shells are interactive (`himBHs`), with `HISTFILE=$HOME/.bash_history`.
+- **Two copies of the state shell.** Patching only the four extension bundles left 3 startup
+  entries (`JS4Vly`). The PIDs in the history lines (`k2A8qD`) matched state shells started by
+  the extension-host process. That process has its own copy in `extensionHostProcess.js`.
+- **Shell-environment resolver.** The main and a utility process run `$SHELL -i -l -c
+  '<runtime> -p env'` at startup: 6 shells per session. With the resolver unchanged and all
+  state shells guarded, no startup entry was written (`RvEwyz`). Local probes show why: bash
+  replaces itself with that single command, so it never reaches its own history save.
+- **Write timing.** In `RvEwyz` the terminals' lines were written 0.53–0.54 s before each host
+  exited: the shell saves its history when the terminal closes at quit.
+
+### Inferred, not proven
+
+- **Why it started.** Before OV-403, terminal shells did not exit within the verifier's window.
+  Their masters were pinned by inherited descriptors, or the pty host outlived the app
+  ([shutdown ownership](rea-shutdown-ownership.md)). So no history was saved before HOME was
+  compared. The clean SIGHUP from the bounded pty-host stop makes bash save history at quit.
+  No pre-fix build was rerun to confirm this.
+
+### Policy and change
+
+- **(a) Agent shells: fixed.** `desktop/shell-history-customization.mjs` (`installShellHistoryGuards`,
+  run after the command-exit pass) adds a guard to every Agent state-shell template, after the
+  startup files have run:
+  - bash: `builtin set +o history`. `HISTFILE` and the environment are untouched.
+  - zsh: `builtin unset HISTFILE`.
+
+  The snapshot then carries history off into every Agent command. Seven copies are guarded:
+  the Agent exec, Agent host, Agent-host daemon, local runtime and MCP extensions, the
+  extension-host process and the MCP utility process. Each bash/zsh/zsh-light site must match
+  exactly once, as the argument after `"-ilc"`, or the build fails. First originals go to
+  `backups/shell-history/`, and a marker makes the pass idempotent; the daemon's shebang stays
+  first.
+- **(b) The user's own terminal: allowed only by attribution.** The integrated terminal is the
+  user's interactive shell, and saving its history is normal shell behavior, not OpenVision
+  data. `desktop/shell-history-policy.mjs` lets the verifier accept exactly `/.bash_history`,
+  and only when all of the following hold:
+  - every integrated terminal shell reported itself interactive, with that file as its own
+    `HISTFILE`;
+  - every line is a `#<epoch>` timestamp or a command typed into those terminals;
+  - at least one typed command is present.
+
+  An Agent command, a startup entry or an unknown writer still fails the run. No other HOME
+  path is allowed. The verifier also asserts that Agent commands are non-interactive with
+  history off. Integrated terminals and the resolver are not changed.
+
+### Verification (Linux x64 only)
+
+| Command | Result |
+| --- | --- |
+| `npm run build:desktop` | Pass, from a clean `source/`, `build/`, `electron-host/` and `backups/` |
+| `npm run verify:global-paths` | Unfixed build: fail (`DBACmY`, above). Final build: **pass**, `RvEwyz` and `aSzh7Y`, run consecutively. 12 authorized fixture requests, no other request. All hosts exited 0. HOME added only the attributed history (mode 600; 3 typed lines). HOME changed and removed lists were empty |
+| `npm run verify:shutdown-cycles` | Pass, `shutdown-cycles-TS67NP`: 9 cycles plus a final start, 0 failures |
+| `npm run verify:development` | Pass, `development-verification-Q3PJtn`; native exit 0 |
+| `npm run test:namespace` | 47/47, including 10 new tests: 5 for the transform (drift, idempotence, backups, every recovered copy, and real bash with and without the guard), 5 for the policy |
+| `npm run test:shutdown` | 34/34 |
+| `npm run test:desktop` | 171/171 |
+| `npm run test:build-integrity` | 26/26 |
+| `npm run check:desktop`, `npm run docs:check` | Pass |
+
+### Open
+
+- zsh: there was no zsh on this host, so its guard is checked only by tests on fixture code.
+  `unset HISTFILE` removes an exported `HISTFILE` from Agent commands.
+- Other interactive shells: terminal suggestions (`bash -ic alias`) and the resolver were
+  inspected, but not changed. The resolver can still save history when a startup file stops
+  bash from replacing itself, for example with an `EXIT` trap. Neither wrote in these runs.
+- Windows, macOS and packaging: the preview.7 payload predates this change.
