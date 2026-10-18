@@ -222,3 +222,29 @@ native workload.
 - **Data destinations, without the held telemetry fix:** `api2.cursor.sh`,
   `registry.npmjs.org` and the spellcheck download remain. That is expected until
   `telemetry-ov1005-blocked` is fixed and merged.
+
+## 8. Update — 18 October 2026 (Linux x64, source build)
+
+Merged and verified on `main`:
+
+| Story | Result |
+| --- | --- |
+| OV-1005 / OV-501 | The telemetry branch is merged. The hidden Customize project scope came from a feature flag that only Cursor's servers used to switch on; it is now set locally. `verify:data-destinations` shows 0 non-provider requests (18 before); `verify:telemetry:extended` shows 0 non-user destinations over 600 s idle. The TypeScript registry gate is closed on Linux. The always-local idle loop (about 185 hosted calls per minute) is gone. |
+| OV-302 | `~/.bash_history` is resolved. Agent state shells have history switched off in all 7 bundled copies. The user's own terminal history is allowed only when attributed. `verify:global-paths` passes. |
+| OV-702 | All 16 lifecycle cases pass. Fixed: replacement of protected bundled extensions, misleading wrong-architecture addon errors, and junk left behind by manifests without a publisher. |
+| OV-1002 | Streaming and the transcript were already batched and virtualized. A 12.4 MB model list is no longer rewritten into stored settings on every save (record 13.7 MB → 1.3 MB). `verify:responsiveness` failed one timing budget under host load (small-file typing p95 365.9 > 360 ms) and passed on rerun. |
+
+Combined verification:
+
+- Clean rebuild, then 12 suites with 0 failures (`test:desktop` 197/197).
+- Native checks passed first time: `verify:global-paths`, `verify:data-destinations`, `verify:telemetry`, `verify:extensions`, `verify:shutdown-cycles`, `verify:development`, `verify:agent -- --review-recovery`.
+- `verify:responsiveness` passed on rerun.
+- Ledger unchanged at 6/42: every story still has W, M or $ gates.
+
+The §6 items for the telemetry regression and `.bash_history` are closed. New open
+items:
+
+- flag drift: 206 server-controlled feature-flag defaults differ from the anonymous server response, and have not been assessed;
+- `verify:model-menu:large` uses a stale selector;
+- closed chats keep their history in renderer memory;
+- intermittent verifiers (stabilization in progress).
