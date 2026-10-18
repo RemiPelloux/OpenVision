@@ -7,7 +7,8 @@ import { sharp } from '../tooling/dependencies.mjs';
 import { workbenchAssets } from './source-assets.mjs';
 import { detectInstallation } from './installation-location.mjs';
 import { platformLayout } from './platform.mjs';
-import { brandAgentWindowTitle } from './source-branding.mjs';
+import { brandAgentWindowTitle, productBranding } from './source-branding.mjs';
+import { linuxLauncher, portableArguments, privateResources } from './portable-layout.mjs';
 
 test('agent title belongs to window defaults and refresh is idempotent', () => {
   const source = '(defaults = {HEIGHT_GLASS: 520,}), (title = "Cursor Agents"), (compatibility = "cursor")';
@@ -16,6 +17,23 @@ test('agent title belongs to window defaults and refresh is idempotent', () => {
   assert.equal(brandAgentWindowTitle(branded), branded);
   assert.throws(() => brandAgentWindowTitle(source + source), /one agent window title owner/);
   assert.throws(() => brandAgentWindowTitle(source.replace('Cursor Agents', 'Unexpected')), /Unexpected agent window title/);
+});
+
+test('original update endpoints are unreachable: no update URLs, no updater, updates disabled at launch', async t => {
+  const app = await mkdtemp(join(tmpdir(), 'openvision-updates-'));
+  t.after(() => rm(app, { recursive: true, force: true }));
+  await writeFile(join(app, 'package.json'), JSON.stringify({ name: 'Cursor', desktopName: 'cursor.desktop' }));
+  await writeFile(join(app, 'product.json'), JSON.stringify({ nameShort: 'Cursor', updateUrl: 'https://api2.cursor.sh/updates',
+    backupUpdateUrl: 'https://downloads.cursor.com/updates', checksums: { 'out/main.js': 'x' }, quality: 'stable' }));
+  await productBranding(app);
+  const product = JSON.parse(await readFile(join(app, 'product.json'), 'utf8'));
+  for (const key of ['updateUrl', 'backupUpdateUrl', 'checksums']) assert.equal(key in product, false, key);
+  assert.doesNotMatch(JSON.stringify(product), /cursor\.sh|downloads\.cursor\.com|\/updates/);
+  // The AppImage updater is never packaged, and every launch disables the update service.
+  assert.ok(privateResources.has('appimageupdatetool.AppImage'));
+  assert.ok(portableArguments('/host').includes('--disable-updates'));
+  assert.match(linuxLauncher, /--disable-updates/);
+  for (const argument of portableArguments('$host')) assert.ok(linuxLauncher.includes(argument.replace('$host', '"$host').replace(/(data\/local(?:-extensions)?)$/, '$1"')), argument);
 });
 
 test('brand refresh migrates a prepared workbench to SVG without duplicating bootstrap assets', async t => {
