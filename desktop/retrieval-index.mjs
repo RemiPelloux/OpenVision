@@ -304,31 +304,37 @@ export class RetrievalIndex {
     for (const path of await this.readIgnoreFiles(ignoreChanges)) scopes.push(path === '.git/info/exclude' ? '' : parentOf(path));
     if (head) candidates.push(...await this.headChanges(scopes));
     const collapsed = collapseScopes(scopes);
-    for (const scope of collapsed) await this.reconcileScope(scope, signal);
+    const work = { files: new Map(), deletions: new Set() };
+    for (const scope of collapsed) await this.scopeWork(scope, work, signal);
     this.pendingScopes = [];
-    const files = [], deletions = [];
+    const directories = [];
     for (const path of [...new Set(candidates)]) {
       if (collapsed.some(scope => pathInside(scope, path))) continue;
       const stats = await lstat(join(this.root, path)).catch(() => undefined);
       this.counters.stats++;
       if (!stats) {
-        if (this.store.file(path)) deletions.push(path);
-        else for (const row of this.store.filesUnder(path)) deletions.push(row.path);
-      } else if (stats.isDirectory()) await this.reconcileScope(path, signal);
+        if (this.store.file(path)) work.deletions.add(path);
+        else for (const row of this.store.filesUnder(path)) work.deletions.add(row.path);
+      } else if (stats.isDirectory()) directories.push(path);
       else if (stats.isSymbolicLink()) {
-        if (this.store.file(path)) deletions.push(path);
+        if (this.store.file(path)) work.deletions.add(path);
         if (!this.rules.ignored(path)) await this.classifyLink(path);
       } else if (this.rules.ignored(path)) {
         this.counters.ignoredSkips++;
-        if (this.store.file(path)) deletions.push(path);
-      } else files.push({ path });
+        if (this.store.file(path)) work.deletions.add(path);
+      } else work.files.set(path, { path });
     }
-    if (files.length || deletions.length) await this.process(files, deletions, signal);
+    for (const directory of collapseScopes(directories)) await this.scopeWork(directory, work, signal);
+    for (const path of work.files.keys()) work.deletions.delete(path);
+    // Deletions and creations share one pass so moves are detected by identity.
+    if (work.files.size || work.deletions.size) await this.process([...work.files.values()], [...work.deletions], signal);
     this.status = { state: 'idle', complete: this.status.complete, ...this.store.counts() };
     return this.status;
   }
 
-  async reconcileScope(scope, signal) {
+  // Changes only re-evaluate this subtree: one ripgrep enumeration of the
+  // subtree, and existing records outside it are not visited.
+  async scopeWork(scope, work, signal) {
     this.counters.subtreeReconciles.push(scope || '/');
     const ancestors = scope && this.rules.ignored(scope);
     const listing = ancestors ? [] : await enumerate({ root: this.root, rgPath: this.rgPath, scope,
@@ -336,7 +342,15 @@ export class RetrievalIndex {
     this.counters.enumerations++; this.counters.enumeratedFiles += listing.length;
     const included = this.filter(listing);
     await this.symlinks(included, scope);
-    await this.reconcile(included, scope, signal);
+    const existing = new Map(this.store.filesUnder(scope).map(row => [row.path, row]));
+    const wanted = new Set(included);
+    for (const path of existing.keys()) if (!wanted.has(path)) work.deletions.add(path);
+    for (const path of included) work.files.set(path, { path, record: existing.get(path) });
+  }
+
+  // Applies files.exclude scopes recorded at open().
+  async reconcilePending({ signal } = {}) {
+    return this.pendingScopes?.length ? this.applyChanges([], { signal }) : this.status;
   }
 
   async git(args) {
