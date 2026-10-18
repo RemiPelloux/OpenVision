@@ -77,6 +77,20 @@ it, but commands run by the Agent may see it. OpenVision ignores `CURSOR_DATA_DI
 `CURSOR_CONFIG_DIR` and `$XDG_CONFIG_HOME/cursor`. Another product's settings
 therefore cannot redirect OpenVision's data.
 
+### Shell history
+
+Your integrated terminals run your own shell with your own settings. When a
+terminal closes, bash saves its history to `$HISTFILE` (`~/.bash_history` by
+default), as in any other terminal. OpenVision does not change this.
+
+Commands run by the Agent never add to your shell history. The Agent prepares
+each shell session once in an interactive login shell, which reads your startup
+files. OpenVision turns history off in that shell after your startup files run
+(bash: `set +o history`; zsh: `HISTFILE` is unset). Agent commands then run with
+history off. Your `HISTFILE` and other variables are not changed. Only with zsh
+is an exported `HISTFILE` absent from Agent commands.
+See [shell history evidence](../recovery/rea-global-path-isolation.md#18-october-2026-shell-history-in-home-linux-x64-only).
+
 ### Importing data from your home directory
 
 Earlier builds kept this data in `~/.openvision` and `~/.openvision-local`.

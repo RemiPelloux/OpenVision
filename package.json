@@ -50,7 +50,7 @@
     "verify:project-clone": "node desktop/verify-project-clone.mjs",
     "verify:project-themes": "node desktop/verify-project-themes.mjs",
     "test:paste": "node --test desktop/large-paste.test.mjs desktop/paste-customization.test.mjs",
-    "test:namespace": "node --test desktop/project-namespace.test.mjs desktop/project-namespace-migration.test.mjs desktop/namespace-plans.test.mjs desktop/rules-scope.test.mjs desktop/global-paths.test.mjs desktop/profile-home-paths.test.mjs",
+    "test:namespace": "node --test desktop/project-namespace.test.mjs desktop/project-namespace-migration.test.mjs desktop/namespace-plans.test.mjs desktop/rules-scope.test.mjs desktop/global-paths.test.mjs desktop/profile-home-paths.test.mjs desktop/shell-history-customization.test.mjs desktop/shell-history-policy.test.mjs",
     "migrate:project": "node desktop/migrate-project.mjs",
     "migrate:profile-home": "node desktop/migrate-profile-home.mjs",
     "verify:paste": "node desktop/verify-paste.mjs",
