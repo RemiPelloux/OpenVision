@@ -199,3 +199,71 @@ OV-501's own change.
 
 Third-party extensions the user installs and MCP servers the user configures
 remain out of scope.
+
+## Customize project scopes and re-verification (18 October 2026, Linux x64 only)
+
+### Regression and cause
+
+**Observed.** On a build with `5ea2d86a`, `verify:global-paths` reported
+`project-openvision-skill`, `-command` and `-rule` missing for every profile
+(`logs/global-paths-McEy0V`), and a single-window probe reproduced it. In
+Customize, the scope selector showed only **User**. Passing runs before the
+change showed **All**, with User and 1 Workspace.
+
+**Not the transport refusal.** With the `refuseAnonymousHostedCalls` guard
+disabled in all three transports, the items were still missing. The refused
+calls already reject through the renderer's Connect transport (`ConnectError
+[unknown]`), and their callers treat that as an unavailable service.
+
+**Cause.** The selector depends on the Statsig client gate
+`customize_manage_scope_multiselect`. Its bundled default is off, which renders
+the single-scope ("User") manager and hides workspace items. The anonymous
+`BootstrapStatsig` response used to turn it on. A profile from a pre-change run
+holds that response in `workbench.experiments.statsigBootstrap` (gate names are
+djb2-hashed), and there the gate is `true`. With the refresh inert, a fresh
+profile gets the bundled default. Changing only this default restored all three
+items.
+
+**Fix.** `setLocalGateDefaults` in `desktop/network-defaults.mjs` sets that
+gate's default to on in both workbench bundles. It is guarded (exactly one table
+entry) and idempotent. The transport guard is unchanged.
+
+**Open (gate drift).** The 3.21.13 workbench declares 752 client gates. 665 are
+in the anonymous bootstrap, and in **206** of them the server value differs from
+the bundled default. Most are cloud, Grok, mobile or hosted features. Some local
+ones are among them (`instant_grep_indexing`, `custom_agents_enabled`,
+`customize_global_search`). Only the gate above is shown to break a local
+feature. The others were not assessed. Whether an existing profile's cached
+bootstrap is still applied was not measured.
+
+### Results (clean rebuild of `b8f2c31d`)
+
+| Check | Before (`5ea2d86a`) | After |
+| --- | --- | --- |
+| `verify:global-paths` (`logs/global-paths-xdMUU3`) | Project items missing ×3 | Missing `[]`, leaked `[]` for alpha, beta and gamma. All five session steps pass. Fails only on the known `~/.bash_history` (OV-302) |
+| `verify:telemetry:extended --idle-seconds 600` (`logs/telemetry-extended-6Jd60o`) | — | Passes. 0 non-user destinations, 0 direct remote sockets, 0 telemetry matches, 1 hostname (the gallery, Extensions phase), 45 processes, family drained, no device-id file |
+| `verify:telemetry` (`logs/telemetry-verification-rQMiuT`) | — | Passes. No HTTP URLs, no telemetry matches |
+| `verify:data-destinations` (`logs/data-destinations-GTNpzM`) | 18 non-provider requests, 16 connections (`62y0eg`, main before the merge) | **0 requests, 0 connections, no host**: no `registry.npmjs.org`, no `redirector.gvt1.com`, no `api2.cursor.sh`. All 9 checks pass, provider 8 requests |
+
+**Always-local idle loop (OV-1003).** The probe used a fresh profile, a project
+with 122 files, a 150 s settle and then a 600 s idle window, with host networking.
+Per-process CPU came from the idle-memory verifier's process-family helper
+(`/proc`). A never-pausing conditional breakpoint on the transport guard in
+extension host 4 counted refused calls by RPC.
+- **0 refused or attempted hosted calls** in the 600 s idle window. No
+  `AgentService/Run` call was made. Before, there were about 185 per minute.
+- Positive control: opening Customize afterwards counted
+  `DashboardService/ListMarketplacePlugins` ×1 at the guard.
+- Extension host 4 used **2.54 CPU s per 10 minutes**, against 25.08 before
+  (`idle-memory-linux.md`, a different run with a workload). That is level with
+  hosts 2, 3 and 5 (2.52–2.56). Its private memory was flat (112.9 → 112.5 MiB
+  USS + swap). Before, it grew 264 → 420 MiB in 10 minutes of idle.
+- The whole family used 20.46 CPU s. The host load average was about 5.9, with
+  11.4 GiB available and 16 GiB of swap in use by other work.
+- Inferred, not shown: the loop stops at its source and does not just fail
+  faster. The guard never ran during idle, so whatever drove `Run` was not
+  triggered, possibly because of a gate that now stays at its default. The
+  trigger was not identified.
+
+OV-1005 stays **Partial**: macOS, the packaged release and signed-in workloads
+remain, as listed above.

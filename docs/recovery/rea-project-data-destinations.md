@@ -144,13 +144,14 @@ npm run verify:data-destinations    # optional: OV501_IDLE_MS, OV501_FINAL_IDLE_
 
 ### Open gates
 
-1. TypeScript ATA sends project-derived package names to `registry.npmjs.org`.
-   OV-1005 owns the `typescript.disableAutomaticTypeAcquisition` default.
-   OV-501 cannot be Verified until it lands and this verifier shows no
-   registry traffic.
+1. ~~TypeScript ATA sends project-derived package names to `registry.npmjs.org`.~~
+   **Closed on Linux x64, 18 October 2026.** With the OV-1005 network defaults
+   (ATA off), `logs/data-destinations-GTNpzM` shows 0 non-provider requests,
+   0 connections and no host. All 9 checks pass. See the
+   [telemetry report](rea-telemetry-linux.md).
 2. Hosted non-project calls (extensions control, MCP registry, marketplace,
    team/usage dashboard) and the Chromium spellcheck download. No project data
-   was observed in them; their removal is outside OV-501.
+   was observed in them. In the same 18 October run, none of them was made.
 3. Windows and macOS captures; workloads beyond this fixed set (debugger,
    terminals, Git commit-message generation, MCP, extensions).
 4. A real-server answer was never allowed. Upload paths that depend on one are
