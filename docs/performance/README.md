@@ -16,6 +16,7 @@ Measured optimization results, workload boundaries and unfinished performance ch
 - [Model catalog memory and repeated-work optimization](model-memory-optimization.md)
 - [Model picker scale and accessibility — 13 October 2026](model-picker-scale.md)
 - [Idle and long-session memory on Linux — 17 October 2026](idle-memory-linux.md)
+- [Responsiveness in large sessions on Linux — 18 October 2026](responsiveness-linux.md)
 - [Native Windows performance baseline](native-performance-baseline.md)
 - [Performance review — 2026-10-12](performance.md)
 

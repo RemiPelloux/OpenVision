@@ -559,6 +559,8 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+18 October 2026, OV-1002 (owner: OpenVision): [Linux responsiveness budgets](../performance/responsiveness-linux.md) add fixed large-session datasets and a native budget verifier, and stop rewriting the 12.4 MB published model catalog on every application save; controlled fixture only, OV-1002 stays Partial.
+
 17 October 2026, OV-1001 (owner: OpenVision): [Linux Agent context budgets](../performance/agent-context-linux.md) add a native budget verifier and fix loop-retry repeats and running-chat close; controlled fixtures only, OV-1001 stays Partial.
 
 14 October 2026, OV-302/OV-701 import follow-up (owner: OpenVision):
