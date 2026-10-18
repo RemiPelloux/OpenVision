@@ -250,6 +250,13 @@ that main commit `5ea2d86a` refuses such calls without an account token. That co
 is not in this branch's base and was **not** measured here. Whether the retry loop's
 CPU and allocation stop with it, or only fail faster, is open.
 
+**Re-measured on 18 October 2026, with `5ea2d86a` and its Customize fix
+(Linux x64, source build):** in a 600 s idle window there were 0 attempted
+hosted calls, counted at the transport guard. Extension host 4 used
+2.54 CPU s, against 25.08, which is level with the other hosts. Its private
+memory stayed flat at about 113 MiB. Method and caveats are in
+[the telemetry report](../recovery/rea-telemetry-linux.md).
+
 ### Interrupted runs
 
 Three earlier after runs (`logs/idle-memory-after-8FTNKm`, `-iJK3rO`, `-CiBgKp`)
@@ -324,7 +331,7 @@ host stays alive and serves them.
 | --- | --- | --- |
 | Renderer | Largest at startup (≈570–590 MiB PSS); grows with chats | Not idle waste: holds the open UI and chat history. Retention bounds belong to the reasoning/chat retention clause |
 | Extension host 4 (always-local / Cursor Tab) | Largest idle Node process; grew 100–155 MiB during idle with no workload, from the network loop above | Owner change belongs to OV-1005 (network) and OV-603 (autocomplete); re-measure after `5ea2d86a` |
-| Extension host 4 network loop | About 185 hosted `AgentService/Run` calls per minute to `api2.cursor.sh` while idle; 25 s CPU per 10 idle minutes | OV-1005/OV-501 owner; reported, not changed here |
+| Extension host 4 network loop | About 185 hosted `AgentService/Run` calls per minute to `api2.cursor.sh` while idle; 25 s CPU per 10 idle minutes | OV-1005/OV-501 owner. With the OV-1005 defaults (18 October): 0 calls and 2.54 CPU s per 10 idle minutes |
 | `CursorProclistService` + proclist polling | 10 s whole-system process scan in main; 5 min upload attempts | Telemetry upload is OV-1005's owner; reported to that work, not changed here |
 | js-debug source-map glob | 4–5 GiB transient in the dev-extension layout | Fixture layout; documented for OV-403. Upstream js-debug behaviour is unchanged |
 | Pty host | Absent until the first terminal; 40 MiB afterwards | Already lazily started. Idle disposal was not added: 40 MiB with live restore semantics is not supported by this evidence |
@@ -356,7 +363,7 @@ All checks ran on this host against the rebuilt source.
 - macOS and Windows runs of the same workload (this report is Linux x64 only).
 - Repeated runs on a quiet host to give distributions. Here, host swap pressure moved
   hundreds of MiB between USS and swap.
-- Re-measure extension host 4 idle CPU and memory with OV-1005's refusal (`5ea2d86a`) in the build. Stop the always-local `AgentService/Run` retry loop at its caller if it still spins.
+- Re-run `verify:idle-memory` (full workload) once the OV-1005 network defaults are on main. The 18 October idle probe shows the `AgentService/Run` loop no longer runs, but its trigger was not identified.
 - Chat/reasoning-session retention bounds in the renderer, and a longer series
   (more than 6 iterations, with forced GC in a diagnostic build) to separate
   retention from garbage.

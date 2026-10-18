@@ -36,6 +36,25 @@ export async function createLoopbackProxy() {
     upstream.on('error', () => { if (!response.headersSent) response.writeHead(502); response.end(); });
     request.pipe(upstream);
   });
+  // Absolute-URL upgrades (WebSocket over a plain HTTP proxy): loopback only.
+  server.on('upgrade', (request, socket, head) => {
+    let target;
+    try { target = new URL(request.url); } catch { return socket.destroy(); }
+    const allowed = isLoopbackHost(target.hostname);
+    events.push({ at: Date.now(), method: `UPGRADE ${request.method}`, host: target.hostname,
+      port: Number(target.port || 80), url: target.href, allowed, userAgent: request.headers['user-agent'] });
+    socket.on('error', () => {});
+    if (!allowed) return socket.end('HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\n\r\n');
+    const upstream = connect(Number(target.port || 80), target.hostname, () => {
+      const headers = [];
+      for (let index = 0; index < request.rawHeaders.length; index += 2)
+        if (!/^proxy-/i.test(request.rawHeaders[index])) headers.push(`${request.rawHeaders[index]}: ${request.rawHeaders[index + 1]}`);
+      upstream.write(`${request.method} ${target.pathname}${target.search} HTTP/1.1\r\n${headers.join('\r\n')}\r\n\r\n`);
+      if (head?.length) upstream.write(head);
+      upstream.pipe(socket); socket.pipe(upstream);
+    });
+    upstream.on('error', () => socket.destroy());
+  });
   server.on('connect', (request, socket, head) => {
     const { host, port } = splitAuthority(request.url);
     const allowed = isLoopbackHost(host);
