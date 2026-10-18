@@ -247,3 +247,21 @@ items:
 - `verify:model-menu:large` uses a stale selector;
 - closed chats keep their history in renderer memory;
 - intermittent verifiers (stabilization in progress).
+
+## 9. Pause checkpoint — 18 October 2026
+
+[Verifier stability](../verification/verifier-stability-linux.md) is merged. Five
+intermittent checks are fixed in the harness; none was a product defect and no
+budget was raised. Wall time is cut for focused runs: interruption `write-kill`
+499 s → 50 s, multiline Tab 65 s → 21 s, responsiveness smoke 330 s → 224 s
+(`--full` keeps the original datasets).
+
+Verified on merged `main`: suites with 0 failures (`test:desktop` 198/198), plus
+`verify:completion -- --acceptance`, `verify:language-matrix`,
+`verify:agent-interruption -- --cases=write-kill` and `verify:model-menu:large`.
+
+Still open: `stream.lastChunkToPaintMs` failed once in smoke mode (1789 > 1000);
+a keystroke during the async Tab accept could be misplaced (untested).
+
+The ledger is unchanged: **6/42 Verified, 36 stories and 322 points remaining.**
+Work is paused here.
