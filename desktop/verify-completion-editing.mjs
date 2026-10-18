@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 const cancellationBudgetMs = 1000;
 const requestTimeoutMs = 25000;
@@ -43,10 +43,39 @@ export async function typePrefix(page, text) {
   await page.keyboard.press('End'); await page.keyboard.insertText(' ');
 }
 
-export async function savedText(page, file) {
+// Saves the file's active editor and reads it once the save has completed. Save
+// participants ("Running Code Actions and Formatters") can hold a small save for
+// several seconds on a loaded Linux host, so a fixed delay read stale bytes. The
+// tab keeps its dirty mark until the write finishes; a clean tab has nothing to write.
+export async function saveFile(page, file, timeout = 30000) {
+  const tab = selector => page.locator(`.tabs-container .tab.active${selector}`).filter({ hasText: basename(file) });
+  await tab('').waitFor();
   await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(250);
-  return (await readFile(file, 'utf8')).replaceAll('\r\n', '\n');
+  await tab('.dirty').waitFor({ state: 'hidden', timeout });
+}
+
+// Presses Tab and waits until it has taken effect. The recovered accept path
+// awaits a word diff before it edits the model, so the insertion lands after the
+// key event; a save or read issued right after the key could miss it. Tab either
+// accepts (the suggestion shown at the key press leaves the screen; the edited line
+// is re-rendered, so a follow-up suggestion is a new element) or indents; both
+// mark the tab dirty.
+export async function pressTab(page, timeout = 15000) {
+  const visible = page.locator('.cursor-ghost-text').filter({ visible: true });
+  const shown = await visible.count() ? await visible.first().elementHandle().catch(() => null) : null;
+  await page.keyboard.press('Tab');
+  if (shown) await page.waitForFunction(element => !element.isConnected || !element.getClientRects().length,
+    shown, { timeout }).catch(() => { throw Error('Tab left the visible autocomplete suggestion on screen'); });
+  await page.locator('.tabs-container .tab.active.dirty').waitFor({ timeout });
+}
+
+export async function savedRaw(page, file) {
+  await saveFile(page, file);
+  return readFile(file, 'utf8');
+}
+
+export async function savedText(page, file) {
+  return (await savedRaw(page, file)).replaceAll('\r\n', '\n');
 }
 
 async function partialAcceptance({ page, file, fixture, directory }, result) {
@@ -57,10 +86,13 @@ async function partialAcceptance({ page, file, fixture, directory }, result) {
   await page.locator('.cursor-ghost-text').filter({ hasText: 'greeting' }).first().waitFor();
   const visibleAt = performance.now();
   await page.keyboard.press('ControlOrMeta+ArrowRight');
+  // Word acceptance is applied after an asynchronous diff: wait for the accepted word
+  // to leave the suggestion before saving.
+  await page.locator('.cursor-ghost-text').filter({ hasText: 'greeting' }).first().waitFor({ state: 'hidden' });
   const partial = await savedText(page, file);
   assert.equal(partial.trimEnd(), prefix + 'greeting', 'Word acceptance must insert only the next word');
   await page.screenshot({ path: join(directory, 'partial-word.png') });
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   assert.equal(await savedText(page, file), prefix + insertion, 'Tab must accept the remaining text without duplication');
   await page.keyboard.press('ControlOrMeta+z');
   const undo = await savedText(page, file);

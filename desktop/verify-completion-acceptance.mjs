@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { until, typePrefix, savedText } from './verify-completion-editing.mjs';
+import { until, typePrefix, savedText, savedRaw, pressTab } from './verify-completion-editing.mjs';
 
 // Acceptance-safety cases for OV-603. Every response comes from a controlled
 // local HTTP fixture; this is not live inference.
@@ -76,7 +76,7 @@ async function fullAccept({ page, file, fixture, trace }) {
   await typePrefix(page, prefix);
   await requestFor(page, fixture, 'full');
   await ghost(page, 'left').waitFor();
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   assert.equal(await savedText(page, file), prefix + insertion, 'Tab must insert exactly the suggestion');
   const undo = await undoTo(page, file, prefix, trace);
   assert.ok(undo.exact, 'Undo must restore the exact typed text');
@@ -98,7 +98,7 @@ async function staleSameLine({ page, file, fixture }) {
   await page.keyboard.insertText('x');
   await page.keyboard.press('End');
   await page.waitForTimeout(settleMs);
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   const saved = await savedText(page, file);
   const accepted = saved === 'x' + prefix + insertion, discarded = squash(saved) === squash('x' + prefix);
   assert.ok(accepted || discarded, `Stale same-line acceptance corrupted the line: ${JSON.stringify(saved)}`);
@@ -118,7 +118,7 @@ async function staleLineShift({ page, file, fixture }) {
   await page.keyboard.press('Enter');
   await page.keyboard.press('ControlOrMeta+End');
   await page.waitForTimeout(settleMs);
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   const saved = await savedText(page, file);
   const accepted = saved === '\n' + prefix + insertion, discarded = squash(saved) === squash('\n' + prefix);
   assert.ok(saved.startsWith('\n// header\nconst moved ='), `Line shift corrupted earlier lines: ${JSON.stringify(saved)}`);
@@ -140,7 +140,7 @@ async function externalChange({ page, file, fixture }) {
   await writeFile(file, external);
   await page.locator('.monaco-editor .view-lines').first().filter({ hasText: 'external' }).waitFor({ timeout: 10000 });
   const visibleAfterReload = await ghost(page, 'fromDisk').isVisible();
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   const saved = await savedText(page, file);
   assert.ok(!saved.includes('fromDisk'), 'Suggestion must not be applied to externally replaced content');
   assert.equal(squash(saved), squash(external), 'External content must be preserved');
@@ -157,7 +157,7 @@ async function wrongTab({ page, file, fixture }) {
   await ghost(page, 'tabValue').waitFor();
   await openFile(page, 'other.js');
   await page.keyboard.press('ControlOrMeta+End');
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   const otherSaved = await savedText(page, other);
   assert.ok(!otherSaved.includes('tabValue'), 'Suggestion was applied to another file');
   assert.equal(squash(otherSaved), squash(otherText));
@@ -182,7 +182,7 @@ async function multiCursor({ page, file, fixture }) {
   await page.waitForTimeout(settleMs);
   const requests = fixture.log.filter(item => item.mode === 'multi').length - before;
   const visible = await page.locator('.cursor-ghost-text').filter({ hasText: 'multi' }).count();
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   await page.keyboard.press('Escape');
   const saved = await savedText(page, file), lines = saved.split('\n');
   assert.equal(lines.length, 2, `Multi-cursor acceptance changed the line count: ${JSON.stringify(saved)}`);
@@ -194,10 +194,11 @@ async function multiCursor({ page, file, fixture }) {
 }
 
 // CRLF document with Unicode before the cursor and a multiline Unicode insertion.
+const crlfOriginal = 'const label = "😀 café";\r\nconst next =\r\n// tail\r\n';
 async function unicodeCrlf({ page, file, fixture }) {
   const crlf = join(dirname(file), 'crlf.js');
-  const original = 'const label = "😀 café";\r\nconst next =\r\n// tail\r\n';
-  await writeFile(crlf, original);
+  // Created before launch (see prepareCompletionAcceptanceProject).
+  assert.equal(await readFile(crlf, 'utf8'), crlfOriginal, 'CRLF fixture must be untouched before it is opened');
   fixture.begin('crlf', { match: context => /const next = $/.test(context.prefix), content: 'call("日本語",\n  "😀");' });
   await openFile(page, 'crlf.js');
   await page.keyboard.press('ControlOrMeta+Home');
@@ -206,16 +207,12 @@ async function unicodeCrlf({ page, file, fixture }) {
   await page.keyboard.insertText(' ');
   const event = await requestFor(page, fixture, 'crlf');
   await ghost(page, 'call').waitFor();
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(250);
-  const raw = await readFile(crlf, 'utf8');
+  await pressTab(page);
+  const raw = await savedRaw(page, crlf);
   assert.equal(raw, 'const label = "😀 café";\r\nconst next = call("日本語",\r\n  "😀");\r\n// tail\r\n', 'CRLF insertion must keep CRLF line endings');
   assert.ok(!/[^\r]\n/.test(raw), 'Mixed line endings after acceptance');
   await page.keyboard.press('ControlOrMeta+z');
-  await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(250);
-  assert.equal(await readFile(crlf, 'utf8'), 'const label = "😀 café";\r\nconst next = \r\n// tail\r\n', 'CRLF undo must be one exact step');
+  assert.equal(await savedRaw(page, crlf), 'const label = "😀 café";\r\nconst next = \r\n// tail\r\n', 'CRLF undo must be one exact step');
   await openFile(page, 'completion.js');
   return { exactCrlf: true, undoSteps: 1, prefixUsedCrlf: event.prefixTail.includes('\r\n') };
 }
@@ -231,7 +228,7 @@ async function longLine({ page, file, fixture }) {
   try { event = await requestFor(page, fixture, 'long', 25000); } catch { event = undefined; }
   if (event) await ghost(page, 'done').waitFor({ timeout: 5000 }).catch(() => {});
   else await page.waitForTimeout(1500);
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   await savedText(page, file);
   // A 20 KB save can land after the default read delay; wait for this case's text.
   // Save participants hold this save for several seconds on Linux.
@@ -270,7 +267,7 @@ async function burst({ page, file, fixture }, interval) {
   const visibleAt = performance.now();
   await page.waitForTimeout(500);
   const staleVisible = await page.locator('.cursor-ghost-text').filter({ hasText: 'STALE' }).count();
-  await page.keyboard.press('Tab');
+  await pressTab(page);
   const saved = await savedText(page, file);
   assert.equal(saved, final + 'Value();', 'Only the final completion may be accepted');
   const requests = fixture.log.filter(item => item.mode === mode && item.receivedAt >= started);
@@ -286,8 +283,17 @@ async function burst({ page, file, fixture }, interval) {
     lastKeyToVisibleMs: Math.round(visibleAt - lastKey) };
 }
 
+// Quick Open serves its previous file list (warmed at startup, also by the chat
+// mention menu) while a fresh one loads, re-initializes at most every 5 s and does
+// not re-run a query when the load completes. A file written just before Quick Open
+// could therefore stay "No matching results" (juoyx2, MzaZ82). Every fixture the
+// cases open by name is created before the application starts.
+export async function prepareCompletionAcceptanceProject(project) {
+  await writeFile(join(project, 'other.js'), '// Other document must remain unchanged.\n');
+  await writeFile(join(project, 'crlf.js'), crlfOriginal);
+}
+
 export async function verifyCompletionAcceptance(context, result) {
-  await writeFile(join(dirname(context.file), 'other.js'), '// Other document must remain unchanged.\n');
   result.requests = context.fixture.log;
   context.trace = result.trace = [];
   const cases = [['fullAccept', fullAccept], ['staleSameLine', staleSameLine], ['staleLineShift', staleLineShift],

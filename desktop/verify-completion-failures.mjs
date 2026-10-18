@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { saveFile, pressTab } from './verify-completion-editing.mjs';
 
 const invalidInsertion = 'Provider did not return a complete code insertion.';
 export const completionFailureCases = [
@@ -56,9 +57,8 @@ export async function verifyCompletionFailures(context) {
     }
     // A rejected response must leave Tab as ordinary editor input; it must not
     // accept provider text. Whitespace differs with user/editor tab settings.
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('ControlOrMeta+s');
-    await page.waitForTimeout(300);
+    await pressTab(page);
+    await saveFile(page, file);
     const saved = await readFile(file, 'utf8');
     assert.equal(saved.replace(/\s/g, ''), original.replace(/\s/g, ''), `${entry.id} changed source code`);
     observed.push({ id: entry.id, rejectedWithoutCodeInsertion: true, diagnostic: entry.diagnostic });

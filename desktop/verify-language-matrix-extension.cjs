@@ -182,8 +182,18 @@ async function typescript() {
     await fsp.writeFile(file('other.ts'), shifted);
     const doc = await open('lib.ts');
     const position = doc.positionAt(doc.getText().indexOf('greet'));
+    // The disk-change guard rejects a rename whose unopened target was modified at
+    // or after 50 ms before the provider started, and asks the user to try again.
+    // A request issued that soon after the write is rejected by design; only that
+    // exact rejection is retried, and the final edit must use the shifted lines.
+    let guardRejections = 0;
     const edit = await until(async () => {
-      const value = await vscode.commands.executeCommand('vscode.executeDocumentRenameProvider', doc.uri, position, 'welcome');
+      let value;
+      try { value = await vscode.commands.executeCommand('vscode.executeDocumentRenameProvider', doc.uri, position, 'welcome'); }
+      catch (error) {
+        if (!String(error?.message).includes('A file changed on disk while computing the rename. Try again.')) throw error;
+        guardRejections++; return false;
+      }
       const target = value?.entries().find(([uri]) => uri.fsPath === file('other.ts'));
       return target && target[1].every(item => item.range.start.line >= 2) && value;
     }, 'rename positions reflect external change', 30000);
@@ -194,7 +204,7 @@ async function typescript() {
     assert.equal(await vscode.workspace.saveAll(false), true);
     assert.equal(await read('other.ts'), shifted);
     await fsp.writeFile(file('other.ts'), before);
-    return { shifted_lines: 2, exact_bytes: true };
+    return { shifted_lines: 2, exact_bytes: true, guard_rejections: guardRejections };
   });
   await largeFile(L, 'large.ts', item => item.code === 2322, '"large diagnostic"', '7');
 }

@@ -15,6 +15,9 @@ import { withDeadlineDispatch } from './openvision-provider-dispatch.cjs';
 const nativeFetch = withDeadlineDispatch(fetch, getGlobalDispatcher);
 
 const limits = { headersMs: 250, inactivityMs: 150 };
+// Limits the recovered transport applies. The stalled-body case widens only the
+// header deadline, so a slow local header under load cannot preempt the phase it measures.
+let transportLimits = limits;
 const original = await readFile(new URL('extensions/cursor-agent-exec/dist/main.js', readableApp), 'utf8');
 const patched = redactProviderErrors(original);
 const expression = (anchor, offset = 0) => {
@@ -30,16 +33,23 @@ const context = { Error, TypeError, Headers, Te: ApiError,
   qt: response => Object.fromEntries(response.headers), Zt: () => nativeFetch,
   openvisionProviderErrors: { ...policy,
     fetchProviderWithDeadlines: (implementation, url, options) => fetchProviderWithDeadlines(implementation, url,
-      { ...options, dispatcher: options.dispatcher ?? getGlobalDispatcher() }, limits) },
+      { ...options, dispatcher: options.dispatcher ?? getGlobalDispatcher() }, transportLimits) },
 };
 const transport = runInNewContext(`(${expression('er = async ({', 5)})`, context);
 const retry = runInNewContext(`(${expression('async function $r(')})`, context);
 const agentRetry = runInNewContext(`(${expression('function TEe(')})`, context);
 
 async function fixture(run) {
-  const requests = [], sockets = new Set();
+  const requests = [], sockets = new Set(), arrivals = [];
+  // Resolves once the server has received `count` requests, so a test can act on
+  // that real condition instead of guessing how long the client takes to send.
+  requests.arrived = count => count <= requests.length ? Promise.resolve()
+    : new Promise(resolve => arrivals.push({ count, resolve }));
   const server = createServer((request, response) => {
     const entry = { path: request.url, response, closed: once(response, 'close') }; requests.push(entry);
+    for (const waiter of arrivals.filter(item => item.count <= requests.length)) {
+      arrivals.splice(arrivals.indexOf(waiter), 1); waiter.resolve();
+    }
     response.setHeader('x-request-id', 'deadline-fixture');
     if (request.url === '/headers') return;
     response.writeHead(200, { 'content-type': 'text/event-stream' });
@@ -114,7 +124,10 @@ test('production adapter uses the selected pool without changing caller options 
 
 for (const phase of ['headers', 'body']) {
   test(`recovered transport terminates stalled ${phase}, closes the socket and allows only explicit recovery`, { timeout: 5000 }, async () => {
-    await fixture(async (base, requests) => {
+    // The body case keeps its 150 ms inactivity deadline; its header wait is bounded
+    // by the same 2,000 ms budget the whole failure must meet.
+    transportLimits = phase === 'body' ? { ...limits, headersMs: 2000 } : limits;
+    try { await fixture(async (base, requests) => {
       const started = performance.now(), cpu = process.cpuUsage();
       const operation = () => submit(`${base}/${phase}`);
       const request = () => retry(operation, { maxRetries: 3, delayInMs: 1, backoffFactor: 1 });
@@ -145,7 +158,7 @@ for (const phase of ['headers', 'body']) {
       console.log(JSON.stringify({ phase, limitMs: limits[phase === 'headers' ? 'headersMs' : 'inactivityMs'],
         durationMs: Math.round(durationMs), cpuMs: (used.user + used.system) / 1000,
         processPeakRssMiB: process.resourceUsage().maxRSS / 1024, requests: requests.length }));
-    });
+    }); } finally { transportLimits = limits; }
   });
 }
 
@@ -165,10 +178,15 @@ for (const phase of ['headers', 'body']) {
     await fixture(async (base, requests) => {
       const controller = new AbortController(), reason = new DOMException('User stopped', 'AbortError');
       const result = submit(`${base}/${phase}`, { abortSignal: controller.signal });
-      const operation = phase === 'body' ? result.then(value => new Response(value.value).text()) : result;
-      const timer = setTimeout(() => controller.abort(reason), 50);
-      try { await assert.rejects(operation, error => error === reason); }
-      finally { clearTimeout(timer); }
+      // Cancel only once the phase under test is really in progress: the server holds
+      // the request (headers), or the client holds the headers and is reading (body).
+      // A fixed timer could fire before the request reached the server under load.
+      const operation = phase === 'body'
+        ? Promise.all([result, requests.arrived(1)]).then(([value]) => {
+          const text = new Response(value.value).text(); controller.abort(reason); return text;
+        })
+        : (requests.arrived(1).then(() => controller.abort(reason)), result);
+      await assert.rejects(operation, error => error === reason);
       await requests[0].closed;
       assert.equal(requests.length, 1);
     });

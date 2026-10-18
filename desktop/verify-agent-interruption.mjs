@@ -270,11 +270,36 @@ async function configure() {
   await page.getByText('fixture-agent', { exact: true }).last().click(); await page.keyboard.press('Escape');
 }
 
-async function newChat(prompt) {
-  const input = await openChat(page);
-  if (await page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true }).count())
-    await page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true }).first().click();
+const visibleComposerId = () => page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first()
+  .evaluate(element => element.closest('[data-composer-id]')?.getAttribute('data-composer-id'));
+
+// Submits a prompt in a new chat. `avoid` names a chat the prompt must not reach,
+// such as the interrupted chat that restart may restore. Whether restart shows that
+// chat or an empty one depends on how far its state was persisted before SIGKILL.
+// An untitled restored chat is itself labelled "New Agent", so clicking that label
+// kept the old chat, and a titled one had no such control at all: the retry then
+// went into the restored chat, where the fixture saw the old tool result and
+// finished after one request. The prompt is typed only once the visible composer
+// is a different chat, opened with the "Open New Agent Chat" command.
+async function newChat(prompt, avoid) {
+  await openChat(page);
+  const fresh = page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true });
+  if (avoid) {
+    await waitFor(async () => {
+      if (await visibleComposerId().catch(() => undefined) !== avoid) return true;
+      await page.keyboard.press('ControlOrMeta+Shift+p');
+      await page.locator('.quick-input-widget').getByRole('textbox', { name: 'input', exact: true }).fill('>Open New Agent Chat');
+      await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'Open New Agent Chat' }).first().click();
+      return page.waitForFunction(avoid => [...document.querySelectorAll('.aislash-editor-input[contenteditable=true]')]
+        .filter(element => element.getClientRects().length)
+        .some(element => element.closest('[data-composer-id]')?.getAttribute('data-composer-id') !== avoid),
+      avoid, { timeout: 5000 }).then(() => false, () => false);
+    }, 'Open New Agent Chat did not leave the restored chat', 30000);
+  } else if (await fresh.count()) await fresh.first().click();
+  const input = await openChat(page), composer = await visibleComposerId();
+  if (avoid) assert.notEqual(composer, avoid, 'The prompt must not reach the avoided chat');
   await input.fill(prompt); await input.press('Enter');
+  return composer;
 }
 
 const reviewControls = async () => (await page.locator('button,[role=button],.anysphere-button,.anysphere-text-button').evaluateAll(elements =>
@@ -326,6 +351,8 @@ async function runCase(name, spec) {
     }
   }
   if (spec.settleMs) await page.waitForTimeout(spec.settleMs);
+  // The submitted chat's identity: a retry after restart must not be typed into it.
+  record.composerId = await visibleComposerId().catch(() => undefined);
   record.before = await snapshot(name, 'before-interrupt');
   record.requestsBeforeInterrupt = requests.length - requestsBefore;
   if (spec.interrupt === 'stop') {
@@ -368,7 +395,7 @@ async function runCase(name, spec) {
   if (spec.kind !== 'write' && spec.kind !== 'continuation')
     record.afterRestart.commandLog = await readFile(join(project, `interrupt-command-${name}.log`), 'utf8').catch(() => '');
   record.requestsTotal = requests.length - requestsBefore;
-  if (spec.retry) record.retry = await retryAfterInterruption(name);
+  if (spec.retry) record.retry = await retryAfterInterruption(name, record.composerId);
   judge(record);
   await closeOwnedApp(`${name} after inspection`);
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
@@ -376,15 +403,16 @@ async function runCase(name, spec) {
 
 // The same edit after restart: it must apply once with a review, and an interrupted
 // write's temporary sibling (aged past the sweep threshold here) must be removed.
-async function retryAfterInterruption(name) {
+async function retryAfterInterruption(name, interruptedComposerId) {
   const before = await fileState(name), aged = new Date(Date.now() - 120000);
   for (const entry of before.temporary) await utimes(join(project, entry), aged, aged);
   const requestsBefore = requests.length;
-  await newChat(`Change "before ${name}" to "after ${name}" in interrupt-${name}.js again.`);
+  assert.ok(interruptedComposerId, 'The interrupted chat identity must be known');
+  const composerId = await newChat(`Change "before ${name}" to "after ${name}" in interrupt-${name}.js again.`, interruptedComposerId);
   await page.getByText(`OpenVision ${name} finished.`, { exact: true }).first().waitFor({ timeout: 45000 });
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
   const after = await fileState(name), ui = await snapshot(name, 'after-retry');
-  return { temporaryBefore: before.temporary, file: after, controls: ui.controls, requests: requests.length - requestsBefore,
+  return { interruptedComposerId, composerId, temporaryBefore: before.temporary, file: after, controls: ui.controls, requests: requests.length - requestsBefore,
     writes: (await probeEvents(fileFor(name))).filter(entry => entry.event === 'write').length };
 }
 

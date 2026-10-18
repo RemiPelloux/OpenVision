@@ -9,8 +9,8 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { writeCompletionFailure, verifyCompletionFailures } from './verify-completion-failures.mjs';
 import { fileHash } from './import-files.mjs';
-import { createCompletionEditingFixture, verifyCompletionEditing } from './verify-completion-editing.mjs';
-import { createCompletionAcceptanceFixture, verifyCompletionAcceptance } from './verify-completion-acceptance.mjs';
+import { createCompletionEditingFixture, verifyCompletionEditing, saveFile, pressTab } from './verify-completion-editing.mjs';
+import { createCompletionAcceptanceFixture, verifyCompletionAcceptance, prepareCompletionAcceptanceProject } from './verify-completion-acceptance.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -27,6 +27,7 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
   ...(editing ? { 'cursor.cpp.enablePartialAccepts': true } : {}) }));
 const file = join(project, 'completion.js');
 await writeFile(file, 'const answer = ');
+if (acceptance) await prepareCompletionAcceptanceProject(project);
 const requests = [], inference = Promise.withResolvers(), multiline = Promise.withResolvers();
 let phase = 'simple';
 const server = createServer(async (request, response) => {
@@ -59,6 +60,7 @@ try {
       '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, file] });
   const page = await app.firstWindow();
+  const ghost = text => page.locator('.cursor-ghost-text').filter({ hasText: text }).first();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
@@ -82,16 +84,16 @@ try {
     const timer = setTimeout(() => reject(new Error('No native autocomplete request observed')), 25000);
     timer.unref();
   })]);
-  await page.waitForTimeout(2000);
+  // Tab must be pressed while the suggestion is shown, and files read only after
+  // their save completed; fixed delays raced both on a loaded host.
+  await ghost('42').waitFor({ timeout: 25000 });
   await page.screenshot({ path: join(directory, 'suggestion.png') });
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(700);
+  await pressTab(page);
+  await saveFile(page, file);
   const accepted = await readFile(file, 'utf8');
   assert.match(accepted, /const answer =\s+42/);
   await page.keyboard.press('ControlOrMeta+z');
-  await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(500);
+  await saveFile(page, file);
   assert.doesNotMatch(await readFile(file, 'utf8'), /42/);
   phase = 'multiline';
   await page.keyboard.press('Escape');
@@ -101,19 +103,17 @@ try {
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('End');
   await page.keyboard.insertText(' ');
-  await page.keyboard.press('ControlOrMeta+s');
+  await saveFile(page, file);
   await Promise.race([multiline.promise, new Promise((_, reject) => {
     const timer = setTimeout(() => reject(new Error('No multiline autocomplete request observed')), 25000); timer.unref();
   })]);
-  await page.waitForTimeout(2000);
+  await ghost('café').waitFor({ timeout: 25000 });
   await page.screenshot({ path: join(directory, 'multiline.png') });
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(700);
+  await pressTab(page);
+  await saveFile(page, file);
   assert.equal((await readFile(file, 'utf8')).replaceAll('\r\n', '\n'), 'const items = [\n  "café 日本語",\n  "😀"\n];');
   await page.keyboard.press('ControlOrMeta+z');
-  await page.keyboard.press('ControlOrMeta+s');
-  await page.waitForTimeout(500);
+  await saveFile(page, file);
   assert.equal((await readFile(file, 'utf8')).replaceAll('\r\n', '\n'), 'const items = [\n  \n];');
   let failures, editingResult;
   if (editing) {
@@ -129,11 +129,8 @@ try {
   await page.keyboard.press('Escape'); await page.keyboard.press('ControlOrMeta+a');
   await page.keyboard.insertText('const recovered ='); await page.keyboard.press('End');
   await page.keyboard.insertText(' ');
-  await page.waitForTimeout(2500);
-  await page.keyboard.press('Tab'); await page.keyboard.press('ControlOrMeta+s');
-  // Saves can be held by save participants; wait for the write instead of a fixed delay.
-  for (let attempt = 0; attempt < 50 && !(await readFile(file, 'utf8')).startsWith('const recovered'); attempt++)
-    await page.waitForTimeout(200);
+  await ghost('42').waitFor({ timeout: 25000 });
+  await pressTab(page); await saveFile(page, file);
   assert.equal((await readFile(file, 'utf8')).trim(), 'const recovered = 42', 'Valid completion recovers after rejection');
   assert.ok(requests.every(request => request.model === 'fixture-coder' && request.authorized));
   assert.deepEqual(errors, []);
