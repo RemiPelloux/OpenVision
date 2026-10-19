@@ -119,7 +119,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app, page;
 const hostExits = [];
 const result = { checkedAt: new Date().toISOString(), identity, requests, errors, toolResults, stages: [], success: false,
-  scope: 'Linux x64 native Agent StrReplace on a genuinely full tmpfs project volume, freeing space, retry, Keep and restart. Controlled local model fixture; profile storage stays on the ordinary disk. Does not cover EIO, power loss, other platforms or live providers.' };
+  scope: 'Linux x64 native Agent StrReplace on a genuinely full tmpfs project volume, freeing space, retry, Undo with the volume full again, a repeated edit, Keep and restart. Controlled local model fixture; profile storage stays on the ordinary disk. Does not cover EIO, power loss, other platforms or live providers.' };
 async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.OPENVISION_IO_FAULT_DIRECTORY;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
@@ -196,13 +196,39 @@ try {
   await submit('Space is available again. Insert the generated block into notes.md.', 'OpenVision retry edit turn finished.');
   await page.waitForTimeout(2000);
   const retried = await stage('after-retry');
+
+  // Reject/Undo with the project volume full: restoring the saved bytes must never
+  // leave a torn file, and a failed restore must stay recoverable after freeing space.
+  const undoFree = await fillVolume();
+  await stage('volume-full-before-undo', { fillerFreeBytes: undoFree });
+  await page.getByText(/^Undo( All)?$/).filter({ visible: true }).first().click();
+  await page.getByText('Confirm', { exact: true }).filter({ visible: true }).click({ timeout: 3000 }).catch(() => {});
+  await page.waitForTimeout(3000);
+  const undoText = await page.locator('body').innerText();
+  await writeFile(join(directory, 'after-undo-full-volume.txt'), undoText);
+  const undone = await stage('after-undo-full-volume', { visibleErrors: undoText.split('\n')
+    .filter(line => /no space|ENOSPC|could not|failed to save|unable/i.test(line)).slice(0, 10) });
+  await unlink(filler);
+  let undoFreed = await stage('after-undo-freed');
+  if (!undoFreed.notes.original) {
+    // The restore did not reach disk while full: save the restored editor text again.
+    await page.locator('.tabs-container .tab').filter({ hasText: 'notes.md' }).first().click().catch(() => {});
+    await page.keyboard.press('ControlOrMeta+s');
+    for (let attempt = 0; attempt < 50 && !(await describe(notes)).original; attempt++) await page.waitForTimeout(100);
+    undoFreed = await stage('after-undo-freed-save-retry', { saveRetried: true });
+  }
+  // A new pending review for the Keep and restart stages.
+  phase = 'again';
+  await submit('Insert the generated block into notes.md once more.', 'OpenVision again edit turn finished.');
+  await page.waitForTimeout(2000);
+  const again = await stage('after-repeat-edit');
   await page.getByText(keepLabel).filter({ visible: true }).first().click();
   await page.waitForTimeout(2000);
   const kept = await stage('after-keep-all');
   await closeOwnedApp();
   await launch();
   await openChat(page);
-  await page.getByText('OpenVision retry edit turn finished.', { exact: true }).first().waitFor({ timeout: 30000 });
+  await page.getByText('OpenVision again edit turn finished.', { exact: true }).first().waitFor({ timeout: 30000 });
   const restarted = await stage('after-restart');
 
   result.observations = {
@@ -211,6 +237,8 @@ try {
     savedBytesSurviveFullVolume: fault.notes.original, partialFileAfterFault: fault.notes.partialChanged,
     savedBytesAfterFreeing: freed.notes.original, retryWritesCompleteBytes: retried.notes.changed,
     keptBytes: kept.notes.changed, keptBytesAfterRestart: restarted.notes.changed,
+    undoWhileFull: { notes: undone.notes, freeBytes: undone.freeBytes, pendingReview: undone.pendingReviewVisible,
+      visibleErrors: undone.visibleErrors }, undoAfterFreeing: { notes: undoFreed.notes, saveRetried: !!undoFreed.saveRetried },
   };
   assert.equal(fault.freeBytes, 0, 'The volume must still be full after the failed edit');
   assert.match(result.observations.faultToolResult ?? '', /no space/i, 'The Agent must report the full volume');
@@ -221,14 +249,20 @@ try {
   assert.equal(retried.notes.changed, true, 'The retried edit must write the complete replacement');
   assert.deepEqual(retried.temporaries, [], 'The retried write must remove the stale interrupted-writer sibling');
   assert.equal(retried.pendingReviewVisible, true, 'The successful retry must create a pending review');
+  assert.equal(undone.freeBytes, 0, 'The volume must still be full after Undo');
+  assert.ok(undone.notes.original || undone.notes.changed, 'Undo on a full volume leaves the original or the complete edited bytes, never a torn file');
+  assert.equal(undoFreed.notes.original, true, 'After freeing space the undone file holds the exact original bytes');
+  assert.equal(undoFreed.pendingReviewVisible, false, 'The undone review is gone');
+  assert.equal(again.notes.changed, true); assert.equal(again.pendingReviewVisible, true);
   assert.equal(kept.notes.changed, true);
   assert.equal(restarted.notes.changed, true, 'Accepted bytes must survive restart');
-  for (const record of [fault, freed, retried, kept, restarted]) {
+  for (const record of [fault, freed, retried, undone, undoFreed, again, kept, restarted]) {
     assert.equal(record.unrelated, true); assert.deepEqual(record.temporaries, []);
   }
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
   assert.equal(requests.filter(request => request.phase === 'full').length, 2);
   assert.equal(requests.filter(request => request.phase === 'retry').length, 2);
+  assert.equal(requests.filter(request => request.phase === 'again').length, 2);
   assert.deepEqual(errors, []);
   result.success = true;
 } catch (error) {

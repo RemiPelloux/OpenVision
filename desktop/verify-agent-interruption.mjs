@@ -53,6 +53,16 @@ for (const helper of agentWriteHelpers) {
   await unlink(path); await writeFile(path, instrumentAgentWrite(text, helper), { flag: 'wx' });
   overlay.records.push({ path: helper.file, original: await fileHash(join(appRoot, helper.file)), instrumented: await fileHash(path) });
 }
+// Verification only: expose the inline-diff service of the overlay's workbench copy
+// so the review state behind the bar can be recorded after Undo/Confirm and restart.
+{
+  const workbench = 'out/vs/workbench/workbench.desktop.main.js', path = join(overlayApp, workbench);
+  const text = await readFile(path, 'utf8'), anchor = 'getInlineDiffStorageKeyPrefix() {';
+  assert.equal(text.split(anchor).length, 2, 'Expected one review-record key owner');
+  await unlink(path);
+  await writeFile(path, text.replace(anchor, `${anchor}\n            globalThis.__openvisionInlineDiffService = this;`), { flag: 'wx' });
+  overlay.records.push({ path: workbench, original: await fileHash(join(appRoot, workbench)), instrumented: await fileHash(path) });
+}
 const runId = randomUUID();
 const probeModule = join(root, 'desktop/verify-agent-interruption-probe.cjs');
 
@@ -306,6 +316,20 @@ const reviewControls = async () => (await page.locator('button,[role=button],.an
   elements.filter(element => element.offsetParent !== null).map(element => element.textContent.trim())
     .filter(text => /^(Keep( All| File)?|Undo( All| File)?|Reject( All)?|Review|Run|Skip|Stop|Confirm)$/.test(text)))).sort();
 
+// Review state behind the bar: registry descriptors, live handlers and stored records.
+const reviewState = () => page.evaluate(async () => {
+  const service = globalThis.__openvisionInlineDiffService;
+  if (!service) return { available: false };
+  const file = value => value?.path?.split('/').at(-1) ?? value?.fsPath?.split('/').at(-1);
+  const records = await service.storageService.cursorDiskKVGetPrefix(service.getInlineDiffStorageKeyPrefix()).catch(error => String(error));
+  return { available: true,
+    diffs: service.inlineDiffs.value.map(diff => ({ id: diff.id, file: file(diff.uri), composer: !!diff.composerMetadata,
+      handler: service.diffHandlers.has(diff.id) })),
+    handlers: [...service.diffHandlers.keys()],
+    parked: (service.getParkedDiffs?.() ?? []).map(entry => entry.diffId ?? entry.id),
+    records: Array.isArray(records) ? records.map(([key]) => key) : records };
+}).catch(error => ({ available: false, error: error.message }));
+
 async function snapshot(name, label) {
   await page.screenshot({ path: join(directory, `${name}-${label}.png`) }).catch(() => {});
   const text = await page.locator('body').innerText().catch(() => '');
@@ -320,6 +344,11 @@ async function fileState(name) {
   return { exists: true, length: Buffer.byteLength(bytes), sha256: (await fileHash(path)), temporary,
     state: bytes === original(name) ? 'original' : bytes === changed(name) ? 'changed' : 'torn' };
 }
+
+// The transcript must not call an unconfirmed edit "Edited"; an interrupted edit
+// is labelled as an attempt with the interruption message.
+const transcript = text => ({ edited: /\bEdited\b[\s\S]{0,40}interrupt-/.test(text),
+  interrupted: /Edit attempted|Edit interrupted before it completed/.test(text) });
 
 async function runCase(name, spec) {
   const record = { name, ...spec, stages: [], violations: [] };
@@ -358,7 +387,8 @@ async function runCase(name, spec) {
   if (spec.interrupt === 'stop') {
     await page.locator('.stop-button').filter({ visible: true }).first().click();
     await page.waitForTimeout(1500);
-    record.stages.push({ stage: 'after Stop, write still held', file: await fileState(name), ui: await snapshot(name, 'after-stop') });
+    const stopped = await snapshot(name, 'after-stop');
+    record.stages.push({ stage: 'after Stop, write still held', file: await fileState(name), ui: stopped, transcript: transcript(stopped.text) });
     await writeFile(join(probeDirectory, `release-interrupt-${name}.js`), '');
     await page.waitForTimeout(3000);
     record.stages.push({ stage: 'after Stop and write release', file: await fileState(name), ui: await snapshot(name, 'after-release') });
@@ -378,13 +408,29 @@ async function runCase(name, spec) {
     // can run until the next start, which must end the orphan.
     if (!closed && spec.interrupt !== 'kill') { shell.socket.end('exit\n'); record.afterExit.commandCleanup = 'nonce-authenticated socket exit'; await shell.closed; }
   }
+  // An interrupted writer's temporary is swept at startup once it is older than
+  // 60 s; age it so this restart stands for a later one. A recent temporary of
+  // another file must be kept, since a live writer may own it.
+  const editCase = spec.kind === 'write' || spec.kind === 'continuation';
+  if (editCase) {
+    const aged = new Date(Date.now() - 120000);
+    for (const entry of record.afterExit.file.temporary) await utimes(join(project, entry), aged, aged);
+    record.sweepControl = join(project, `.sweep-control-${name}.js.openvision-${randomUUID()}.tmp`);
+    await writeFile(record.sweepControl, 'recent temporary of another writer');
+  }
   // Restart into the same profile and inspect what recovery shows.
   const requestsAtRestart = requests.length;
   await launch(); await openChat(page);
   await page.waitForTimeout(4000);
-  record.afterRestart = { file: spec.kind === 'shell' || spec.kind === 'approval' ? undefined : await fileState(name),
-    ui: await snapshot(name, 'after-restart'), restartRequests: requests.length - requestsAtRestart,
+  if (editCase) await waitFor(async () => !(await fileState(name)).temporary.length, 'Startup sweep left the aged temporary', 15000).catch(() => {});
+  const restartedUi = await snapshot(name, 'after-restart');
+  record.afterRestart = { file: editCase ? await fileState(name) : undefined,
+    ui: restartedUi, transcript: transcript(restartedUi.text), restartRequests: requests.length - requestsAtRestart,
     probe: await probeEvents(fileFor(name)) };
+  if (editCase) {
+    record.afterRestart.sweepControlKept = await lstat(record.sweepControl).then(() => true, () => false);
+    await unlink(record.sweepControl).catch(() => {});
+  }
   if (spec.kind === 'shell' && !record.afterExit.commandExited && spec.interrupt === 'kill') {
     const shell = shells.get(name);
     const closed = await Promise.race([shell.closed, new Promise(resolve => setTimeout(() => resolve(false), 10000))]);
@@ -419,7 +465,7 @@ async function retryAfterInterruption(name, interruptedComposerId) {
 // A restored change must remain reviewable: reject it through the native review
 // controls and require the exact original bytes, without inference.
 async function rejectRestored(name) {
-  const steps = [], requestsBefore = requests.length;
+  const steps = [], requestsBefore = requests.length, stateBefore = await reviewState();
   const click = async label => {
     const control = page.getByText(label, { exact: true }).filter({ visible: true });
     if (!await control.count()) return false;
@@ -445,13 +491,18 @@ async function rejectRestored(name) {
   }
   let file = await fileState(name);
   for (let attempt = 0; attempt < 50 && file.state !== 'original'; attempt++) { await page.waitForTimeout(100); file = await fileState(name); }
-  // Recorded, not asserted: the single-file review bar can remain after the
-  // bytes are restored (also observed after a graceful close).
+  // Once the bytes are restored, the review bar must be gone, now and after restart.
   let controls = await reviewControls();
-  for (let attempt = 0; attempt < 50 && controls.includes('Keep'); attempt++) { await page.waitForTimeout(100); controls = await reviewControls(); }
+  for (let attempt = 0; attempt < 50 && reviewBar(controls); attempt++) { await page.waitForTimeout(100); controls = await reviewControls(); }
+  const stateAfter = await reviewState();
   await snapshot(name, 'after-reject');
-  return { steps, file, controls, requests: requests.length - requestsBefore };
+  await closeOwnedApp(`${name} after reject`);
+  await launch(); await openChat(page); await page.waitForTimeout(4000);
+  const restarted = { file: await fileState(name), controls: await reviewControls(), state: await reviewState() };
+  await snapshot(name, 'after-reject-restart');
+  return { steps, file, controls, stateBefore, stateAfter, restarted, requests: requests.length - requestsBefore };
 }
+const reviewBar = controls => controls.some(control => /^(Keep|Undo)( All| File)?$/.test(control));
 
 // Acceptance: exact original or new bytes, no extra execution or inference after
 // restart, a review for every applied change, and no surviving owned processes.
@@ -469,11 +520,22 @@ function judge(record) {
     if (record.afterRestart.file.state === 'changed' && !reviewed) fail('applied change has no restorable review after restart');
     if (record.recovery && (record.recovery.file.state !== 'original' || record.recovery.requests !== 0))
       fail(`rejecting the restored review left ${record.recovery.file.state} bytes after ${record.recovery.requests} requests`);
+    if (record.recovery && reviewBar(record.recovery.controls)) fail(`review bar remains after Undo and Confirm: ${record.recovery.controls}`);
+    if (record.recovery && (reviewBar(record.recovery.restarted.controls) || record.recovery.restarted.file.state !== 'original'))
+      fail(`after Undo, Confirm and restart: ${record.recovery.restarted.file.state} bytes, controls ${record.recovery.restarted.controls}`);
     if (record.afterRestart.file.state === 'original' && reviewed) fail('review shown for a change that was not applied');
     if (kind === 'write' && executions !== 1) fail(`write helper ran ${executions} times`);
     if (record.requestsTotal !== (kind === 'continuation' ? 2 : 1)) fail(`unexpected request count ${record.requestsTotal}`);
     if (interrupt === 'stop' && record.afterRestart.file.state !== 'changed') fail('released write after Stop was not applied');
-    if (record.afterRestart.file.temporary.length && interrupt === 'stop') fail('completed write left a temporary sibling');
+    if (record.afterRestart.file.temporary.length) fail(`temporary sibling remains after restart: ${record.afterRestart.file.temporary}`);
+    if (!record.afterRestart.sweepControlKept) fail('startup sweep removed a recent temporary');
+    if (kind === 'write' && interrupt !== 'stop' && record.afterExit.file.temporary.length !== 1)
+      fail(`expected one interrupted-writer temporary after exit, found ${record.afterExit.file.temporary.length}`);
+    // Bytes were never changed: the transcript must not report the edit as made.
+    if (kind === 'write' && interrupt !== 'stop' && record.afterRestart.transcript.edited) fail('unapplied edit is shown as "Edited" after restart');
+    if (kind === 'write' && interrupt === 'close' && !record.afterRestart.transcript.interrupted) fail('interrupted edit is not shown as interrupted after restart');
+    if (interrupt === 'stop' && record.stages[0]?.transcript && record.stages.find(entry => entry.transcript)?.transcript.edited)
+      fail('edit held at Stop is shown as "Edited"');
     if (record.retry && (record.retry.file.state !== 'changed' || record.retry.file.temporary.length || record.retry.requests !== 2 ||
         record.retry.writes !== 2 || !record.retry.controls.includes('Keep'))) fail(`retry after interruption: ${JSON.stringify(record.retry)}`);
   } else {
