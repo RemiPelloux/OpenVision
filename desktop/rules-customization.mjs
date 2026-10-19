@@ -1,7 +1,7 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { workspaceRuleEvents } from './workspace-rule-events.mjs';
 
-const marker = '/* OpenVision local user rules v3 */';
+const marker = '/* OpenVision local user rules v4 */';
 const helperImport = 'import {LocalRules as OpenvisionLocalRules} from "../code/electron-sandbox/workbench/openvision-local-rules.js";';
 const symbols = {
   desktop: { owner: 'w$i', base: 'Se', emitter: 'me', store: 'tg', signal: 'Lt', disposable: 'en',
@@ -41,7 +41,19 @@ function localClass(s) {
     setItems(value) { this.jotaiStore.set(${s.items}, typeof value === 'function' ? value(this.jotaiStore.get(${s.items})) : value); }
     setIsLoading(value) { this.jotaiStore.set(${s.loading}, value); }
     notifyItemsChanged() { this._onDidChangeItems.fire(this.items.map(item => ({...item}))); }
-    reloadLocalRules() { this.setItems(this.localRules.read()); this.setIsLoading(false); this.notifyItemsChanged(); }
+    // Readable rules always load; an unreadable record is kept, reported once per
+    // change, and still blocks writes until it is removed.
+    reloadLocalRules() {
+      const { items, unreadable } = this.localRules.inspect();
+      this.setItems(items); this.setIsLoading(false); this.notifyItemsChanged();
+      const keys = unreadable.map(entry => entry.key).join(", ");
+      if (!unreadable.length || keys === this.reportedUnreadable) return;
+      this.reportedUnreadable = keys;
+      const detail = "Readable rules are loaded. The unreadable record was left unchanged, and new or changed rules cannot be saved until it is removed (see the recovery guide, Corrupt profile).";
+      this.logService.error("OpenVision rules: " + unreadable.length + " unreadable saved rule(s) kept unchanged: " + keys);
+      (globalThis.openvisionProfileRecoveryQueue ??= []).push({ id: "unreadable-rules:" + keys, kind: "unreadable-rule", store: "Profile rules",
+        title: unreadable.length + " saved rule(s) could not be read.", detail, path: keys });
+    }
     async refresh() { this.reloadLocalRules(); }
     ensureReady() {
       return this.ready ??= this.localRules.migrateLegacy(this.aiService.getPersonalContext())
@@ -72,8 +84,8 @@ export function localUserRules(text, variant) {
   const start = position + `${s.owner} = `.length;
   const node = parseExpressionAt(text, start, { ecmaVersion: 'latest' });
   const original = text.slice(start, node.end);
-  if (text.includes('/* OpenVision local user rules v2 */'))
-    return (text.slice(0, start) + localClass(s) + text.slice(node.end)).replace('/* OpenVision local user rules v2 */', marker);
+  for (const prior of ['/* OpenVision local user rules v2 */', '/* OpenVision local user rules v3 */'])
+    if (text.includes(prior)) return (text.slice(0, start) + localClass(s) + text.slice(node.end)).replace(prior, marker);
   for (const name of ['knowledgeBaseList', 'knowledgeBaseAdd', 'knowledgeBaseUpdate', 'knowledgeBaseRemove', 'notifyItemsChanged'])
     if (!original.includes(name)) throw new Error(`User rule service contract changed: ${name}`);
   const decoration = `${s.owner} = `;
