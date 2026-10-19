@@ -136,6 +136,27 @@ export function refuseAnonymousHostedCalls(text) {
     'throw Object.assign(new Error("OpenVision: Cursor service calls require a signed-in Cursor account"), { code: "unauthenticated" });';
   return text.slice(0, at) + guard + text.slice(at);
 }
+// --- Cached Statsig bootstrap (OV-1005 gate drift; ov/data-telemetry) -------
+// The experiment service applies the bootstrap a profile cached under
+// `workbench.experiments.statsigBootstrap` at every start, with no expiry, before
+// and independent of the (now inert) server refresh. A profile from a build that
+// still refreshed it therefore keeps the anonymous server values for ~200 gates
+// forever, while a fresh profile uses the bundled and local defaults
+// (logs/statsig-cache-*). The cache is ignored so every local profile evaluates
+// the same defaults; the stored value is left untouched (reversible). Kept
+// separate from the experiment-refresh change above.
+const cachedBootstrapMarker = '/* OpenVision cached Statsig bootstrap ignored v1 */';
+export function ignoreCachedStatsigBootstrap(text) {
+  if (text.includes(cachedBootstrapMarker)) return text;
+  const methods = [...text.matchAll(/\n(\s*)_initFromCachedBootstrap\(\) \{/g)];
+  if (methods.length !== 1) throw new Error('Cached experiment bootstrap owner missing or ambiguous');
+  const [method] = methods, body = text.slice(method.index, method.index + 600);
+  if (!/this\.storageService\.get\([\w$]+\.STATSIG_BOOTSTRAP_STORAGE_KEY, -1\)/.test(body))
+    throw new Error('Cached experiment bootstrap contract changed');
+  const at = method.index + method[0].length;
+  return text.slice(0, at) + ` ${cachedBootstrapMarker} return !1;` + text.slice(at);
+}
+
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
   'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs'];
 
@@ -159,7 +180,7 @@ export async function installNetworkDefaults(root) {
 
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
-    await backedWrite(root, `${app}/${relative}`, text, setLocalGateDefaults(disableWorkbenchHostedReports(text)));
+    await backedWrite(root, `${app}/${relative}`, text, ignoreCachedStatsigBootstrap(setLocalGateDefaults(disableWorkbenchHostedReports(text))));
   }
   for (const relative of transportTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
@@ -179,5 +200,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate default`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate default; cached Statsig bootstrap ignored`);
 }
