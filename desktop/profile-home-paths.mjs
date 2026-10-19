@@ -67,13 +67,25 @@ export function isolateMainProfileHome(text) {
     m => `getExitWatchdogMarkerPath() { return ${m[1]}(${envHome}, this.productService.dataFolderName`));
   patches.push(site(text, /return ([\w$]+)\.joinPath\([\w$]+\.userHome, ([\w$]+)\.dataFolderName, "shadow-workspaces"\);/g, 'shadow workspaces',
     m => `return ${m[1]}.joinPath(${m[1]}.file(${envHome}), ${m[2]}.dataFolderName, "shadow-workspaces");`));
+  // Editor MCP discovery (Claude desktop, Windsurf, global mcp.json adapters)
+  // resolves every adapter from the profile home: the home is the profile home
+  // and the APPDATA/XDG_CONFIG_HOME overrides are dropped, so each adapter
+  // falls back to its layout under the profile home on every platform.
+  patches.push(site(text, /homedir: ([\w$]+)\.file\([\w$]+\(\)\),\s*winAppData: this\.uriFromEnvVariable\("APPDATA"\),\s*xdgHome: this\.uriFromEnvVariable\("XDG_CONFIG_HOME"\),/g,
+    'MCP discovery home', m => `homedir: ${m[1]}.file(${envHome}), winAppData: void 0, xdgHome: void 0,`));
   return marker + '\n' + applyTelemetryPatches(text, patches);
 }
 
 function environmentServicePatches(text) {
   if (!/get appSettingsHome\(\) \{/.test(text)) throw new Error('Profile home environment service contract changed');
-  return [site(text, /: ([\w$]+)\(this\.userHome, this\.productService\.dataFolderName, "argv\.json"\)/g, 'environment argv.json',
+  const patches = [site(text, /: ([\w$]+)\(this\.userHome, this\.productService\.dataFolderName, "argv\.json"\)/g, 'environment argv.json',
     m => `: ${m[1]}(this.appSettingsHome, this.productService.dataFolderName, "argv.json")`)];
+  // The developer-only file policy (--__enable-file-policy) reads policy.json
+  // from the profile home; every environment service with the getter must match.
+  if (/get policyFile\(\) \{/.test(text))
+    patches.push(site(text, /: ([\w$]+)\(this\.userHome, this\.productService\.dataFolderName, "policy\.json"\)/g, 'environment policy.json',
+      m => `: ${m[1]}(this.appSettingsHome, this.productService.dataFolderName, "policy.json")`));
+  return patches;
 }
 
 export function isolateEnvironmentProfileHome(text) {
@@ -86,6 +98,7 @@ export function isolateEnvironmentProfileHome(text) {
 // counts are drift guards; `~` expansion, shell working directories and other
 // tools' folders keep the operating-system home.
 const homedir = '(?:\\(0, )?[\\w$]+\\.homedir\\)?\\(\\)';
+const wrappedHomedir = '(?:\\(0, )?[\\w$]+(?:\\.default)?\\.homedir\\)?\\(\\)';
 const patterns = {
   join: [new RegExp(`((?:\\(0, )?[\\w$]+\\.join\\)?\\()${homedir}(, "\\.(?:cursor|claude)")(?!, "mcp\\.json")`, 'g'),
     m => `${m[1]}${envHome}${m[2]}`],
@@ -93,7 +106,8 @@ const patterns = {
     m => `\`\${${envHome}}\${${m[1]}.sep}.cursor\${`],
   pluginCache: [/new ([\w$]+\.[\w$]+)\([\w$]+\.homedir\(\)\)/g, m => `new ${m[1]}(${envHome})`],
   pluginSettings: [/\}\)\([\w$]+\.homedir\(\), ([\w$]+)\)/g, m => `})(${envHome}, ${m[1]})`],
-  pluginRemoval: [/userHomeDir: [\w$]+\.homedir\(\)/g, () => `userHomeDir: ${envHome}`],
+  // Not the shell description, whose home is the real one (retrieval).
+  pluginRemoval: [/(?<!suggestedShell: [\w$]+,\s*)userHomeDir: [\w$]+\.homedir\(\)/g, () => `userHomeDir: ${envHome}`],
   pluginService: [/(new [\w$]+\.[\w$]+\(\s*[\w$]+,\s*)[\w$]+\.homedir\(\)(,\s*\(\) => \(\{\s*importThirdPartyPlugins)/g,
     m => `${m[1]}${envHome}${m[2]}`],
   // Another product's data/config overrides (and its XDG config folder) would
@@ -101,14 +115,47 @@ const patterns = {
   overrides: [/const ([\w$]+) = process\.env\.CURSOR_(?:DATA|CONFIG)_DIR;/g, m => `const ${m[1]} = void 0;`],
   xdgConfig: [/const ([\w$]+) = process\.env\.XDG_CONFIG_HOME;(\s*return \(null == \1 \? void 0 : \1\.trim\(\)\)\s*\? \(0, [\w$]+\.join\)\(\1, "cursor"\))/g,
     m => `const ${m[1]} = void 0;${m[2]}`],
+  // The same joins wrapped over several lines (computer-use data; in the daemon
+  // also projects, marketplaces and the Linux sign-in policy.json).
+  wrapped: [new RegExp(`((?:\\(0, )?[\\w$]+(?:\\.default)?\\.join\\)?\\(\\s*\\n\\s*)${wrappedHomedir}(,\\s*"\\.(?:cursor|claude)")`, 'g'),
+    m => `${m[1]}${envHome}${m[2]}`],
+  // One-line joins through a default-import home (daemon getCursorDataDir).
+  defaultJoin: [/((?:\(0, )?[\w$]+(?:\.default)?\.join\)?\()[\w$]+\.default\.homedir\(\)(, "\.(?:cursor|claude)")/g,
+    m => `${m[1]}${envHome}${m[2]}`],
+  // Skill store moves and skill plugin packing compare against the user skills root.
+  userHomeDirectory: [/userHomeDirectory: \(0, [\w$]+\.homedir\)\(\)/g, () => `userHomeDirectory: ${envHome}`],
+  // Agent-host daemon: its user MCP configuration is the profile's own
+  // User/mcp.json (the file the editor's MCP service owns), approvals for it
+  // are rooted in the profile home, and its XDG config branch is ignored.
+  daemonMcp: [new RegExp(`(\\(0, [\\w$]+\\.join\\)\\()${wrappedHomedir}, "\\.cursor", "mcp\\.json"\\)`, 'g'),
+    m => `${m[1]}${envHome}, "mcp.json")`],
+  daemonMcpApproval: [new RegExp(`createPolicyMiddlewares\\(${wrappedHomedir}\\)`, 'g'), () => `createPolicyMiddlewares(${envHome})`],
+  daemonXdg: [/const ([\w$]+) = process\.env\.XDG_CONFIG_HOME;(\s*if \(\1 === null \|\| \1 === void 0 \? void 0 : \1\.trim\(\)\)\s*return \(0, [\w$]+\.join\)\(\1, "cursor"\);)/g,
+    m => `const ${m[1]} = void 0;${m[2]}`],
+  daemonProjects: [new RegExp(`getProjectPath\\(${wrappedHomedir}, `, 'g'), () => `getProjectPath(${envHome}, `],
+  daemonSkillsHome: [new RegExp(`\\? ([\\w$]+) : ${wrappedHomedir};(\\s*const allowExternalSubagentSymlinks)`, 'g'),
+    m => `? ${m[1]} : ${envHome};${m[2]}`],
+  daemonSandbox: [new RegExp(`(\\(0, [\\w$]+\\.join\\)\\(\\s*)${wrappedHomedir}(,\\s*userSandboxDataFolderName,)`, 'g'),
+    m => `${m[1]}${envHome}${m[2]}`],
+  // Retrieval: codebase snapshots and watchers of the agent data folders, and
+  // its worktree root. Other tools' CLAUDE_CONFIG_DIR/CODEX_HOME overrides are
+  // ignored; their folders resolve inside the profile home (still gated).
+  retrievalDotDirs: [/(function [\w$]+\(\) \{\s*const ([\w$]+) = )[\w$]+\.homedir\(\);(\s*return \[\s*\{\s*path: [\w$]+\.join\(\2, "\.cursor"\),)/g,
+    m => `${m[1]}${envHome};${m[3]}`],
+  retrievalOverrides: [/process\.env\.(?:CLAUDE_CONFIG_DIR|CODEX_HOME) \|\| /g, () => ''],
+  retrievalWorktrees: [/const ([\w$]+) = [\w$]+\.homedir\(\);(\s*[\w$]+ =\s*\1 && \1\.length > 0\s*\? [\w$]+\.join\(\1, \.\.\.[\w$]+\.split\("\/"\)\))/g,
+    m => `const ${m[1]} = ${envHome};${m[2]}`],
 };
 export const nodeTargets = {
-  'extensions/cursor-agent-exec/dist/main.js': { join: 13, prefix: 1, overrides: 2, xdgConfig: 1, pluginCache: 4, pluginSettings: 1, pluginRemoval: 1, pluginService: 1 },
-  'extensions/cursor-agent-host/dist/main.js': { join: 10, prefix: 1, overrides: 2, xdgConfig: 1 },
-  'extensions/cursor-agent-host/dist/292.js': { join: 3, pluginCache: 3, pluginSettings: 1, pluginRemoval: 1, pluginService: 1 },
+  'extensions/cursor-agent-exec/dist/main.js': { join: 13, prefix: 1, overrides: 2, xdgConfig: 1, pluginCache: 4, pluginSettings: 1, pluginRemoval: 1, pluginService: 1,
+    wrapped: 1, userHomeDirectory: 3 },
+  'extensions/cursor-agent-host/dist/main.js': { join: 10, prefix: 1, overrides: 2, xdgConfig: 1, wrapped: 1 },
+  'extensions/cursor-agent-host/dist/292.js': { join: 3, pluginCache: 3, pluginSettings: 1, pluginRemoval: 1, pluginService: 1, userHomeDirectory: 3 },
   'extensions/cursor-agent-host/dist/817.js': { pluginCache: 1 },
-  'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs': { join: 5, prefix: 1, overrides: 2 },
-  'extensions/cursor-local-agent-runtime/dist/main.js': { join: 7, overrides: 1, xdgConfig: 1 },
+  'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs': { join: 5, prefix: 1, overrides: 2, wrapped: 5,
+    defaultJoin: 1, daemonMcp: 1, daemonMcpApproval: 1, daemonXdg: 1, daemonProjects: 2, daemonSkillsHome: 1, daemonSandbox: 1 },
+  'extensions/cursor-local-agent-runtime/dist/main.js': { join: 7, overrides: 1, xdgConfig: 1, wrapped: 1 },
+  'extensions/cursor-retrieval/dist/main.js': { retrievalDotDirs: 1, retrievalOverrides: 2, retrievalWorktrees: 1 },
   'extensions/cursor-mcp/dist/main.js': { join: 1 },
   'extensions/cursor-browser-automation/dist/extension.js': { join: 2 },
   'extensions/cursor-ndjson-ingest/dist/main.js': { join: 1 },

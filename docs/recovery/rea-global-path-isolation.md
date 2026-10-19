@@ -471,3 +471,168 @@ Source build of the 3.21.13 runtime input. On main, `verify:global-paths` failed
   inspected, but not changed. The resolver can still save history when a startup file stops
   bash from replacing itself, for example with an `EXIT` trap. Neither wrote in these runs.
 - Windows, macOS and packaging: the preview.7 payload predates this change.
+
+## 19 October 2026: MCP discovery, plugins, gated roots, migration and a packaged second installation (Linux x64 only)
+
+Source build of the 3.21.13 runtime input, plus one `npm run package:linux` tree. Branch
+`ov/config-isolation`. OV-302 stays **Partial** until the coordinator integrates the ledger;
+the Linux recommendation is in the [worker report](../verification/worker-reports/config-isolation.md).
+
+### Defects
+
+**Observed (native, before the fix).** With the extended verifier on the unfixed build
+(`logs/global-paths-O0sUv1`, `logs/global-paths-chhehf`), alpha, started with
+`--__enable-file-policy`, read `~/.openvision-local/policy.json` in HOME. No other guarded
+HOME file was read. Both runs also failed the provider step, because of the host (see
+below), not because of this defect.
+
+**Code, fixed in source (no native exposure by default):**
+- **Editor MCP discovery.** The main-process helper gave the Claude desktop, Windsurf and
+  global `mcp.json` adapters `os.homedir()`, `APPDATA` and `XDG_CONFIG_HOME`. In 3.21.13
+  nothing reads the discovery registry: `QKy.getAll()` has no caller in either workbench,
+  so the adapters are never instantiated. With the setting on, natively no file was read
+  either before or after the fix.
+- **Agent-host daemon.** Off by default behind host gates. It read user servers from
+  `~/.cursor/mcp.json` with approvals rooted in HOME. It also had a `$XDG_CONFIG_HOME/cursor`
+  branch, HOME paths wrapped over several lines (projects, Claude marketplaces, the Linux
+  sign-in `policy.json`, computer-use data), `getProjectPath(homedir())` for transcripts,
+  a HOME default for its skills `userHome`, and a per-user sandbox file in HOME.
+- **Retrieval.** The snapshot and watcher roots for agent folders (`~/.cursor` ungated;
+  `~/.claude` or `CLAUDE_CONFIG_DIR`, `~/.codex` or `CODEX_HOME`, `~/.agents` behind the
+  `agentDotDirs` gate) and its worktree root.
+- **Wrapped joins.** Computer-use data (`~/.cursor/cursor-computer-use`) in exec, host and
+  the local runtime used a multi-line join that the earlier pattern did not match. So did
+  the skill-store and skill-packing `userHomeDirectory: homedir()` arguments in exec and
+  host `292.js`.
+- **Developer file policy.** `policyFile` (only with `--__enable-file-policy` or a dev build)
+  resolved `~/<dataFolderName>/policy.json` in main, the pty host and both workbenches.
+
+### Change
+
+`desktop/profile-home-paths.mjs` (same owner, same drift-guarded counts, backups and
+marker):
+
+| Producer | Now |
+| --- | --- |
+| Editor MCP discovery helper (`out/main.js`) | `homedir` is the profile home; `winAppData` and `xdgHome` are dropped. Every adapter resolves under the profile home on every platform, for example `User/.config/Claude/claude_desktop_config.json` |
+| Daemon user MCP servers and approvals | `User/mcp.json`, the file the editor's MCP service owns ([MCP isolation](rea-profile-isolation.md)), with approvals rooted in the profile home |
+| Daemon config directory | `XDG_CONFIG_HOME` ignored, as `CURSOR_CONFIG_DIR` already was |
+| Daemon projects, marketplaces, sign-in `policy.json`, transcripts, skills default, per-user sandbox | Profile home |
+| Retrieval agent-folder roots and worktree root | Profile home. `CLAUDE_CONFIG_DIR` and `CODEX_HOME` are ignored; the gate is unchanged |
+| Computer-use data; skill-store and skill-packing home | Profile home |
+| `policyFile` (environment services in main, pty host and both workbenches) | `appSettingsHome/<dataFolderName>/policy.json` |
+
+The retrieval shell description (`suggestedShell`, `userHomeDir`) keeps the real home for
+`~` expansion. So do the daemon's sandbox `~` expansion and `isWorkingDirHomeDir`. The
+plugin-removal pattern now excludes it explicitly.
+
+`desktop/migrate-profile-home.mjs` also imports `~/.openvision/agents` into `User/agents`,
+where user subagents are read.
+
+### Verifier
+
+`npm run verify:global-paths` gains the following:
+
+- **A HOME read detector.** After seeding, every HOME file's access time is set to an
+  hour before its modification time. On this `relatime` ext4 root, any read moves it.
+  The verifier's own reads use `O_NOATIME`, and a probe file proves the detector works
+  before the run (it fails closed otherwise).
+- **More HOME markers.** All of them must be neither read nor listed:
+  - MCP discovery files: `.openvision/mcp.json`, `.cursor/mcp.json`, Claude desktop
+    (HOME and `$XDG_CONFIG_HOME`) and Windsurf. Each server would write a marker
+    outside HOME if started.
+  - Plugins: `~/.openvision/plugins/local/<plugin>` with a skill and an agent, `cache`,
+    `github-plugins.json`, and `~/.claude/plugins/installed_plugins.json` with a cached
+    plugin, `marketplaces`, `known_marketplaces.json` and `enabledPlugins` in
+    `~/.claude/settings.json`.
+  - `~/.openvision-local/policy.json` and `~/.openvision/policy.json`.
+- **Settings.** Every profile sets `chat.mcp.enabled`, `chat.mcp.discovery.enabled` and
+  autostart on, and Customize → MCPs is captured.
+- **Alpha only:**
+  - It owns a local plugin with a skill and an agent. It must list all three; beta and
+    gamma must list none.
+  - It starts with `--__enable-file-policy` and must read its profile `policy.json`.
+- **Listing comparison.** Names are compared case-insensitively, with separators
+  normalized, because Customize title-cases plugin names ("Alpha Local Plugin").
+- **`--migrate`.**
+  - Setup: legacy skill, subagent, plan and command in HOME, plus a skill that alpha's
+    profile already holds with different content.
+  - It runs `npm run migrate:profile-home` twice, then starts alpha.
+  - It expects: 4 files copied, exactly that conflict, HOME byte-identical,
+    `home-import.json` written once, and a second run copying nothing and leaving the
+    profile unchanged.
+  - In Customize, the migrated items must be listed and the profile's version of the
+    conflicting skill must win.
+- **`--second-installation <dir>`.**
+  - gamma runs the executable of a tree made by `npm run package:linux -- <dir>`, with
+    that tree's own `electron-host/data/local` and `data/local-extensions`.
+  - The verifier refuses a tree that already has `data/local` or lies inside the shared
+    host.
+- **XDG base directories.** These are created before launch. On this host, Chromium's
+  bundled fontconfig (cache format 11) cannot use the system cache (format 9). Without
+  `$XDG_CACHE_HOME` it fell back to `~/.fontconfig` (`global-paths-O0sUv1`). That is a
+  library cache, not OpenVision data. Real desktop sessions have these directories.
+
+### Host notes
+
+- The provider-step failures in the two unfixed runs were not caused by this change.
+  - Saving a provider key waited on a Secret Service that did not exist.
+  - Fix: gnome-keyring was installed, and each run starts `gnome-keyring-daemon --unlock
+    --components=secrets` inside `dbus-run-session`, with a disposable password.
+  - An empty password raised a keyring-creation prompt that blocked startup. That run was
+    stopped; it is not counted.
+- Native runs use a clean environment (`env -i`, with only `HOME`, `PATH` and `LANG`), so
+  the container's proxy variables do not reach Electron.
+- zsh 5.9 was installed (`apt-get install zsh`), keeping the existing `/etc/zsh/zshrc`.
+
+### Observed (fixed build, native)
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `npm run verify:global-paths` | `global-paths-9p2hhi` | **Pass, first run.** HOME read only `.bash_profile` and `.bashrc` (shell startup). Guarded MCP, plugin and policy files: not read. XDG Claude configuration: not read. No server started. HOME added only the attributed `.bash_history`; nothing changed or removed. Alpha read its profile `policy.json`. Alpha listed its plugin, plugin skill and plugin agent; beta and gamma listed none, and no HOME plugin was listed. Each profile created `User/.openvision/plugins/local`. 12 authorized fixture requests. All hosts exited 0 |
+| `npm run verify:global-paths -- --migrate` | `global-paths-migrate-jBdRLc` | **Pass, first run.** First import: exit 1 by design (the conflict), 4 copied, 1 conflict. Second import: 0 copied, 4 unchanged, profile unchanged. HOME unchanged. Customize listed the legacy skill, subagent and command, and the profile's version of the conflicting skill |
+| `npm run package:linux -- build/second-installation`, then `npm run verify:global-paths -- --second-installation build/second-installation` | `global-paths-b4SwwC` | **Pass, first run.** gamma ran `build/second-installation/electron-host/openvision` with that tree's `data/local`. Same results as the default mode. The packaged `out/main.js` has the same SHA-256 as the source build (`0878b35f…`) |
+
+Reruns on the same build, all passing:
+
+| Mode | Run |
+| --- | --- |
+| Default | `global-paths-iDYzDy` |
+| `--migrate` | `global-paths-migrate-BH0iPt` |
+| `--second-installation`, with the package's `data/` removed first | `global-paths-nBepSr` |
+
+Each mode passed twice, both times on its first attempt, with no retries. Same-build
+regression runs:
+- `verify:rules-isolation` (`rules-isolation-x6CyGv`): pass.
+- `verify:local-rules` (`local-rules-verification-U61P38`): pass.
+- `test:namespace`: 53/53. The 6 new tests cover discovery adapters on three platforms,
+  the file policy, the daemon, retrieval roots, the relocated subagent import, and a real
+  zsh run of the zsh guard.
+
+### Inferred, not native
+
+- **Retrieval roots.** Offline, retrieval tracks no codebase, and the `agentDotDirs` gate is
+  a server feature gate. A unit test runs the patched root function with
+  `CLAUDE_CONFIG_DIR` and `CODEX_HOME` set, and checks that all four roots are under the
+  profile home. Disposition: covered by the unit test and the HOME read detector (no HOME
+  read in any run); the gated branch was not exercised natively.
+- **Daemon.** Off by default. The unit test runs `getConfigDir()` with `XDG_CONFIG_HOME`
+  and `CURSOR_CONFIG_DIR` set, and checks that every patched site uses the variable.
+- **Editor discovery.** The adapters are not instantiated in 3.21.13. The unit test runs the
+  recovered adapters' own `getFilePath` with the patched helper's output on all three
+  platforms.
+- **Plugin cache, marketplace clones and `github-plugins.json` writes.** These happen only on
+  install, or for backend-enabled plugins, so none ran offline. Their roots are the profile
+  home in code (earlier pass). The local-plugin root that activation creates was observed in
+  each profile.
+
+### Defaults kept (owner decision pending)
+
+- Named profiles created with **Profiles** inside one data directory share that directory's
+  `User` folder and its OpenVision customizations (now stated in the
+  [guide](../guides/project-configuration.md#agent-data-and-runtime-arguments)).
+- Parent-folder rule inheritance stays off.
+- Legacy project `.cursor` inputs are read only through `migrate:project`.
+- Terminal Claude/Codex status stays the explicit opt-in that reads HOME.
+- The daemon's user MCP file is `User/mcp.json` (shared with the editor), not
+  `User/.openvision/mcp.json`.
