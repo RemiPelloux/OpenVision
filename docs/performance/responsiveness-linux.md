@@ -184,6 +184,125 @@ handler and gate code.
   3–7) and up to 6.8 s in exploratory runs at load 34, flat across turns 10–110. The first
   chunk took 1.1 s after submit. Neither was attributed.
 
+## Linux follow-up: stream delivery, edit sync, scroll (19 October 2026)
+
+This section covers a second Linux x64 host. It is a cloud container with 4
+CPUs and 15 GB of RAM, running Xvfb at 1920×1080 with **no GPU**, so Chromium
+renders in software. Runs were serialized, under a non-root user, with
+`dbus-run-session` and a plaintext gnome-keyring as the Secret Service. The
+model fixture is the same controlled loopback fixture as above. The run list
+and commands are in the
+[worker report](../verification/worker-reports/responsiveness.md).
+
+### `stream.lastChunkToPaintMs`
+
+The smoke failure `xXcKIA` (1,789 ms) had three causes:
+
+1. **Measurement (fixed in the verifier).**
+   - Old behaviour: the "stream done" text was polled only after the 56 typed
+     keys. With 500 chunks the stream ends before the typing does, so smoke
+     figures included leftover typing time.
+   - New behaviour: once the fixture sends the last chunk, the page checks the
+     streaming reply every frame, concurrently with the typing. The time is
+     taken one frame after the text is found. Both clocks are wall-clock based
+     (`performance.timeOrigin + now()`) on the same host.
+   - New fields: `lastChunkToFoundMs`, `lastChunkAfterTypingMs`, `typingMs`,
+     `submitToRequestMs` and `firstChunkSentToSeenMs`.
+2. **Delivery (fixed in the product).** The recovered Agent loop
+   (`consumeStream` in `cursor-agent-exec`) awaits renderer round trips for
+   every text delta: `sendUpdate(textDelta)`, `sendUpdate(tokenDelta)` and
+   `recordText`. Delivery therefore runs at the renderer main thread's pace.
+   - Observed with the `--trace-stream` logpoints on the renderer's
+     `textDeltaCoalescer`: 500 deltas sent in 2.2 s arrived at 25–50 per
+     second, with a median inter-arrival of 25 ms at 51 fps. The coalescer
+     flushed each one promptly.
+   - Observed with strace of the extension host: the SSE response was read in
+     about 3 s; writes to the renderer IPC socket ran for about 20 s.
+   - The rate did not depend on transcript size: 41 deltas/s with 2 turns and
+     35/s with 30.
+   - Fix: `desktop/agent-stream-delivery-customization.mjs` reads the model
+     stream as it arrives and merges text deltas that are already waiting, so
+     one round trip carries the backlog. Order, text, token counts and other
+     events are unchanged. When the renderer keeps up, nothing is waiting and
+     each delta goes alone.
+3. **Fixture (fixed in the verifier).** The fixture project lives under
+   `logs/` inside the OpenVision checkout. The Agent's per-turn
+   `git status --short --branch` found that checkout and walked it. The launch
+   now sets `GIT_CEILING_DIRECTORIES` to the run directory.
+   - Submit → model request: 6,477 → 427 ms.
+   - Transcript turns: 7.4 → 1.25 s.
+   - About 100 MB of extension-host reads per stream disappeared.
+
+Last chunk sent → painted (ms). The budget of 1,000 ms is unchanged.
+
+| Build | Smoke (500 chunks) | Full (2,000 chunks) |
+| --- | --- | --- |
+| Before (`R0Nvs0`, `oJF6cs`; full `0IZqo5`) | 12,167; 12,219 | **44,960** |
+| After, 10 smoke and 10 full stream-only runs | **650–847** | **SEE_FULL** |
+
+### Incremental edits in the 50,000-line file
+
+Default pending owner decision: "incremental" means editor-model and
+language-server synchronisation, not Agent multi-edit application.
+
+Each editor phase now records, per typed key and by process role:
+
+- renderer writes;
+- extension-host reads and writes;
+- TypeScript server reads and writes;
+- CPU per role, over all threads.
+
+The large-file phase also records ratios to the 40-line control file
+(`*Ratio`) and the per-key edit payload as a share of the file
+(`syncBytesPerKeyFileShare`).
+
+Baselines (`dQjcNM`, `o5bjuB`, `vCBiFW`; 165 keys each):
+
+| Per typed key | 40-line file | 50,000-line file (3,538,890 B) |
+| --- | ---: | ---: |
+| Renderer writes (edits to the extension host, upper bound) | 142–924 B | 169–173 B |
+| TypeScript server input (edits) | 814–997 B | 893–1,348 B |
+| Large/small ratio, TypeScript server input | | 0.90–1.66 |
+| Edit payload as a share of the file | | 0.00025–0.00038 |
+| TypeScript server output (replies) | 2.1–2.4 KB | **68–143 KB** |
+| CPU: renderer / extension host / TypeScript server | 32–33 / 12.5–14.2 / 6.1–6.8 ms | 55–61 / 52–60 / 41–72 ms |
+
+What these show:
+
+- **Edits are incremental (observed).** What reaches the extension host and
+  the TypeScript server per key is the same in both files, about 1 KB.
+- **Replies are not.** strace of the semantic server
+  (`logs/strace-ts.txt`, a diagnostic run) attributes the large replies to
+  `documentHighlights`: one response was 4,077,984 bytes, listing a keyword's
+  occurrence on all 50,000 lines (every fixture line starts with
+  `export const`).
+  - This is occurrence highlighting after cursor moves, from the built-in
+    TypeScript extension. It is not edit sync and not re-tokenization.
+  - It explains the 4× extension-host and 7–12× TypeScript-server CPU per key,
+    and the large-file long tasks (532–1,143 ms against 0–152 ms).
+  - It was not changed. Capping occurrence highlighting in large files is
+    listed as an owner decision.
+
+New `editorLarge` budgets were set from these baselines:
+
+| Budget | Value |
+| --- | ---: |
+| `rendererWritePerKey` | ≤ 1,000 B |
+| `tsserverReadPerKey` | ≤ 2,700 B (worst baseline ×2) |
+| `syncBytesPerKeyFileShare` | ≤ 0.001 (full only) |
+| `tsserverReadPerKeyRatio` | ≤ 2.5 (worst ×1.5) |
+
+### Scroll frame p95
+
+Each phase now records `frameRefreshHistogram`: frame gaps counted in whole
+60 Hz refresh intervals (1, 2, 3, 4, and 5 or more).
+
+SCROLL_RESULTS
+
+### Software rendering and the frame budgets
+
+SOFTWARE_RESULTS
+
 ## Budgets
 
 `desktop/responsiveness-budgets.json` holds the budgets and
