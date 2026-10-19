@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { mkdir, mkdtemp, readFile, writeFile, unlink, stat } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,56 +10,53 @@ import { fileHash } from './import-files.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { probeProvider } from './live-provider-probe.mjs';
 import { payloadComparisons, probeNativePayload } from './live-payload-probe.mjs';
+import { readSavedProviders, savedStatePath, decryptSavedCredential, writeFixtureSavedProviders, startFixtureProvider } from './saved-providers.mjs';
+import { qualityFixtureReply, qualityFixtureSets } from './completion-quality-fixture.mjs';
 
 if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-providers.mjs --live [--model SAVED_ID] [--mode tools|chat|completion] [--reasoning omit|none|low|medium|high|xhigh|max] [--thinking enabled|disabled]\nCompletion mode uses the unchanged production autocomplete request and does not accept reasoning/thinking overrides. Optional: --native-payload PATH with --model compares five variants of a captured disposable Agent request; --comparison structure|output-limit selects the variants. Every response has a byte/time bound. Do not combine with mode/reasoning/thinking. Uses real API quota.');
+  console.log('Usage: node desktop/verify-live-providers.mjs --live [--model SAVED_ID] [--mode tools|chat|completion|completion-quality] [--reasoning omit|none|low|medium|high|xhigh|max] [--thinking enabled|disabled]\nCompletion modes use the unchanged production autocomplete request and do not accept reasoning/thinking overrides; completion-quality sends the pinned multi-language corpus (36 requests per model). --fixture-saved-provider [--fixture-responses good|bad|truncated|markdown] dry-runs completion-quality against a labelled loopback fixture without quota. Optional: --native-payload PATH with --model compares five variants of a captured disposable Agent request; --comparison structure|output-limit selects the variants. Every response has a byte/time bound. Do not combine with mode/reasoning/thinking. Uses real API quota.');
   process.exit(0);
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const database = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
-let providers;
-try {
-  const row = database.prepare('SELECT value FROM ItemTable WHERE key = ?').get('openvision.model-providers.v1');
-  assert.ok(row, 'No saved OpenVision providers');
-  const state = JSON.parse(String(row.value));
-  providers = state.providers.map(provider => ({ id: provider.id, name: provider.name, url: provider.url,
-    models: provider.models.filter(model => model.enabled).map(model => model.id),
-    encrypted: database.prepare('SELECT value FROM ItemTable WHERE key = ?')
-      .get(`secret://openvision.provider.${provider.id}`)?.value }));
-} finally { database.close(); }
+const fixture = process.argv.includes('--fixture-saved-provider');
+const fixtureSetIndex = process.argv.indexOf('--fixture-responses');
+const fixtureSet = fixtureSetIndex < 0 ? 'good' : process.argv[fixtureSetIndex + 1];
+assert.ok(fixture || fixtureSetIndex < 0, '--fixture-responses requires --fixture-saved-provider');
+assert.ok(qualityFixtureSets.includes(fixtureSet), 'Unknown fixture response set');
+let providers = fixture ? undefined : readSavedProviders(savedStatePath(root));
 const modelIndex = process.argv.indexOf('--model');
-const selectedModel = modelIndex < 0 ? undefined : process.argv[modelIndex + 1];
-if (modelIndex >= 0) {
-  assert.ok(selectedModel && !selectedModel.startsWith('--'), '--model requires a saved model ID');
-  providers = providers.filter(provider => provider.models.includes(selectedModel)).map(provider => ({ ...provider, probeModel: selectedModel }));
-  assert.ok(providers.length, 'Requested model is not enabled in saved providers');
-}
+const selectedModel = modelIndex < 0 ? fixture ? 'fixture-coder' : undefined : process.argv[modelIndex + 1];
+if (modelIndex >= 0) assert.ok(selectedModel && !selectedModel.startsWith('--'), '--model requires a saved model ID');
 const effortIndex = process.argv.indexOf('--reasoning');
-if (effortIndex >= 0) {
-  const effort = process.argv[effortIndex + 1];
-  assert.ok(['omit', 'none', 'low', 'medium', 'high', 'xhigh', 'max'].includes(effort), 'Unsupported probe reasoning option');
-  providers = providers.map(provider => ({ ...provider, probeReasoning: effort }));
-}
+const effort = effortIndex < 0 ? undefined : process.argv[effortIndex + 1];
+if (effortIndex >= 0) assert.ok(['omit', 'none', 'low', 'medium', 'high', 'xhigh', 'max'].includes(effort), 'Unsupported probe reasoning option');
 const thinkingIndex = process.argv.indexOf('--thinking');
-if (thinkingIndex >= 0) {
-  const thinking = process.argv[thinkingIndex + 1];
-  assert.ok(['enabled', 'disabled'].includes(thinking), 'Thinking must be enabled or disabled');
-  providers = providers.map(provider => ({ ...provider, probeThinking: thinking }));
-}
+const thinking = thinkingIndex < 0 ? undefined : process.argv[thinkingIndex + 1];
+if (thinkingIndex >= 0) assert.ok(['enabled', 'disabled'].includes(thinking), 'Thinking must be enabled or disabled');
 const modeIndex = process.argv.indexOf('--mode');
+const mode = modeIndex < 0 ? undefined : process.argv[modeIndex + 1];
 if (modeIndex >= 0) {
-  const mode = process.argv[modeIndex + 1];
-  assert.ok(['chat', 'tools', 'completion'].includes(mode), 'Mode must be chat, tools or completion');
-  assert.ok(mode !== 'completion' || (effortIndex < 0 && thinkingIndex < 0), 'Completion mode preserves production options');
-  providers = providers.map(provider => ({ ...provider, probeMode: mode }));
+  assert.ok(['chat', 'tools', 'completion', 'completion-quality'].includes(mode), 'Mode must be chat, tools, completion or completion-quality');
+  assert.ok(!mode.startsWith('completion') || (effortIndex < 0 && thinkingIndex < 0), 'Completion modes preserve production options');
 }
+assert.ok(!fixture || mode === 'completion-quality', 'Fixture dry runs cover --mode completion-quality only');
+function selectProviders(saved) {
+  let selected = saved;
+  if (selectedModel) {
+    selected = selected.filter(provider => provider.models.includes(selectedModel)).map(provider => ({ ...provider, probeModel: selectedModel }));
+    assert.ok(selected.length, 'Requested model is not enabled in saved providers');
+  }
+  return selected.map(provider => ({ ...provider, ...(effort ? { probeReasoning: effort } : {}),
+    ...(thinking ? { probeThinking: thinking } : {}), ...(mode ? { probeMode: mode } : {}) }));
+}
+if (providers) providers = selectProviders(providers);
 const { layout } = await loadRuntime(root);
 const payloadIndex = process.argv.indexOf('--native-payload');
 const comparisonIndex = process.argv.indexOf('--comparison');
 assert.ok(comparisonIndex < 0 || payloadIndex >= 0, '--comparison requires --native-payload');
 let nativePayload;
 if (payloadIndex >= 0) {
-  assert.ok(selectedModel && providers.length === 1, 'Payload comparison requires exactly one saved provider via --model');
+  assert.ok(!fixture && selectedModel && providers.length === 1, 'Payload comparison requires exactly one saved provider via --model');
   assert.ok(effortIndex < 0 && thinkingIndex < 0 && modeIndex < 0, 'Payload comparison preserves captured options');
   const path = process.argv[payloadIndex + 1];
   assert.ok(path && !path.startsWith('--'), '--native-payload requires a file');
@@ -80,7 +76,7 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verification
 // Windows safeStorage binds encrypted values to the profile's DPAPI-wrapped key.
 // Copy only that encrypted key into our disposable profile, then remove it after exit.
 let copiedEncryptionKey = false;
-if (process.platform === 'win32') {
+if (process.platform === 'win32' && !fixture) {
   const state = JSON.parse(await readFile(join(root, 'data/local/Local State'), 'utf8'));
   assert.equal(typeof state.os_crypt?.encrypted_key, 'string', 'Saved profile encryption key missing');
   await writeFile(join(profile, 'Local State'), JSON.stringify({ os_crypt: { encrypted_key: state.os_crypt.encrypted_key } }));
@@ -94,13 +90,20 @@ const result = { checkedAt: new Date().toISOString(),
   verifierSha256: await fileHash(fileURLToPath(import.meta.url)),
   probeSha256: await fileHash(join(root, 'desktop/live-chat-probe.mjs')),
   discoveryProbeSha256: await fileHash(join(root, 'desktop/live-provider-probe.mjs')),
-  ...(providers[0]?.probeMode === 'completion' ? {
+  ...(mode === 'completion' ? {
     completionProbeSha256: await fileHash(join(root, 'desktop/live-completion-probe.mjs')),
     completionAdapterSha256: await fileHash(join(root, 'desktop/completion-http.mjs')) } : {}),
+  ...(mode === 'completion-quality' ? {
+    completionQualityProbeSha256: await fileHash(join(root, 'desktop/live-completion-quality-probe.mjs')),
+    completionQualityCorpusSha256: await fileHash(join(root, 'desktop/completion-quality-corpus.mjs')),
+    completionSyntaxSha256: await fileHash(join(root, 'desktop/completion-syntax.mjs')),
+    completionAdapterSha256: await fileHash(join(root, 'desktop/completion-http.mjs')) } : {}),
+  ...(fixture ? { fixture: { responses: fixtureSet,
+    label: 'FIXTURE DRY RUN: loopback provider with authored replies; no live model, quota or quality claim.' } } : {}),
   ...(nativePayload ? { payloadProbeSha256: await fileHash(join(root, 'desktop/live-payload-probe.mjs')),
     capturedPayloadSha256: await fileHash(resolve(process.argv[payloadIndex + 1])) } : {}),
   providers: [], success: false };
-let app;
+let app, fixtureProvider, fixtureState;
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
@@ -108,12 +111,16 @@ try {
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : [])] });
   await app.firstWindow();
+  if (fixture) {
+    const key = 'fixture-saved-key';
+    fixtureProvider = await startFixtureProvider({ models: [selectedModel], key,
+      respond: (payload, context) => qualityFixtureReply(fixtureSet, context) });
+    fixtureState = await writeFixtureSavedProviders(app, join(directory, 'fixture-saved-state.vscdb'),
+      { id: 'fixture-saved', name: 'Fixture saved provider', url: fixtureProvider.url, models: [selectedModel], key });
+    providers = selectProviders(readSavedProviders(fixtureState));
+  }
   for (const provider of providers) {
-    const credential = await app.evaluate(({ safeStorage }, saved) => {
-      try {
-        return { key: saved ? safeStorage.decryptString(Buffer.from(JSON.parse(String(saved)).data)) : '' };
-      } catch { return { error: 'Saved credential could not be decrypted.' }; }
-    }, provider.encrypted);
+    const credential = await decryptSavedCredential(app, provider.encrypted);
     const observed = { id: provider.id, name: provider.name, baseUrl: provider.url,
       credentialAvailable: !!credential.key,
       ...(credential.error ? { error: credential.error } : nativePayload
@@ -127,7 +134,14 @@ try {
   }
   result.success = result.providers.length > 0 && result.providers.every(provider => nativePayload
     ? provider.diagnostic?.ok : provider.discovery?.ok &&
-      (providers[0]?.probeMode === 'completion' ? provider.completion?.ok : provider.chat?.ok));
+      (mode === 'completion' ? provider.completion?.ok : mode === 'completion-quality' ? provider.completionQuality?.ok : provider.chat?.ok));
+  if (fixtureProvider) {
+    result.fixture.serverRequests = fixtureProvider.requests.length;
+    result.fixture.allAuthorized = fixtureProvider.requests.every(request => request.authorized);
+    // The probe's own request count must match what the loopback route received.
+    if (!result.fixture.allAuthorized || result.fixture.serverRequests !==
+        result.providers.reduce((total, provider) => total + (provider.completionQuality?.requests ?? 0), 0)) result.success = false;
+  }
 } catch {
   result.success = false; result.error = 'Probe execution failed before completing all checks.';
 } finally {
@@ -144,6 +158,8 @@ try {
       if (error.code !== 'ENOENT') { result.success = false; result.encryptionCleanupError = 'Disposable encrypted key cleanup failed.'; }
     });
   }
+  await fixtureProvider?.close();
+  if (fixtureState) await unlink(fixtureState).catch(() => {});
   if (copiedEncryptionKey && result.cleanupError) result.retainedEncryptionState = 'Owned disposable profile retained because host cleanup is unconfirmed.';
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2) + '\n');
   console.log(`Evidence: ${directory}`);
