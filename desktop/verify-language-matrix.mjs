@@ -65,7 +65,7 @@ const result = { checked_at: new Date().toISOString(), directory, mode: large ? 
   ...(only ? { only, partial: 'Development filter: not an acceptance run' } : {}), platform: process.platform, arch: process.arch,
   launcher_node: process.version, executable_sha256: await fileHash(layout.executable), identities,
   pinned_extensions: pinned, typescript: typescriptVersion, project_entries: Object.keys(fixtures).length,
-  limitations: ['Public-API driver plus native rename widget; the only registered provider is the private .ovconflict race probe.',
+  limitations: ['Public-API driver plus native rename widget; the only registered providers are the private .ovconflict race probe and the .ovinflight delayed probes.',
     'Timings are single local observations on this machine, not cross-machine guarantees.',
     'Trace counts cover file-path syscalls of the owned process family; content reads through already-open descriptors are not path-attributed.'] };
 
