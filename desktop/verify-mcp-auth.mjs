@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { spawn, execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { setTimeout as delay } from 'node:timers/promises';
 import { _electron } from '../tooling/browser.mjs';
 import { verificationSettings } from './verification-profile.mjs';
@@ -53,7 +54,9 @@ const result = { directory, checkedAt: new Date().toISOString(), mode: secrets ?
       ['verifier', join(root, 'desktop/verify-mcp-auth.mjs')]].map(async ([name, path]) => [name, await fileHash(path)]))) },
   scope: 'Linux x64 native workbench, MCP utility and main process; loopback OAuth 2.1 MCP fixture; controlled inference; disposable profile only.',
   checks: {}, observations: {}, pageErrors: [], hostExits: [], opened: [] };
-const env = { ...process.env, OV_MCP_STATIC_TOKEN: oauth.issued.staticToken }; delete env.ELECTRON_RUN_AS_NODE;
+// A canary exported like a user's own secret (issue #9): it must never reach disk.
+const environmentCanary = `ov-env-canary-${randomUUID()}`;
+const env = { ...process.env, OV_MCP_STATIC_TOKEN: oauth.issued.staticToken, OV_ENV_CANARY: environmentCanary }; delete env.ELECTRON_RUN_AS_NODE;
 const sandbox = await linuxSandboxArguments(layout.host);
 const common = ['--user-data-dir', profile, '--extensions-dir', join(profile, 'extensions'), '--new-window',
   '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', ...sandbox];
@@ -310,11 +313,20 @@ async function secretChecks() {
   const rows = await readOAuthRows(join(profile, 'User/globalStorage/state.vscdb'));
   result.observations.oauthRows = rows.map(({ key, logical, kind, encryptedPrefix, bytes }) => ({ key, logical, kind, encryptedPrefix, bytes }));
   const secretRows = rows.filter(row => row.kind === 'secret');
-  // The legacy extension owner (class Uw) keeps its PKCE verifier as a plain
-  // global value; its mirror reaches this store when it starts an attempt
-  // before routing moves to the utility. Recorded, not asserted (see rea-mcp-oauth).
-  result.observations.plainVerifierRows = rows.filter(row => row.kind === 'global' && row.logical.endsWith('] mcp_code_verifier'))
+  // Issue #9: the legacy extension owner kept its PKCE verifier as a plain global
+  // value (mirrored into this store) and in its attempt files. Neither may remain.
+  result.observations.plainVerifierRows = rows.filter(row => row.kind === 'global' && row.logical.endsWith('] mcp_code_verifier') && row.bytes > 4)
     .map(row => ({ logical: row.logical, bytes: row.bytes }));
+  assert.deepEqual(result.observations.plainVerifierRows, [], 'No PKCE verifier is kept as a plain value');
+  const attemptFiles = [];
+  for await (const path of (async function* walk(folder) {
+    for (const entry of await readdir(folder, { withFileTypes: true }).catch(() => [])) {
+      const child = join(folder, entry.name);
+      if (entry.isDirectory()) yield* walk(child); else if (/mcp-oauth-attempts\/[^/]+\.json$/.test(child)) yield child;
+    }
+  })(join(profile, 'User/globalStorage'))) attemptFiles.push({ path: path.replace(directory, '<run>'), verifier: /"codeVerifier"/.test(await readFile(path, 'utf8')) });
+  result.observations.attemptFiles = attemptFiles;
+  assert.deepEqual(attemptFiles.filter(file => file.verifier), [], 'OAuth attempt files carry no PKCE verifier');
   for (const name of ['mcp_tokens', 'mcp_client_information'])
     assert.ok(secretRows.some(row => ownRow(row, name)), `Missing secret row ${name}`);
   for (const row of secretRows) assert.equal(row.encryptedPrefix, 'v11', `${row.logical} must be encrypted with the keyring key`);
@@ -329,15 +341,15 @@ async function secretChecks() {
   const pids = await familyPids(app.process().pid);
   const findings = await scanForSecrets({ roots: [profile, project], files: [join(profile, 'User/.openvision-local/argv.json')],
     secrets: [...oauth.secrets().map(([kind, value]) => kind === 'static_token' ? [kind, value, { environmentName: 'OV_MCP_STATIC_TOKEN' }] : [kind, value]),
-      ['static_header', `Bearer ${oauth.issued.staticToken}`]], pids });
+      ['static_header', `Bearer ${oauth.issued.staticToken}`], ['environment_canary', environmentCanary, { environmentName: 'OV_ENV_CANARY' }]], pids });
   result.observations.scan = findings.summary;
-  // The variable itself is part of the app's environment. A persisted copy of
-  // that environment entry is recorded separately (it is not written by the MCP
-  // path); any other copy, including an expanded header, fails.
-  const environmentCopies = findings.hits.filter(hit => hit.kind === 'static_token' && hit.environmentEntryOnly);
-  result.observations.environmentEntryCopies = environmentCopies.map(hit => hit.where.replace(directory, '<run>'));
-  assert.deepEqual(findings.hits.filter(hit => !environmentCopies.includes(hit)), [],
-    'No OAuth secret, expanded static header or other copy of the static token may appear on disk or in argv');
+  // Issue #9: the app's own environment (the static token variable and an exported
+  // canary) must not be persisted either; environment-entry copies are classified
+  // for diagnosis only.
+  result.observations.environmentEntryCopies = findings.hits.filter(hit => hit.environmentEntryOnly)
+    .map(hit => `${hit.kind}: ${hit.where.replace(directory, '<run>')}`);
+  assert.deepEqual(findings.hits.map(hit => ({ ...hit, where: hit.where.replace(directory, '<run>') })), [],
+    'No OAuth secret, expanded static header, static token or exported environment value may appear on disk or in argv');
   assert.equal(await readFile(mcpConfig, 'utf8'), configText);
   result.checks.noSecretsOnDiskOrArgv = true;
 }

@@ -15,7 +15,7 @@ await mkdir(join(profile, 'User/agents'), { recursive: true }); await mkdir(proj
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'git.openRepositoryInParentFolders': 'never' }));
 // A profile-defined (user) subagent with its own model; its reasoning is that model's saved choice.
 await writeFile(join(profile, 'User/agents/fixture-reviewer.md'),
-  '---\nname: fixture-reviewer\ndescription: Fixture reviewer that replies with a marker.\nmodel: agent-thinker\n---\nReply with the requested marker.\n');
+  '---\nname: fixture-reviewer\ndescription: Fixture reviewer that replies with a marker.\nmodel: agent-thinker\n---\nReply with the requested marker. OV-SUBAGENT-BODY-MARK\n');
 const file = join(project, 'example.js'); await writeFile(file, '// Native subagent reasoning check\n');
 const result = { success: false, checkedAt: new Date().toISOString(), platform: process.platform, arch: process.arch,
   scope: 'Native Task child model/reasoning, labels, failures, retry, resume and restart with a simulated API. Fixture responses; no live model compatibility claim.',
@@ -47,6 +47,8 @@ const server = createServer(async (request, response) => {
   const role = child ? 'child' : toolResult !== undefined ? 'continuation' : 'parent';
   const behaviour = (role === 'parent' ? undefined : plan[role].shift()) ?? 'ok';
   const record = { phase, model: body.model, reasoning: body.reasoning_effort ?? body.reasoning?.effort, role, behaviour,
+    // Issue #10: the custom subagent's Markdown body must reach its child request.
+    subagentBody: JSON.stringify(body.messages ?? []).includes('OV-SUBAGENT-BODY-MARK'),
     messages: body.messages?.length ?? 0, toolResult: toolResult !== undefined ? text(toolResult) : undefined,
     childResultReturned: toolResult !== undefined && text(toolResult).includes(marker),
     agentId: toolResult !== undefined ? /Agent ID: ([\w-]+)/.exec(text(toolResult))?.[1] : undefined };
@@ -237,6 +239,8 @@ try {
   assert.deepEqual(pairs(custom), [['parent-thinker', 'high'], ['agent-thinker', 'medium'], ['parent-thinker', 'high']],
     'Profile subagent uses its own model and reasoning; the parent keeps its own');
   assert.equal(custom.at(-1).childResultReturned, true);
+  assert.deepEqual(custom.map(request => [request.role, request.subagentBody]), [['parent', false], ['child', true], ['continuation', false]],
+    'Only the custom child request carries the subagent body');
   await childLabel('profile', true);
 
   // Child failures: one child request with its own model and reasoning, no duplicate and no parent-model fallback.
