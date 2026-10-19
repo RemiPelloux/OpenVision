@@ -7,7 +7,7 @@ import { readableAppDirectory } from './recovered-source.mjs';
 import { isolateWorkbenchGlobalPaths } from './global-paths.mjs';
 import { isolateEnvironmentProfileHome, isolateMainProfileHome, isolateNodeProfileHome, isolateWorkbenchProfileHome,
   marker, nodeTargets, terminalStatusSetting, variable } from './profile-home-paths.mjs';
-import { excludedItems, migrateProfileHome } from './migrate-profile-home.mjs';
+import { excludedItems, migrateProfileHome, relocatedItems } from './migrate-profile-home.mjs';
 
 const cache = new Map();
 const original = relative => {
@@ -15,7 +15,7 @@ const original = relative => {
   return cache.get(relative);
 };
 const workbenches = ['desktop', 'glass'].map(variant => `out/vs/workbench/workbench.${variant}.main.js`);
-const homeJoin = /(?:\(0, )?[\w$]+\.join\)?\((?:\(0, )?[\w$]+\.homedir\)?\(\), "\.(?:cursor|claude)"(?!, "mcp\.json")/;
+const homeJoin = /(?:\(0, )?[\w$]+(?:\.default)?\.join\)?\(\s*(?:\(0, )?[\w$]+(?:\.default)?\.homedir\)?\(\),\s*"\.(?:cursor|claude)"/;
 
 function withEnvironment(value, run) {
   const before = process.env[variable];
@@ -148,4 +148,89 @@ test('home import is additive, keeps sources, skips worktrees and links, and rep
   assert.equal(second.unchanged, first.copied);
   assert.deepEqual(await snapshot(profile), profileBefore, 'repeat changes nothing');
   await assert.rejects(migrateProfileHome({ home, profile: 'relative' }), /absolute profile/);
+});
+
+const daemon = 'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs';
+const retrieval = 'extensions/cursor-retrieval/dist/main.js';
+
+test('editor MCP discovery resolves every adapter from the profile home', async () => {
+  const text = isolateMainProfileHome(await original('out/main.js'));
+  const literal = text.match(/load\(\) \{\s*return Promise\.resolve\((\{\s*platform: ([\w$]+),\s*homedir: ([\w$]+)\.file\([\s\S]*?xdgHome: void 0,\s*\})\);/);
+  assert.ok(literal, 'patched discovery helper');
+  const details = platform => withEnvironment('/profiles/alpha/User', () => {
+    const before = { APPDATA: process.env.APPDATA, XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME };
+    process.env.APPDATA = 'C:\\Users\\u\\AppData\\Roaming'; process.env.XDG_CONFIG_HOME = '/home/u/.config';
+    try { return new Function(literal[2], literal[3], `return ${literal[1]};`)(platform, { file: value => value }); }
+    finally { for (const [key, value] of Object.entries(before)) if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+  });
+  assert.throws(() => new Function(literal[2], literal[3], `return ${literal[1]};`)(3, { file: value => value }), /profile home unavailable/);
+  // Run the recovered adapters' own getFilePath with the helper's details.
+  const workbench = await original(workbenches[0]);
+  const claude = workbench.match(/getFilePath\(\{ platform: e, winAppData: t, xdgHome: n, homedir: i \}\) \{([\s\S]*?)\n    \}\n    adaptFile/);
+  const others = [...workbench.matchAll(/getFilePath\(\{ homedir: e \}\) \{\s*return ([\w$]+)\.joinPath\(e, ([^)]*)\);\s*\}/g)];
+  const platformEnum = claude[1].match(/e === ([\w$]+)\.Windows/)[1], uri = claude[1].match(/([\w$]+)\.joinPath/)[1];
+  assert.equal(others.length, 2);
+  const platforms = { Windows: 3, Mac: 1, Linux: 2 };
+  for (const platform of Object.values(platforms)) {
+    const input = details(platform);
+    assert.equal(input.homedir, '/profiles/alpha/User');
+    assert.equal(input.winAppData, undefined); assert.equal(input.xdgHome, undefined);
+    const joinPath = { joinPath: (...parts) => path.posix.join(...parts) };
+    const paths = [new Function(platformEnum, uri, 'e', 't', 'n', 'i', claude[1])(platforms, joinPath, platform, input.winAppData, input.xdgHome, input.homedir),
+      ...others.map(([, name, args]) => new Function(name, 'e', `return ${name}.joinPath(e, ${args});`)(joinPath, input.homedir))];
+    for (const file of paths) assert.ok(file.startsWith('/profiles/alpha/User/'), `${platform}: ${file}`);
+  }
+});
+
+test('developer file policy resolves from the profile home in every environment service', async () => {
+  for (const [relative, transform] of [['out/main.js', isolateMainProfileHome], ['out/vs/platform/terminal/node/ptyHostMain.js', isolateEnvironmentProfileHome],
+    ...workbenches.map(relative => [relative, text => isolateWorkbenchProfileHome(isolateWorkbenchGlobalPaths(text))])]) {
+    const text = transform(await original(relative));
+    assert.match(text, /\(this\.appSettingsHome, this\.productService\.dataFolderName, "policy\.json"\)/, relative);
+    assert.doesNotMatch(text, /this\.userHome, this\.productService\.dataFolderName, "policy\.json"/, relative);
+  }
+});
+
+test('agent-host daemon reads the profile MCP file, approvals, config and policy from the profile home', async () => {
+  const before = await original(daemon), text = isolateNodeProfileHome(before, nodeTargets[daemon]);
+  assert.doesNotMatch(text, /process\.env\.XDG_CONFIG_HOME/);
+  assert.doesNotMatch(text, /homedir\)?\(\), "\.cursor", "mcp\.json"/);
+  assert.doesNotMatch(text, /createPolicyMiddlewares\(\(0, [\w$]+\.homedir\)\(\)\)/);
+  assert.doesNotMatch(text, /getProjectPath\(\(0, [\w$]+\.homedir\)\(\), /);
+  assert.match(text, /\(0, [\w$]+\.join\)\(\(home => [\s\S]{0,200}?\(process\.env\.VSCODE_OPENVISION_PROFILE_HOME\), "mcp\.json"\)/);
+  // Execute the patched config directory owner: XDG_CONFIG_HOME and CURSOR_CONFIG_DIR are ignored.
+  const source = text.match(/function getConfigDir\(\) \{[\s\S]*?\n\}/)[0];
+  const join = source.match(/\(0, ([\w$]+)\.join\)/)[1];
+  const saved = { XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME, CURSOR_CONFIG_DIR: process.env.CURSOR_CONFIG_DIR };
+  process.env.XDG_CONFIG_HOME = '/home/u/.config'; process.env.CURSOR_CONFIG_DIR = '/elsewhere';
+  try {
+    assert.equal(withEnvironment('/profiles/alpha/User', () => new Function(join, `${source}; return getConfigDir();`)(path.posix)), '/profiles/alpha/User/.cursor');
+  } finally { for (const [key, value] of Object.entries(saved)) if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+});
+
+test('retrieval snapshot and watcher roots resolve from the profile home and ignore other tools\' overrides', async () => {
+  const text = isolateNodeProfileHome(await original(retrieval), nodeTargets[retrieval]);
+  const owner = text.match(/function ([\w$]+)\(\) \{\s*const ([\w$]+) = \(home => [\s\S]*?\n    \}\n/)[0];
+  const name = owner.match(/function ([\w$]+)/)[1], pathName = owner.match(/path: ([\w$]+)\.join/)[1], kinds = owner.match(/kind: ([\w$]+)\./)[1];
+  const saved = { CLAUDE_CONFIG_DIR: process.env.CLAUDE_CONFIG_DIR, CODEX_HOME: process.env.CODEX_HOME };
+  process.env.CLAUDE_CONFIG_DIR = '/home/u/claude'; process.env.CODEX_HOME = '/home/u/codex';
+  try {
+    const roots = withEnvironment('/profiles/alpha/User', () => new Function(pathName, kinds, `${owner}; return ${name}();`)(path.posix, new Proxy({}, { get: (_, key) => key })));
+    assert.deepEqual(roots.map(root => root.path), ['.cursor', '.claude', '.codex', '.agents'].map(folder => `/profiles/alpha/User/${folder}`));
+    assert.deepEqual(roots.map(root => root.requiresGate), [false, true, true, true]);
+  } finally { for (const [key, value] of Object.entries(saved)) if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+  assert.match(text, /const ([\w$]+) = \(home => [\s\S]{0,200}?VSCODE_OPENVISION_PROFILE_HOME\);\s*[\w$]+ =\s*\1 && \1\.length > 0/, 'worktree root');
+  assert.doesNotMatch(text, /CLAUDE_CONFIG_DIR|CODEX_HOME/);
+  // The shell description keeps the real home.
+  assert.match(text, /suggestedShell: [\w$]+,\s*userHomeDir: [\w$]+\.homedir\(\)/);
+});
+
+test('home import places legacy subagents in the profile subagent folder', async () => {
+  const { home, profile } = await fixture();
+  await mkdir(path.join(home, '.openvision/agents'), { recursive: true });
+  await writeFile(path.join(home, '.openvision/agents/legacy.md'), 'agent');
+  const result = await migrateProfileHome({ home, profile });
+  assert.equal(await readFile(path.join(profile, 'User', relocatedItems['.openvision/agents'], 'legacy.md'), 'utf8'), 'agent');
+  assert.equal(await lstat(path.join(profile, 'User/.openvision/agents')).catch(() => null), null);
+  assert.ok(result.items.some(item => item.item === '.openvision/agents' && item.copied === 1));
 });
