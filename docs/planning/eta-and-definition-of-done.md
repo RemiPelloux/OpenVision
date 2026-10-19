@@ -4,7 +4,7 @@ Checkpoint: **17 October 2026**, after the 16–17 October Linux sessions
 ([session report](../verification/linux-session-2026-10-16.md)). Ledger owner:
 [completion sprints](completion-sprints.md); order owner: [roadmap](roadmap.md).
 
-**18 October re-scope:** the current counts (13/44 Verified, baseline v3) and the
+**18 October re-scope:** the current counts (15/44 Verified, baseline v3) and the
 running Linux work are in [§10](#10-re-scope--18-october-2026); §1–§9 keep the
 17–18 October record as written.
 
@@ -363,4 +363,4 @@ lists them in its report. None of those defaults is final until the owner accept
 usage limit, and only 3 pushed partial work. They now run 5 at a time, pushing after
 each task. `ov/ubuntu-rerun-fixes` fixed the four Ubuntu/X11 failures above (one
 product defect in the pty wrapper, three harness defects). After a coordinator rebuild
-and a first-time rerun, OV-401 and OV-403 are Verified. Ledger: **9/44 Verified (20.45%)**. Then `ov/subagent-reasoning` (OV-104, OV-203) merged and reran first-time: **11/44 (25.00%)**. Then `ov/rules-memories` (OV-301): **12/44 (27.27%)**. Then `ov/config-isolation` (OV-302): **13/44 (29.55%)**.
+and a first-time rerun, OV-401 and OV-403 are Verified. Ledger: **9/44 Verified (20.45%)**. Then `ov/subagent-reasoning` (OV-104, OV-203) merged and reran first-time: **11/44 (25.00%)**. Then `ov/rules-memories` (OV-301): **12/44 (27.27%)**. Then `ov/config-isolation` (OV-302): **13/44 (29.55%)**. Then `ov/agent-chat-failures` (OV-102, OV-204): **15/44 (34.09%)**.

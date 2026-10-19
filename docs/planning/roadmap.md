@@ -6,8 +6,8 @@
 Updated 18 October 2026; latest portable release **0.2.0-preview.7**, with Linux x64 source support. The verified-coverage target is **80%**.
 Baseline v3 (18 October re-scope) moves platform and live clauses into OV-901,
 OV-902, OV-905 and OV-205, so the denominator is **44 acceptance stories** and **36
-must be fully Verified**. Current ledger: **13 Verified, 16 Partial, 14 Planned, 1
-Unknown**, or **29.55%**. Twenty-three additional stories must pass to reach the
+must be fully Verified**. Current ledger: **15 Verified, 14 Partial, 14 Planned, 1
+Unknown**, or **34.09%**. Twenty-one additional stories must pass to reach the
 numeric target. See [ETA §10](eta-and-definition-of-done.md#10-re-scope--18-october-2026).
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
