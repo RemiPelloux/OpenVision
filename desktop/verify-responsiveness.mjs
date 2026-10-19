@@ -82,7 +82,7 @@ let script; // { kind: 'turn', reply } | { kind: 'stream', sentLast }
 // Wall-clock milliseconds with sub-millisecond resolution, comparable with the renderer's
 // performance.timeOrigin + performance.now() on the same host.
 const epochNow = () => performance.timeOrigin + performance.now();
-const fixture = { requests: 0, streamChunksSent: 0, streamStartedAt: 0, streamEndedAt: 0, lastChunkSentEpoch: 0, unscripted: 0 };
+const fixture = { requests: 0, streamChunksSent: 0, streamStartedAt: 0, streamEndedAt: 0, streamRequestEpoch: 0, firstChunkSentEpoch: 0, lastChunkSentEpoch: 0, unscripted: 0 };
 const sse = (response, model, delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: 'fixture-responsiveness',
   object: 'chat.completion.chunk', model, choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
 const server = createServer(async (request, response) => {
@@ -97,11 +97,12 @@ const server = createServer(async (request, response) => {
   response.writeHead(200, { 'content-type': 'text/event-stream' });
   const current = script;
   if (current?.kind === 'stream') {
-    script = undefined; fixture.streamStartedAt = performance.now();
+    script = undefined; fixture.streamStartedAt = performance.now(); fixture.streamRequestEpoch = epochNow();
     sse(response, payload.model, { role: 'assistant', content: '' });
     for (const piece of streamPieces) {
       if (response.destroyed) break;
       sse(response, payload.model, { content: piece }); fixture.streamChunksSent++;
+      if (fixture.streamChunksSent === 1) fixture.firstChunkSentEpoch = epochNow();
       if (fixture.streamChunksSent === streamPieces.length) { fixture.lastChunkSentEpoch = epochNow(); current.sentLast(); }
       await new Promise(resolveWait => setTimeout(resolveWait, 4));
     }
@@ -209,7 +210,7 @@ async function measure(name, work, { transcript = false } = {}) {
     fsWriteBytes: io.write_bytes, fsByRole: io.byRole, ioProcessesReadable: `${ioAfter.readable}/${ioAfter.members}`,
     ...await dom(), ...await heap(), hostLoad1m: loadBefore, ...cpuShare(cpuBefore, await cpuTimes()), ...extra };
   result.phases[name] = phase;
-  console.log(`${name}: ${JSON.stringify({ ...phase, mutatedRows: undefined, fsByRole: undefined, latencySamples: undefined })}`);
+  console.log(`${name}: ${JSON.stringify({ ...phase, mutatedRows: undefined, fsByRole: undefined, latencySamples: undefined, lastChunkDrainProgress: undefined })}`);
   return phase;
 }
 async function typeKeys(text, delay) { for (const key of text) { await page.keyboard.type(key); await page.waitForTimeout(delay); } }
@@ -353,13 +354,13 @@ try {
     let sentLast; const lastChunkSent = new Promise(resolveSent => { sentLast = resolveSent; });
     script = { kind: 'stream', sentLast };
     await input().fill(`${marker} stream: reply with the long fixture stream.`);
-    const submitted = performance.now(); await input().press('Enter');
+    const submittedEpoch = epochNow(), submitted = performance.now(); await input().press('Enter');
     // Light polling (250 ms textContent check) instead of Playwright's per-frame text matching,
     // which itself costs renderer time inside the measured window.
     await page.waitForFunction(({ text, container }) =>
       [...document.querySelectorAll(container)].some(node => node.textContent.includes(text)), { text: `${marker} stream begins`, container: CONTAINER_SELECTOR },
     { polling: 250, timeout: 60000 });
-    const firstPaintMs = Math.round(performance.now() - submitted);
+    const firstPaintMs = Math.round(performance.now() - submitted), firstPaintEpoch = epochNow();
     // The last chunk is detected in the page, per frame, from the moment the fixture sends
     // it, concurrently with the typing below. It used to be polled only after the typing:
     // with 500 chunks (about 2.3 s) the stream ends before the 56 keys (about 4 s) do, so
@@ -375,8 +376,11 @@ try {
     await idle();
     return { firstChunkPaintMs: firstPaintMs, chunksSent: fixture.streamChunksSent,
       fixtureStreamMs: Math.round(fixture.streamEndedAt - fixture.streamStartedAt),
+      // Where the first-chunk time goes: submit -> fixture request -> first chunk sent -> seen (250 ms polling).
+      submitToRequestMs: Math.round(fixture.streamRequestEpoch - submittedEpoch),
+      firstChunkSentToSeenMs: Math.round(firstPaintEpoch - fixture.firstChunkSentEpoch),
       lastChunkToPaintMs: Math.round(painted.paintedEpoch - fixture.lastChunkSentEpoch),
-      lastChunkToFoundMs: Math.round(painted.foundEpoch - fixture.lastChunkSentEpoch), lastChunkCheckFrames: painted.frames,
+      lastChunkToFoundMs: Math.round(painted.foundEpoch - fixture.lastChunkSentEpoch), lastChunkCheckFrames: painted.frames, lastChunkDrainProgress: painted.progress,
       // Positive: the stream outlasted the typing; negative: typing continued after the last chunk.
       lastChunkAfterTypingMs: Math.round(fixture.lastChunkSentEpoch - typingEndedEpoch), typingMs };
   }, { transcript: true });

@@ -194,7 +194,8 @@ export function installProbe({ rowSelector, containerSelector } = {}) {
 export function waitForStreamPaint({ text, begins, rowSelector, containerSelector, timeoutMs }) {
   return new Promise((resolvePaint, rejectPaint) => {
     const deadline = performance.now() + timeoutMs;
-    let row = null, frames = 0;
+    // Drain progress: [ms since the check started, reply text length] every 6th frame.
+    let row = null, frames = 0; const started = performance.now(), progress = [];
     const findRow = () => {
       const containers = [...document.querySelectorAll(containerSelector)];
       for (const container of containers)
@@ -205,9 +206,12 @@ export function waitForStreamPaint({ text, begins, rowSelector, containerSelecto
     const check = () => {
       frames++;
       if (!row?.isConnected) row = findRow();
-      if (row?.textContent.includes(text)) {
+      const content = row?.textContent ?? '';
+      if (frames % 6 === 1 && progress.length < 400) progress.push([Math.round(performance.now() - started), content.length]);
+      if (content.includes(text)) {
         const found = performance.timeOrigin + performance.now();
-        requestAnimationFrame(() => resolvePaint({ paintedEpoch: performance.timeOrigin + performance.now(), foundEpoch: found, frames }));
+        progress.push([Math.round(performance.now() - started), content.length]);
+        requestAnimationFrame(() => resolvePaint({ paintedEpoch: performance.timeOrigin + performance.now(), foundEpoch: found, frames, progress }));
       } else if (performance.now() > deadline) rejectPaint(new Error(`stream text not painted: ${text}`));
       else requestAnimationFrame(check);
     };
