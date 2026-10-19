@@ -317,7 +317,9 @@ try {
   mark('second-window');
   const before = app.windows().length;
   const opened = app.waitForEvent('window', { timeout: 60000 });
-  await command('New Window');
+  // The palette's "New Window" row did not open a window here; the File menu keybinding does.
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('ControlOrMeta+Shift+n');
   const second = await opened;
   await second.locator('.monaco-workbench').waitFor({ state: 'visible', timeout: 60000 });
   await second.waitForTimeout(5000);

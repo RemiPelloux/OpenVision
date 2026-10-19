@@ -413,14 +413,15 @@ async function inner(directory) {
     byPhase: Object.fromEntries(phases.map(({ phase: name }) => [name, provider.filter(item => item.phase === name).length])),
     canaryPhases: [...new Set(provider.filter(item => item.canaries.length).map(item => item.phase))] };
   const sampled = maps.snapshot();
+  const hostRoot = dirname(layout.executable);
   const fileServicePids = [...sampled].filter(([, entry]) => entry.libraries.some(path => path.endsWith('file_service.linux-x64-gnu.node'))).map(([pid]) => pid);
   const trace = strace ? await attribute(traceFile, capture.proxyPort, fileServicePids) : undefined;
   const hashes = new Map();
   for (const path of new Set([...sampled.values()].flatMap(entry => entry.libraries)))
-    if (path.endsWith('.node') || path.startsWith(appRoot) || path.startsWith(directory)) hashes.set(path, await fileHash(path).catch(() => null));
+    if (path.endsWith('.node') || [appRoot, hostRoot, directory].some(prefix => path.startsWith(`${prefix}/`))) hashes.set(path, await fileHash(path).catch(() => null));
   const knownFile = join(root, 'desktop/fixtures/linux-x64-addons-3.21.13.json');
   const known = existsSync(knownFile) ? JSON.parse(await readFile(knownFile, 'utf8')).addons : [];
-  const addons = inventoryAddons({ processes: sampled, hashes, known, appRoot, runDirectory: directory,
+  const addons = inventoryAddons({ processes: sampled, hashes, known, appRoot, hostRoot, runDirectory: directory,
     directPids: trace ? [...new Set(trace.directConnects.map(item => item.tgid))] : [] });
   result.processes = [...sampled].map(([pid, entry]) => ({ pid, role: entry.role, command: entry.command,
     addons: entry.libraries.filter(path => hashes.has(path)), fileServiceLoaded: fileServicePids.includes(pid) }));

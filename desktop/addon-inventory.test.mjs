@@ -17,9 +17,10 @@ test('maps parsing keeps .node and .so file mappings once, including replaced fi
 });
 
 test('scope separates the shipped tree, run-written files and the system', () => {
-  assert.equal(libraryScope('/app/x.node', { appRoot: '/app', runDirectory: '/run' }), 'bundled');
-  assert.equal(libraryScope('/appx/x.node', { appRoot: '/app', runDirectory: '/run' }), 'system');
-  assert.equal(libraryScope('/run/extensions/y.node', { appRoot: '/app', runDirectory: '/run' }), 'run');
+  assert.equal(libraryScope('/app/x.node', { appRoot: '/app', hostRoot: '/host', runDirectory: '/run' }), 'bundled');
+  assert.equal(libraryScope('/appx/x.node', { appRoot: '/app', hostRoot: '/host', runDirectory: '/run' }), 'system');
+  assert.equal(libraryScope('/run/extensions/y.node', { appRoot: '/app', hostRoot: '/host', runDirectory: '/run' }), 'run');
+  assert.equal(libraryScope('/host/libffmpeg.so', { appRoot: '/app', hostRoot: '/host', runDirectory: '/run' }), 'host');
 });
 
 test('roles come from the Chromium type, utility sub-type and executable', () => {
@@ -57,28 +58,30 @@ test('inventory hashes every addon and fails only an unknown addon with a direct
     [10, { role: 'utility:node.mojom.NodeService', libraries: ['/app/ext/fs.node', '/usr/lib/libc.so.6'] }],
     [11, { role: 'openvision', libraries: ['/app/native-keymap.node', '/usr/lib/libc.so.6'] }],
     [12, { role: 'node', libraries: ['/run/extensions/x/addon.node'] }],
+    [13, { role: 'gpu-process', libraries: ['/host/libffmpeg.so'] }],
   ]);
-  const hashes = new Map([['/app/ext/fs.node', 'aa'], ['/app/native-keymap.node', 'bb'], ['/run/extensions/x/addon.node', 'cc']]);
-  const known = [{ path: 'ext/fs.node', sha256: 'aa' }, { path: 'native-keymap.node', sha256: 'bb' }];
-  const clean = inventoryAddons({ processes, hashes, known, directPids: [], appRoot: '/app', runDirectory: '/run' });
-  assert.equal(clean.addons.length, 3);
+  const hashes = new Map([['/app/ext/fs.node', 'aa'], ['/app/native-keymap.node', 'bb'], ['/run/extensions/x/addon.node', 'cc'], ['/host/libffmpeg.so', 'dd']]);
+  const known = [{ path: 'ext/fs.node', sha256: 'aa' }, { path: 'native-keymap.node', sha256: 'bb' }, { path: 'host/libffmpeg.so', sha256: 'dd' }];
+  const clean = inventoryAddons({ processes, hashes, known, directPids: [], appRoot: '/app', hostRoot: '/host', runDirectory: '/run' });
+  assert.equal(clean.addons.length, 4);
+  assert.equal(clean.addons.find(row => row.scope === 'host').relative, 'host/libffmpeg.so');
   assert.equal(clean.systemLibraryMappings, 2);
   assert.deepEqual(clean.unknown, ['/run/extensions/x/addon.node']);
   assert.deepEqual(clean.checks, { addonsInventoried: true, noAddonDirectSockets: true });
 
-  const knownDirect = inventoryAddons({ processes, hashes, known, directPids: [10], appRoot: '/app', runDirectory: '/run' });
+  const knownDirect = inventoryAddons({ processes, hashes, known, directPids: [10], appRoot: '/app', hostRoot: '/host', runDirectory: '/run' });
   assert.equal(knownDirect.checks.noAddonDirectSockets, true);
   assert.deepEqual(knownDirect.knownWithDirectSockets.map(row => row.path), ['/app/ext/fs.node']);
 
-  const unknownDirect = inventoryAddons({ processes, hashes, known, directPids: [12], appRoot: '/app', runDirectory: '/run' });
+  const unknownDirect = inventoryAddons({ processes, hashes, known, directPids: [12], appRoot: '/app', hostRoot: '/host', runDirectory: '/run' });
   assert.equal(unknownDirect.checks.noAddonDirectSockets, false);
   assert.deepEqual(unknownDirect.unknownWithDirectSockets, [{ path: '/run/extensions/x/addon.node', roles: ['node'], directConnectPids: [12] }]);
 
   const drifted = inventoryAddons({ processes, hashes: new Map([...hashes, ['/app/ext/fs.node', 'changed']]), known, directPids: [10],
-    appRoot: '/app', runDirectory: '/run' });
+    appRoot: '/app', hostRoot: '/host', runDirectory: '/run' });
   assert.equal(drifted.checks.noAddonDirectSockets, false, 'a changed digest is not a known addon');
 
-  const unhashed = inventoryAddons({ processes, hashes: new Map(), known, appRoot: '/app', runDirectory: '/run' });
+  const unhashed = inventoryAddons({ processes, hashes: new Map(), known, appRoot: '/app', hostRoot: '/host', runDirectory: '/run' });
   assert.equal(unhashed.checks.addonsInventoried, false);
   assert.equal(inventoryAddons({ processes: new Map(), hashes, known }).checks.addonsInventoried, false);
 });

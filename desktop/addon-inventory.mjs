@@ -19,10 +19,12 @@ export function mappedLibraries(maps) {
 
 const inside = (path, directory) => Boolean(directory) && (path === directory || path.startsWith(directory.endsWith(sep) ? directory : directory + sep));
 
-// "bundled": shipped in the application tree; "run": written during the run
-// (installed extensions, profile, fixtures); "system": anything else.
-export function libraryScope(path, { appRoot, runDirectory } = {}) {
+// "bundled": shipped in the application tree; "host": shipped with the Electron
+// host (for example libffmpeg.so); "run": written during the run (installed
+// extensions, profile, fixtures); "system": anything else.
+export function libraryScope(path, { appRoot, hostRoot, runDirectory } = {}) {
   if (inside(path, appRoot)) return 'bundled';
+  if (inside(path, hostRoot)) return 'host';
   if (inside(path, runDirectory)) return 'run';
   return 'system';
 }
@@ -73,16 +75,17 @@ export const tgidOf = (groups, tid) => groups.get(tid) ?? tid;
 // One row per mapped addon. `processes` maps pid -> { role, libraries: [paths] };
 // `hashes` maps path -> sha256 (null when unreadable); `directPids` are thread
 // group ids that made a direct (non-proxy) non-loopback connect; `known` lists
-// expected addons as { path (relative to appRoot), sha256 }.
-export function inventoryAddons({ processes, hashes, directPids = [], known = [], appRoot, runDirectory }) {
+// expected addons as { path (relative to appRoot, or host/<relative to hostRoot>), sha256 }.
+export function inventoryAddons({ processes, hashes, directPids = [], known = [], appRoot, hostRoot, runDirectory }) {
   const rows = new Map();
   const direct = new Set(directPids);
   let systemLibraries = 0;
   for (const [pid, { role, libraries }] of processes) {
     for (const path of libraries) {
-      const scope = libraryScope(path, { appRoot, runDirectory });
+      const scope = libraryScope(path, { appRoot, hostRoot, runDirectory });
       if (scope === 'system' && !nodeAddon.test(path)) { systemLibraries++; continue; }
-      const row = rows.get(path) ?? { path, relative: scope === 'bundled' ? relative(appRoot, path) : undefined, scope,
+      const row = rows.get(path) ?? { path, scope,
+        relative: scope === 'bundled' ? relative(appRoot, path) : scope === 'host' ? `host/${relative(hostRoot, path)}` : undefined,
         kind: nodeAddon.test(path) ? 'node-addon' : 'shared-object', sha256: hashes.get(path) ?? null,
         roles: new Set(), pids: new Set(), directConnectPids: new Set() };
       row.roles.add(role); row.pids.add(pid);
