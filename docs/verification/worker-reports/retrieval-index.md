@@ -118,12 +118,16 @@ My own choices, also reversible:
 - **Not started:** `status.json` counters, Pause/Resume/Cancel commands, all three native retrieval verifiers, and the data-destinations indexing phase.
 - **Last verified run IDs:** `logs/retrieval-quality-4NbDmg`, `logs/retrieval-quality-WpBeIX`, `logs/retrieval-benchmark-4wxwLZ`, `logs/retrieval-benchmark-5CIoxp`.
 - **Uncommitted findings:** none.
-- **Clean rebuild:** see the line appended below at stop.
+- **Clean rebuild at stop: failed.** `logs/rebuild.txt` ends with `Codebase search contract changed: extension activation (0)`, thrown by `retrieval-tool-customization.mjs`. The guard refused to patch, so nothing was half-applied. Two likely causes, neither investigated:
+  - the activation anchor (`async function …(e) { if (G.cursor.cursorAgentHostEnabled) {`) differs in the bundle on the coordinator base;
+  - the rebuild ran under the root shell's default Node 22.22.0 instead of the pinned 24.18.0.
+
+  The first remaining task is to rebuild with Node 24.18.0 and re-anchor that one step. `source/` is therefore incomplete; per the coordinator's tips, delete `source/`, `electron-host/`, `build/namespace-journal.json`, `build/source-build.json` and `build/recovery/` before rebuilding.
 - **Remaining work:**
 
   | Remaining task | Worker sessions |
   | --- | --- |
-  | Confirm the rebuild and fix any anchor drift | Part of the next session |
+  | Fix the activation anchor and rebuild with Node 24.18.0 | Part of the next session |
   | `status.json` counters and Pause/Resume/Cancel commands | Part of the next session |
   | `verify:retrieval` (OV-502), including two passes | About one session |
   | `verify:retrieval-incremental` (OV-503), including two passes | About one session |
