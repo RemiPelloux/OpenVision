@@ -523,6 +523,14 @@ export async function requestAgentProvider(storage, secrets, selection) {
     ...(selected.customHeaders ? { customHeaders: selected.customHeaders } : {}) };
 }
 
+// OV-703: provider keys and model requests stay on this machine. A remote
+// window runs the Agent runtime in the remote extension host, so the provider
+// configuration (keys and custom headers) would be sent to that host.
+export function assertLocalProviderWindow(configuration = globalThis.vscode?.context?.configuration?.()) {
+  if (configuration?.remoteAuthority)
+    throw modelSelectionError('OpenVision does not send provider keys or Agent model requests to remote hosts. Use the Agent from a local window.');
+}
+
 export function assertImageInput(storage, modelId, images) {
   if (!images) return;
   const route = requestProviderRoute(storage, modelId);

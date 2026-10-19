@@ -15,14 +15,16 @@ export const linuxInputs = {
     url: 'https://downloads.cursor.com/production/e44a49c17e334d442e58bbde931d791200f014a2/linux/x64/Cursor-3.21.13-x86_64.AppImage' },
 };
 
-async function download(input, path) {
+// Streams a pinned input to `path`; the file appears only after its size and
+// SHA-256 match. Shared with the remote server and extension inputs.
+export async function downloadPinned(input, path) {
   const response = await fetch(input.url);
-  if (!response.ok) throw new Error(`Native input download failed: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Pinned input download failed: HTTP ${response.status}`);
   const partial = `${path}.${process.pid}.partial`;
   try {
     await pipeline(Readable.fromWeb(response.body), createWriteStream(partial, { flags: 'wx' }));
     if ((await lstat(partial)).size !== input.bytes || await fileHash(partial) !== input.sha256)
-      throw new Error('Downloaded native input does not match the pinned size and SHA-256.');
+      throw new Error(`Downloaded ${input.file} does not match the pinned size and SHA-256.`);
     await rename(partial, path);
   } finally { await rm(partial, { force: true }); }
 }
@@ -39,7 +41,7 @@ export async function linuxInstallation(root, context = process) {
   const image = join(directory, input.file);
   if (!await exists(image)) {
     console.log(`Downloading pinned ${input.file} (${Math.round(input.bytes / 1048576)} MiB)`);
-    await download(input, image);
+    await downloadPinned(input, image);
   } else if (await fileHash(image) !== input.sha256) throw new Error(`Existing ${image} does not match the pinned SHA-256; remove it and retry.`);
   await chmod(image, 0o755);
   // The AppImage runtime extracts its own squashfs without FUSE; run only after the hash check.

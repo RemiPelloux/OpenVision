@@ -7,6 +7,7 @@ import { disableCloudFeatures } from './cloud-features.mjs';
 import { customModels } from './custom-models.mjs';
 import { customizeStream } from './stream-customization.mjs';
 import { requestProviderRouting } from './provider-routing.mjs';
+import { remoteProviderGuard } from './remote-provider-guard.mjs';
 import { providerSelectionErrors } from './model-selection-customization.mjs';
 import { localUserRules } from './rules-customization.mjs';
 import { subagentModelParameters, subagentStatusReasoning } from './subagent-model-customization.mjs';
@@ -33,7 +34,7 @@ async function customize(root, variant) {
   const local = localWorkbench(before, variant);
   const cloud = disableCloudFeatures(local.text);
   const stream = customizeStream(customModels(cloud.text, variant));
-  const providers = providerSelectionErrors(requestProviderRouting(stream.text, variant));
+  const providers = providerSelectionErrors(remoteProviderGuard(requestProviderRouting(stream.text, variant)));
   const welcome = customizeWelcome(persistProviderFailures(providerManualRetry(completionCancellation(localUserRules(subagentStatusReasoning(subagentModelParameters(providers, variant), variant), variant)))), variant);
   const home = customizeProjectHome(customInlineEdit(fixSaveAllCommands(fixWorkspaceSaveAll(customizeLegacyMemories(customizeMemory(customizePaste(welcome, variant), variant), variant))), variant), variant);
   const after = customizeApplicationStorage(releaseClosedChats(cancelClosedRunningChat(customizeThemes(home, variant))), variant);
@@ -71,6 +72,7 @@ export async function customizeBundles(root) {
     'desktop/model-picker-labels.mjs',
     'desktop/stream-customization.mjs',
     'desktop/provider-routing.mjs',
+    'desktop/remote-provider-guard.mjs',
     'desktop/rules-customization.mjs', 'desktop/workspace-rule-events.mjs', 'desktop/subagent-model-customization.mjs',
     'desktop/subagent-settings-customization.mjs',
     'desktop/completion-cancellation.mjs',
