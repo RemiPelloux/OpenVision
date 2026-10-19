@@ -214,3 +214,19 @@ test('configuration proxies are passed to the worker as plain data', async () =>
     await owner.dispose();
   } finally { await fx.cleanup(); }
 });
+
+test('reconfiguring files.exclude re-evaluates only the changed scope on the next activation', async () => {
+  const fx = await fixture(200);
+  try {
+    const owner = service(fx);
+    await owner.search('order');
+    await owner.reconfigure({ filesExclude: { 'pkg0/mod1/**': true } });
+    assert.equal(owner.worker, undefined);
+    await owner.search('order');
+    const counters = (await owner.status()).counters;
+    assert.deepEqual([counters.fullSyncs, counters.reads, counters.fullRebuilds], [0, 0, 0]);
+    assert.deepEqual(counters.subtreeReconciles, ['pkg0/mod1']);
+    assert.equal(counters.filesDeleted, 50);
+    await owner.dispose();
+  } finally { await fx.cleanup(); }
+});

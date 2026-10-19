@@ -212,6 +212,17 @@ export class RetrievalService {
     return { released: true, reason };
   }
 
+  // New settings apply from the next activation. The service keeps its
+  // activation count and recorded changes, so files.exclude changes are
+  // reconciled by scope instead of a whole-folder pass.
+  async reconfigure({ filesExclude, embeddings, idleMs }) {
+    await this.release('settings changed');
+    this.workerData = JSON.parse(JSON.stringify({ ...this.workerData,
+      ...(filesExclude ? { filesExclude } : {}), ...(embeddings ? { embeddings } : {}) }));
+    if (idleMs) this.options.idleMs = idleMs;
+    return this.workerData;
+  }
+
   async deleteIndex() {
     await this.release('delete');
     const directory = await this.directory();

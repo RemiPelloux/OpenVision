@@ -27,15 +27,19 @@ function settings() {
 
 const folders = () => (vscode().workspace.workspaceFolders ?? []).filter(folder => folder.uri.scheme === 'file').map(folder => folder.uri.fsPath);
 
-async function service(root, providers) {
-  const existing = state.services.get(root);
-  if (existing) return existing;
-  const [{ RetrievalService }, { embeddingSettings }] = await Promise.all([
-    import(moduleUrl('retrieval-service.mjs')), import(moduleUrl('retrieval-embeddings.mjs'))]);
+async function configuration(providers) {
+  const { embeddingSettings } = await import(moduleUrl('retrieval-embeddings.mjs'));
   const current = settings();
   if (providers) state.providers = providers;
   const saved = (providers ?? state.providers ?? []).map(provider => ({ id: provider.id, name: provider.name ?? provider.id, url: provider.baseUrl ?? provider.url, apiKey: provider.apiKey }));
-  const embeddings = embeddingSettings(current.embeddings, saved);
+  return { ...current, embeddings: embeddingSettings(current.embeddings, saved) };
+}
+
+async function service(root, providers) {
+  const existing = state.services.get(root);
+  if (existing) return existing;
+  const { RetrievalService } = await import(moduleUrl('retrieval-service.mjs'));
+  const current = await configuration(providers), embeddings = current.embeddings;
   const modules = join(vscode().env.appRoot, 'node_modules/@vscode');
   const created = new RetrievalService({ userDataDirectory: state.userDataDirectory, root,
     rgPath: join(modules, 'ripgrep/bin', process.platform === 'win32' ? 'rg.exe' : 'rg'),
@@ -45,6 +49,16 @@ async function service(root, providers) {
   state.services.set(root, created);
   log(`${root}: index service created (embeddings ${embeddings.enabled ? `${embeddings.provider}/${embeddings.model}` : embeddings.reason})`);
   return created;
+}
+
+// Settings changes keep each service (and the changes it records while
+// released); the next activation re-evaluates only the affected scopes.
+async function reconfigureAll(reason) {
+  const current = await configuration();
+  for (const [root, entry] of state.services) {
+    await entry.reconfigure({ filesExclude: current.filesExclude, embeddings: current.embeddings, idleMs: current.idleMs });
+    log(`${root}: index service reconfigured (${reason}; embeddings ${current.embeddings.enabled ? `${current.embeddings.provider}/${current.embeddings.model}` : current.embeddings.reason})`);
+  }
 }
 
 async function releaseAll(reason) {
@@ -127,7 +141,7 @@ function activate(context) {
   subscriptions.push(head, head.onDidCreate(notify), head.onDidChange(notify));
   subscriptions.push(api.workspace.onDidChangeConfiguration(event => {
     if (event.affectsConfiguration('files.exclude') || event.affectsConfiguration('openvision.retrieval'))
-      releaseAll('settings changed').catch(error => log(`release failed: ${error.message}`));
+      reconfigureAll('settings changed').catch(error => log(`reconfigure failed: ${error.message}`));
   }));
   subscriptions.push(api.workspace.onDidChangeWorkspaceFolders(event => {
     for (const folder of event.removed) {

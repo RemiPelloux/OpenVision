@@ -265,7 +265,7 @@ async function toolMode() {
   await writeSettings({});
 }
 
-// A settings change releases the index service; its next worker starts with
+// A settings change releases the index worker; the next worker starts with
 // fresh counters, so that case is measured from zero (fresh: true).
 async function incrementalCase(name, action, check, { fresh = false } = {}) {
   const before = await json('status.json');
@@ -334,8 +334,10 @@ async function incrementalMode() {
   await incrementalCase('files.exclude', async () => {
     await writeSettings({ 'files.exclude': { ...(verificationSettings['files.exclude'] ?? {}), 'pipeline/**': true } });
     await ask('excluded', [{ query: 'csv export formula escaping', target_directories: [] }]);
-  }, change => {
+  }, (change, entry) => {
     assert.equal(change.reads, 0, 'files.exclude changes read no unchanged file');
+    assert.equal(change.fullSyncs, 0, 'files.exclude changes do not reconcile the whole folder');
+    assert.deepEqual(entry.subtreeReconciles, ['pipeline']);
     assert.ok(!indexedPaths().some(path => path.startsWith('pipeline/')));
   }, { fresh: true });
   const [output] = await ask('after', [{ query: 'schedule dock branch feature', target_directories: [] }]);
