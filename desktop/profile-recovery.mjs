@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { readdir, readFile, rename, stat, writeFile, rm } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, isAbsolute, join } from 'node:path';
 
 // Startup recovery guidance (OV-1004). The runtime already survives these
 // faults without destroying data: an unreadable state.vscdb is renamed to
@@ -70,7 +70,9 @@ async function quarantineFindings(directory, store) {
 }
 
 // `userDataDir` is --user-data-dir; the profile home holds argv.json.
-export async function inspectProfile({ userDataDir, profileHome = join(userDataDir, 'User'), dataFolderName = '.openvision-local' }) {
+// `folders` are the window's absolute local project folders; only their
+// .openvision/mcp.json is read.
+export async function inspectProfile({ userDataDir, profileHome = join(userDataDir, 'User'), dataFolderName = '.openvision-local', folders = [] }) {
   const user = join(userDataDir, 'User');
   const findings = [...await quarantineFindings(join(user, 'globalStorage'), 'Profile storage (globalStorage/state.vscdb)')];
   for (const entry of await readdir(join(user, 'workspaceStorage')).catch(() => []))
@@ -84,6 +86,9 @@ export async function inspectProfile({ userDataDir, profileHome = join(userDataD
       'Fix it with "Preferences: Configure Runtime Arguments".'),
     jsonFinding(join(user, 'mcp.json'), 'User mcp.json', 'MCP servers configured in it are not started.',
       'Fix the file; its servers are listed under Settings > Customize > MCPs.'),
+    ...folders.filter(folder => typeof folder === 'string' && isAbsolute(folder)).slice(0, 8).map(folder =>
+      jsonFinding(join(folder, '.openvision', 'mcp.json'), `Project mcp.json (${basename(folder)})`, 'MCP servers configured in it are not started.',
+        'Fix the file; its servers are listed under Settings > Customize > MCPs.')),
   ])) if (finding) findings.push(finding);
   const acknowledged = await readAcknowledged(userDataDir);
   return findings.filter(finding => !acknowledged.has(finding.id));

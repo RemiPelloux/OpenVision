@@ -10,7 +10,8 @@ const profile = () => ({ userDataDir: app.getPath('userData'), profileHome: proc
 ipcMain.handle('vscode:openvision-profile-recovery', async (event, request) => {
   assertWorkbenchSender(event, expected);
   try {
-    const findings = await inspectProfile(profile());
+    const folders = Array.isArray(request?.folders) ? request.folders.filter(folder => typeof folder === 'string') : [];
+    const findings = await inspectProfile({ ...profile(), folders });
     if (request?.action === 'inspect') return { ok: true, findings };
     if (request?.action === 'acknowledge' && Array.isArray(request.ids))
       return { ok: true, acknowledged: await acknowledge({ ...profile(), ids: request.ids.filter(id => typeof id === 'string'), current: findings }) };

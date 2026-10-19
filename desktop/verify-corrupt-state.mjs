@@ -83,7 +83,10 @@ async function buildBaseline() {
   await closeOwned(session.app, exits, 'baseline');
   updateDatabase(paths(baseline).global, ruleKeys.map(id => ['INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)', id, rule(id.split('.').pop())]));
   const argvText = await readFile(paths(baseline).argv, 'utf8');
-  return { argvCreated: argvText.length > 0, notes: await readFile(notes, 'utf8') };
+  // Every cell starts from the project exactly as the baseline left it: the
+  // pending review belongs to the edited notes.md.
+  projectFiles['notes.md'] = await readFile(notes, 'utf8');
+  return { argvCreated: argvText.length > 0, notes: projectFiles['notes.md'] };
 }
 
 // Every store's identity, so a cell can show which ones changed.
@@ -126,6 +129,8 @@ const sqliteRow = (file, rowKey) => async profile => {
   return { path, row: rowKey };
 };
 const cells = {
+  // Control: nothing corrupted. No guidance may appear and nothing may change.
+  'control': { store: 'none', control: true, expect: /$^/, affects: [], corrupt: async profile => ({ path: paths(profile).settings }) },
   'global-state-garbage': { store: 'global state.vscdb', expect: /profile storage/i, affects: ['global'],
     corrupt: async profile => { const path = paths(profile).global; await writeFile(path, garbage((await stat(path)).size));
       await rm(`${path}-wal`, { force: true }); await rm(`${path}-shm`, { force: true }); return { path }; } },
@@ -151,7 +156,7 @@ const cells = {
   'mcp-project-corrupt': { store: '.openvision/mcp.json', expect: /mcp/i, affects: ['mcpProject'],
     view: 'Customize/MCPs', inPlace: /[^\n]*(JSON syntax error|Invalid config|parse|mcp\.json)[^\n]*/i,
     corrupt: async () => { const path = join(project, '.openvision/mcp.json'); await writeFile(path, '{ "mcpServers": [ '); return { path }; } },
-  'review-snapshot-corrupt': { store: 'Agent review snapshot (cursorDiskKV inlineDiff:*)', expect: /review/i, affects: ['review'],
+  'review-snapshot-corrupt': { store: 'Agent review snapshot (cursorDiskKV inlineDiff:*)', expect: /review/i, affects: ['review'], openReview: true,
     corrupt: async profile => {
       const path = paths(profile).global, rows = readDatabase(path).diskKeys.filter(name => name.startsWith('inlineDiff:'));
       assert.ok(rows.length, 'Baseline must hold a review snapshot');
@@ -217,6 +222,16 @@ async function runCell(name, spec, base) {
     if (spec.view) record.viewText = await settingsPage(session.page, spec.view);
     const openedChat = await openChat(session.page).then(() => true, () => false);
     record.chatOpened = openedChat;
+    if (spec.openReview) {
+      // Use the restored review: what does the app do with an unreadable snapshot?
+      const review = session.page.getByText('Review', { exact: true }).filter({ visible: true });
+      record.reviewControl = await review.count();
+      if (record.reviewControl) { await review.first().click().catch(() => {}); await session.page.waitForTimeout(2500); }
+      record.afterReview = { notifications: await notifications(session.page), notes: await readFile(notes, 'utf8'),
+        text: (await session.page.locator('body').innerText()).slice(-1200) };
+      record.notifications = [...new Set([...record.notifications, ...record.afterReview.notifications])];
+      record.recoveryPanel = await session.page.locator('.openvision-profile-recovery').allInnerTexts().catch(() => []);
+    }
     record.body = (await snapshot(session.page, directory, `${name}-after-start`)).slice(-2000);
     // Notification centre (toasts can time out).
     await session.page.keyboard.press('Escape');
@@ -244,9 +259,12 @@ async function runCell(name, spec, base) {
   const fail = message => record.violations.push(message);
   if (!record.started) fail('workbench did not start');
   if (record.exit && record.exit.exitCode !== 0) fail(`host exit ${record.exit.exitCode}/${record.exit.signalCode}`);
-  if (target.row ? !record.rowKept && !record.bytes.copies.length : !record.bytes.inPlace && !record.bytes.copies.length)
+  if (!spec.control && (target.row ? !record.rowKept && !record.bytes.copies.length : !record.bytes.inPlace && !record.bytes.copies.length))
     fail('original corrupted bytes were neither kept in place nor backed up');
-  if (!record.guidance.length) fail('no recovery guidance was shown');
+  if (spec.control) {
+    if (record.recoveryPanel?.length) fail('recovery guidance shown for an intact profile');
+  } else if (!record.guidance.length) fail('no recovery guidance was shown');
+  if (spec.openReview && record.afterReview?.notes !== projectFiles['notes.md']) fail('opening an unreadable review changed the project file');
   if (record.unrelatedChanges.length) fail(`unrelated data changed: ${record.unrelatedChanges.join(', ')}`);
   if (record.survivors.length) fail(`${record.survivors.length} owned processes survived`);
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));

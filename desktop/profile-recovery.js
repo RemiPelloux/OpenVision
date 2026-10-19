@@ -35,15 +35,51 @@ export function renderRecoveryNotice(findings, onDismiss) {
   return panel;
 }
 
-export async function showProfileRecovery(ipc = globalThis.vscode?.ipcRenderer) {
-  if (!ipc) return;
-  const response = await ipc.invoke(channel, { action: 'inspect' });
-  if (!response?.ok) { console.error('[OpenVision] profile recovery inspection failed:', response?.error); return; }
-  if (!response.findings.length) return;
-  return renderRecoveryNotice(response.findings, () => ipc.invoke(channel, { action: 'acknowledge', ids: response.findings.map(finding => finding.id) }));
+// Findings come from the main-process profile inspection and from workbench
+// owners that meet unreadable data while loading (rules, providers, reviews),
+// which call (globalThis.openvisionProfileRecoveryQueue ??= []).push(finding). Workbench
+// findings are not persisted: they return on the next start while the data is
+// still unreadable.
+const state = { findings: [], persisted: new Set(), panel: undefined, ipc: undefined };
+function refresh() {
+  state.panel?.remove();
+  state.panel = state.findings.length ? renderRecoveryNotice(state.findings, async () => {
+    const ids = state.findings.map(finding => finding.id).filter(id => state.persisted.has(id));
+    state.findings = []; state.panel = undefined;
+    if (ids.length) await state.ipc?.invoke(channel, { action: 'acknowledge', ids, folders: workspaceFolders() });
+  }) : undefined;
+}
+export function reportProfileFinding(finding) {
+  if (!finding?.id || state.findings.some(existing => existing.id === finding.id)) return;
+  state.findings.push({ title: String(finding.title ?? ''), detail: String(finding.detail ?? ''), path: String(finding.path ?? ''), id: String(finding.id) });
+  if (globalThis.document?.body) refresh();
 }
 
+export async function showProfileRecovery(ipc = globalThis.vscode?.ipcRenderer) {
+  if (!ipc) return;
+  state.ipc = ipc;
+  const response = await ipc.invoke(channel, { action: 'inspect', folders: workspaceFolders() });
+  if (!response?.ok) { console.error('[OpenVision] profile recovery inspection failed:', response?.error); return; }
+  for (const finding of response.findings) { state.persisted.add(finding.id); reportProfileFinding(finding); }
+  return state.panel;
+}
+
+// The window's folder, from the sandbox window configuration (file URIs only).
+function workspaceFolders() {
+  try {
+    const workspace = globalThis.vscode?.context?.configuration?.()?.workspace;
+    const uri = workspace?.uri;
+    return uri?.scheme === 'file' && typeof uri.path === 'string' ? [decodeURIComponent(uri.path)] : [];
+  } catch { return []; }
+}
+
+// Owners push findings to a queue that may exist before this module loads.
+const queued = Array.isArray(globalThis.openvisionProfileRecoveryQueue) ? globalThis.openvisionProfileRecoveryQueue : [];
+globalThis.openvisionProfileRecoveryQueue = { push: finding => reportProfileFinding(finding) };
+for (const finding of queued) reportProfileFinding(finding);
+
 if (globalThis.document) {
-  const start = () => setTimeout(() => showProfileRecovery().catch(error => console.error('[OpenVision] profile recovery:', error)), 1500);
+  const start = () => setTimeout(() => showProfileRecovery().then(() => { if (state.findings.length && !state.panel) refresh(); })
+    .catch(error => console.error('[OpenVision] profile recovery:', error)), 1500);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true }); else start();
 }
