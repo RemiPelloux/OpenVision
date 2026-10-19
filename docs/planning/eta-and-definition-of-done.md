@@ -5,7 +5,8 @@ Checkpoint: **17 October 2026**, after the 16–17 October Linux sessions
 [completion sprints](completion-sprints.md); order owner: [roadmap](roadmap.md).
 
 **18 October re-scope:** the current counts (18/44 Verified, baseline v3) and the
-running Linux work are in [§10](#10-re-scope--18-october-2026); §1–§9 keep the
+re-scope are in [§10](#10-re-scope--18-october-2026); the state of every branch and the ETA at the
+19 October stop are in [§11](#11-stop-checkpoint--19-october-2026-1600-utc). §1–§9 keep the
 17–18 October record as written.
 
 Per [`objective.md`](../../objective.md), the ETA is expressed as **acceptance
@@ -364,3 +365,86 @@ usage limit, and only 3 pushed partial work. They now run 5 at a time, pushing a
 each task. `ov/ubuntu-rerun-fixes` fixed the four Ubuntu/X11 failures above (one
 product defect in the pty wrapper, three harness defects). After a coordinator rebuild
 and a first-time rerun, OV-401 and OV-403 are Verified. Ledger: **9/44 Verified (20.45%)**. Then `ov/subagent-reasoning` (OV-104, OV-203) merged and reran first-time: **11/44 (25.00%)**. Then `ov/rules-memories` (OV-301): **12/44 (27.27%)**. Then `ov/config-isolation` (OV-302): **13/44 (29.55%)**. Then `ov/agent-chat-failures` (OV-102, OV-204): **15/44 (34.09%)**. Then `ov/import-restore` (OV-701): **16/44 (36.36%)**. Then `ov/autocomplete-safety` and `ov/autocomplete-quality` (OV-603, OV-602): **18/44 (40.91%)**.
+
+## 11. Stop checkpoint — 19 October 2026, 16:00 UTC
+
+The owner asked to stop all workers. Each running worker finished its current step,
+wrote a "Status at stop" section in its report, committed and pushed. No worker is
+running. The coordinator branch is `ccr-a39d6f13-jurmdv`. Merged branches were rebuilt
+from clean and rerun natively on Ubuntu 24.04/X11 before any promotion.
+
+**Ledger: 18/44 Verified (40.91%).** The 80% target needs 36.
+
+### Story status by branch
+
+Merged and Verified on Linux x64 (coordinator rerun, first-time passes):
+
+| Stories | Branch |
+| --- | --- |
+| OV-702 | (rerun only) |
+| OV-401, OV-403 | `ov/ubuntu-rerun-fixes` |
+| OV-104, OV-203 | `ov/subagent-reasoning` |
+| OV-301 | `ov/rules-memories` |
+| OV-302 | `ov/config-isolation` |
+| OV-102, OV-204 | `ov/agent-chat-failures` |
+| OV-701 | `ov/import-restore` |
+| OV-603, OV-602 | `ov/autocomplete-safety`, `ov/autocomplete-quality` |
+
+Merged, checks pass, held:
+
+| Story | Branch | Held for |
+| --- | --- | --- |
+| OV-103 | `ov/agent-editing` | Owner acceptance of residuals ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
+| OV-402 | `ov/language-tools` | Owner decision on host-class budgets (13.0 s > 10 s symbols, 259 > 250 ms p95) and Python/Go/Rust syntax-only (#5) |
+| OV-1001 | `ov/agent-context` | Owner decision on long-chat retention held by React/Solid (#5) |
+| OV-1003 | `ov/idle-resources` | Slope 15.7 > 15 MiB in 1 of 3 runs; `verify:startup-traversal` 1,394 > 1,300 listings on the merged code (`OLDKis`) |
+| OV-303 | `ov/mcp-safety` (merged to `8085e882`; head `c4e00504`) | `--simultaneous` fails 5/5 on the merged clean build (`5 !== 8`, re-approved child runs an old config); passes on the worker's incremental build. Suspected interaction with a later merge |
+
+Pushed, not merged yet (each needs a coordinator merge plus clean rerun):
+
+| Story | Branch head | State at stop | Remaining |
+| --- | --- | --- | --- |
+| OV-304 | `ov/mcp-auth` `f61c5acc` | All modes pass ×2; 7 defects fixed | Merge and rerun; recommended for promotion |
+| OV-903 | `ov/linux-completion` `28144458` | Issue #6 fixed; package, X11/Wayland cells, `verify:critical` added | Explorer budget and `mcp-session` to recheck on the merged code; #8 branding |
+| OV-501, OV-1005 | `ov/data-telemetry` `4b0750ca` | `verify:data-destinations` 14/14; 2 privacy leaks fixed | One 600 s `telemetry:extended` rerun |
+| OV-801 | `ov/native-inventory` `3e6d5ae9` | Inventory, loaded roles, dispositions, esbuild.wasm rebuilt byte-identical | One `verify:native-inventory` rerun; owner accepts defaults |
+| OV-904 | `ov/updates-rollback` `5b7cfe71` | Signed release, install/upgrade/rollback; `verify:upgrade:linux` passed once | Second native run |
+| OV-1002 | `ov/responsiveness` `57a7f892` | Stream delivery defect fixed (12.2 s → 0.65–0.85 s) | Incremental-edit and scroll budgets; frame budgets fail on a no-GPU host |
+| OV-502–504 | `ov/retrieval-index` `a87a7b4c` | Owned FTS5 index, quality corpus (recall@5 0.947), incremental indexer and worker lifecycle, unit-tested | Fix one customization anchor, rebuild with Node 24.18.0, then 3 native verifiers |
+| OV-1004 | `ov/release-safety` `faaf91c8` | Secret scanner; two corrupt-state defects fixed; 3 verifiers written | Native runs of the 3 verifiers |
+
+Not started (paused at the usage limit, no commits): OV-704 and OV-604 preparation
+(`ov/modes-inventory`), OV-703 (`ov/remote-ssh`), OV-802 (`ov/upstream-host`) and
+OV-803 (`ov/helper-replacement`). OV-804 waits for an owner decision. The platform and
+live stories are tracked in issues [#1–#4](https://github.com/RemiPelloux/OpenVision/issues).
+
+### ETA
+
+The work is limited by the shared usage quota: about 5 worker sessions per quota window.
+
+| Work | Worker sessions |
+| --- | --- |
+| Finish the pushed branches above | about 8–11 (retrieval 2–3, MCP regression 1–2, the rest about 1 each or less) |
+| The four never-started groups | about 6–8 |
+| Coordinator merge and clean reruns | between rounds |
+
+That is roughly **3–4 quota rounds** of Linux work. Done fully, it could add up to 21
+Linux stories (all except OV-804 and the four platform/live stories), for **39/44 on
+Linux**. That clears the 36 target only once the owner decisions in #5 are taken.
+OV-205, OV-901, OV-902 and OV-905 need balance, a Windows host, a Mac or other Linux
+machines. OV-804 needs the source-distribution decision.
+
+### Issues opened during this run
+
+- [#6](https://github.com/RemiPelloux/OpenVision/issues/6) keyring-less provider save hang (fixed on `ov/linux-completion`)
+- [#7](https://github.com/RemiPelloux/OpenVision/issues/7) Quick Edit Ctrl+A
+- [#8](https://github.com/RemiPelloux/OpenVision/issues/8) Cursor branding after a `--glass` start
+- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **security**: the Agent terminal saves its launch environment (secrets) in plaintext
+- [#10](https://github.com/RemiPelloux/OpenVision/issues/10) custom subagent body never reaches the child request
+
+### Lessons for the next run
+
+- Run no more than 5 sessions at once, and push after every task: 25 at once exhausted the quota in under an hour.
+- Native verifiers need gnome-keyring with a plaintext login keyring, xdotool, imagemagick, sqlite3 and iproute2, as user `ov` under `xvfb-run` and `dbus-run-session`.
+- A clean rebuild needs `build/source-build.json`, `build/namespace-journal.json`, `source/` and `electron-host/` removed. The build needs Node 24.18.0.
+- Re-test every merge combination: two regressions (`--simultaneous` and startup traversal) appeared only after branches were combined.
