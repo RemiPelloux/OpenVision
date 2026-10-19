@@ -17,13 +17,13 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **19/44 · 43.18%** | **25/44** are not fully verified: 10 Partial, 14 Planned, 1 Unknown |
-| Recorded 80% verification milestone | Requires **36/44** Verified | **17** additional stories must pass |
-| All accepted features | Requires **44/44** Verified | **25** additional stories must pass |
+| Fully verified local-feature stories | **21/44 · 47.73%** | **23/44** are not fully verified: 8 Partial, 14 Planned, 1 Unknown |
+| Recorded 80% verification milestone | Requires **36/44** Verified | **15** additional stories must pass |
+| All accepted features | Requires **44/44** Verified | **23** additional stories must pass |
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
-Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602 and OV-801 are Verified under it. See
+Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501 and OV-1005 are Verified under it. See
 the [status page](planning/eta-and-definition-of-done.md#re-scope-baseline-v3), which also lists [every story's gap and ETA](planning/eta-and-definition-of-done.md#story-status-and-gaps).
 
 Partial stories include working implementations with unfinished checks. This is
