@@ -18,3 +18,15 @@ export async function openChat(page) {
   }
   return input;
 }
+
+// Hosts without a Secret Service (for example a bare Xvfb session) get the
+// upstream modal "OS keyring couldn't be identified" prompt, which takes keyboard
+// focus. Close it without choosing a store: "Use weaker encryption" would write
+// password-store=basic to the user's argv.json. Returns whether it was shown.
+export async function dismissKeyringPrompt(page) {
+  const dialog = page.locator('.monaco-dialog-box').filter({ visible: true, hasText: "An OS keyring couldn't be identified" });
+  if (!await dialog.count()) return false;
+  await dialog.locator('.dialog-close-action, [aria-label="Close Dialog"], .codicon-dialog-close').first().click();
+  await dialog.waitFor({ state: 'hidden' });
+  return true;
+}

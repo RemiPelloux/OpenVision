@@ -12,6 +12,7 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
+import { probePollSeconds, probesPerRootPerSecond } from './explorer-probe-rate.mjs';
 
 // OV-401 Linux Explorer matrix: native Explorer/editor operations in a disposable
 // large multi-root fixture, symlinks, external changes, POSIX permission denial,
@@ -37,7 +38,8 @@ const budget = Object.freeze({
   externalEdit: { projectSyscalls: 30, distinctProjectPaths: 3, projectDirectoryListings: 2, inotifyAddWatch: 2, probesPerRootPerSecond: 4 },
   idle: { projectSyscalls: 0, projectDirectoryListings: 0, inotifyAddWatch: 0, probesPerRootPerSecond: 4 },
   // Root configuration probes: periodic stats of absent per-root paths (.vscode, .claude,
-  // .openvision, .git); they scale with roots, not files. Bounded per root and second.
+  // .openvision, .git); they scale with roots, not files. Bounded per root and second,
+  // taken over whole 5.007 s poll periods (explorer-probe-rate.mjs).
   // No per-file watches and no unbounded growth through the symlink loop.
   // Workspace roots may hold one extra non-recursive watch; every other watched
   // directory exactly one. User-excluded trees (files.watcherExclude) hold none.
@@ -657,9 +659,12 @@ async function parseTrace(path, windows, tasks) {
     bucket.distinctProjectPathList = [...bucket.distinctProjectPaths].slice(0, 40);
     bucket.distinctProjectPaths = bucket.distinctProjectPaths.size;
     bucket.probePaths = bucket.probePaths.size;
-    bucket.probesPerRootPerSecond = +(bucket.probeSyscalls / 3 / (windows[name].end - windows[name].start)).toFixed(2);
+    const seconds = windows[name].end - windows[name].start;
+    // Over whole poll periods (explorer-probe-rate.mjs); the window-only figure is kept for review.
+    bucket.probesPerRootPerSecond = probesPerRootPerSecond(bucket.probeSyscalls, 3, seconds);
+    bucket.probesPerRootPerWindowSecond = +(bucket.probeSyscalls / 3 / seconds).toFixed(2);
   }
-  return { traceLines: total, startup, windows: out, windowSeconds: Object.fromEntries(Object.entries(windows).map(([name, span]) => [name, +(span.end - span.start).toFixed(2)])) };
+  return { traceLines: total, startup, probePollSeconds, windows: out, windowSeconds: Object.fromEntries(Object.entries(windows).map(([name, span]) => [name, +(span.end - span.start).toFixed(2)])) };
 }
 
 async function functional() {
@@ -721,5 +726,5 @@ try {
     watches: result.watches, measurements: result.measurements && { startup: result.measurements.startup,
       windows: Object.fromEntries(Object.entries(result.measurements.windows).map(([name, item]) => [name,
         { projectSyscalls: item.projectSyscalls, distinctProjectPaths: item.distinctProjectPathList, projectDirectoryListings: item.projectDirectoryListings,
-          inotifyAddWatch: item.inotifyAddWatch, probeSyscalls: item.probeSyscalls, probesPerRootPerSecond: item.probesPerRootPerSecond, byCall: item.byCall, byRole: item.byRole }])) }, hostExits: result.hostExits }, null, 2));
+          inotifyAddWatch: item.inotifyAddWatch, probeSyscalls: item.probeSyscalls, probesPerRootPerSecond: item.probesPerRootPerSecond, probesPerRootPerWindowSecond: item.probesPerRootPerWindowSecond, byCall: item.byCall, byRole: item.byRole }])) }, hostExits: result.hostExits }, null, 2));
 }
