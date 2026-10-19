@@ -29,6 +29,7 @@
     "verify:extensions": "node desktop/verify-extension-lifecycle.mjs",
     "verify:language-ui": "node desktop/verify-language-ui.mjs",
     "verify:language-matrix": "node desktop/verify-language-matrix.mjs",
+    "verify:rename-race": "node desktop/verify-rename-race.mjs",
     "prepare:desktop": "node desktop/prepare-source.mjs",
     "import:cursor": "node desktop/import-cli.mjs",
     "import:settings": "node desktop/import-cli.mjs",
