@@ -55,6 +55,7 @@
     "migrate:profile-home": "node desktop/migrate-profile-home.mjs",
     "verify:paste": "node desktop/verify-paste.mjs",
     "verify:local-rules": "node desktop/verify-local-rules.mjs",
+    "verify:local-rules:agent-context": "node desktop/verify-local-rules.mjs --agent-context",
     "verify:rules-isolation": "node desktop/verify-rules-isolation.mjs",
     "verify:global-paths": "node desktop/verify-global-paths.mjs",
     "verify:rules:windows": "node desktop/verify-rules-windows.mjs",

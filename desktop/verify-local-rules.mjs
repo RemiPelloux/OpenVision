@@ -153,6 +153,8 @@ async function verifyAgentContext() {
     await page.getByText('Rules fixture reply.', {exact:true}).filter({visible:true}).first().waitFor({timeout:30000});
     assert.ok(bodies.length >= 1, 'The Agent turn reached the fixture provider');
     inspectRulesRequest(bodies[0], {userRule, projectRule, marker}, result.checks);
+    // The live helper's answer-marker check has no meaning with a fixed fixture reply.
+    delete result.checks.initialRequestDoesNotContainAnswer;
     const messages = JSON.stringify(JSON.parse(bodies[0]).messages);
     assert.ok(!messages.includes(memory.content), 'A saved memory body is not eagerly added to the first request');
     result.checks.hiddenMemoryBodyAbsentFromFirstRequest = true;
