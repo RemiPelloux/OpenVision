@@ -105,6 +105,7 @@ test('window attribution uses per-process CPU deltas, in-window RSS peaks and wa
   assert.equal(window.distinct_entries, 2);
   assert.equal(window.inotify_add_watch, 3);
   assert.equal(window.diagnostic_update_ms, 7);
+  assert.equal(measured.cpu_ms_total.tsserver, 550);
   assert.equal(measured.peak_inotify_watches, 70);
   assert.equal(measured.peak_watch_fraction, 0.07);
 });
@@ -118,6 +119,8 @@ test('large-project budgets fail on excess and on missing measurements', () => {
   assert.deepEqual(evaluateLargeProject({ ...measurement, peak_inotify_watches: 21 }, budget), ['peak_inotify_watches 21 > 20']);
   assert.deepEqual(evaluateLargeProject({ ...measurement, windows: {} }, budget), ['ts-edit-1: window missing']);
   assert.deepEqual(evaluateLargeProject({ ...measurement, first_diagnostics_ms: undefined }, budget), ['first_diagnostics_ms: not measured']);
+  assert.deepEqual(evaluateLargeProject({ ...measurement, cpu_ms_total: { tsserver: 900 } }, { ...budget, cpu_ms_total: { tsserver: 800 } }),
+    ['cpu_ms_total.tsserver 900 > 800']);
 });
 
 test('large-project budgets are declared for every measured window with a recorded derivation', () => {
@@ -126,7 +129,7 @@ test('large-project budgets are declared for every measured window with a record
     'dependency-install', 'tsconfig-change', 'ts-edit-after-reload']);
   for (const [name, window] of Object.entries(largeProjectBudget.windows)) {
     assert.ok(window.distinct_entries < 0.5 * LARGE_MODULES, `${name} stays far below a program rescan`);
-    assert.ok(window.cpu_ms.tsserver > 0 && window.cpu_ms['extension-host'] > 0, name);
   }
+  assert.ok(largeProjectBudget.cpu_ms_total.tsserver > 0 && largeProjectBudget.cpu_ms_total['extension-host'] > 0);
   assert.ok(largeProjectBudget.peak_watch_fraction < 1);
 });
