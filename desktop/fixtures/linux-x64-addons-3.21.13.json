@@ -1,0 +1,105 @@
+{
+ "scope": "Native addons and bundled shared objects mapped by the OpenVision 3.21.13 Linux x64 source build during verify:data-destinations (logs/data-destinations-fNkZXe). An addon that is not listed, or has a different SHA-256, is unknown; an unknown addon in a process that makes a direct non-proxy connection fails noAddonDirectSockets.",
+ "addons": [
+  {
+   "path": "extensions/cursor-agent-exec/dist/node_modules/@anysphere/tree-chunk-napi/tree-chunk-napi.linux-x64-gnu.node",
+   "sha256": "6dbfb46f03a9486741964441e81847c7261222a1b09373044e8bb8fa0d51f1f1",
+   "roles": [
+    "utility:node.mojom.NodeService:openvision"
+   ]
+  },
+  {
+   "path": "extensions/cursor-agent-exec/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node",
+   "sha256": "8d16289ce35196a347c27ca3c6b24e9ab7c35643ea73e0077e2a1cf75cf29788",
+   "roles": [
+    "utility:node.mojom.NodeService:openvision"
+   ]
+  },
+  {
+   "path": "extensions/cursor-agent-exec/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node",
+   "sha256": "ddc2ba327b1838b6b7dff13b6d1003b2fbbee2fea62b1ce298911de911c05ab9",
+   "roles": [
+    "utility:node.mojom.NodeService:openvision"
+   ]
+  },
+  {
+   "path": "extensions/cursor-retrieval/node_modules/@anysphere/file-service/file_service.linux-x64-gnu.node",
+   "sha256": "3b0290b101e8d8f772b829689e5cdc1b082608a4596be0627f3d86c3a76b7cb0",
+   "roles": [
+    "utility:node.mojom.NodeService:exe"
+   ]
+  },
+  {
+   "path": "host/libEGL.so",
+   "sha256": "6aa1e796e006c8cafccd95774e8704074714d7c70c3ecd99d8bdf390578ce542",
+   "roles": [
+    "gpu-process:openvision"
+   ]
+  },
+  {
+   "path": "host/libffmpeg.so",
+   "sha256": "033cbc12324fb7f56fa84bceb3a07d4b0412a320eb0f5faca766397db11344a3",
+   "roles": [
+    "gpu-process:openvision",
+    "openvision",
+    "renderer:openvision",
+    "utility:audio.mojom.AudioService:openvision",
+    "utility:network.mojom.NetworkService:openvision",
+    "utility:node.mojom.NodeService:exe",
+    "utility:node.mojom.NodeService:openvision",
+    "zygote:openvision"
+   ]
+  },
+  {
+   "path": "host/libGLESv2.so",
+   "sha256": "510449f3c2f06f9d7e4791859b2832249f781fc9b0c2cae7d6fe906aea1b6d39",
+   "roles": [
+    "gpu-process:openvision"
+   ]
+  },
+  {
+   "path": "node_modules/@parcel/watcher/build/Release/watcher.node",
+   "sha256": "5e73fa7d520e22cc7e743aeda99e7474dcbc576a9f14c2f8f5dfbdf97dc88731",
+   "roles": [
+    "utility:node.mojom.NodeService:openvision"
+   ]
+  },
+  {
+   "path": "node_modules/@vscode/spdlog/build/Release/spdlog.node",
+   "sha256": "6a4fb7705c05da9d8e2771cf315b6c53dafa814136f9a74b611bb2ee4921db1e",
+   "roles": [
+    "openvision",
+    "utility:node.mojom.NodeService:exe",
+    "utility:node.mojom.NodeService:openvision"
+   ]
+  },
+  {
+   "path": "node_modules/@vscode/sqlite3/build/Release/vscode-sqlite3.node",
+   "sha256": "90a98b86a73b70a367ea33c76e24c8cbb3f6bc2f1d9095ea2da716ae8ceedb7d",
+   "roles": [
+    "openvision"
+   ]
+  },
+  {
+   "path": "node_modules/cursor-proclist/build/Release/cursor_proclist.node",
+   "sha256": "19e3f28befb0a39d23a26e200a45fe2bcb156d69bc00ef885551182d979dd942",
+   "roles": [
+    "openvision"
+   ]
+  },
+  {
+   "path": "node_modules/native-keymap/build/Release/keymapping.node",
+   "sha256": "92d870c953da1a4dc1ea082271d035d9f665efddb6e47c1436c52831cf596829",
+   "roles": [
+    "openvision"
+   ]
+  },
+  {
+   "path": "node_modules/node-pty/build/Release/pty.node",
+   "sha256": "2451a5a2a1ba3c95071e7709afe27b429c7627dad3a451a1ac8e883c5a57ebc0",
+   "roles": [
+    "utility:node.mojom.NodeService:openvision"
+   ]
+  }
+ ]
+}
