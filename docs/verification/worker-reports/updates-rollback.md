@@ -1,8 +1,8 @@
 # Worker report: OV-904 updates and rollback (Linux x64)
 
-Branch `ov/updates-rollback`, based on the coordinator branch
-`ccr-a39d6f13-jurmdv` (merged, not rebased). The coordinator's stop request
-ended this session before the second native run. Evidence:
+Branch `ov/updates-rollback`. The first round was merged into `main`; the
+resumed round fast-forwarded the branch to `origin/main` (`4543994b`) and made a
+clean rebuild before the final native runs. Evidence:
 [Upgrade, interruption and rollback on Linux x64](../upgrade-rollback-linux.md).
 
 ## Summary
@@ -16,8 +16,11 @@ ended this session before the second native run. Evidence:
   extraction, profile copy and migration with pre-upgrade and pre-rollback
   backups, rollback, uninstall that keeps profiles and backups, `--purge`, and
   launcher entry and icon handling.
-- **Native verifier** `verify:upgrade:linux`: passed once (`upgrade-linux-4XxJrW`)
-  after two development failures. Both were real defects, fixed at their owner.
+- **Native verifier** `verify:upgrade:linux`: after two development failures
+  (both real defects, fixed at their owner), it passed at `fbc84ea7`
+  (`upgrade-linux-4XxJrW`). It then passed twice, each on the first run, on a
+  clean rebuild of merged `main` at `80cf90ec` (`upgrade-linux-0tkebc`,
+  `upgrade-linux-wApW6A`).
 
 ## Tasks
 
@@ -25,7 +28,7 @@ ended this session before the second native run. Evidence:
 | --- | --- | --- |
 | 1 | `release:linux` + `release:verify`, tamper tests | Done (14 unit tests, including tamper, mismatch, namespace, untrusted key, unsafe manifest entries and asar under the packaged runtime) |
 | 2 | Install, upgrade, rollback and uninstall tool | Done (20 unit tests, including real SIGKILL at every phase, stale-lock recovery, running-app refusal, retention, purge and the socket-path preflight) |
-| 3 | `verify:upgrade:linux` | Done; **one** passing run. The required second run was not made (stop request). |
+| 3 | `verify:upgrade:linux` | Done. Two first-run passes on the final head. The resumed round added a native check that rollback refuses a profile the older version cannot open. |
 | 4 | Cross-version profile fixture | Done in the verifier. The credential-free fixture from current code was migrated `0→1`. The `v0.2.0-preview.7` tag build opened the N/N+1 profile (downgrade), and an N+1 install migrated and opened a profile the tag build wrote (forward). The fixture is generated per run and not committed (no profiles in git). |
 | 5 | Explicit assertion that update endpoints are unreachable | Done in `desktop/branding.test.mjs` |
 
@@ -42,7 +45,8 @@ ended this session before the second native run. Evidence:
 | --- | --- |
 | `node --test desktop/linux-release.test.mjs desktop/linux-install.test.mjs` | 34/34 pass at `fbc84ea7`. The asar test failed with the fix removed, as expected. |
 | `node --test desktop/profile-format.test.mjs desktop/branding.test.mjs` | 4/4 and 4/4 pass |
-| `npm run verify:upgrade:linux -- --previous-runtime /home/ov/preview7/OpenVision` (as `ov`, Xvfb, dbus) | `upgrade-linux-NghLQr` failed and `upgrade-linux-GAdDCW` failed (development runs, defects above). `upgrade-linux-4XxJrW` **passed** at `fbc84ea7`, on the first run of that code. |
+| `npm run verify:upgrade:linux -- --previous-runtime /home/ov/preview7/OpenVision` (as `ov`, Xvfb, dbus) | `upgrade-linux-NghLQr` failed and `upgrade-linux-GAdDCW` failed (development runs, defects above). `upgrade-linux-4XxJrW` passed at `fbc84ea7`. On a clean rebuild of `main` at `80cf90ec`: `upgrade-linux-0tkebc` **passed** (first run) and `upgrade-linux-wApW6A` **passed** (first run). No retries. |
+| `npm run test:updates` on merged `main` | 42/42 pass |
 | `npm run docs:check` | Pass (run before the final commit) |
 
 Host notes: 4 CPUs; native runs one at a time. Installed `openssh-client`.
@@ -51,13 +55,12 @@ The tag build `v0.2.0-preview.7` lives outside the repo in a git worktree at
 
 ## Recommendation
 
-OV-904 Linux x64: **not yet**. To promote it:
-1. Make a second passing run of `verify:upgrade:linux` (with `--previous-runtime`)
-   on the final head, as the rule for changed verifiers requires.
-2. Run `npm run status:features` after the coordinator integrates the planning
-   files.
-
-Everything else in the Linux scope is implemented and evidenced.
+OV-904 Linux x64: **promote to Verified on Linux x64**. Every Linux clause has
+native evidence on the final head: release provenance, the installer and
+uninstaller, interrupted upgrade at every phase, profile migration (including
+across `v0.2.0-preview.7`), rollback, refusal of an incompatible store,
+user-data retention and purge, and no update endpoints. The remaining
+limitations are listed in the evidence doc and under Open risks.
 
 ## Moved to platform/live stories
 
@@ -86,18 +89,16 @@ upgrade belongs on a desktop with a Secret Service.
   own fixture.
 - Long usernames with deep custom roots and no `XDG_RUNTIME_DIR` are refused
   rather than supported.
+- Agent edit/review history is not seeded by the verifier. It shares
+  `state.vscdb` with the chats that are checked, but it has no dedicated
+  assertion.
 - The extension registry stores absolute locations. Extensions loaded after the
   path changed between versions in every run (relocation works), but only one
   extension fixture was tried.
 
-## Status at stop
+## Status
 
-- **Done:** tasks 1, 2, 4 and 5; task 3 implemented with one passing run.
-- **Partly done:** task 3, which still needs its second passing native run.
-- **Not started:** none.
-- **Last verified run:** `upgrade-linux-4XxJrW` (passed, commit `fbc84ea7`).
-- **Uncommitted findings:** none. Everything is in this report and the evidence doc.
-- **Remaining work:** one native rerun of `verify:upgrade:linux` with
-  `--previous-runtime` (about 40 minutes of exclusive host time, plus the main
-  build and the tag build if the container is fresh) and a report update. That
-  is **one worker session, within one quota round**.
+The first round ended on the coordinator's stop request with one native pass.
+The resumed round added the native refused-rollback check and made two
+first-run passes on a clean rebuild of merged `main`. No OV-904 Linux task
+remains open.
