@@ -50,7 +50,7 @@ deduplication change.
 
 | Scanner | Count | Started by | Owner (code) | Why it repeats |
 | --- | ---: | --- | --- | --- |
-| `cursorsandbox --preflight-only` | 5 | Default host ×2; agent-exec, always-local and retrieval hosts ×1 each | `isSandboxHelperSupported` / `primeSandboxHelperSupport` in the shared extension-host runtime (`out/vs/workbench/api/node/extensionHostProcess.js`), which also exists in the agent-exec, agent-host, MCP and local-agent-runtime bundles | The verdict is cached in module state, one per process. It is re-probed when the working directory differs ("cached verdict … measured from a different directory"). Each preflight's sandboxed child (`exe`) walked the workspace: 390 listings in all, about 6 full walks |
+| `cursorsandbox --preflight-only` | 5 | Default host ×2; agent-exec, always-local and retrieval hosts ×1 each | `isSandboxHelperSupported` / `primeSandboxHelperSupport` in the shared extension-host runtime (`out/vs/workbench/api/node/extensionHostProcess.js`), which also exists in the agent-exec, agent-host, MCP and local-agent-runtime bundles | The verdict is cached in module state, one per process. It is re-probed when the working directory differs ("cached verdict … measured from a different directory"). The preflight itself made no fixture directory listings in these traces (correction of 19 October below) |
 | `rg --files -g **/.cursorignore … --no-ignore-parent` | 2 | Default host | Workbench file-search provider (ignore-file discovery), one per root | Once per root. It is a different process from the next row |
 | `rg --files --iglob **/.gitignore --iglob **/.cursorignore` | 2 | Agent-exec host | Agent ignore mapping (`findFilesWithRipgrep`, source `ignore_scan`), one per root | Once per root |
 | `rg --files … --follow` (no include glob) | 2 | Default host | Workbench file index (quick-open cache), one per root | Once per root |
@@ -116,9 +116,8 @@ relaxed.
   in each extension-host process separately. Sharing it needs a cross-process
   cache, for example a verdict file in the profile keyed by helper hash,
   kernel release and directory, with invalidation. That was not done: a wrong
-  shared verdict would disable or wrongly enable command sandboxing. Each
-  preflight's sandboxed child also lists the workspace (about 382–395
-  listings in all). Owner: the shared extension-host runtime.
+  shared verdict would disable or wrongly enable command sandboxing. Owner: the shared
+  extension-host runtime.
 - **`.cursorignore`: 4, target 2.** Two owners in two processes, the workbench
   file-search provider and the agent ignore mapping, each walk once per root.
   Merging them needs a shared ignore-file index across processes. Not
