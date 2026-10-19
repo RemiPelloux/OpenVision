@@ -77,10 +77,59 @@ export function guardRenameDiskChanges(text) {
         return openvisionRenameEdit;`));
 }
 
+const cancellationMarker = '/* OpenVision rename edit cancellation v1 */';
+const startedLine = '      const openvisionRenameStarted = Date.now();\n';
+
+// The workbench rename widget disposes the editor-state token source when the
+// input box closes, which removes its edit listeners without cancelling, so a
+// rename request in flight never sees a same-document edit. Give the provider a
+// token that is also cancelled when the requested document changes. The
+// version guard still decides whether the late result is applied.
+export function guardRenameCancellation(text) {
+  if (text.includes(cancellationMarker)) return text;
+  if (!text.includes(diskMarker)) throw Error('Rename disk guard must be installed first');
+  const calls = [...text.matchAll(/const (\w+) = await this\._provider\.provideRenameEdits\((\w+), (\w+), (\w+), (\w+)\);/g)]
+    .filter(match => text.lastIndexOf(startedLine, match.index) > text.lastIndexOf('async provideRenameEdits(', match.index));
+  if (calls.length !== 1 || text.split(startedLine).length !== 2) throw Error('Rename provider call shape changed');
+  const [call, value, document, position, name, token] = calls[0];
+  const linked = `      const openvisionRenameCancel = (() => {
+        let cancelled = false;
+        const listeners = new Set(), fire = () => {
+          if (cancelled) return;
+          cancelled = true;
+          for (const listener of [...listeners]) try { listener(); } catch {}
+          listeners.clear();
+        };
+        const token = { get isCancellationRequested() { return cancelled || ${token}.isCancellationRequested; },
+          onCancellationRequested(listener, thisArg, disposables) {
+            const run = () => listener.call(thisArg);
+            let handle;
+            if (token.isCancellationRequested) handle = { dispose: clearTimeout.bind(null, setTimeout(run)) };
+            else { listeners.add(run); handle = { dispose: () => listeners.delete(run) }; }
+            if (Array.isArray(disposables)) disposables.push(handle);
+            return handle;
+          } };
+        const subscriptions = [${token}.onCancellationRequested(fire),
+          this._documents.onDidChangeDocument(event => { if (event.document === ${document}) fire(); })];
+        return { token, dispose: () => subscriptions.forEach(item => item.dispose()) };
+      })();
+`;
+  const replacement = `const ${value} = await (async () => {
+          try { return await this._provider.provideRenameEdits(${document}, ${position}, ${name}, openvisionRenameCancel.token); }
+          finally { openvisionRenameCancel.dispose(); }
+        })();`;
+  // The listener needs the document, so it is created right after the document lookup.
+  const lookup = new RegExp(`(const ${document} = this\\._documents\\.getDocument\\(\\w+\\),\\s*\\w+ = [\\w$]+\\.to\\(\\w+\\);\\n)`);
+  const at = text.indexOf(startedLine);
+  const head = text.slice(0, at), tail = text.slice(at).replace(call, replacement);
+  if (!lookup.test(tail.slice(0, tail.indexOf(replacement)))) throw Error('Rename document lookup shape changed');
+  return cancellationMarker + '\n' + head + tail.replace(lookup, `$1${linked}`);
+}
+
 export async function installRenameVersionGuard(root) {
   for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWorkerMain.js']) {
     const path = join(root, 'source/app/out/vs/workbench/api', variant);
-    const before = await readFile(path, 'utf8'), after = guardRenameDiskChanges(guardRenameVersions(before));
+    const before = await readFile(path, 'utf8'), after = guardRenameCancellation(guardRenameDiskChanges(guardRenameVersions(before)));
     if (before === after) continue;
     const backup = join(root, 'backups/rename-versions', `${digest(before)}.js`);
     await mkdir(dirname(backup), { recursive: true });

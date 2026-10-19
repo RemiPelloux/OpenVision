@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableAppDirectory } from './recovered-source.mjs';
-import { guardRenameVersions, guardRenameDiskChanges } from './rename-version-customization.mjs';
+import { guardRenameVersions, guardRenameDiskChanges, guardRenameCancellation } from './rename-version-customization.mjs';
 
 function adapter(source, context) {
   const offset = source.indexOf('async provideRenameEdits(');
@@ -108,6 +108,64 @@ for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWork
       'hosts without node:fs keep the version-only guard');
   });
 }
+
+for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWorkerMain.js']) {
+  test(`${variant}: same-document edits cancel the provider token; the version guard still rejects the late result`, async () => {
+    const original = await readFile(new URL(`out/vs/workbench/api/${variant}`, `file:///${readableRoot.replaceAll('\\', '/')}/`), 'utf8');
+    const guarded = guardRenameCancellation(guardRenameDiskChanges(guardRenameVersions(original)));
+    assert.equal(guardRenameCancellation(guarded), guarded, 'idempotent');
+    assert.equal(guardRenameCancellation(guardRenameDiskChanges(guardRenameVersions(guarded))), guarded, 'chain stays idempotent');
+    const docs = new Map(['source', 'other'].map(name => [name, { uri: { toString: () => name }, version: 1 }]));
+    const listeners = new Set();
+    const documents = { getDocument: uri => docs.get(uri.toString()), getAllDocumentData: () => [...docs.values()].map(document => ({ document })),
+      getDocumentData: uri => docs.has(uri.toString()) ? { document: docs.get(uri.toString()) } : undefined,
+      onDidChangeDocument: listener => { listeners.add(listener); return { dispose: () => listeners.delete(listener) }; } };
+    const change = name => { docs.get(name).version++; for (const listener of [...listeners]) listener({ document: docs.get(name) }); };
+    const outer = () => { const callbacks = new Set(); return { isCancellationRequested: false,
+      onCancellationRequested: callback => { callbacks.add(callback); return { dispose: () => callbacks.delete(callback) }; },
+      cancel() { this.isCancellationRequested = true; callbacks.forEach(callback => callback()); }, callbacks }; };
+    const start = token => {
+      let finish, seen;
+      const provider = { provideRenameEdits: (_document, _position, _name, inner) => { seen = { inner, fired: 0 };
+        inner.onCancellationRequested(() => { seen.fired++; });
+        return new Promise(resolve => { finish = resolve; }); } };
+      const pending = new (adapter(guarded, { process: {} }))(documents, provider, {})
+        .provideRenameEdits(docs.get('source').uri, {}, 'renamed', token);
+      return { pending, seen: () => seen, finish: () => finish(['source'].map(name => ({ resource: docs.get(name).uri, textEdit: {} }))) };
+    };
+    const same = start(outer());
+    await Promise.resolve();
+    change('other');
+    assert.equal(same.seen().inner.isCancellationRequested, false, 'edits to other documents do not cancel');
+    change('source');
+    assert.equal(same.seen().inner.isCancellationRequested, true);
+    assert.equal(same.seen().fired, 1);
+    change('source');
+    assert.equal(same.seen().fired, 1, 'fires once');
+    same.finish();
+    assert.match((await same.pending).rejectReason, /changed while computing/, 'late result ignoring the token is still rejected');
+    assert.equal(listeners.size, 0, 'document listener disposed when the provider settles');
+    const host = outer(), cancelled = start(host);
+    await Promise.resolve();
+    host.cancel();
+    assert.equal(cancelled.seen().inner.isCancellationRequested, true, 'workbench cancellation still propagates');
+    cancelled.finish();
+    assert.equal(await cancelled.pending, undefined, 'host-cancelled request returns nothing');
+    assert.equal(host.callbacks.size, 0, 'outer token subscription disposed');
+    const healthy = start(outer());
+    await Promise.resolve();
+    healthy.finish();
+    assert.deepEqual(Array.from((await healthy.pending).edits, edit => edit.versionId), [docs.get('source').version]);
+    let late = 0;
+    healthy.seen().inner.onCancellationRequested(() => late++);
+    assert.equal(late, 0);
+  });
+}
+
+test('cancellation guard requires the disk guard', () => {
+  assert.throws(() => guardRenameCancellation('class Other {}'), /must be installed first/);
+  assert.throws(() => guardRenameCancellation('/* OpenVision rename disk changes v1 */'), /shape changed/);
+});
 
 test('disk guard requires the version guard and an unchanged shape', () => {
   assert.throws(() => guardRenameDiskChanges('class Other {}'), /must be installed first/);
