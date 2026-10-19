@@ -26,6 +26,8 @@ test('roles come from the Chromium type, utility sub-type and executable', () =>
   assert.equal(processRole(['/opt/ov/openvision', '--type=utility', '--utility-sub-type=node.mojom.NodeService'], 'openvision'),
     'utility:node.mojom.NodeService:openvision');
   assert.equal(processRole(['/opt/ov/openvision', '/project'], 'openvision'), 'openvision');
+  assert.equal(processRole(['/opt/ov/openvision --type=utility --utility-sub-type=node.mojom.NodeService --lang=en-US'], 'openvision'),
+    'utility:node.mojom.NodeService:openvision');
   assert.equal(processRole(['/usr/bin/node', 'child.mjs'], 'MainThread'), 'node (MainThread)');
 });
 

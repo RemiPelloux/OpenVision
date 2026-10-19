@@ -30,6 +30,8 @@ export function libraryScope(path, { appRoot, runDirectory } = {}) {
 // Process role from its command line: Chromium process type, utility
 // sub-type and the executable name.
 export function processRole(argv = [], comm = '') {
+  // Chromium children rewrite their title: argv arrives as one space-joined string.
+  if (argv.length === 1 && /\s--/.test(argv[0])) argv = argv[0].split(/\s+/);
   const type = argv.find(arg => arg.startsWith('--type='))?.slice(7);
   const subType = argv.find(arg => arg.startsWith('--utility-sub-type='))?.slice(19);
   const executable = argv[0]?.split('/').pop() ?? comm;

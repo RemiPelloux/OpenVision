@@ -1,12 +1,17 @@
 // Extended process-family telemetry verification (Linux x64).
 // Workload: startup, project open/edit, settings, extensions view, Agent chat
-// against a loopback model fixture, terminal, search, long idle and quit.
+// against a loopback model fixture, terminal, search, Tab completion and
+// Quick Edit (loopback provider), Source Control commit-message generation and
+// commit, a JS debug session, a second window opened and closed, an MCP STDIO
+// fixture tool call, long idle and quit.
 // Observers: owned loopback proxy (refuses non-loopback), Chromium net log,
 // /proc socket sampling of the owned process tree, and strace of the tree.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { captureEnvironment, removedProxyVariables } from './capture-harness.mjs';
+import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -40,10 +45,22 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
   'git.openRepositoryInParentFolders': 'never',
   // A controlled shell: the user's rc files and prompt tools are not part of the product.
   'terminal.integrated.profiles.linux': { 'OpenVision test shell': { path: '/bin/bash', args: ['--noprofile', '--norc'] } },
-  'terminal.integrated.defaultProfile.linux': 'OpenVision test shell' }));
+  'terminal.integrated.defaultProfile.linux': 'OpenVision test shell',
+  'editor.quickSuggestions': false, 'editor.autoClosingBrackets': 'never', 'editor.formatOnSave': false }));
 await writeFile(join(profile, 'argv.json'), '{"enable-crash-reporter":false}');
 await writeFile(join(project, 'hello.js'), 'console.log("OpenVision extended telemetry verification");\n');
 await writeFile(join(project, 'notes.txt'), 'UniqueTelemetrySearchToken lives here.\n');
+// A Git repository (Source Control workload) and a JS debug fixture.
+const debugMarker = join(directory, 'debug-marker.txt');
+await writeFile(join(project, 'debug-me.js'), 'require("node:fs").writeFileSync(process.argv[2], "debugged");\n');
+await mkdir(join(project, '.vscode'));
+await writeFile(join(project, '.vscode/launch.json'), JSON.stringify({ version: '0.2.0', configurations: [{ type: 'node', request: 'launch',
+  name: 'OV telemetry debug', program: '${workspaceFolder}/debug-me.js', args: [debugMarker], console: 'internalConsole' }] }, null, 2));
+const git = args => execFileSync('git', ['-c', 'user.name=OV', '-c', 'user.email=ov@example.invalid', '-c', 'init.defaultBranch=main', ...args],
+  { cwd: project, encoding: 'utf8' });
+git(['init', '-q']); git(['add', '.']); git(['commit', '-qm', 'fixture']);
+const generatedMessage = 'OV telemetry fixture commit message';
+const mcp = await createMcpStdioFixture();
 
 const phases = [];
 let currentPhase = 'launch';
@@ -51,6 +68,7 @@ const mark = name => { currentPhase = name; phases.push({ name, at: Date.now() }
 const phaseAt = time => phases.findLast(phase => phase.at <= time)?.name ?? 'launch';
 
 const modelRequests = [];
+let agentPlan = [], agentReply = 'OpenVision telemetry fixture reply.';
 const fixture = createServer(async (request, response) => {
   if (request.url === '/v1/models') {
     response.setHeader('content-type', 'application/json');
@@ -60,11 +78,27 @@ const fixture = createServer(async (request, response) => {
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
   const payload = JSON.parse(Buffer.concat(chunks));
   modelRequests.push({ at: Date.now(), phase: currentPhase, tools: payload.tools?.length ?? 0 });
-  response.writeHead(200, { 'Content-Type': 'text/event-stream' });
-  for (const [delta, finish_reason] of [[{ role: 'assistant', content: 'OpenVision telemetry fixture reply.' }, null], [{}, 'stop']])
-    response.write(`data: ${JSON.stringify({ id: 'fixture', object: 'chat.completion.chunk', model: payload.model,
-      choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
-  response.end('data: [DONE]\n\n');
+  const chunk = (delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: 'fixture', object: 'chat.completion.chunk',
+    model: payload.model, choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
+  if (payload.tools?.length) {
+    const done = new Set(payload.messages.filter(message => message.role === 'tool').map(message => message.tool_call_id));
+    const next = agentPlan.find(call => !done.has(call.id) && payload.tools.some(tool => tool.function?.name === call.name));
+    response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    if (next) {
+      chunk({ role: 'assistant', tool_calls: [{ index: 0, id: next.id, type: 'function', function: { name: next.name, arguments: JSON.stringify(next.args) } }] });
+      chunk({}, 'tool_calls');
+    } else { chunk({ role: 'assistant', content: agentReply }); chunk({}, 'stop'); }
+    return response.end('data: [DONE]\n\n');
+  }
+  // Tab, Quick Edit and commit-message requests (no tools).
+  const content = currentPhase === 'tab' ? '42;' : currentPhase === 'scm' ? generatedMessage : currentPhase === 'inline-edit' ? 'const edited = 2;' : agentReply;
+  if (payload.stream) {
+    response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+    chunk({ role: 'assistant', content }); chunk({}, 'stop');
+    return response.end('data: [DONE]\n\n');
+  }
+  response.setHeader('content-type', 'application/json');
+  response.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { role: 'assistant', content } }] }));
 });
 await new Promise(done => fixture.listen(0, '127.0.0.1', done));
 const proxy = await createLoopbackProxy();
@@ -104,7 +138,7 @@ const sampler = sampleLoop();
 
 const errors = [];
 const rendererUrls = [];
-const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+const env = captureEnvironment(process.env);
 // A disposable XDG cache exposes machine-wide identifier writes (for example
 // @vscode/deviceid's Microsoft/DeveloperTools/deviceid) without touching ~/.cache.
 const xdgCache = join(directory, 'xdg-cache'); env.XDG_CACHE_HOME = xdgCache;
@@ -123,14 +157,16 @@ const observe = page => {
 app.on('window', observe);
 for (const window of app.windows()) observe(window);
 const result = { platform: process.platform, arch: process.arch, checkedAt: new Date().toISOString(), identity,
-  idleSeconds, strace: useStrace, proxy: useProxy, networkNamespace: process.argv.includes('--netns') ? 'loopback-only' : 'host', success: false };
+  idleSeconds, strace: useStrace, proxy: useProxy, removedProxyVariables: removedProxyVariables(process.env), networkNamespace: process.argv.includes('--netns') ? 'loopback-only' : 'host', success: false };
 let page;
 async function command(name) {
   await page.keyboard.press('Escape');
   await page.keyboard.press('ControlOrMeta+Shift+p');
   const picker = page.locator('.quick-input-widget');
   await picker.locator('input[type="text"]').fill(`>${name}`);
-  await picker.getByText(name, { exact: true }).first().click();
+  const exact = picker.getByText(name, { exact: true });
+  // Labels may carry a category prefix ("View: …").
+  await (await exact.count() ? exact.first() : picker.locator('.quick-input-list .monaco-list-row').filter({ hasText: name }).first()).click();
 }
 try {
   page = await app.firstWindow();
@@ -165,6 +201,7 @@ try {
   await page.getByLabel('API Key', { exact: true }).fill('fixture-key');
   await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await page.locator('dialog').waitFor({ state: 'detached' });
+  await models.getByRole('combobox', { name: 'Tab autocomplete model' }).selectOption({ label: 'Telemetry fixture · fixture-agent' });
   await page.waitForTimeout(3000);
 
   mark('extensions');
@@ -212,6 +249,78 @@ try {
   await page.locator('.search-view .monaco-list-row').filter({ hasText: 'notes.txt' }).first().waitFor();
   await page.waitForTimeout(3000);
 
+  mark('tab');
+  const editor = async name => {
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ControlOrMeta+p');
+    await page.locator('.quick-input-widget input[type="text"]').fill(name);
+    await page.keyboard.press('Enter');
+    await page.locator('.tabs-container .tab.active').filter({ hasText: name }).first().waitFor();
+    await page.locator('.monaco-editor .inputarea').first().focus();
+  };
+  await editor('hello.js');
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.insertText('const answer = ');
+  for (let i = 0; i < 120 && !modelRequests.some(request => request.phase === 'tab'); i++) await page.waitForTimeout(250);
+  assert.ok(modelRequests.some(request => request.phase === 'tab'), 'Tab completion must reach the loopback provider');
+  await page.keyboard.press('Escape');
+
+  mark('inline-edit');
+  await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('ControlOrMeta+k');
+  const prompt = page.locator('.monaco-editor [contenteditable="true"]').filter({ visible: true }).first();
+  await prompt.click(); await page.keyboard.insertText('Rewrite this file'); await prompt.press('Enter');
+  await page.getByText('Reject', { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
+  await page.getByText('Reject', { exact: true }).filter({ visible: true }).first().click();
+  assert.ok(modelRequests.some(request => request.phase === 'inline-edit'), 'Quick Edit must reach the loopback provider');
+  await page.keyboard.press('ControlOrMeta+s');
+
+  mark('scm');
+  await writeFile(join(project, 'notes.txt'), 'UniqueTelemetrySearchToken lives here.\nA staged change.\n');
+  git(['add', 'notes.txt']);
+  // Source Control has no palette command to open its view; both commands act
+  // on the repository's SCM input, and the commit proves which message it held.
+  await command('Generate Commit Message');
+  for (let i = 0; i < 120 && !modelRequests.some(request => request.phase === 'scm'); i++) await page.waitForTimeout(250);
+  assert.ok(modelRequests.some(request => request.phase === 'scm'), 'Commit-message generation must reach the loopback provider');
+  await page.waitForTimeout(2000);
+  await command('Git: Commit Staged');
+  for (let i = 0; i < 80 && git(['log', '-1', '--format=%s']).trim() !== generatedMessage; i++) await page.waitForTimeout(250);
+  assert.equal(git(['log', '-1', '--format=%s']).trim(), generatedMessage, 'Source Control commit must use the generated message');
+
+  mark('debug');
+  await command('Debug: Start Debugging');
+  for (let i = 0; i < 160 && !existsSync(debugMarker); i++) await page.waitForTimeout(250);
+  assert.equal(await readFile(debugMarker, 'utf8').catch(() => ''), 'debugged', 'The JS debug session must run the project file');
+  await page.waitForTimeout(3000);
+
+  mark('second-window');
+  const before = app.windows().length;
+  const opened = app.waitForEvent('window', { timeout: 60000 });
+  await command('New Window');
+  const second = await opened;
+  await second.locator('.monaco-workbench').waitFor({ state: 'visible', timeout: 60000 });
+  await second.waitForTimeout(5000);
+  await second.close();
+  for (let i = 0; i < 80 && app.windows().length > before; i++) await page.waitForTimeout(250);
+  assert.equal(app.windows().length, before, 'The second window must close');
+
+  mark('mcp');
+  await writeFile(join(profile, 'User/mcp.json'), JSON.stringify({ mcpServers: { 'openvision-verify': mcp.configuration } }, null, 2));
+  for (let i = 0; i < 180 && !mcp.requests.some(request => request.method === 'tools/list'); i++) await page.waitForTimeout(250);
+  await page.waitForTimeout(3000);
+  agentPlan = [{ id: 'ov_mcp_call', name: 'CallMcpTool', args: { server: 'user-openvision-verify', toolName: 'memory_probe',
+    description: 'OpenVision telemetry MCP probe', arguments: {} } }];
+  agentReply = 'OpenVision telemetry MCP complete.';
+  const mcpInput = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  if (!await mcpInput.count()) await page.keyboard.press('ControlOrMeta+Shift+l');
+  await mcpInput.fill('Call memory_probe on user-openvision-verify once.');
+  await mcpInput.press('Enter');
+  const run = page.locator('[data-tool-approval-gate]').filter({ visible: true }).getByRole('button', { name: /^Run(?:\s|$)/ });
+  await run.first().waitFor({ timeout: 45000 }); await run.first().click();
+  await page.getByText(agentReply, { exact: true }).first().waitFor({ timeout: 60000 });
+  assert.equal(mcp.requests.filter(request => request.method === 'tools/call').length, 1, 'One MCP STDIO tool call');
+  result.mcp = { toolLists: mcp.requests.filter(request => request.method === 'tools/list').length, toolCalls: 1 };
+
   mark('idle');
   const idleUntil = Date.now() + idleSeconds * 1000;
   while (Date.now() < idleUntil) await page.waitForTimeout(Math.min(30000, idleUntil - Date.now()));
@@ -238,6 +347,7 @@ try {
   sampling = false; await sampler;
   await proxy.close();
   await new Promise(done => fixture.close(done));
+  await mcp.dispose().catch(error => { result.mcpCleanupFailure = error.message; });
 }
 
 // Collect observations.

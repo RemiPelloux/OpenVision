@@ -29,7 +29,9 @@ else
 fi
 capture=
 if command -v tcpdump >/dev/null 2>&1; then
-  tcpdump -i lo -U -n -w "$dir/bypass.pcap" 'not net 127.0.0.0/8 and not ip6 host ::1' 2>"$dir/tcpdump.log" &
+  # -Z root: stay the namespace's mapped root; dropping to a 'tcpdump' user
+  # fails where that user has no mapping in the user namespace.
+  tcpdump -Z root -i lo -U -n -w "$dir/bypass.pcap" 'not net 127.0.0.0/8 and not ip6 host ::1' 2>"$dir/tcpdump.log" &
   capture=$!
 fi
 status=0
