@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { terminalStateWithoutEnvironment, legacyVerifierInSecrets } from './secret-persistence-customization.mjs';
-import { keepSubagentReminders } from './subagent-reminder-customization.mjs';
+import { keepCustomSubagentInstructions, subagentNotice } from './subagent-reminder-customization.mjs';
 import { readableApp } from './recovered-source.mjs';
 
 const read = relative => readFile(new URL(relative, readableApp), 'utf8');
@@ -63,20 +63,26 @@ test('the legacy MCP PKCE verifier is kept only in secret storage', async () => 
   assert.match(update, /codeVerifier: void 0,/, 'The attempt file no longer carries the verifier');
 });
 
-test('a custom subagent body reaches the Task launcher', async () => {
+test('a client-side custom subagent child receives its definition', async () => {
+  const workbench = await read('out/vs/workbench/workbench.desktop.main.js');
   const exec = await read('extensions/cursor-agent-exec/dist/main.js');
-  const wrapper = text => {
-    const index = text.indexOf('systemReminder: () => K0');
-    const fn = parseExpressionAt(text, text.lastIndexOf('function ', index), { ecmaVersion: 'latest' });
-    return runInNewContext(`(${text.slice(fn.start, fn.end)})`, { K0: 'NOTICE' });
-  };
-  // The launcher sends only a reminder whose function takes no parameter.
-  const launched = reminder => reminder !== undefined && reminder.length === 0 ? reminder() : undefined;
-  const custom = { systemReminder: () => 'BODY-MARKER' };
-  assert.equal(launched(wrapper(exec)(custom).systemReminder), undefined, 'Recovered wrapper drops the custom body');
-  const patched = keepSubagentReminders(exec);
-  assert.equal(keepSubagentReminders(patched), patched);
-  assert.equal(launched(wrapper(patched)(custom).systemReminder), 'NOTICE\n\nBODY-MARKER');
-  assert.equal(launched(wrapper(patched)({}).systemReminder), 'NOTICE');
-  assert.equal(wrapper(patched)({ systemReminder: value => `arg:${value}` }).systemReminder('x'), 'NOTICE\n\narg:x');
+  // The text matches what the Agent runtime builds for a custom definition.
+  assert.ok(exec.includes(JSON.stringify(subagentNotice)));
+  assert.ok(exec.includes('custom subagent. DO NOT create unnecessary markdown files unless explicitly requested by the user.'));
+  assert.ok(!workbench.includes('getRawSubagents().catch'), 'Recovered child submit never reads the definition');
+  const patched = keepCustomSubagentInstructions(workbench);
+  assert.equal(keepCustomSubagentInstructions(patched), patched);
+  const start = patched.indexOf('(async (name) => {');
+  const parsed = parseExpressionAt(patched, start, { ecmaVersion: 'latest' });
+  const call = parsed.type === 'SequenceExpression' ? parsed.expressions[0] : parsed;
+  const definitions = [{ name: 'fixture-reviewer', description: 'Reviews.', tools: ['Read'], prompt: 'BODY-MARKER' },
+    { name: 'fixture-reviewer', prompt: 'SHADOWED' }, { name: 'no-body', prompt: '' }];
+  const run = name => runInNewContext(`(function () { return ${patched.slice(call.start, call.end)}; })`, {
+    G: { subagentInfo: { subagentTypeName: name } } }).call({ _subagentsService: { getRawSubagents: async () => definitions } });
+  assert.equal(await run('fixture-reviewer'), `${subagentNotice}\n\nYou are operating as the "fixture-reviewer" custom subagent. ` +
+    'DO NOT create unnecessary markdown files unless explicitly requested by the user.\nReviews.\nAvailable tools: Read\n\nBODY-MARKER');
+  assert.equal(await run('no-body'), undefined);
+  assert.equal(await run('generalPurpose'), undefined);
+  assert.equal(await run(undefined), undefined);
+  assert.match(patched.slice(call.end, call.end + 400), /rt = ayd\(\$T_\(\{[\s\S]*\}\), openvisionCustomSubagentReminder\)/);
 });

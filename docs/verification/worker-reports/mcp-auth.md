@@ -19,7 +19,8 @@ off. On the final build every verifier mode passed twice in a row, first time:
 `verify:mcp-auth` (four runs, two with `--secrets`) and
 `verify:customization-lifecycle` with `--precedence`, `--invalid` and `--watchers`.
 Two OV-303 regression verifiers were also rerun (see Verification). Three
-findings outside OV-304's owners are reported, not fixed (see Open risks).
+findings outside OV-304's owners were first reported, not fixed; the follow-up
+below fixes two of them (issues #9 and #10).
 
 ## Tasks
 
@@ -175,24 +176,114 @@ are not claimed.
 
 ## Open risks
 
-- **Persisted terminal environment (not fixed; outside OV-304's owners).** The
-  Agent's hidden terminal saves its full launch environment in workspace
-  `state.vscdb` (`terminal.integrated.bufferState`). Any secret exported in the
-  environment that starts OpenVision is therefore on disk in plain text,
-  including a `${env:}` MCP token or a provider key. The MCP path never writes
-  the expanded header.
-- **Legacy OAuth owner start-up race (not fixed).** The legacy `cursor-mcp`
-  extension owner can connect briefly before routing reaches the utility. It
-  registered a client in 3 of 9 restarts, and in every `--secrets` run it left
-  its start-up attempt's PKCE verifier as plain global state. No consent,
-  exchange or token results.
-- **Custom subagent body not observed in the child request.** Task selects the
-  project subagent, but in no run did the child request contain the subagent's
-  body (`subagentBodyInChild` is empty). Whether custom subagent instructions
-  reach a local provider belongs to the subagent stories.
+- **Legacy OAuth owner start-up race (verifier fixed, race not fixed).** The
+  legacy `cursor-mcp` owner can still connect briefly before routing reaches the
+  utility and register a client (3 of 9 restarts before the follow-up). Its
+  PKCE verifier now stays in secret storage (see the follow-up below); the wasted
+  registration request remains.
+- **`check:secrets` aborts under Node 24.18.0 (unrelated, not fixed).** See the
+  follow-up section.
 - The MCP utility stays alive idle after its last server is removed; idle
   disposal is tracked under OV-1003.
 - Expiry is simulated by revoking the access token at the fixture. This is
   equivalent because the runtime never refreshes proactively.
 - Extension warnings (subagents, plugin manifests) stay in the notification
   center after a fix; the Agent and Customize recover regardless.
+
+## Follow-up: issues #9 and #10
+
+19 October 2026, assigned by the coordinator after the first report. Same host,
+Node 24.18.0, clean rebuild (build cache, namespace journal, `source/` and
+`electron-host/` removed), every native run as `ov`, one at a time.
+
+### Issue #9: plaintext secrets outside secret storage
+
+Owner and fix: [secret-persistence-customization.mjs](../../../desktop/secret-persistence-customization.mjs).
+
+- **Terminal environment.** The pty host `serializeTerminalState` stored each
+  persistent terminal's `processLaunchConfig.env`/`executableEnv` (and any
+  `shellLaunchConfig.env`) in workspace `terminal.integrated.bufferState`. The
+  Agent's hidden terminals are persistent, so every exported secret reached
+  `state.vscdb`. Terminal state now persists no environment; a revived terminal
+  starts from the pty host's current environment.
+- **Legacy PKCE verifier.** The legacy `cursor-mcp` owner saved its session
+  verifier as plain extension `globalState` (mirrored into the shared
+  application store) and wrote each attempt's verifier into the attempt JSON
+  file. Both now go to extension secret storage only, and any plain value is
+  cleared; the attempt reader already merged
+  `[oauth-attempt:<id>] mcp_code_verifier` back from secrets.
+
+Assertions: `verify:mcp-auth --secrets` exports a random `OV_ENV_CANARY` into
+the launch environment and requires it on no scanned file (no
+environment-entry allowance any more). It also requires that no plain
+`… mcp_code_verifier` global row and no attempt file with a `codeVerifier`
+exist. The `check:secrets` self-test plants a live and a deleted
+`terminal.integrated.bufferState` row with a canary key in SQLite (9/9 detected).
+
+### Issue #10: custom subagent body never reached the child
+
+Reproduced with a marker: the `fixture-reviewer` profile subagent's body ends in
+`OV-SUBAGENT-BODY-MARK`, and `verify:subagent-reasoning` now requires the marker
+in the custom child request only (not the parent or continuation).
+
+Root cause, traced natively: with local providers Agent Exec runs Task
+client-side (`subagent proxy: delegating to renderer`). The renderer starts the
+child composer and composes the child's system reminder itself. That reminder
+only covered one built-in type and never looked up the custom definition, so
+its description and Markdown body were dropped. The Task launchers in Agent
+Exec, the agent host, its daemon and the local runtime are not on this path:
+instrumented runs showed none was called, and the child turns reached Agent
+Exec's prompt builder with no reminder.
+
+Fix: [subagent-reminder-customization.mjs](../../../desktop/subagent-reminder-customization.mjs)
+looks up the custom definition (first by name, the same precedence Task uses)
+when the renderer submits a child's first message of a launch. It sends the
+reminder the Agent runtime builds for a custom definition: the standard subagent
+notice, the `You are operating as the "<name>" custom subagent…` header,
+description, tools and body. Ordinary chats, resumes and built-in subagents are
+unchanged. A first attempt that changed the runtime wrapper's arity (commit
+`0604f9a8`) was on the unused path, failed natively (`Og6EFM`) and is replaced.
+
+### Verification
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `verify:mcp-auth -- --secrets` (base build, before) | `mcp-auth-secrets-uLrl8e` | Failed: plain `[identifier:v1:…] mcp_code_verifier` row (45 bytes) |
+| `verify:subagent-reasoning` (base build, before) | `PgpCoR` | Failed: no body in the child |
+| `verify:mcp-auth -- --secrets` (arity build) | `mcp-auth-secrets-qSqkz0` | Passed (issue #9 part) |
+| `verify:subagent-reasoning` (arity build) | `Og6EFM` | Failed: body still missing |
+| `verify:subagent-reasoning` (diagnosis, request bodies kept) | `5uxJtF`, `AGokEw`, `XfzxXc`, `6GcvSn` | Failed as expected; the last three used temporary logging in the built bundles, removed by the clean rebuild |
+| `verify:subagent-reasoning` (final build) | `WKsTUY`, `NxAo8O` | Passed, first time, consecutive |
+| `verify:mcp-auth` (final build) | `mcp-auth-QsAdvq`, `mcp-auth-FPKbEi` | Passed, first time |
+| `verify:mcp-auth -- --secrets` (final build) | `mcp-auth-secrets-B0aOC0`, `mcp-auth-secrets-LHEGnE` | Passed, first time: no environment canary, token, code or verifier on disk |
+
+Final build: workbench
+`ab81fe7a333c4382fe2e4337aa7929ac2ba7f5eacc20c48ee4e3eaafcbb7fe17`, pty host
+`9c216224c06b42b67fafd98a441dc6c8e57011c989e30b8c27f75be4d390dc6e`, cursor-mcp
+`f5bb4d8743b75cee171c6524907eb04ff7cb7b0aa492e08bcae6ba5d9757a855`. In
+`WKsTUY` the custom child request carries
+`<system_reminder>\nYou are running as a subagent …` followed by the definition
+and the marker. The verifier now keeps every controlled request body under
+`<run>/requests/` (ignored `logs/`).
+
+Unit and static checks: `npm run test:mcp-auth` 23/23;
+`npm run check:secrets -- --self-test-only` passed (9/9); `npm run docs:check`
+and `npm run status:features` passed.
+
+**Unrelated defect found (not fixed): the full `npm run check:secrets` aborts
+under Node 24.18.0** with `double free or corruption (!prev)` (exit 134). It is
+reproducible on the base commit's scanner and with a single Markdown file
+(`node -e` calling `scanPaths(['docs/performance/responsiveness-linux.md'])`),
+and does not happen with Node 22.22.0. Owner: `desktop/secret-scan.mjs` under
+the pinned Node runtime. With Node 22.22.0 the full default scan read 16,155
+files with no read errors. It had 12 findings, all under ignored `logs/`: fixture
+`Authorization` headers in `mcp.json` written by earlier
+`customization-invalid`/`watchers`/`agent-verification` runs, and two
+`openai-key` pattern hits in a copied host binary under `logs/probe/`. None was
+in `docs/` or in this follow-up's run directories.
+
+### Follow-up recommendation
+
+Issues #9 and #10 are fixed with native Linux x64 evidence. OV-304's
+recommendation is unchanged: promote to Verified on Linux x64. The Node 24.18.0
+scanner abort should be fixed before `check:secrets` is used as a release gate.

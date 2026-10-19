@@ -53,6 +53,9 @@ const server = createServer(async (request, response) => {
     childResultReturned: toolResult !== undefined && text(toolResult).includes(marker),
     agentId: toolResult !== undefined ? /Agent ID: ([\w-]+)/.exec(text(toolResult))?.[1] : undefined };
   result.requests.push(record);
+  // Keep each request body in the run directory so a missing prompt part can be traced.
+  await mkdir(join(directory, 'requests'), { recursive: true });
+  await writeFile(join(directory, 'requests', `${result.requests.length}-${phase}-${role}.json`), JSON.stringify(body, null, 2));
   if (behaviour === '503') {
     response.writeHead(503, { 'content-type': 'application/json' });
     return response.end(JSON.stringify({ error: { message: `fixture ${role} 503 ${phase}`, type: 'fixture_error' } }));
