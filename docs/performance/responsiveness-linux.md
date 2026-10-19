@@ -238,7 +238,8 @@ Last chunk sent → painted (ms). The budget of 1,000 ms is unchanged.
 | Build | Smoke (500 chunks) | Full (2,000 chunks) |
 | --- | --- | --- |
 | Before (`R0Nvs0`, `oJF6cs`; full `0IZqo5`) | 12,167; 12,219 | **44,960** |
-| After, 10 smoke and 10 full stream-only runs | **650–847** | **SEE_FULL** |
+| After, stream-only runs (10 smoke, 10 full) | **650–847** | **448–763** |
+| After, all-phase runs (3 smoke, 3 full) | 437–542 | 478–543 |
 
 ### Incremental edits in the 50,000-line file
 
@@ -297,11 +298,67 @@ New `editorLarge` budgets were set from these baselines:
 Each phase now records `frameRefreshHistogram`: frame gaps counted in whole
 60 Hz refresh intervals (1, 2, 3, 4, and 5 or more).
 
-SCROLL_RESULTS
+Five full-size runs (`HKUSkP`, `zQbbWT`, `W9CeOx`, `Hp2Pzz`, `umLLPW`): p95
+was 100, 100, 116.7, 100 and 100 ms.
+
+- **Histograms** (frames of 1 / 2 / 3 / 4 / 5 or more refresh intervals):
+  - `[305,16,2,18,55]`
+  - `[302,20,1,12,61]`
+  - `[306,15,2,7,66]`
+  - `[311,14,0,20,52]`
+  - `[307,17,1,20,51]`
+- **Longest task:** 136–514 ms.
+- **Smoke (`m69jLf`, `hTqwTq`, `J0q3KU`):** p95 66.6–83.2 ms, with 14–19 frames
+  of 5 or more refreshes.
+
+What this shows:
+
+- On this host the scroll cost is real, not noise. About 15% of the frames
+  are 5 or more refresh intervals long, so the p95 lands on them.
+- The 49.9 ms in `y46mxf` (GPU host) was a single 3-refresh frame at the 95th
+  percentile; 33.4 ms and 49.9 ms differ by one refresh.
+- Inference: the long frames are software raster and forced layout of the
+  virtualized transcript under scrolling. The row-measurement owner noted
+  above was not changed.
 
 ### Software rendering and the frame budgets
 
-SOFTWARE_RESULTS
+The following budgets fail on this host in every full all-phase run, or in
+most of them:
+
+- `stream.longTaskTotalMs` and `stream.latencyP95Ms` (also some
+  `framesOver100Ms`);
+- `scroll.frameP95Ms` and `scroll.longTaskMaxMs`;
+- `turn.longTaskTotalMs` and `turn.latencyP95Ms`;
+- `editorLarge.openMs` and `editorLarge.longTaskTotalMs`;
+- `picker.latencyP95Ms` (2 of 3).
+
+They pass or nearly pass on the GPU-accelerated reference host. The pre-fix
+stream runs here failed long tasks and typing too. The closed-chat string
+budgets (OV-1001's phase) fail at 581/224 in all three full runs and are left
+to that story.
+
+**Budgets were not changed.** If software-rendered Linux hosts should be
+verifiable, the owner could adopt a separate budget set derived the same way
+as the originals: worst observed value on this host after the fixes ×1.5,
+rounded up.
+
+| Budget | Reference (GPU host) | Worst here (full) | Proposed software-rendering budget |
+| --- | ---: | ---: | ---: |
+| `picker.latencyP95Ms` | 190 | 221.9 | 340 |
+| `stream.frameP95Ms` | 50 | 66.7 | 100 |
+| `stream.framesOver100Ms` | 3 | 9 | 14 |
+| `stream.longTaskTotalMs` | 600 | 2,542 | 3,900 |
+| `stream.latencyP95Ms` | 60 | 145.6 | 220 |
+| `scroll.frameP95Ms` | 50 | 116.7 | 180 |
+| `scroll.longTaskMaxMs` | 400 | 514 | 780 |
+| `turn.longTaskTotalMs` | 400 | 581 | 880 |
+| `turn.latencyP95Ms` | 110 | 271.2 | 410 |
+| `editorLarge.openMs` | 900 | 1,644 | 2,500 |
+| `editorLarge.longTaskTotalMs` | 300 | 1,143 | 1,750 |
+
+Every other budget, including the new edit-sync budgets and
+`stream.lastChunkToPaintMs`, passes here unchanged.
 
 ## Budgets
 
@@ -318,7 +375,7 @@ persisted-record budget was set after the fix; both baselines exceed it.
 | Stream | ≥ 2,000 chunks; last chunk painted ≤ 1,000 ms; frame p95 ≤ 50 ms; ≤ 3 frames over 100 ms; long tasks ≤ 600 ms; typing p95 ≤ 60 ms; ≤ 16 rows mutated; ≤ 16 mounted rows; ≤ 12,500 transcript elements; heap ≤ 330 MiB; `wchar` ≤ 3 MB |
 | Scroll | frame p95 ≤ 50 ms; longest task ≤ 400 ms; ≤ 24 rows and ≤ 1,300 elements at the top |
 | Turn | reply painted ≤ 3,500 ms; long tasks ≤ 400 ms; typing p95 ≤ 110 ms |
-| Editor | small-file long tasks ≤ 300 ms, p95 ≤ 360 ms; 50,000-line open ≤ 900 ms, frame p95 ≤ 50 ms, long tasks ≤ 300 ms, p95 ≤ 450 ms |
+| Editor | small-file long tasks ≤ 300 ms, p95 ≤ 360 ms; 50,000-line open ≤ 900 ms, frame p95 ≤ 50 ms, long tasks ≤ 300 ms, p95 ≤ 450 ms; per typed key ≤ 1,000 B renderer writes and ≤ 2,700 B TypeScript server input, ≤ 0.001 of the file (full only), TypeScript server input ≤ 2.5× the control file |
 | Closed chat | ≤ 5,000 live DOM nodes; ≤ 400 marker strings and ≤ 130 reply strings after 75 s; reopens from Chat History with its last reply; heap ≤ 330 MiB |
 | Persisted | application-user record ≤ 2,000,000 B; catalog 0 B |
 | Restart | selected model restored; ≥ 10,001 models; launch to selected model ≤ 31,000 ms |
@@ -339,7 +396,7 @@ npm run verify:responsiveness              # smoke: every phase, 30 turns, 500 c
 npm run verify:responsiveness -- --full    # the datasets the budgets were set on (logs/responsiveness-y46mxf)
 npm run verify:responsiveness -- --phases=editorSmall,editorLarge   # repeat one flaky phase only
 node desktop/verify-responsiveness.mjs --full --no-budgets   # record a baseline
-# diagnostics: --turns=N, --chunks=N, --lines=N, --bursts=N, --trace-storage, --profile=stream,editorLarge, --dump-dom, --save-closed-snapshot
+# diagnostics: --turns=N, --chunks=N, --lines=N, --bursts=N, --trace-storage, --trace-stream, --profile=stream,editorLarge, --dump-dom, --save-closed-snapshot
 npm run verify:model-menu:large            # selector fixed, see below
 npm run test:desktop                       # 184/184
 npm run test:agent-review                  # 95/95
@@ -365,8 +422,23 @@ fixed datasets for a 220-message transcript with code blocks, a 2,000-chunk
 stream with concurrent typing, a 50,000-line file and a 10,001-model picker;
 native measurement of frames, long tasks, input latency, mounted rows, DOM,
 heap and process-family filesystem work; numeric budgets with a verifier; one
-measured waste fixed at its owner. Open: Windows and macOS runs, live provider
-streams, scroll layout cost, the remaining long-chat retention after close (OV-1003), the
+measured waste fixed at its owner.
+
+The 19 October follow-up added three fixes, all on the no-GPU container:
+
+- last-chunk-to-paint is now measured concurrently with typing and passes in
+  every run;
+- per-delta Agent delivery is fixed at its owner;
+- the fixture's git walk is fixed.
+
+It also proved, with budgets, that large-file edits are synchronised
+incrementally. It recorded that many timing budgets fail under software
+rendering, and proposed derived budgets above as an owner decision.
+
+Open: Windows and macOS runs, live provider
+streams, a rerun of every timing budget on a GPU-accelerated Linux host (or an owner
+decision on software-rendering budgets), occurrence highlighting that is O(file) in
+large files, scroll layout cost, the remaining long-chat retention after close (OV-1003), the
 remaining persisted model-name lists, budgets on an unloaded host, and editor
 work with language features beyond the built-in TypeScript server. This is
 **source-build evidence**; the preview.7 portable package does not contain
