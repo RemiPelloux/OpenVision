@@ -97,8 +97,10 @@ test('local mode keeps the Agent host topology off unless its bundle carries the
 
 for (const variant of ['desktop', 'glass']) {
   test(`${variant} retry removes only the empty provider-failure placeholder, never content or other errors`, async () => {
-    const text = providerManualRetry(await readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8'));
+    const built = await readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const text = providerManualRetry(built);
     assert.equal(providerManualRetry(text), text);
+    assert.equal(text.split('openvisionProviderFailurePlaceholder === true').length, 2, 'One clearing check after an in-place upgrade');
     assert.match(text, /cause\?\.name === "LocalProviderError" \? \{ openvisionProviderFailurePlaceholder: true \} : \{\}/);
     const start = text.search(/clearErrorDetailsAndServiceStatusUpdatesFromLatestAIMessages\([\w$]+\) \{/);
     const source = 'function ' + text.slice(start, start + 4000);
@@ -118,6 +120,9 @@ for (const variant of ['desktop', 'glass']) {
     const human = { type: 1, bubbleId: 'u', text: 'prompt' }, error = { title: 'Provider failure' };
     assert.deepEqual(run([human, { type: 2, bubbleId: 'p', text: '', codeBlocks: [], errorDetails: error, openvisionProviderFailurePlaceholder: true }]),
       [['delete', 'p']]);
+    // Restored after restart: the placeholder keeps its mark but has no in-memory error.
+    assert.deepEqual(run([human, { type: 2, bubbleId: 'r', text: '', codeBlocks: [], openvisionProviderFailurePlaceholder: true }]), [['delete', 'r']]);
+    assert.deepEqual(run([human, { type: 2, bubbleId: 'a', text: 'answer', codeBlocks: [] }]), []);
     for (const bubble of [{ text: 'partial', openvisionProviderFailurePlaceholder: true }, { text: '' }, { text: '', toolFormerData: {}, openvisionProviderFailurePlaceholder: true }])
       assert.deepEqual(run([human, { type: 2, bubbleId: 'b', codeBlocks: [], errorDetails: error, ...bubble }]),
         [['set', 'b', 'errorDetails', undefined], ['set', 'b', 'serviceStatusUpdate', undefined]]);
