@@ -367,6 +367,140 @@ async function conflictRename(context) {
   }
 }
 
+// Same-document edits while a language request is in flight. Each delayed probe
+// provider for the private `.ovinflight` fixture snapshots the text when it is
+// called, waits until the driver has typed into that document through the native
+// `type` command, and then returns ranges computed from the old text, ignoring
+// its token. The editor must reject or rebase the stale result without
+// corrupting text, and the provider token must be cancelled by the edit.
+async function inflightEdits(context) {
+  const L = 'inflight', pending = new Map();
+  const selector = { scheme: 'file', pattern: '**/*.ovinflight' };
+  const calls = {};
+  function enter(kind, document, token) {
+    const call = { kind, version: document.version, text: document.getText(), cancelled: false, edited: null,
+      pre_cancelled: token.isCancellationRequested };
+    (calls[kind] ??= []).push(call);
+    token.onCancellationRequested(() => { if (call.cancelled) return;
+      call.cancelled = true; call.cancelled_after_edit_ms = call.edited === null ? null : Math.round(performance.now() - call.edited); });
+    let release;
+    call.released = new Promise(resolve => { release = resolve; });
+    call.release = release;
+    // Only the first request per case is held; retriggered requests answer at once.
+    if (!pending.has(kind)) { pending.set(kind, call); return call; }
+    call.release();
+    return call;
+  }
+  const word = (text, needle) => { const offset = text.indexOf(needle); return { offset, length: needle.length }; };
+  context.subscriptions.push(
+    vscode.languages.registerRenameProvider(selector, {
+      prepareRename: (document, position) => document.getWordRangeAtPosition(position),
+      async provideRenameEdits(document, _position, name, token) {
+        const call = enter('rename', document, token); await call.released;
+        const edit = new vscode.WorkspaceEdit();
+        // Ranges from the snapshot: every `alpha` on every line.
+        call.text.split('\n').forEach((line, index) => { const at = line.indexOf('alpha');
+          if (at >= 0) edit.replace(document.uri, new vscode.Range(index, at, index, at + 5), name); });
+        return edit;
+      },
+    }),
+    vscode.languages.registerDocumentFormattingEditProvider(selector, {
+      async provideDocumentFormattingEdits(document, _options, token) {
+        const call = enter('format', document, token); await call.released;
+        const { offset, length } = word(call.text, '   ');
+        if (offset < 0) return [];
+        // Offsets from the snapshot, converted without the live document.
+        return [vscode.TextEdit.replace(new vscode.Range(0, offset, 0, offset + length), ' ')];
+      },
+    }),
+    vscode.languages.registerCodeActionsProvider(selector, {
+      async provideCodeActions(document, _range, _context, token) {
+        const call = enter('code_action', document, token); await call.released;
+        const action = new vscode.CodeAction('OpenVision in-flight probe', vscode.CodeActionKind.QuickFix);
+        action.edit = new vscode.WorkspaceEdit();
+        action.edit.replace(document.uri, new vscode.Range(0, 0, 0, 5), 'beta');
+        action.isPreferred = true;
+        return [action];
+      },
+    }, { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
+    vscode.languages.registerCompletionItemProvider(selector, {
+      async provideCompletionItems(document, position, token) {
+        const call = enter('completion', document, token); await call.released;
+        const prefix = call.text.split('\n')[position.line].slice(0, position.character).match(/\w*$/)[0];
+        const item = new vscode.CompletionItem('alphaCompletion', vscode.CompletionItemKind.Variable);
+        // The replace range is the snapshot's word; an edit after the snapshot moves it.
+        item.range = new vscode.Range(position.line, position.character - prefix.length, position.line, position.character);
+        item.additionalTextEdits = [vscode.TextEdit.insert(new vscode.Position(1, 0), 'import alphaCompletion\n')];
+        return [item];
+      },
+    }));
+
+  async function scenario(kind, name, text, cursor, typed, trigger, outcomes, { label = `${kind}_same_document_edit`, expectCancel = true } = {}) {
+    await caseRun(L, label, async () => {
+      await fsp.writeFile(file(name), text);
+      const doc = await open(name);
+      assert.equal(doc.getText(), text, `${name} fixture`);
+      const editor = vscode.window.activeTextEditor;
+      const changes = [];
+      const listener = vscode.workspace.onDidChangeTextDocument(event => { if (event.document === doc)
+        changes.push(...event.contentChanges.map(change => ({ offset: change.rangeOffset, removed: change.rangeLength, text: change.text }))); });
+      try {
+        editor.selection = new vscode.Selection(...cursor.trigger, ...cursor.trigger);
+        const command = trigger();
+        const call = await until(() => pending.get(kind), `${kind} provider called`, 20000);
+        // Type into the same document while the provider is still computing.
+        editor.selection = new vscode.Selection(...cursor.type, ...cursor.type);
+        call.edited = performance.now();
+        await vscode.commands.executeCommand('type', { text: typed });
+        assert.notEqual(doc.version, call.version, 'edit landed while the request was pending');
+        await until(() => call.cancelled, `${kind} provider token cancelled by the edit`, 3000).catch(() => {});
+        const cancelledBeforeRelease = call.cancelled;
+        call.release();
+        await Promise.resolve(command).catch(error => { call.command_error = String(error?.message ?? error); });
+        await pause(1200);
+        if (kind === 'completion') {
+          await vscode.commands.executeCommand('acceptSelectedSuggestion');
+          await pause(500);
+        }
+        const observed = doc.getText();
+        const outcome = Object.entries(outcomes).find(([, expected]) => expected === observed)?.[0];
+        result.inflight_detail ??= {};
+        result.inflight_detail[label] = { observed, outcome, cancelled_before_release: cancelledBeforeRelease,
+          calls: calls[kind].map(({ version, cancelled, cancelled_after_edit_ms, pre_cancelled }) =>
+            ({ version, cancelled, cancelled_after_edit_ms, pre_cancelled })) };
+        assert.ok(outcome, `${kind}: stale result corrupted or changed text unexpectedly: ${JSON.stringify(observed)}`);
+        // Continuing the word being completed keeps the request by upstream design:
+        // the result is refiltered and its range rebased to the current word.
+        if (expectCancel) assert.equal(cancelledBeforeRelease, true, `${kind}: provider token was not cancelled by the same-document edit`);
+        await vscode.commands.executeCommand('workbench.action.files.revert');
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+        return { outcome, observed, typed, token_cancel_expected: expectCancel, snapshot_version: call.version, edit_version_after: doc.version,
+          token_cancelled_before_result: cancelledBeforeRelease, cancelled_after_edit_ms: call.cancelled_after_edit_ms ?? null,
+          command_error: call.command_error ?? null, changes };
+      } finally { listener.dispose(); pending.delete(kind); calls[kind] = []; await publish('phase', { mode: `${label}-done` }); }
+    });
+  }
+
+  await scenario('rename', 'inflight-rename.ovinflight', 'alpha one\nalpha two\n', { trigger: [1, 2], type: [0, 0] }, 'Z', () => {
+    void publish('phase', { mode: 'inflight-rename' });
+    return vscode.commands.executeCommand('editor.action.rename');
+  }, { rejected: 'Zalpha one\nalpha two\n', rebased: 'Zrenamed one\nrenamed two\n' });
+  await scenario('format', 'inflight-format.ovinflight', 'alpha   one\n', { trigger: [0, 0], type: [0, 0] }, 'Z',
+    () => vscode.commands.executeCommand('editor.action.formatDocument'),
+    { rejected: 'Zalpha   one\n', rebased: 'Zalpha one\n' });
+  await scenario('code_action', 'inflight-action.ovinflight', 'alpha one\n', { trigger: [0, 2], type: [0, 0] }, 'Z',
+    () => vscode.commands.executeCommand('editor.action.codeAction', { kind: vscode.CodeActionKind.QuickFix.value, apply: 'first' }),
+    { rejected: 'Zalpha one\n', rebased: 'Zbeta one\n' });
+  await scenario('completion', 'inflight-complete.ovinflight', 'al\nend\n', { trigger: [0, 2], type: [0, 2] }, 'p',
+    () => vscode.commands.executeCommand('editor.action.triggerSuggest'),
+    // Accepting must replace the whole current word and add the import exactly once.
+    { rebased: 'alphaCompletion\nimport alphaCompletion\nend\n' }, { label: 'completion_word_continuation', expectCancel: false });
+  await scenario('completion', 'inflight-complete.ovinflight', 'al\nend\n', { trigger: [0, 2], type: [1, 0] }, 'Z',
+    () => vscode.commands.executeCommand('editor.action.triggerSuggest'),
+    // Typing elsewhere ends the session; nothing stale may be inserted on accept.
+    { rejected: 'al\nZend\n' }, { label: 'completion_edit_elsewhere' });
+}
+
 // Bounded windows bracketed by trace markers. The launcher counts filesystem
 // syscalls inside each window to detect whole-project rescans after small edits.
 async function scanWindows() {
@@ -406,13 +540,76 @@ async function scanWindows() {
   return windows;
 }
 
+// --large-project windows: small edits, a save and dependency/config changes in
+// a 5,000-module program. Each window records wall-clock bounds so the launcher
+// can attribute CPU/RSS samples to it.
+async function largeProjectWindows() {
+  const windows = {};
+  const missing = item => item.code === 2305 && /depNew/.test(item.message);
+  async function measure(name, body, settle = 4000) {
+    lagWindow();
+    mark(`${name}-start`);
+    const started_at = Date.now(), started = performance.now();
+    const detail = await body() ?? {};
+    await pause(settle);
+    mark(`${name}-end`);
+    windows[name] = { started_at, ended_at: Date.now(), elapsed_ms: Math.round(performance.now() - started),
+      extension_host_lag: lagSummary(), ...detail };
+  }
+  const warmStarted = performance.now();
+  const ts = await open('src/use.ts');
+  await until(() => diagnosticsFor(ts, missing).length && diagnosticsFor(ts, item => item.code === 2322).length,
+    'large project TypeScript program loaded', 600000);
+  result.large_project = { first_diagnostics_ms: Math.round(performance.now() - warmStarted) };
+  await pause(6000);
+  async function type(doc, needle, text) {
+    const editor = await vscode.window.showTextDocument(doc);
+    const offset = doc.getText().indexOf(needle);
+    assert.ok(offset >= 0, needle);
+    assert.equal(await editor.edit(builder => builder.insert(doc.positionAt(offset), text)), true);
+  }
+  await measure('idle', async () => {});
+  await measure('ts-edit-1', () => type(ts, 'OpenVision', 'x'));
+  await measure('ts-edit-2', () => type(ts, 'OpenVision', 'y'));
+  await measure('ts-save', async () => { assert.equal(await ts.save(), true); });
+  await measure('dependency-change', async () => {
+    // A dependency update rewrites a declaration file under node_modules.
+    const started = performance.now();
+    await fsp.writeFile(file('node_modules/dep-a/index.d.ts'),
+      'export declare function depValue(): number;\nexport declare const depNew: number;\n');
+    await until(() => diagnosticsFor(ts, missing).length === 0, 'dependency change observed by tsserver', 120000);
+    return { diagnostic_update_ms: Math.round(performance.now() - started) };
+  });
+  await measure('dependency-install', async () => {
+    // An install adds a package tree and a package.json dependency.
+    for (let index = 0; index < 50; index++) {
+      await fsp.mkdir(file('node_modules/dep-c/lib'), { recursive: true });
+      await fsp.writeFile(file(`node_modules/dep-c/lib/file${index}.js`), `module.exports = ${index};\n`);
+    }
+    await fsp.writeFile(file('node_modules/dep-c/package.json'), JSON.stringify({ name: 'dep-c', version: '3.0.0', main: 'lib/file0.js' }));
+    await fsp.writeFile(file('package.json'), result.large_fixture.package_json_changed);
+  });
+  await measure('tsconfig-change', async () => {
+    const started = performance.now();
+    await fsp.writeFile(file('tsconfig.json'), result.large_fixture.tsconfig_changed);
+    // The project reload re-reads the program; wait until diagnostics are back.
+    await pause(500);
+    await until(() => diagnosticsFor(ts, item => item.code === 2322).length, 'diagnostics after tsconfig reload', 300000);
+    return { diagnostics_after_reload_ms: Math.round(performance.now() - started) };
+  }, 8000);
+  await measure('ts-edit-after-reload', () => type(ts, 'OpenVision', 'z'));
+  await vscode.commands.executeCommand('workbench.action.files.revert');
+  await vscode.commands.executeCommand('workbench.action.closeAllEditors');
+  return windows;
+}
+
 async function run(context) {
   project = vscode.workspace.workspaceFolders[0].uri.fsPath; directory = path.dirname(project);
   result = { started_at: new Date().toISOString(), api: vscode.version, extensions: {}, cases: {},
     fixture: 'native public VS Code API driver; bundled language providers; no AI inference' };
   const stop = sampleLag();
   try {
-    result.fixture_use_ts = await read('use.ts');
+    result.fixture_use_ts = await read('use.ts').catch(() => null);
     for (const id of ['vscode.typescript-language-features', 'vscode.json-language-features', 'vscode.css-language-features',
       'vscode.html-language-features', 'vscode.markdown-language-features']) {
       const extension = vscode.extensions.getExtension(id);
@@ -422,10 +619,19 @@ async function run(context) {
     }
     result.extension_host_pid = process.pid;
     await publish('driver-ready', { pid: process.pid });
-    result.scan_windows = await scanWindows();
-    await publish('scan-complete', {});
-    for (const language of [typescript, javascript, json, css, html, markdown]) await language();
-    await conflictRename(context);
+    const mode = JSON.parse(await fsp.readFile(path.join(directory, 'mode.json'), 'utf8'));
+    result.mode = mode.mode;
+    if (mode.mode === 'large-project') {
+      result.large_fixture = mode.fixture;
+      result.scan_windows = await largeProjectWindows();
+      await publish('scan-complete', {});
+    } else {
+      result.scan_windows = await scanWindows();
+      await publish('scan-complete', {});
+      // `only` is a development filter; acceptance runs execute every suite.
+      const suites = { typescript, javascript, json, css, html, markdown, conflict: conflictRename, inflight: inflightEdits };
+      for (const [name, suite] of Object.entries(suites)) if (!mode.only || mode.only.includes(name)) await suite(context);
+    }
     const failures = Object.entries(result.cases).filter(([, value]) => value.status === 'fail').map(([key]) => key);
     result.failures = failures;
     result.success = failures.length === 0;

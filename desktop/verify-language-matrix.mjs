@@ -14,12 +14,15 @@ import { fileHash } from './import-files.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
-import { languageMatrix, matrixFixtures, scanBudget, responsivenessBudget, classifyProcess, summarizeTrace } from './language-matrix.mjs';
+import { spawnSync } from 'node:child_process';
+import { languageMatrix, matrixFixtures, scanBudget, responsivenessBudget, classifyProcess, summarizeTrace,
+  largeProjectFixtures, largePackageJson, largeTsconfig, largeProjectBudget, attributeWindows, evaluateLargeProject, isEditWindow } from './language-matrix.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
-const directory = await mkdtemp(join(root, 'logs/language-matrix-'));
+const large = process.argv.includes('--large-project');
+const directory = await mkdtemp(join(root, large ? 'logs/language-matrix-large-' : 'logs/language-matrix-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project'), extension = join(directory, 'driver');
 await Promise.all([mkdir(join(profile, 'User'), { recursive: true }), mkdir(project), mkdir(extension)]);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
@@ -30,7 +33,10 @@ await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verific
   'editor.tabSize': 2, 'editor.insertSpaces': true, 'files.autoSave': 'off', 'files.eol': '\n',
   'files.insertFinalNewline': false, 'html.format.endWithNewline': true, 'window.restoreWindows': 'none',
   'workbench.editor.enablePreview': false, 'editor.rename.enablePreview': false }));
-const fixtures = matrixFixtures();
+const fixtures = large ? largeProjectFixtures() : matrixFixtures();
+const only = process.argv.find(arg => arg.startsWith('--only='))?.slice(7).split(',');
+await writeFile(join(directory, 'mode.json'), JSON.stringify({ mode: large ? 'large-project' : 'matrix', only,
+  fixture: large ? { package_json_changed: largePackageJson(true), tsconfig_changed: largeTsconfig(true) } : null }));
 for (const [name, content] of Object.entries(fixtures)) {
   await mkdir(dirname(join(project, name)), { recursive: true });
   await writeFile(join(project, name), content);
@@ -55,7 +61,8 @@ for (const entry of languageMatrix) {
   assert.equal(manifest.version, entry.version, `${entry.extension} version drifted from the pinned matrix`);
 }
 const typescriptVersion = JSON.parse(await readFile(join(root, 'source/app/extensions/node_modules/typescript/package.json'), 'utf8')).version;
-const result = { checked_at: new Date().toISOString(), directory, platform: process.platform, arch: process.arch,
+const result = { checked_at: new Date().toISOString(), directory, mode: large ? 'large-project' : 'matrix',
+  ...(only ? { only, partial: 'Development filter: not an acceptance run' } : {}), platform: process.platform, arch: process.arch,
   launcher_node: process.version, executable_sha256: await fileHash(layout.executable), identities,
   pinned_extensions: pinned, typescript: typescriptVersion, project_entries: Object.keys(fixtures).length,
   limitations: ['Public-API driver plus native rename widget; the only registered provider is the private .ovconflict race probe.',
@@ -75,7 +82,7 @@ if (trace) {
 }
 
 let app, page, rootPid, mainPid;
-const errors = [], rtt = [], memory = [], processes = new Map();
+const errors = [], rtt = [], memory = [], processes = new Map(), timeline = [];
 const optional = async name => JSON.parse(await readFile(join(directory, `${name}.json`), 'utf8').catch(() => 'null'));
 
 async function family() {
@@ -153,10 +160,12 @@ try {
     await page.evaluate(() => 0);
     rtt.push(performance.now() - started);
     await fillRename(submitted);
-    if (Date.now() - lastMemory > 1000) {
+    if (Date.now() - lastMemory > (large ? 500 : 1000)) {
       lastMemory = Date.now();
       const sample = await inspectFamily('periodic');
       memory.push(sample.processes.reduce((sum, item) => sum + item.rss_kib, 0));
+      if (large) timeline.push({ at: sample.at, processes: sample.processes.map(({ pid, kind, rss_kib, cpu_ticks, inotify_watches }) =>
+        ({ pid, kind, rss_kib, cpu_ticks, inotify_watches })) });
       if (!sawReady && await optional('driver-ready')) { sawReady = true; snapshots.push({ ...sample, label: 'driver-ready' }); }
       if (!sawScan && await optional('scan-complete')) { sawScan = true; snapshots.push({ ...sample, label: 'scan-complete' }); }
     }
@@ -172,7 +181,7 @@ try {
   for (const path of Object.keys(identities)) assert.equal(await fileHash(join(root, path)), identities[path], `Input changed: ${path}`);
   result.input_build_unchanged = true;
   await page.screenshot({ path: join(directory, 'language-matrix.png') }).catch(() => {});
-  result.success = result.native.success === true;
+  result.success = result.native.success === true && !only;
   if (!result.success) result.failure = result.native.failure ?? `Failed cases: ${result.native.failures?.join(', ')}`;
 } catch (error) {
   result.success = false; result.failure = error.stack;
@@ -196,11 +205,24 @@ try {
       const scan = result.filesystem.windows;
       result.budgets = { scan: scanBudget, responsiveness: responsivenessBudget, violations: [] };
       for (const [name, window] of Object.entries(scan)) {
-        if (window.full_scan) result.budgets.violations.push(`${name}: touched ${window.distinct_entries}/${result.project_entries} project entries`);
+        if (window.full_scan && isEditWindow(name)) result.budgets.violations.push(`${name}: touched ${window.distinct_entries}/${result.project_entries} project entries`);
       }
       if (!Object.keys(scan).length) result.budgets.violations.push('No trace windows were found');
     } catch (error) { result.success = false; result.failure ??= error.stack; }
   } else result.filesystem = { traced: false, reason: 'strace unavailable or disabled; filesystem scan counts not measured' };
+  if (large && result.native?.scan_windows) {
+    try {
+      const clockTicks = Number(spawnSync('getconf', ['CLK_TCK'], { encoding: 'utf8' }).stdout.trim()) || 100;
+      const maxUserWatches = Number((await readFile('/proc/sys/fs/inotify/max_user_watches', 'utf8')).trim());
+      result.large_project = attributeWindows({ windows: result.native.scan_windows, timeline, clockTicks, maxUserWatches,
+        trace: result.filesystem?.windows ?? {} });
+      result.large_project.first_diagnostics_ms = result.native.large_project?.first_diagnostics_ms;
+      result.large_project.budget = largeProjectBudget;
+      const violations = evaluateLargeProject(result.large_project, largeProjectBudget);
+      result.large_project.violations = violations;
+      if (violations.length) (result.budgets ??= { violations: [] }).violations.push(...violations);
+    } catch (error) { result.success = false; result.failure ??= error.stack; }
+  }
   if (result.renderer_round_trip?.p95_ms > responsivenessBudget.renderer_round_trip_p95_ms)
     (result.budgets ??= { violations: [] }).violations.push(`renderer round-trip p95 ${result.renderer_round_trip.p95_ms} ms`);
   for (const [key, value] of Object.entries(result.native?.cases ?? {})) {
@@ -213,6 +235,6 @@ try {
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, (key, value) => value instanceof Set ? [...value] : value, 2));
   console.log(JSON.stringify({ success: result.success, directory, failure: result.failure, summary: result.summary,
     budgets: result.budgets, renderer_round_trip: result.renderer_round_trip, peak_family_rss_mib: result.peak_family_rss_mib,
-    filesystem: result.filesystem?.windows ?? result.filesystem }, null, 2));
+    filesystem: result.filesystem?.windows ?? result.filesystem, large_project: result.large_project }, (key, value) => value instanceof Set ? [...value] : value, 2));
   process.exitCode = result.success ? 0 : 1;
 }
