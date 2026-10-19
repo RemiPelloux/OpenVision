@@ -20,13 +20,13 @@ async function fixture(name = 'Open Vision ünïcødé $`"%\\ path') {
   await writeFile(join(portable, 'uninstall-desktop-entry.sh'), linuxDesktopEntryRemoval, { mode: 0o755 });
   await writeFile(join(portable, 'openvision.png'), 'icon fixture');
   await writeFile(join(portable, 'electron-host/openvision'),
-    `#!/bin/sh\nfor argument in "$@"; do printf '%s\\n' "$argument"; done > "$(dirname "$0")/arguments.txt"\n`, { mode: 0o755 });
+    `#!/bin/sh\nlocale charmap > "$(dirname "$0")/charmap.txt" 2>/dev/null\nfor argument in "$@"; do printf '%s\\n' "$argument"; done > "$(dirname "$0")/arguments.txt"\n`, { mode: 0o755 });
   return { directory, portable, data: join(directory, 'xdg data') };
 }
-const run = (script, data, args = []) => spawnSync(script, args, { encoding: 'utf8', timeout: 10000,
-  env: { PATH: process.env.PATH, HOME: '/nonexistent', XDG_DATA_HOME: data } });
-async function launched(context, args) {
-  assert.equal(run(join(context.portable, 'OpenVision'), context.data, args).status, 0);
+const run = (script, data, args = [], env = {}) => spawnSync(script, args, { encoding: 'utf8', timeout: 10000,
+  env: { PATH: process.env.PATH, HOME: '/nonexistent', XDG_DATA_HOME: data, ...env } });
+async function launched(context, args, env) {
+  assert.equal(run(join(context.portable, 'OpenVision'), context.data, args, env).status, 0);
   const file = join(context.portable, 'electron-host/arguments.txt');
   for (let attempt = 0; attempt < 100; attempt++) {
     try { return (await readFile(file, 'utf8')).trimEnd().split('\n'); }
@@ -48,6 +48,14 @@ test('launcher passes a folder with spaces through as one argument', linux, asyn
   const args = await launched(context, ['/tmp/a project folder']);
   assert.equal(args.at(-1), '/tmp/a project folder');
   assert.ok(!args.includes('--glass'));
+});
+
+test('launcher selects a UTF-8 character type under the C locale so non-ASCII package paths load', linux, async () => {
+  for (const env of [{ LC_ALL: 'C' }, { LANG: 'C' }, {}]) {
+    const context = await fixture();
+    await launched(context, [], env);
+    assert.equal((await readFile(join(context.portable, 'electron-host/charmap.txt'), 'utf8')).trim(), 'UTF-8', JSON.stringify(env));
+  }
 });
 
 test('desktop entry quotes a path with spaces, Unicode and reserved characters', linux, async () => {

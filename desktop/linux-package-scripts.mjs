@@ -6,6 +6,14 @@ set -eu
 here=$(CDPATH= cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)
 host="$here/electron-host"
 unset ELECTRON_RUN_AS_NODE
+# Chromium maps file URLs through the locale's character set: under C/POSIX a
+# package path with non-ASCII characters fails to load the workbench. Switch
+# only the character type to UTF-8; language and formats stay unchanged.
+charmap=$(locale charmap 2>/dev/null || true)
+if [ -n "$charmap" ] && [ "$charmap" != UTF-8 ]; then
+  export LC_CTYPE=C.UTF-8
+  [ -z "\${LC_ALL:-}" ] || export LC_ALL=C.UTF-8
+fi
 [ "$#" -eq 0 ] && set -- --glass
 set -- --user-data-dir "$host/data/local" --extensions-dir "$host/data/local-extensions" \\
   --disable-updates --disable-telemetry --disable-crash-reporter "$@"

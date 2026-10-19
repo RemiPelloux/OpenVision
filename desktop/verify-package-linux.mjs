@@ -3,7 +3,7 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { access, mkdir, mkdtemp, readdir, readFile, readlink, realpath, rename, stat, writeFile, unlink } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
-import { chromium, ozoneArguments } from '../tooling/browser.mjs';
+import { ozoneArguments } from '../tooling/browser.mjs';
 import { fileHash } from './import-files.mjs';
 
 // Native Linux portable-package verification: package into a disposable folder,
@@ -24,6 +24,7 @@ const result = { success: false, checkedAt: new Date().toISOString(), directory,
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   host: { display: process.env.WAYLAND_DISPLAY ? `wayland:${process.env.WAYLAND_DISPLAY}` : process.env.DISPLAY ? `x11:${process.env.DISPLAY}` : null,
     ozonePlatform: process.env.OPENVISION_OZONE_PLATFORM ?? null, desktop: process.env.XDG_CURRENT_DESKTOP ?? null,
+    locale: spawnSync('locale', ['charmap'], { encoding: 'utf8' }).stdout?.trim() ?? null,
     os: await readFile('/etc/os-release', 'utf8').then(text => text.match(/^PRETTY_NAME="?([^"\n]*)/m)?.[1]).catch(() => null) },
   scope: 'Linux x64 portable package built from this checkout; disposable package copy and XDG data folder; no provider, account or inference.' };
 
@@ -57,7 +58,7 @@ async function until(check, timeout, message) {
 const homeConfig = ['.config/OpenVision', '.config/Cursor', '.cursor', '.openvision'].map(name => join(homedir(), name));
 const exists = path => access(path).then(() => true, () => false);
 
-async function launch(name, args, act) {
+async function launch(name, args, act, match = 'true') {
   const record = { name, args };
   result.launches.push(record);
   await unlink(join(profile, 'DevToolsActivePort')).catch(error => { if (error.code !== 'ENOENT') throw error; });
@@ -66,25 +67,50 @@ async function launch(name, args, act) {
     { cwd: directory, env, encoding: 'utf8', timeout: 30000 });
   record.launcherExit = launcher.status;
   assert.equal(launcher.status, 0, `Launcher failed: ${launcher.stderr}`);
-  let browser;
+  let page;
   try {
     const port = await until(async () => (await readFile(join(profile, 'DevToolsActivePort'), 'utf8').catch(() => ''))
       .split('\n')[0], 60000, 'The package did not create its profile in electron-host/data/local');
     record.profileDevToolsFile = true;
-    browser = await chromium.connectOverCDP(`http://127.0.0.1:${port}`);
-    const page = await until(() => browser.contexts().flatMap(context => context.pages())
-      .find(candidate => candidate.url().includes('workbench')), 60000, 'No workbench window');
-    page.setDefaultTimeout(30000);
-    assert.ok(decodeURIComponent(page.url()).includes(`${host}/resources/app/`), `Window must load the relocated package: ${page.url()}`);
+    // Raw CDP to the window target: Playwright's connectOverCDP attaches to an
+    // internal error page instead of this vscode-file:// workbench.
+    // Pick the window this launch is about: VS Code may also restore the previous window.
+    page = await until(async () => {
+      const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then(response => response.json(), () => []);
+      record.windows = targets.filter(item => item.type === 'page' && item.url.includes('/workbench/')).length;
+      for (const target of targets.filter(item => item.type === 'page' && item.url.includes('/workbench/'))) {
+        assert.ok(decodeURIComponent(target.url).includes(`${host}/resources/app/`), `Window must load the relocated package: ${target.url}`);
+        const candidate = await cdpPage(target.webSocketDebuggerUrl);
+        if (await candidate.evaluate(match).catch(() => false)) return candidate;
+        candidate.close();
+      }
+    }, 60000, 'No matching workbench window');
     record.workbenchUrlInsidePackage = true;
     record.pids = await packageProcesses();
     assert.ok(record.pids.length > 0, 'Package processes must run from the relocated executable');
-    await act(page, record);
-    await page.keyboard.press('Control+q');
+    await act(page, record).catch(async error => {
+      record.visibleText = await page.evaluate('document.body.innerText.slice(0, 2000)').catch(() => null);
+      record.failureTitle = await page.evaluate('document.title').catch(() => null);
+      record.failureDom = await page.evaluate(`({ dialogs: document.querySelectorAll('dialog').length,
+        welcomeDialog: !!document.querySelector('dialog.ov-welcome-dialog'), sidebar: !!document.querySelector('.part.sidebar'),
+        sidebarVisible: !!document.querySelector('.part.sidebar')?.getClientRects().length,
+        treeItems: [...document.querySelectorAll('[role=treeitem]')].map(item => item.textContent).slice(0, 10),
+        workbench: document.querySelector('.monaco-workbench')?.className })`).catch(error => error.message);
+      record.failureTargets = await fetch(`http://127.0.0.1:${port}/json/list`).then(response => response.json())
+        .then(items => items.map(({ type, title, url }) => ({ type, title, url: url.slice(-60) })), () => null);
+      const shot = await page.send('Page.captureScreenshot').catch(() => null);
+      if (shot) await writeFile(join(directory, `${name}-failure.png`), Buffer.from(shot.data, 'base64'));
+      throw error;
+    });
+    // Browser.close closes every window; on Linux the editor quits with its last window.
+    const { webSocketDebuggerUrl } = await fetch(`http://127.0.0.1:${port}/json/version`).then(response => response.json());
+    const browser = await cdpPage(webSocketDebuggerUrl);
+    await browser.send('Browser.close').catch(() => {});
+    browser.close();
     await until(async () => !(await packageProcesses()).length, 60000, 'Package processes did not exit after Quit');
     record.quitCleanly = true;
   } finally {
-    await browser?.close().catch(() => {});
+    page?.close();
     const leftovers = await packageProcesses().catch(() => []);
     if (leftovers.length) {
       record.leftovers = leftovers;
@@ -92,6 +118,34 @@ async function launch(name, args, act) {
       for (const pid of leftovers) try { process.kill(pid, 'SIGTERM'); } catch {}
     }
   }
+}
+
+async function cdpPage(url) {
+  const socket = new WebSocket(url);
+  await new Promise((resolve, reject) => { socket.onopen = resolve; socket.onerror = () => reject(Error('CDP connection failed')); });
+  let sequence = 0;
+  const pending = new Map();
+  socket.onmessage = ({ data }) => {
+    const message = JSON.parse(data);
+    const waiter = pending.get(message.id);
+    if (!waiter) return;
+    pending.delete(message.id);
+    if (message.error) waiter.reject(Error(message.error.message)); else waiter.resolve(message.result);
+  };
+  // A closing target answers nothing more; settle outstanding calls instead of hanging.
+  socket.onclose = () => { for (const waiter of pending.values()) waiter.reject(Error('CDP connection closed')); pending.clear(); };
+  const send = (method, params = {}) => new Promise((resolve, reject) => {
+    if (socket.readyState !== WebSocket.OPEN) return reject(Error('CDP connection closed'));
+    const id = ++sequence; pending.set(id, { resolve, reject });
+    socket.send(JSON.stringify({ id, method, params }));
+  });
+  const evaluate = async expression => {
+    const { result: value, exceptionDetails } = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true });
+    if (exceptionDetails) throw Error(exceptionDetails.exception?.description ?? exceptionDetails.text);
+    return value.value;
+  };
+  const waitFor = (expression, timeout, message) => until(() => evaluate(expression).catch(() => false), timeout, message);
+  return { send, evaluate, waitFor, close: () => socket.close() };
 }
 
 async function windowClass(pids) {
@@ -156,9 +210,9 @@ try {
   // 4. First launch: welcome screen, profile inside the package, window identity, a persisted value.
   const probe = `package-${Date.now()}`;
   await launch('first', ['--glass'], async (page, record) => {
-    await page.getByRole('region', { name: 'Welcome to OpenVision' }).waitFor({ timeout: 60000 });
+    await page.waitFor(`!!document.querySelector('[aria-label="Welcome to OpenVision"]')?.getClientRects().length`, 60000, 'Welcome screen missing');
     record.welcome = true;
-    await page.evaluate(value => localStorage.setItem('openvision.package.probe', value), probe);
+    await page.evaluate(`localStorage.setItem('openvision.package.probe', ${JSON.stringify(probe)})`);
     record.windowClass = await windowClass(record.pids);
   });
   const identity = result.launches[0].windowClass;
@@ -172,17 +226,22 @@ try {
 
   // 5. Restart through the launcher with a folder whose path has spaces and Unicode.
   await launch('restart', [project], async (page, record) => {
-    await page.locator('.monaco-workbench').waitFor({ timeout: 60000 });
-    record.persistedProbe = await until(() => page.evaluate(() => localStorage.getItem('openvision.package.probe')), 10000, 'Probe missing');
+    await page.waitFor(`!!document.querySelector('.monaco-workbench')`, 60000, 'Workbench missing');
+    record.persistedProbe = await page.waitFor(`localStorage.getItem('openvision.package.probe')`, 10000, 'Probe missing');
     assert.equal(record.persistedProbe, probe, 'The profile must persist across restart');
-    await page.locator('.part.sidebar').getByRole('treeitem').filter({ hasText: 'notes été.txt' }).first().waitFor({ timeout: 60000 });
+    // The window was selected by its workspace configuration (the Unicode folder). After the
+    // default --glass start it opens in the Agent layout with Project Home, which lists the folder.
+    record.workspace = await page.evaluate('JSON.stringify(vscode.context.configuration().workspace)');
+    record.layout = await page.evaluate(`document.querySelector('.part.sidebar') ? 'editor' : 'agent'`);
+    await page.waitFor(`document.body.innerText.includes(${JSON.stringify(project)})`, 30000, 'Project Home does not list the opened folder');
+    record.title = await page.evaluate('document.title');
     record.projectOpened = true;
-  });
+  }, `JSON.stringify(vscode.context.configuration()?.workspace ?? null).includes(${JSON.stringify(JSON.stringify(project).slice(1, -1).split('/').pop())})`);
   result.checks.profilePersistsAcrossRestart = true;
-  result.checks.projectWithUnicodePathOpened = true;
+  result.checks.unicodeFolderArgumentOpened = true;
 
   const created = (await walk(portable)).map(({ path }) => relative(portable, path)).filter(name => !before.has(name));
-  const outside = created.filter(name => !name.startsWith('electron-host/data/'));
+  const outside = created.filter(name => name !== 'electron-host/data' && !name.startsWith('electron-host/data/'));
   result.createdOutsideProfile = outside;
   assert.deepEqual(outside, [], 'Runtime writes inside the package must stay under electron-host/data');
   const homeAfter = Object.fromEntries(await Promise.all(homeConfig.map(async path => [path, await exists(path)])));
