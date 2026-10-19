@@ -253,10 +253,14 @@ try {
   await unlink(filler);
   let grownFreed = await stage('after-growing-undo-freed');
   if (!grownFreed.notes.changed) {
-    // The restore did not reach disk while full: save the restored editor text again.
-    await openNotes(); await page.keyboard.press('ControlOrMeta+s');
+    // The restore could not be saved while full: the save error offers Retry and the
+    // restored text stays unsaved in its editor.
+    const toast = page.locator('.notification-toast').filter({ hasText: /Failed to save 'notes\.md'/ }).filter({ visible: true }).first();
+    await toast.waitFor({ timeout: 10000 });
+    const saveError = (await toast.innerText()).replace(/\s+/g, ' ');
+    await toast.getByRole('button', { name: 'Retry', exact: true }).click();
     for (let attempt = 0; attempt < 50 && !(await describe(notes)).changed; attempt++) await page.waitForTimeout(100);
-    grownFreed = await stage('after-growing-undo-save-retry', { saveRetried: true });
+    grownFreed = await stage('after-growing-undo-save-retry', { saveRetried: true, saveError });
   }
   await closeOwnedApp();
   await launch();
@@ -274,7 +278,7 @@ try {
       visibleErrors: undone.visibleErrors }, undoAfterFreeing: { notes: undoFreed.notes, saveRetried: !!undoFreed.saveRetried },
     growingUndoWhileFull: { notes: grown.notes, freeBytesBeforeUndo: growFree, freeBytesAfterUndo: grown.freeBytes,
       pendingReview: grown.pendingReviewVisible, visibleErrors: grown.visibleErrors },
-    growingUndoAfterFreeing: { notes: grownFreed.notes, saveRetried: !!grownFreed.saveRetried },
+    growingUndoAfterFreeing: { notes: grownFreed.notes, saveRetried: !!grownFreed.saveRetried, saveError: grownFreed.saveError },
   };
   assert.equal(fault.freeBytes, 0, 'The volume must still be full after the failed edit');
   assert.match(result.observations.faultToolResult ?? '', /no space/i, 'The Agent must report the full volume');
