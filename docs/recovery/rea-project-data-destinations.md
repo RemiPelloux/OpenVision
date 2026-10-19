@@ -10,6 +10,179 @@ The story is not Verified, because project-derived package names still reach
 `registry.npmjs.org` through TypeScript Automatic Type Acquisition. That fix
 belongs to OV-1005. Other platforms are also uncaptured.
 
+## 19 October 2026 — extended workloads, addon inventory and capture fixes
+
+**Linux x64 only**, in a cloud container: Ubuntu 24.04, kernel 6.18, 4 CPUs,
+15 GB RAM, Xvfb, Node 24.18.0. Source build of 3.21.13 with every change on
+branch `ov/data-telemetry`, including the merged `ov/mcp-safety`. Controlled
+loopback fixtures only. Worker report:
+[data-telemetry](../verification/worker-reports/data-telemetry.md).
+
+### What the verifier now covers
+
+`npm run verify:data-destinations` keeps the 16 October method and workload.
+The run then adds these steps, each with its own canary:
+
+| Phase | Action | Canary |
+| --- | --- | --- |
+| terminal | Controlled `bash --noprofile --norc`: `echo` into a marker file, then `git add` and `git commit -m` | `OVC-TERM-…`, `OVC-TCOMMIT-…` |
+| commit-message | Stage a file, run **Generate Commit Message**, then **Git: Commit Staged** | `OVC-STAGED-…` (staged diff) |
+| debug | **Debug: Start Debugging** of a project `.cjs` file (js-debug, `internalConsole`) | `OVC-DEBUG-…` |
+| mcp | Write an MCP STDIO fixture into the profile's `mcp.json`, then have the Agent call `memory_probe` (approved with Run) | the fixture's per-run output marker |
+| vsix-install | **Extensions: Install from VSIX…** of a local fixture package (simple file dialog) | `ovc-vsix-…` (extension name and code) |
+
+New checks: `terminal`, `commitMessage` (the staged canary reaches the provider
+and the commit uses the generated message), `debug`, `mcp`, `vsixInstall`,
+`addonsInventoried`, `noAddonDirectSockets`, `noNonProviderTraffic` (0 captured
+requests, 0 connections, 0 direct connects) and `hostExitRequested`.
+
+**Native addon inventory.** The verifier reads `/proc/<pid>/maps` of the whole
+owned family every 3 s, so short-lived processes and late loads are counted. It
+records every mapped `.node` file, and every `.so` shipped in the application
+tree or the Electron host directory, with path, SHA-256, owning roles and pids.
+strace thread ids are mapped to their process through clone records, so a
+connect from a worker thread is attributed to the process that maps the addon.
+The 16 October check compared thread ids with process ids, so a connect from a
+worker thread could not match. The known list is
+`desktop/fixtures/linux-x64-addons-3.21.13.json`. An addon missing from it, or
+with a different digest, is unknown. An unknown addon in a process that makes
+a direct connect fails `noAddonDirectSockets`.
+
+**Host exits.** Every host exit is recorded with phase, code, signal and whether
+the verifier requested it. A `heartbeat.json` (phase, `MemAvailable`, memory PSI)
+is written every 5 s and outlives a verifier that is itself stopped.
+`--signal-trace` adds signal deliveries, `kill`/`tgkill` calls and process exits
+of the whole family to the strace log.
+
+### Capture defects found and fixed (harness)
+
+1. **Names resolved but never connected (observed).** The capture DNS socket was
+   bound to `0.0.0.0`. Replies to queries sent to `127.0.0.53` therefore left
+   from `127.0.0.1`, and Chromium's connected UDP resolver dropped them. The name
+   was recorded, but the request never reached the capture
+   (`logs/data-destinations-1K5w71`: 12 lookups of `marketplace.cursorapi.com`,
+   0 connections). The resolver address now has its own socket.
+2. **Lookups suppressed (observed in a scratch namespace).** With only
+   `127.0.0.1` configured, glibc's `AI_ADDRCONFIG` sent no IPv4 query at all. The
+   namespace now adds `198.18.0.2/32` on `lo`. Both namespaces still have no route
+   off the machine.
+3. **strace hung the Agent (observed).** Stopping on every syscall of the family
+   left the BYOK Agent turn after "Using agent backend" with no connect attempt in
+   4 of 5 runs (`V57pK6`: 300 s). Without strace it answered in 1.6 s (`kYpbAA`).
+   strace now uses `--seccomp-bpf`. With it, the Agent answered in about 2 s in
+   every later run.
+4. **Explicit proxy made opt-in (`--proxy`).** With `--proxy-server` the Agent
+   turn also stalled (`Zkbnby`; the documented OV-1005 proxy stall). The
+   transparent catch-alls terminate TLS by SNI, so the capture needs no proxy.
+5. `tcpdump` needs `-Z root` in the user namespace. Inherited proxy variables
+   (`HTTPS_PROXY`, `NO_PROXY`, `npm_config_*proxy`, …) are removed from the app
+   environment; otherwise Node clients would reach a host proxy on loopback,
+   where the capture sees only a loopback connection.
+
+### Product leak found and fixed (owner change)
+
+**Local VSIX install → Marketplace (observed).** Installing a local VSIX made two
+Marketplace queries (`logs/data-destinations-daLpz9`):
+
+- The shared-process install task's `updateMetadata` sent
+  `POST https://marketplace.cursorapi.com/_apis/public/gallery/extensionquery`
+  with `filterType 7 = "openvision-fixture.ovc-vsix-…"`. That is the identity of
+  a possibly private, locally built extension.
+- The workbench's `matchInstalledExtensionsWithGallery` sent a CORS preflight
+  for the same query (`bzFObc`). Its POST was never sent because the capture
+  answered 503.
+
+Owner fix (`desktop/network-defaults.mjs`, section "Local VSIX installs"):
+`skipVsixGalleryMetadata` (shared process and CLI) and `skipVsixGalleryMatch`
+(desktop and Glass workbench). A local install records no Marketplace metadata,
+and the workbench leaves `source: "vsix"` extensions out of the Marketplace
+match. Installs from the Marketplace are unchanged. Owner decision pending: a
+VSIX-installed extension is no longer linked to its Marketplace listing for
+update checks.
+
+No project data was in these requests. The canary was the extension's own name.
+
+### Result (final build)
+
+`logs/data-destinations-fNkZXe` (default timing: 60 s indexing idle, 30 s final
+idle), the series below and the three final runs `PvCKfo`, `DOBY9j` and
+`W8SO9C` (`npm run verify:data-destinations`, all first-time passes). Every check passed, including all ten workload
+checks. Observed:
+
+- **Provider:** 11 requests, 459,388 B (1 model list, 5 Agent, 1 Tab, 1 Quick
+  Edit, 1 commit message, 2 Agent turns for MCP). Canaries reached it during
+  Agent, Tab, Quick Edit, commit-message generation and MCP: the staged diff
+  and the MCP tool output.
+- **Everything else:** 0 non-provider requests, 0 connections, 0 DNS names,
+  0 SNI names, 0 direct connects (strace, 295–306 processes).
+  - The terminal echo, the terminal commit, the debug output and the VSIX
+    reached only local fixtures (marker files, the project's Git history, the
+    profile's extensions directory).
+  - The MCP STDIO child talked only to its loopback fixture.
+- **Addons:** 13 inventoried, all known, none in a process with a direct
+  connect.
+  - Main process: `spdlog`, `vscode-sqlite3`, `cursor_proclist`, `keymapping`.
+  - Extension and utility hosts: `file_service` (retrieval host only,
+    `3b0290b1…`, unchanged), the agent-exec `tree-chunk-napi` and tree-sitter
+    bindings, `watcher`, `pty`.
+  - Electron host shared objects: `libffmpeg.so`, and `libEGL.so` /
+    `libGLESv2.so` in the GPU process.
+- **Local mode:** `Local mode enabled — codebase indexing disabled`. The Agent
+  tool list again has no semantic or codebase search tool.
+
+### Clean-quit flake during idle indexing (`0nIEiN`, 17 October)
+
+**Ten consecutive runs** with `--signal-trace` and default timing, on the final
+build: `jfA9IJ`, `t25YKC`, `5ltB4D`, `53UQsE`, `Hg5QsV`, `XmSgeo`, `G7nAF7`,
+`5WYHh6`, `okrbs5`, `ThMm72`.
+
+- **10 of 10 passed first time**, with all 18 checks each time.
+- Each run: 11 provider requests and 0 non-provider requests, connections, names
+  or direct connects.
+- No unrequested host exit occurred. The Electron main process received no
+  signal and exited with code 0 at the requested quit.
+- Heartbeats show at least 8.7 GiB `MemAvailable` and memory PSI `some avg10`
+  of 0.
+- First Agent provider request: 1.6–2.2 s after the prompt.
+
+**Controlled reproductions** (helper scripts under the ignored `logs/probes/`;
+only processes of the owned run were matched, by command line):
+
+| Experiment | Run | What happened |
+| --- | --- | --- |
+| Stop only the verifier process (SIGKILL) 40 s into idle indexing | `logs/data-destinations-FEIxhG` | Heartbeat stops at `idle-indexing`, no `result.json`. **The app did not quit:** 12 owned processes were still running 300 s later. The main process exited with code 1 only when the Xvfb session ended |
+| Send SIGTERM to the Electron main process 40 s into idle indexing | `nr1GT2`, then `70cXzZ` with the recording fix | **Same signature as `0nIEiN`:** a clean quit with code 0 within 0.6 s. The main log shows only extension hosts exiting with code 0. The verifier fails with "Target page … has been closed" during `idle-indexing` |
+
+**Attribution (inferred):** the reported symptom is an external SIGTERM (or an
+equivalent quit request) to the owned app. A product self-quit is not
+indicated: none was seen in 12 traced full runs. A reaped verifier is not
+either: the app outlives it. That is consistent with the agent-harness
+stop recorded for `verify:idle-memory`. In `0nIEiN` the verifier stayed alive
+and recorded the quit, so the signal reached the app and not the verifier. The
+sender of the original events was never recorded and remains unknown.
+
+**Hardening:**
+
+- Every host exit is recorded. An exit after the window closed on its own is
+  recorded as unrequested. The first run (`nr1GT2`) had mislabelled it
+  "requested", because the renderer closes before the main process exits.
+- The phase is kept (`windowClosedBeforeRequest`).
+- `heartbeat.json` outlives a stopped verifier.
+- `--signal-trace` names the main process's signal, its sender and whether the
+  sender is outside the traced family (`70cXzZ`: SIGTERM from a pid outside the
+  family, main exit 0 at +0.56 s).
+- A recurrence now fails `hostExitRequested` and shows its cause.
+
+### Still open
+
+- Windows and macOS captures (moved to the platform stories).
+- Signed-in account workloads (moved to the live/account story).
+- Upload paths that need a positive server answer remain inferred from code. The
+  owner fixes make them unreachable whatever the server answers.
+- Extensions and MCP servers that users install themselves can open their own
+  connections. This is an accepted residual. The MCP fixture here is a
+  controlled STDIO child.
+
 ## 16 October 2026 — native capture and owner fixes
 
 ### Method
