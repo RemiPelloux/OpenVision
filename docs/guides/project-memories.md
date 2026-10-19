@@ -177,6 +177,42 @@ the denied directory, restores it in `finally`, and verifies exact restoration.
 These checks close multi-root, junction and permission-denial coverage, not the
 remaining physical full-disk, stale cross-window or native inline-edit gates.
 
+## Native filesystem verification on Linux, 19 October
+
+`verify-memory-filesystem.mjs` previously asserted `win32`. It now also runs on
+Linux x64:
+
+- The rules folder of the second root is a **directory symlink** to an owned
+  target. The save is rejected with "Memory folders must be ordinary project
+  directories, not links", and the target stays empty. Only the link is removed.
+- Write permission is then removed from the real folder (`0755` to `0555`,
+  recorded as `memory_denied_folder_mode: "555"`). A write probe fails with
+  `EACCES`. The save is rejected, the already approved file is unchanged, and
+  the card allows retry.
+- After the mode is restored and checked, retry writes the memory into the
+  selected second root only.
+
+Windows keeps its junction and ACL fixture.
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `npm run verify:memory:filesystem` | `fmRTVH` | All 11 filesystem checks passed. The run then **failed** in the later other-project phase: the Agent pane stayed closed (harness, fixed below). |
+| `npm run verify:memory:filesystem` | `saxhAF`, `n1DC0v` | **Pass** |
+| `npm run verify:memory` | `vVJENm` | **Fail, environmental**: no Secret Service; the provider save never completed |
+| `npm run verify:memory` | `qwYqud` | **Fail**: same other-project Agent pane issue |
+| `npm run verify:memory` | `1R0Loc`, `Vojdai` | **Pass** |
+| `npm run verify:legacy-memory` | `3BHmyy` | Pass |
+| `npm run verify:legacy-memory:stale` | `AqNUHh`, `QRaMsu` | Pass first time |
+| `npm run verify:legacy-memory:windows` (two windows) | `vJmp89`, `D5gJ9K` | Pass first time; the forwarding launch exited 0 |
+
+Harness fix: in a freshly opened project window with no focused editor, one
+`Ctrl+Shift+L` left the Agent pane closed. `verify:memory` now falls back to
+the shared `openChat` helper. The failed runs are counted as failures, not as
+first-time passes.
+
+The runs use controlled HTTP replies, not live inference. Live `--memory` runs
+and the Windows and macOS reruns belong to the platform/live stories.
+
 ## Legacy import verification, 14 October
 
 `npm run verify:legacy-memory` passed on the built Windows desktop at

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, open, readFile, readdir, stat, statfs, unlink, writeFile } from 'node:fs/promises';
 import { release } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -189,30 +189,42 @@ async function launch() {
   await enterWorkspace(page);
   await page.waitForTimeout(8000);
 }
+// The read-only launch is spawned directly: the expected outcome is a native
+// error dialog that blocks the main process before any window, which a
+// debugger-attached launch cannot observe. The dialog is found through X11 by
+// the owned child's _NET_WM_PID, captured, and dismissed with Return.
+const x11 = (...args) => spawnSync('xdotool', args, { encoding: 'utf8' });
 async function readOnlyLaunch(readOnlyProfile) {
   const probe = await writeFile(join(readOnlyProfile, 'probe'), '').then(() => 'writable', error => error.code);
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.OPENVISION_IO_FAULT_DIRECTORY;
-  const outcome = { probe };
-  let owned, child;
-  try {
-    owned = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
-      args: ['--user-data-dir', readOnlyProfile, '--extensions-dir', join(directory, 'extensions'),
-        '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
-        '--disable-telemetry', '--disable-crash-reporter', ...await linuxSandboxArguments(layout.host), project] });
-    child = owned.process();
-    const window = await owned.firstWindow({ timeout: 60000 });
-    await window.waitForTimeout(15000);
-    outcome.started = true;
-    outcome.text = (await window.locator('body').innerText().catch(() => '')).split('\n')
-      .filter(line => /storage|read-only|readonly|could not|failed|error/i.test(line)).slice(0, 20);
-    await window.screenshot({ path: join(directory, 'read-only-launch.png') }).catch(() => {});
-  } catch (error) { outcome.started = false; outcome.launchError = error.message.split('\n')[0]; }
-  if (child) {
-    const exited = child.exitCode !== null || child.signalCode !== null ? Promise.resolve() : new Promise(resolve => child.once('exit', resolve));
-    await owned.close().catch(() => {});
-    await exited;
-    outcome.exit = { exitCode: child.exitCode, signalCode: child.signalCode };
+  const outcome = { probe, dialog: undefined, stderr: '' };
+  const child = spawn(layout.executable, ['--user-data-dir', readOnlyProfile, '--extensions-dir', join(directory, 'extensions'),
+    '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
+    '--disable-telemetry', '--disable-crash-reporter', ...await linuxSandboxArguments(layout.host), project],
+  { env, stdio: ['ignore', 'ignore', 'pipe'] });
+  child.stderr.setEncoding('utf8').on('data', chunk => { outcome.stderr += chunk; });
+  const exited = new Promise(done => child.once('exit', (exitCode, signalCode) => done({ exitCode, signalCode })));
+  let exit;
+  exited.then(value => { exit = value; });
+  const deadline = Date.now() + 60000;
+  while (!exit && !outcome.dialog && Date.now() < deadline) {
+    const found = x11('search', '--onlyvisible', '--pid', String(child.pid)).stdout.trim().split('\n').filter(Boolean);
+    if (found.length) {
+      await new Promise(done => setTimeout(done, 1500)); // let GTK paint before capture
+      outcome.dialog = { windows: found.length, title: x11('getwindowname', found[0]).stdout.trim() };
+      spawnSync('import', ['-window', 'root', join(directory, 'read-only-dialog.png')]);
+      outcome.dialog.mainBlockedWhileShown = exit === undefined;
+      x11('windowfocus', '--sync', found[0]); x11('key', '--clearmodifiers', 'Return');
+      outcome.dialog.dismissedWith = 'Return';
+    } else await new Promise(done => setTimeout(done, 250));
   }
+  const settled = await Promise.race([exited, new Promise(done => setTimeout(done, 30000))]);
+  if (!settled) {
+    // Only this verifier's own spawned child is stopped, through its handle.
+    outcome.forcedStop = true; child.kill('SIGTERM'); await exited;
+  }
+  outcome.exit = exit ?? await exited;
+  outcome.explanation = outcome.stderr.split('\n').filter(line => /\[openvision\]|profile folder|read-only|--user-data-dir|Nothing in the profile/.test(line)).slice(0, 12);
   return outcome;
 }
 async function closeOwnedApp() {
@@ -434,6 +446,15 @@ try {
     assert.deepEqual(await readdir(memoryDirectory).then(names => names.filter(name => name.endsWith('.tmp'))), []);
     assert.equal(result.readOnlyLaunch.probe, 'EROFS', 'The read-only view must produce EROFS');
     assert.equal(result.readOnlyLaunch.databaseUnchanged, true, 'A read-only profile launch must not change saved storage');
+    const readOnly = result.readOnlyLaunch;
+    assert.ok(readOnly.dialog?.windows >= 1, 'A read-only profile shows a native dialog before any window');
+    assert.equal(readOnly.dialog.mainBlockedWhileShown, true, 'The host waits for the dialog');
+    assert.match(readOnly.stderr, /OpenVision cannot start because its profile folder cannot be written\./);
+    assert.ok(readOnly.stderr.includes(join(directory, 'readonly-view/profile')), 'The dialog names the profile path');
+    assert.match(readOnly.stderr, /read-only file system\. \(EROFS\)/);
+    assert.match(readOnly.stderr, /--user-data-dir set to a writable folder/);
+    assert.equal(readOnly.forcedStop, undefined, 'Dismissing the dialog ends startup without being stopped');
+    assert.deepEqual(readOnly.exit, { exitCode: 1, signalCode: null }, 'The host exits with code 1 after the dialog');
     assert.deepEqual(errors, []);
   }
   result.success = true;

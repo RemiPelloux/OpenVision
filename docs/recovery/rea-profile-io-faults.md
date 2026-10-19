@@ -189,9 +189,10 @@ still work. Profile storage is on the ordinary disk in that verifier.
 - **Review-snapshot `SQLITE_FULL` inside a live turn.** Turns did not issue
   requests while the profile was full. The snapshot recovery owners keep their
   existing [injected-failure evidence](rea-agent-review-recovery.md).
-- **Read-only profile UX.** The app exits without explaining why. A read-only
-  profile mid-session cannot be produced: tmpfs refuses `remount,ro` while
-  SQLite holds the file open for writing.
+- **Read-only profile mid-session.** It cannot be produced: tmpfs refuses
+  `remount,ro` while SQLite holds the file open for writing. The read-only
+  profile at startup is fixed; see
+  [Read-only profile at startup](#read-only-profile-at-startup-19-october) below.
 - **A long stay on a full volume.** A setting that is still unsaved when the app
   quits is lost, but its save was reported as failed. Other workbench state
   (layout, view state) is retried while the app runs but is not acknowledged.
@@ -206,3 +207,99 @@ OV-103 and OV-301 still have open clauses (above, and in their own reports).
 
 [ipc-3.24]: ../../curs_source/modules/3.24.18/208e7b1ba65e410e50a6ddc167ffe358b469aa6079c2b6a7eb6937682771871d-768b05080f06/storageIpc_2.js
 [storage-3.24]: ../../curs_source/modules/3.24.18/208e7b1ba65e410e50a6ddc167ffe358b469aa6079c2b6a7eb6937682771871d-768b05080f06/storage_3.js
+
+## Read-only profile at startup, 19 October
+
+Linux x64 only: Ubuntu 24.04.5 container, kernel 6.18.44, Xvfb with a private
+D-Bus session, Node 24.18.0, prepared 3.21.13 runtime input. Source change after
+**0.2.0-preview.7**. It does not prove Windows or macOS behavior.
+
+### Observed cause
+
+A direct launch on a bind-mounted read-only view of a profile (inside an
+unprivileged user and mount namespace) logged this and exited without any
+window or message:
+
+```
+Error: ENOENT: no such file or directory, mkdir '<profile>/User/globalStorage'
+    at async BAe.initServices (out/main.js)
+    at async BAe.startup (out/main.js)
+```
+
+- **Observed:** Node's recursive `mkdir` reports the read-only failure as
+  `ENOENT`, not `EROFS`. The main bundle's `handleStartupDataDirError` only shows
+  its dialog for `EACCES` and `EPERM`, so `startup()` rethrew and `quit()` exited
+  with code 1.
+- **Inferred:** adding `EROFS` to that check would not have helped, because the
+  error code that arrives is `ENOENT`.
+
+### Correction
+
+[`desktop/profile-writability.js`](../../desktop/profile-writability.js) is a
+local main-process module.
+[`desktop/profile-writability-customization.mjs`](../../desktop/profile-writability-customization.mjs)
+calls it from `startup()`, right after the environment is resolved and before
+`initServices` creates any profile folder.
+
+- It checks the profile folder (or its nearest existing parent) with
+  `access(W_OK)`. It never writes a probe file.
+- On `EROFS`, `EACCES` or `EPERM` it shows a native error dialog through
+  Electron's `dialog.showMessageBoxSync` and writes the same text to stderr. The
+  dialog gives the profile path, the cause and the error code. It says that
+  nothing in the profile was changed. The remedy is to make the folder writable
+  or start with `--user-data-dir` set to a writable folder. Startup then exits
+  with code 1.
+- Other probe errors (for example `EIO`) keep the existing startup path.
+- **Default pending owner decision:** no read-only session is offered. The
+  conservative choice is to explain the problem and exit. A read-only session
+  would need every storage writer to tolerate refusal, and that is not verified.
+- Drift guards: the exact recovered `startup()` text, the Electron
+  `app`/`dialog` import, the `_8` dialog-options owner and the upstream
+  `EACCES`/`EPERM` handler must each be present once. A partially applied patch
+  is refused. Reapplying is a no-op (marker
+  `/* OpenVision profile writability check v1 */`). The first backup is
+  `backups/profile-writability/main.js`.
+
+### Verification
+
+`verify:profile-io-faults` now spawns the read-only launch directly, with no
+debugger attached. A blocking dialog cannot be observed through Playwright's
+Electron launch. The verifier:
+
+1. finds the dialog through X11 by the owned child's `_NET_WM_PID`
+   (`xdotool search --onlyvisible --pid`);
+2. checks that the host has not exited while the dialog is shown;
+3. captures `read-only-dialog.png`;
+4. dismisses the dialog with Return.
+
+It then asserts all of the following:
+
+- the dialog text on stderr: message, profile path, `read-only file system.
+  (EROFS)` and the `--user-data-dir` remedy;
+- exit code 1 with no signal and no forced stop;
+- the `state.vscdb` hash is unchanged.
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `node --test desktop/profile-writability.test.mjs` (in `test:provider-storage`, 77/77) | — | Pass, 5 tests: writable and missing profiles; EROFS, EACCES and EPERM with path, code and remedy; nearest-parent check; other errors pass through; patch order, idempotence and drift |
+| `npm run verify:profile-io-faults` | `RenGiF` | **Fail, environmental.** The baseline provider dialog never closed, before any fault step. This container had no Secret Service, and the save did not complete (see the worker report). |
+| `npm run verify:profile-io-faults` (gnome-keyring session) | `1tcBc7` | **Pass**: dialog shown while the host waited, exit 1, `state.vscdb` unchanged; all full-volume stages as in `EtKCCY` |
+| `npm run verify:profile-io-faults` (repeat) | `qSrkBj` | **Pass** |
+
+On this host, as in `EtKCCY`, the profile rule save while full **succeeded**:
+SQLite committed into WAL space it already owned. Main bundle
+`8a14ecd5…b017be`, profile-writability module `8a478b2d…7d22`.
+
+A manual capture showed the GTK dialog with a red error icon and these lines:
+
+- "OpenVision cannot start because its profile folder cannot be written."
+- the path
+- "It is on a read-only file system. (EROFS)"
+- the remedy
+
+It also showed one **Close** button.
+
+**Not verified:** EIO, torn sectors and power loss stay residual exclusions
+(default pending owner decision). The dialog on Wayland, Windows and macOS was
+not run. Accessibility tooling was not used to read the dialog text; the text
+assertion uses the identical stderr copy, and the window is verified by X11.

@@ -104,3 +104,49 @@ isolation evidence. Physical disk/I/O failure remains unverified beyond the
 tested SQLite statement errors. Same-rule simultaneous edits are last-writer behavior, not a
 verified merge feature. Native macOS/Linux and other live models were not tested
 in this pass. The fixed denominator remains 42 stories.
+
+## Linux x64 follow-up, 19 October
+
+Ubuntu 24.04.5 container, Xvfb, private D-Bus session with gnome-keyring,
+Node 24.18.0, source build of the prepared 3.21.13 runtime. `verify:rules:windows`
+means two windows, not the Windows OS.
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `npm run verify:rules:windows` | `VV7Dx2` (first build), `bLzZxu` (final build) | **Pass first time, both runs.** All 16 checks: two real windows, concurrent additions, cross-window edit and delete, profile isolation, restart in the other project, malformed record, and SQLite trigger rejection of create, edit and delete. The forwarding second launch exited 0. Every host exited 0. |
+| `npm run verify:local-rules` | `TFnQ5d` | Pass: native create, edit, restart and delete; no knowledge-base requests |
+| `npm run verify:local-rules:agent-context` | `hq602D`, `o8mCbB` | **Pass, both runs** (below) |
+
+No Linux-only failure appeared. Single-instance forwarding worked without the
+sandbox flag on the forwarding launch.
+
+### First Agent request after restart (controlled fixture)
+
+`verify:local-rules -- --agent-context` (`npm run verify:local-rules:agent-context`)
+is the non-live counterpart of the live `--rules` check. It runs these steps:
+
+1. Configures a provider that points at a **local fixture HTTP server**. Its
+   replies are fixed: this is not inference.
+2. Creates a user rule through Customize → Rules.
+3. Restarts the host.
+4. Sends one Agent turn.
+
+The project has an always-applied rule (`.openvision/rules/fixture-always.mdc`)
+and a saved memory: a hash-named `memory-<sha256>.mdc` with the same text an
+approved memory gets.
+
+Assertions on the first request body:
+
+- it contains the user rule;
+- it contains the always-applied project rule;
+- it does **not** contain the memory body;
+- no request is sent before the restart;
+- no renderer knowledge-base RPC appears;
+- every host exits 0.
+
+The memory's description was present, as the on-demand design expects (recorded
+as `memoryDescriptionDiscoverable`). The first body is kept as
+`first-request.json` in the run directory.
+
+Same-rule concurrent edits stay last-writer-wins. This is a default pending owner
+decision, not a merge feature.
