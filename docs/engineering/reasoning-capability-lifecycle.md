@@ -105,6 +105,28 @@ call (HTTP 200), then timed out on the actual file-result continuation after
 60 seconds. Both requests preserved High. This failed run remains evidence in
 the live compatibility report and is not counted as a success.
 
+## Linux x64 retry and resume, 19 October 2026
+
+`verify:reasoning-capabilities` now also covers provider failures after a
+reasoning level is chosen (loopback fixture, Linux x64; first run `PUx7tZ`).
+
+- **Ultra (extended level).** 503 → Try again, and a stream ending without a
+  finish reason → Resume. Each sends one failed request and then exactly one
+  retry, both with `reasoning_effort: ultra`.
+- **Level removed between failure and retry.**
+  1. Discovery removes Ultra after a failed Ultra request.
+  2. Try again shows "Reasoning level "ultra" is no longer available".
+  3. It sends **0 requests**.
+- **High.** Try again and Resume each send one `high` retry.
+- **High after a full restart.**
+  - With an unresolved 503, restoring sends 0 requests and Try again then sends
+    one `high` request.
+  - With an unresolved partial stream, restoring sends 0 requests and Resume then
+    sends one `high` request.
+
+No product change was needed for these cases. Child retry and resume behavior is
+in [subagent verification](../verification/subagent-reasoning-verification.md).
+
 ## Limits and follow-up
 
 OV-203 remains Partial pending its OV-104 dependency and remaining retry/resume
