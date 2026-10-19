@@ -64,7 +64,7 @@
     "test:telemetry": "node --test desktop/telemetry-core.test.mjs desktop/telemetry-extensions.test.mjs desktop/telemetry-workbench.test.mjs desktop/network-capture.test.mjs desktop/network-defaults.test.mjs",
     "verify:telemetry": "node desktop/verify-telemetry.mjs",
     "verify:telemetry:extended": "sh desktop/verify-telemetry-extended.sh",
-    "test:completion": "node --test desktop/completion-provider.test.mjs desktop/completion-response.test.mjs desktop/completion-keyboard.test.mjs desktop/completion-undo.test.mjs desktop/completion-preparation.test.mjs desktop/profile-paths.test.mjs desktop/subagent-paths.test.mjs",
+    "test:completion": "node --test desktop/completion-provider.test.mjs desktop/completion-response.test.mjs desktop/completion-keyboard.test.mjs desktop/completion-undo.test.mjs desktop/completion-accept.test.mjs desktop/completion-budgets.test.mjs desktop/completion-preparation.test.mjs desktop/profile-paths.test.mjs desktop/subagent-paths.test.mjs",
     "verify:completion": "node desktop/verify-completion.mjs",
     "test:inline-edit": "node --test desktop/inline-edit.test.mjs desktop/inline-edit-context.test.mjs desktop/completion-response.test.mjs",
     "verify:inline-edit": "node desktop/verify-inline-edit.mjs",
