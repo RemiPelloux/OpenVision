@@ -47,11 +47,15 @@ test('budgets fail on excess, on missing measurements and on minimums', () => {
 
 test('committed budgets cover every fixed workload and the session clauses', async () => {
   const budgets = JSON.parse(await readFile(new URL('./agent-context-budgets.json', import.meta.url), 'utf8'));
-  for (const name of ['single', 'reads', 'edit', 'long'])
+  for (const name of ['single', 'reads', 'edit', 'fork', 'long'])
     for (const key of ['requests', 'inputBytes', 'estimatedInputTokens', 'duplicateRequests', 'nearDuplicateRequests', 'auxiliaryRequests'])
       assert.equal(typeof budgets.workloads[name]?.[key], 'number', `${name}.${key}`);
   for (const key of ['maxStopToTransportCloseMs', 'stopExtraRequests', 'windowCloseToTransportCloseMs'])
     assert.equal(typeof budgets.session[key], 'number', key);
+  // Fork and reasoning clauses (OV-1001): source history once, tool calls replayed, source unchanged, restart.
+  for (const key of ['sourceHistoryCopies', 'min:toolCallsReplayed', 'min:sourceUnchangedOnDisk', 'min:forkSurvivesRestart', 'reasoningReplayed'])
+    assert.equal(typeof budgets.workloads.fork[key], 'number', `fork.${key}`);
+  assert.equal(budgets.workloads.edit.reasoningReplayed, 0); assert.ok(budgets.workloads.edit['min:reasoningDeltasSent'] > 0);
 });
 
 test('fork accounting counts source copies; dry-run usage and usage comparison stay labelled synthetic inputs', () => {
