@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { mkdtemp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, readFile, readlink, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -11,6 +11,7 @@ import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { processFamily } from './process-family-linux.mjs';
 import { createMcpServerFixture } from './verify-mcp-server.mjs';
+import { spawn } from 'node:child_process';
 
 // Native OV-304 customization lifecycle on Linux x64 with a disposable profile
 // and project and a controlled loopback provider (no live inference).
@@ -300,7 +301,7 @@ async function invalid() {
     noDescription: [join(project, '.openvision/skills/ov-no-description/SKILL.md'), 'Description is required'],
     badAgent: [join(project, '.openvision/agents/ov-bad-agent.md'), 'this subagent was not loaded'],
     emptyAgent: [join(project, '.openvision/agents/ov-empty-agent.md'), 'this subagent was not loaded'],
-    badPlugin: [join(plugin, '.cursor-plugin/plugin.json'), 'this plugin manifest could not be read'],
+    badPlugin: [join(plugin, '.cursor-plugin/plugin.json'), 'this plugin manifest was not used: Invalid JSON'],
   };
   const matching = (texts, parts) => texts.filter(text => parts.every(part => text.includes(part)));
   let texts = [];
@@ -354,6 +355,170 @@ async function invalid() {
   for (const fixture of [mcp, second]) assert.deepEqual(fixture.errors, []);
 }
 
+// --watchers ---------------------------------------------------------------
+// inotify watches held by the owned host family: per role, and the watched inodes.
+async function watches(app) {
+  const family = await processFamily({ rootPid: app.process().pid });
+  const roles = {}, inodes = new Map();
+  let total = 0;
+  for (const member of family) {
+    for (const fd of await readdir(`/proc/${member.pid}/fd`).catch(() => [])) {
+      if (await readlink(`/proc/${member.pid}/fd/${fd}`).catch(() => '') !== 'anon_inode:inotify') continue;
+      const info = await readFile(`/proc/${member.pid}/fdinfo/${fd}`, 'utf8').catch(() => '');
+      for (const match of info.matchAll(/^inotify wd:\w+ ino:([0-9a-f]+) sdev:([0-9a-f]+)/gm)) {
+        roles[member.role] = (roles[member.role] ?? 0) + 1; total++;
+        const key = `${parseInt(match[2], 16)}:${parseInt(match[1], 16)}`;
+        inodes.set(key, (inodes.get(key) ?? 0) + 1);
+      }
+    }
+  }
+  return { total, roles, inodes };
+}
+async function inodeKeys(paths) {
+  const keys = new Map();
+  for (const path of paths) {
+    const info = await stat(path).catch(() => undefined);
+    if (!info) continue;
+    // stat() returns the user-space dev_t; fdinfo prints the kernel's (major << 20 | minor).
+    const major = ((info.dev >>> 8) & 0xfff) | (Math.floor(info.dev / 2 ** 32) & ~0xfff);
+    const minor = (info.dev & 0xff) | ((info.dev >>> 12) & 0xfff00);
+    keys.set(`${major * 2 ** 20 + minor}:${info.ino}`, path);
+  }
+  return keys;
+}
+const watchedOf = (sample, keys) => [...keys].filter(([key]) => sample.inodes.has(key)).map(([, path]) => path.replace(directory, '<run>'));
+async function rowNames(page, tab, kind) { return (await allRows(page, tab, kind)).map(row => row.name); }
+async function untilRows(page, tab, kind, predicate, description) {
+  let names = [];
+  await until(description, async () => predicate(names = await rowNames(page, tab, kind)), 30000)
+    .catch(error => { (result.observations.rowsAtTimeout ??= {})[description] = names; throw error; });
+  return names;
+}
+async function forward(args) {
+  const child = spawn(layout.executable, [...common, ...args], { env, stdio: 'ignore' });
+  const code = await new Promise((done, reject) => { child.once('error', reject); child.once('exit', done); });
+  assert.equal(code, 0, 'The forwarding instance hands the request to the running instance');
+}
+async function watchers() {
+  const other = join(directory, 'project-b');
+  for (const folder of [project, other]) {
+    await write(join(folder, '.openvision/skills/ov-base-skill/SKILL.md'), skill('ov-base-skill', 'Base fixture skill'));
+    await write(join(folder, '.openvision/agents/ov-base-agent.md'), agent('ov-base-agent', 'Base fixture agent', 'Base body.'));
+    await write(join(folder, '.openvision/mcp.json'), JSON.stringify({ mcpServers: {} }));
+    await writeFile(join(folder, 'hello.js'), 'export const answer = 42;\n');
+  }
+  const own = await inodeKeys([project, join(project, '.openvision'), join(project, '.openvision/skills'), join(project, '.openvision/agents')]);
+  const others = await inodeKeys([other, join(other, '.openvision'), join(other, '.openvision/skills'), join(other, '.openvision/agents')]);
+  const mcp = await createMcpServerFixture(), stale = await createMcpServerFixture();
+  result.mcpFixtures = [mcp, stale];
+  const { app, page } = await launch();
+  await configureProvider(page); await selectModel(page);
+  await page.keyboard.press('Escape');
+  await delay(8000);
+  const baseline = await watches(app);
+  result.observations.baseline = { total: baseline.total, roles: baseline.roles, watchedProject: watchedOf(baseline, own) };
+  assert.ok(watchedOf(baseline, own).length > 0, 'The open project is watched');
+
+  // Live add, rename and delete in the open project.
+  const added = join(project, '.openvision/skills/ov-watch-skill');
+  await write(join(added, 'SKILL.md'), skill('ov-watch-skill', 'Watched fixture skill WATCH-SKILL-ADDED'));
+  await untilRows(page, 'skills', 'skill', names => names.includes('ov-watch-skill'), 'added skill listed');
+  assert.ok(markersOf((await ask(page, 'watch-added', 'OpenVision customization check: skills after add?'))
+    .filter(request => request.role === 'parent')).includes('WATCH-SKILL-ADDED'), 'The Agent sees the added skill');
+  await rename(added, join(project, '.openvision/skills/ov-watch-renamed'));
+  await untilRows(page, 'skills', 'skill', names => names.includes('ov-watch-renamed') && !names.includes('ov-watch-skill'), 'renamed skill listed');
+  await rm(join(project, '.openvision/skills/ov-watch-renamed'), { recursive: true });
+  await untilRows(page, 'skills', 'skill', names => !names.includes('ov-watch-renamed'), 'deleted skill removed');
+  await write(join(project, '.openvision/agents/ov-watch-agent.md'), agent('ov-watch-agent', 'Watched fixture agent WATCH-AGENT-ADDED', 'Watched body.'));
+  await untilRows(page, 'agents', 'subagent', names => names.includes('ov-watch-agent'), 'added subagent listed');
+  await rename(join(project, '.openvision/agents/ov-watch-agent.md'), join(project, '.openvision/agents/ov-watch-moved.md'));
+  await untilRows(page, 'agents', 'subagent', names => names.includes('ov-watch-agent') || names.includes('ov-watch-moved'), 'renamed subagent listed');
+  await rm(join(project, '.openvision/agents/ov-watch-moved.md'));
+  await untilRows(page, 'agents', 'subagent', names => !names.includes('ov-watch-agent') && !names.includes('ov-watch-moved'), 'deleted subagent removed');
+  await write(join(home, 'mcp.json'), JSON.stringify({ mcpServers: { 'ov-watch-mcp': mcp.configuration } }));
+  await until('added MCP server discovered', () => mcp.requests.some(item => item.method === 'tools/list' && item.authorized), 45000);
+  await page.keyboard.press('Escape');
+  await customize(page, 'mcps');
+  // Remove only after the server is listed and the legacy-to-utility hand-off has settled (see run JSHBzL).
+  await until('added MCP server listed', async () => await page.locator('[data-mcp-manage-server="ov-watch-mcp"]').count() > 0, 30000);
+  await delay(5000);
+  await write(join(home, 'mcp.json'), JSON.stringify({ mcpServers: {} }));
+  await until('removed MCP server not listed', async () => await page.locator('[data-mcp-manage-server="ov-watch-mcp"]').count() === 0, 30000);
+  const afterRemoval = mcp.requests.length; await delay(5000);
+  assert.equal(mcp.requests.length, afterRemoval, 'A removed MCP server receives no further requests');
+  await page.keyboard.press('Escape');
+  result.checks.liveAddRenameDelete = true;
+
+  // A second window on another project, then closed.
+  const windows = app.waitForEvent('window', { timeout: 60000 });
+  // A named profile window: it also creates the profile used by the switch below.
+  await forward(['--new-window', '--profile', 'ov-watch-profile', other]);
+  const second = await windows; second.on('pageerror', error => result.pageErrors.push(error.message));
+  await second.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
+  await enterWorkspace(second); await delay(6000);
+  const withSecond = await watches(app);
+  result.observations.secondWindow = { total: withSecond.total, watchedOther: watchedOf(withSecond, others) };
+  assert.ok(watchedOf(withSecond, others).length > 0, 'The second project is watched while its window is open');
+  const title = await second.title(), closed = second.waitForEvent('close', { timeout: 30000 });
+  assert.equal(await app.evaluate(({ BrowserWindow }, value) => {
+    const window = BrowserWindow.getAllWindows().find(item => item.getTitle() === value); window?.close(); return Boolean(window);
+  }, title), true);
+  await closed;
+  await until('second project watches released', async () => watchedOf(await watches(app), others).length === 0, 30000);
+  result.checks.windowCloseReleasesWatches = true;
+
+  // Switch the first window to the other project, edit the old project, and switch back.
+  const switched = page.waitForEvent('framenavigated', { timeout: 60000 }).catch(() => undefined);
+  await forward(['--reuse-window', other]);
+  await switched;
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
+  await enterWorkspace(page);
+  await until('workspace switched', async () => (await page.title()).includes('project-b'), 30000);
+  await delay(6000);
+  const afterSwitch = await watches(app);
+  result.observations.afterSwitch = { total: afterSwitch.total, watchedProject: watchedOf(afterSwitch, own), watchedOther: watchedOf(afterSwitch, others) };
+  assert.deepEqual(watchedOf(afterSwitch, own), [], 'The previous project is no longer watched');
+  await write(join(project, '.openvision/skills/ov-stale-skill/SKILL.md'), skill('ov-stale-skill', 'Stale fixture skill'));
+  await write(join(project, '.openvision/agents/ov-stale-agent.md'), agent('ov-stale-agent', 'Stale fixture agent', 'Stale body.'));
+  await write(join(project, '.openvision/mcp.json'), JSON.stringify({ mcpServers: { 'ov-stale-mcp': stale.configuration } }));
+  await delay(5000);
+  assert.ok(!(await rowNames(page, 'skills', 'skill')).includes('ov-stale-skill'), 'No reload from the disposed project');
+  assert.ok(!(await rowNames(page, 'agents', 'subagent')).includes('ov-stale-agent'));
+  assert.equal(stale.requests.length, 0, 'The disposed project MCP file starts nothing');
+  await page.keyboard.press('Escape');
+  await rm(join(project, '.openvision/skills/ov-stale-skill'), { recursive: true });
+  await rm(join(project, '.openvision/agents/ov-stale-agent.md'));
+  await write(join(project, '.openvision/mcp.json'), JSON.stringify({ mcpServers: {} }));
+  result.checks.noStaleReloadAfterWorkspaceSwitch = true;
+  const back = page.waitForEvent('framenavigated', { timeout: 60000 }).catch(() => undefined);
+  await forward(['--reuse-window', project]);
+  await back;
+  await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
+  await enterWorkspace(page);
+  await until('workspace switched back', async () => !(await page.title()).includes('project-b'), 30000);
+
+  // Profile switch to the named profile and back, in place.
+  for (const name of ['ov-watch-profile', 'Default']) {
+    await page.keyboard.press('F1');
+    await page.keyboard.type('Profiles: Switch Profile'); await page.keyboard.press('Enter');
+    await page.locator('.quick-input-widget .monaco-list-row').filter({ hasText: name === 'Default' ? /^Default/ : name }).first().click();
+    await until(`profile ${name}`, async () => name === 'Default' ? !(await page.title()).includes('ov-watch-profile') :
+      (await page.title()).includes(name), 30000);
+    await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
+    (result.observations.profileTitles ??= []).push(await page.title());
+    await delay(4000);
+  }
+  result.observations.profileTitle = await page.title();
+  await page.keyboard.press('Escape');
+  await delay(8000);
+  const final = await watches(app);
+  result.observations.final = { total: final.total, roles: final.roles, watchedProject: watchedOf(final, own), watchedOther: watchedOf(final, others) };
+  assert.deepEqual(watchedOf(final, others), [], 'No watch remains on the closed and switched-away project');
+  assert.deepEqual(final.roles, baseline.roles, 'inotify watches per process role return to the baseline');
+  result.checks.watchCountsReturnToBaseline = true;
+  for (const fixture of [mcp, stale]) assert.deepEqual(fixture.errors, []);
+}
+
 async function prepare() {
   await mkdir(home, { recursive: true }); await mkdir(project, { recursive: true });
   await writeFile(join(project, 'hello.js'), 'export const answer = 42;\n');
@@ -365,6 +530,7 @@ try {
   await prepare();
   if (mode === '--precedence') await precedence();
   if (mode === '--invalid') await invalid();
+  if (mode === '--watchers') await watchers();
   assert.deepEqual(result.pageErrors, []);
   result.status = 'passed';
 } catch (error) {

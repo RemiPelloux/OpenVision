@@ -134,13 +134,15 @@ test('malformed subagents and invalid plugin manifests report the file, and a fi
   problems.length = 0;
   const start = output.indexOf('function qu(e, t, r) {');
   const qu = parseExpressionAt(output, start, { ecmaVersion: 'latest' });
-  const manifests = { '/p/.cursor-plugin/plugin.json': new SyntaxError('Unexpected end of JSON input'), '/p/.claude-plugin/plugin.json': { name: 'p', skills: './skills' } };
+  const manifests = { '/p/.cursor-plugin/plugin.json': '{ "name": ', '/p/.claude-plugin/plugin.json': '{ "name": "p", "skills": "./skills" }',
+    '/p/plugin.json': new Error('EACCES: permission denied') };
   const run = runInNewContext(`(${output.slice(qu.start, qu.end)})`, {
     globalThis: { openvisionCustomizationProblem: hook }, B: ['.cursor-plugin/plugin.json', '.claude-plugin/plugin.json', 'plugin.json'],
     I: { join: (...parts) => parts.join('/') }, Cu: async () => false, Au: async () => {},
     be: { stat: async path => { if (!(path in manifests)) throw Object.assign(new Error('missing'), { code: 'ENOENT' }); return { isFile: () => true }; } },
     Pu: async path => { if (manifests[path] instanceof Error) throw manifests[path]; return manifests[path]; },
-    he: value => ({ success: true, data: value }), Ju: () => ({}), Ou: async () => undefined, Bu: () => false, Du: value => value,
+    // The recovered validator's contract: JSON text in, { success, data } or { success: false, error: string } out.
+    he: value => { try { return { success: true, data: JSON.parse(value) }; } catch (error) { return { success: false, error: `Invalid JSON: ${error.message}` }; } }, Ju: () => ({}), Ou: async () => undefined, Bu: () => false, Du: value => value,
     Iu: (self, args, promise, generator) => new Promise((resolve, reject) => {
       const iterator = generator.call(self);
       const step = (method, value) => { let next; try { next = iterator[method](value); } catch (error) { reject(error); return; }
@@ -150,6 +152,36 @@ test('malformed subagents and invalid plugin manifests report the file, and a fi
   });
   const loaded = await run('/p', 'p', { log() {} });
   assert.equal(loaded.manifestFilePath, '/p/.claude-plugin/plugin.json');
-  assert.deepEqual(problems, [['/p/.cursor-plugin/plugin.json', 'this plugin manifest could not be read: Unexpected end of JSON input'],
-    ['/p/.claude-plugin/plugin.json', null]]);
+  assert.equal(problems.length, 2);
+  assert.match(problems[0][1], /^this plugin manifest was not used: Invalid JSON: /);
+  assert.deepEqual(problems.map(([path]) => path), ['/p/.cursor-plugin/plugin.json', '/p/.claude-plugin/plugin.json']);
+  assert.equal(problems[1][1], null);
+  problems.length = 0;
+  delete manifests['/p/.cursor-plugin/plugin.json']; delete manifests['/p/.claude-plugin/plugin.json'];
+  await run('/p', 'p', { log() {} });
+  assert.deepEqual(problems, [['/p/plugin.json', 'this plugin manifest could not be read: EACCES: permission denied']],
+    'A read failure other than a missing file is reported');
+});
+
+test('a changed MCP configuration file refreshes the Customize MCP list', async () => {
+  const run = async text => {
+    const index = text.indexOf('"user_mcp_config_changed"');
+    let source;
+    for (let start = text.lastIndexOf('async onDidFilesChange(', index); !source; ) {
+      const node = parseExpressionAt(text, text.lastIndexOf('class', start), { ecmaVersion: 'latest' });
+      source = node.body.body.find(entry => entry.key?.name === 'onDidFilesChange' && entry.start <= index && entry.end > index);
+      source = source && text.slice(source.start, source.end);
+    }
+    let fired = 0;
+    const service = Object.assign(runInNewContext(`({${source}})`, { dl() {} }), {
+      contextService: { getWorkspace: () => ({ folders: [] }) }, uriIdentityService: { extUri: {} },
+      getUserConfigFilePath: async () => 'user', eventTouchesConfigFile: (event, file) => event.includes(file),
+      initializeUserConfiguredServers: async () => {}, initializeServers: async () => {}, refilterTeamServersAgainstLocalServers() {},
+      _onSettingsChanged: { fire: () => fired++ },
+    });
+    await service.onDidFilesChange(['user']); await service.onDidFilesChange(['other']);
+    return fired;
+  };
+  assert.equal(await run(workbench), 0, 'Recovered watcher never tells the Customize list');
+  assert.equal(await run(patched), 1, 'Exactly one refresh, only for a configuration change');
 });

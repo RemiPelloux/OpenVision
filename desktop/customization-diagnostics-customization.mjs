@@ -14,6 +14,7 @@ import { subagentReaderOwner } from './subagent-paths.mjs';
 const mcpMarker = '/* OpenVision MCP configuration diagnostics v1 */';
 const skillMarker = '/* OpenVision skill diagnostics v1 */';
 const execMarker = '/* OpenVision subagent and plugin manifest diagnostics v1 */';
+const refreshMarker = '/* OpenVision MCP list refresh after config change v1 */';
 
 function enclosingClass(text, index) {
   // Count only real candidates: minified bundles also contain many `className` tokens.
@@ -128,9 +129,30 @@ export function reportSkillProblems(text) {
   return text.slice(0, end) + report + text.slice(end);
 }
 
+// A changed MCP configuration file re-reads its servers and initializes them,
+// but the Customize MCP list refreshes only on onSettingsChanged or the first
+// onDidInitialize, so a removed server stayed listed as connected. Fire the
+// settings event once a configuration file change has been applied.
+export function refreshMcpListOnConfigChange(text) {
+  const candidates = [];
+  for (let index = text.indexOf('async onDidFilesChange('); index >= 0; index = text.indexOf('async onDidFilesChange(', index + 1)) {
+    const method = enclosingClass(text, index).body.body.find(entry => entry.key?.name === 'onDidFilesChange' && entry.start <= index && entry.end > index);
+    if (method && text.slice(method.start, method.end).includes('"user_mcp_config_changed"')) candidates.push(method);
+  }
+  if (candidates.length !== 1) throw new Error('MCP configuration watcher owner missing or ambiguous');
+  const [method] = candidates, source = text.slice(method.start, method.end);
+  if (source.includes(refreshMarker)) return text;
+  const flag = method.value.body.body[0]?.declarations?.find(item => item.init?.type === 'UnaryExpression' &&
+    item.init.operator === '!' && item.init.argument.value === 1)?.id.name;
+  if (!flag || !source.includes('this.initializeServers(') || !text.includes('this._onSettingsChanged.fire()'))
+    throw new Error('MCP configuration watcher contract changed');
+  const end = method.value.body.end - 1;
+  return text.slice(0, end) + `\n            ${refreshMarker} ${flag} && this._onSettingsChanged.fire();\n          ` + text.slice(end);
+}
+
 // The helpers are module-level function declarations at the top of the bundle.
 export function customizeWorkbenchDiagnostics(text) {
-  const result = reportSkillProblems(reportMcpConfigProblems(text));
+  const result = refreshMcpListOnConfigChange(reportSkillProblems(reportMcpConfigProblems(text)));
   if (result.includes('function openvisionMcpConfigProblems(')) return result;
   const hashbang = /^#![^\n]*\n/.exec(result)?.[0] ?? '';
   return hashbang + `${mcpConfigChecks}\n${noticeHelper}\n` + result.slice(hashbang.length);
@@ -200,7 +222,7 @@ export function reportSubagentAndPluginProblems(text) {
   edits.push({ at: read.handler.body.start + 1, end: read.handler.body.start + 1,
     text: ` if (!["ENOENT", "ENOTDIR"].includes(${error}?.code)) ${report(path, `\`this plugin manifest could not be read: \${${error}?.message ?? ${error}}\``)};` });
   edits.push({ at: check.start, end: check.end, text: `if (!${result}.success) { ${report(path,
-    `\`this plugin manifest does not match the manifest schema: \${String(${result}.error?.issues?.[0]?.message ?? ${result}.error?.message ?? "invalid fields").slice(0, 200)}\``)}; continue; }
+    `\`this plugin manifest was not used: \${String(typeof ${result}.error === "string" ? ${result}.error : ${result}.error?.message ?? "it does not match the manifest schema").slice(0, 300)}\``)}; continue; }
               ${report(path, 'undefined')};` });
   if (!read.handler.param) edits.push({ at: read.handler.start, end: read.handler.body.start, text: `catch (${error}) ` });
   let output = text;
