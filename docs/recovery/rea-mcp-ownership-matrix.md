@@ -194,6 +194,10 @@ through an owner header.
 | `mcp-config-ownership-same-basename-UuZTb7`, `-raQ1Bj` | Both passed all six checks first time; three distinct utility keys; host exit 0 |
 | `mcp-config-ownership-AUw5EJ`, `mcp-config-ownership-failed-close-geq2MB` | Existing modes still pass (and again after the cleanup-bound change: `tyQU3g`, `failed-close-8O6yhn`) |
 
+After the team-settings fix (`2bfe8491`) changed the workbench, the default,
+`--simultaneous`, `--http` and `--same-basename` modes passed again first time
+(`Soyhuh`, `simultaneous-XjCzHm`, `http-l3eO6u`, `same-basename-pXZUtK`).
+
 Same-basename utility keys differ only in their project scope hash, for example
 `project-0-app-ov-base::mcpScope:profile:ZGVmYXVsdA:project:NDQ0ZTQ5NTU:cfg:…`
 and `…:project:YjhiNTM0ZWU:cfg:…` for byte-identical `/a/app` and `/c/app`
