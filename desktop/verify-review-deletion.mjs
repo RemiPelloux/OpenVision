@@ -381,7 +381,8 @@ async function groupedPostCommit() {
   stage.failed.notifications = await toastTexts();
   await page.screenshot({ path: join(directory, 'group-member-failed.png') });
   assert.equal(stage.failed.notifications.length, 1, 'The failed Keep All member is reported with a retry');
-  assert.match(stage.failed.notifications[0], /could not finish keeping the review of 1 file.*Retry/);
+  assert.match(stage.failed.notifications[0], /could not finish keeping the review of 1 file\. The decision is kept; retry to finish it\./);
+  assert.equal(await cleanupToasts().first().getByRole('button', { name: 'Retry', exact: true }).count(), 1);
   assert.deepEqual(stage.failed.handlers, ['beta.js'], 'Only the failed member remains owned');
   assert.equal(stage.failed.counts.disposeInjected, 1);
   assert.deepEqual(stage.failed.records, [], 'The accepted decision ends both pending-review records');
@@ -447,12 +448,14 @@ async function groupedRejectRetry() {
     pendingControls: await page.getByText(/^(Keep|Undo)( All)?$/).filter({ visible: true }).count() };
   await page.screenshot({ path: join(directory, 'group-reject-retry-notification.png') });
   assert.deepEqual(stage.failed.handlers, ['gamma.js'], 'The later member is undone although the first member failed');
-  assert.equal(stage.failed.counts.disposeInjected, 1);
+  // The storage flush owner may already have retried the committed cleanup once.
+  assert.ok(stage.failed.counts.disposeInjected >= 1);
   assert.equal(stage.failed.notifications.length, 1);
-  assert.match(stage.failed.notifications[0], /could not finish undoing the review of 1 file.*Retry/);
+  assert.match(stage.failed.notifications[0], /could not finish undoing the review of 1 file\. The decision is kept; retry to finish it\./);
   // Retry while the fault persists: the committed decision resumes, fails again and is reported again.
   await cleanupToasts().first().getByRole('button', { name: 'Retry', exact: true }).click();
-  await page.waitForFunction(() => globalThis.__openvisionMemberCounts.disposeInjected >= 2, undefined, { timeout: 10000 });
+  const injectedBeforeRetry = stage.failed.counts.disposeInjected;
+  await page.waitForFunction(count => globalThis.__openvisionMemberCounts.disposeInjected > count, injectedBeforeRetry, { timeout: 10000 });
   await cleanupToasts().first().waitFor({ timeout: 10000 });
   stage.failedRetry = { ...await live(), counts: await memberCounts(), notifications: await toastTexts() };
   assert.deepEqual(stage.failedRetry.handlers, ['gamma.js'], 'A failing retry keeps the member owned');
