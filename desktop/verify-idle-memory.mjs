@@ -40,6 +40,10 @@ const signalTrace = process.argv.includes('--signal-trace');
 // Optional: start extension hosts with an inspector and read each host's active
 // handles (timers, sockets, watchers) at every idle mark. Off for budgeted runs.
 const timerInventory = process.argv.includes('--timer-inventory');
+// Settled iteration samples follow a forced garbage collection in the renderer
+// (DevTools HeapProfiler.collectGarbage), so the long-session slope measures
+// retained memory rather than where the last collection happened to fall.
+const forcedGc = !process.argv.includes('--no-forced-gc');
 const budgetVariant = argument('budgets', quick ? 'quick' : 'full');
 const budgets = budgetVariant === 'none' ? undefined : await loadBudgets(join(dirname(fileURLToPath(import.meta.url))), budgetVariant);
 await mkdir(join(root, 'logs'), { recursive: true });
@@ -114,7 +118,7 @@ await new Promise(done => server.listen(0, '127.0.0.1', done));
 
 const result = { checkedAt: new Date().toISOString(), identity, directory,
   scope: 'Linux x64 native source build; fresh-profile start is not a cold OS page cache; controlled loopback model; one run per configuration.',
-  options: { idleMarks, iterations, settleSeconds, iterationSettleSeconds, quick, signalTrace, timerInventory, budgetVariant }, budgets,
+  options: { idleMarks, iterations, settleSeconds, iterationSettleSeconds, quick, signalTrace, timerInventory, forcedGc, budgetVariant }, budgets,
   launches: [], idle: [], iterations: [], errors: [], hostExits: [], success: false };
 const pause = ms => new Promise(done => setTimeout(done, ms));
 let app, page, rootPid, names = new Map(), closing = false;
@@ -258,6 +262,13 @@ async function workload(index) {
   return timing;
 }
 
+async function collectRendererGarbage() {
+  const started = performance.now(), cdp = await page.context().newCDPSession(page);
+  try { await cdp.send('HeapProfiler.collectGarbage'); } finally { await cdp.detach().catch(() => {}); }
+  await pause(2000);
+  return { renderer: true, ms: Math.round(performance.now() - started) };
+}
+
 async function processSamplingEvidence() {
   const pattern = /\[CursorProclistService\] Config enabled feature|\[Cursor Proclist Polling\] (Started polling|Transport down|Failed to send V2 metrics|Replaying)|Samples written:/;
   const logLines = [], files = [];
@@ -343,7 +354,9 @@ try {
     const timing = await workload(index);
     const active = await stop();
     await pause(iterationSettleSeconds * 1000);
+    const collected = forcedGc ? await collectRendererGarbage() : undefined;
     const settled = await snapshot(`iteration-${index}-settled`);
+    if (collected) settled.forcedGc = collected;
     result.iterations.push({ index, timing, active, settled });
     console.log(`[iteration ${index}] active peak PSS ${active.peakPssMiB} MiB; settled USS ${settled.ussMiB} / PSS ${settled.pssMiB} / swap ${settled.swapMiB} MiB, ${settled.count} processes`);
   }

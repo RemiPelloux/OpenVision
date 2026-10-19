@@ -352,21 +352,126 @@ async function openvisionSweepAgentTemporaries(roots, now = Date.now()) {
 `;
 }
 
-export function sweepAgentTemporariesOnStartup(text) {
-  if (text.includes(agentTemporarySweepMarker)) {
-    if (text.split(agentTemporarySweepMarker).length !== 2) throw new Error('Agent temporary sweep marker is ambiguous');
-    return text;
-  }
-  if (text.split(activation).length !== 2 || text.split('const G = require("vscode"),').length !== 2 ||
-      !text.includes(agentWriteMarker))
-    throw new Error('Agent execution activation contract changed');
-  const index = text.indexOf(activation);
-  return text.slice(0, index) + agentTemporarySweep() + '    ' + activation.replace('{\n', `{
+// v1 walked every open root on every start (OV-1003: one extra full walk of
+// the workspace per root, 132 fixture directory listings in
+// verify:startup-traversal). The walk is now needed only when a session of this
+// profile may have left an interrupted temporary. Each Agent execution session
+// keeps a record in its profile storage from activation until its process
+// exits. A clean exit with no write in flight removes the record; with writes in
+// flight it lists their temporaries. A record without that list means the session
+// ended without running its exit handler (SIGKILL, crash, power loss). At the next
+// start, recorded temporaries are removed (same 60 s rule), and an unclean ending
+// triggers the bounded walk. A profile with no ended session does no work.
+export const agentTemporarySessionMarker = '/* OpenVision Agent temporary session records v1 */';
+export const agentWriteRegistryMarker = '/* OpenVision Agent write in-flight registry v1 */';
+const sessionDirectory = 'openvision-agent-write-sessions';
+const v1Schedule = `
       setTimeout(() => openvisionSweepAgentTemporaries((G.workspace.workspaceFolders ?? [])
         .filter((folder) => folder.uri.scheme === "file").map((folder) => folder.uri.fsPath))
         .then((swept) => swept.removed.length && console.log("[OpenVision] Removed " + swept.removed.length + " interrupted Agent write temporaries"),
           () => {}), 2000).unref?.();
-`) + text.slice(index + activation.length);
+`;
+const sessionSchedule = `
+      openvisionAgentTemporarySessions(e.globalStorageUri?.fsPath, () => (G.workspace.workspaceFolders ?? [])
+        .filter((folder) => folder.uri.scheme === "file").map((folder) => folder.uri.fsPath));
+`;
+
+export function agentTemporarySessions() {
+  return `${agentTemporarySessionMarker}
+function openvisionAgentTemporarySessions(storage, roots) {
+  const fs = require("node:fs"), fsp = require("node:fs/promises"), path = require("node:path");
+  if ("string" != typeof storage || !path.isAbsolute(storage)) return;
+  const directory = path.join(storage, "${sessionDirectory}");
+  const pending = (globalThis.__openvisionAgentTemporaries ??= new Set());
+  const startOf = (pid) => {
+    try { const stat = fs.readFileSync(\`/proc/\${pid}/stat\`, "utf8"); return stat.slice(stat.lastIndexOf(")") + 2).split(" ")[19]; } catch { return; }
+  };
+  // A record whose process is still the same live process belongs to another window.
+  const alive = (record) => {
+    if (!Number.isInteger(record.pid) || record.pid <= 0) return false;
+    if ("linux" === process.platform) return void 0 !== record.start && startOf(record.pid) === record.start;
+    try { return process.kill(record.pid, 0), !0; } catch (error) { return "EPERM" === error?.code; }
+  };
+  let ended = [], own;
+  try {
+    fs.mkdirSync(directory, { recursive: !0 });
+    for (const name of fs.readdirSync(directory)) {
+      if (!name.endsWith(".json")) continue;
+      const file = path.join(directory, name);
+      let record; try { record = JSON.parse(fs.readFileSync(file, "utf8")); } catch { record = {}; }
+      if (!alive(record)) ended.push({ file, record });
+    }
+    own = path.join(directory, \`\${process.pid}-\${require("node:crypto").randomUUID()}.json\`);
+    fs.writeFileSync(own, JSON.stringify({ pid: process.pid, start: startOf(process.pid) }));
+  } catch { return; }
+  process.once("exit", () => {
+    try {
+      pending.size ? fs.writeFileSync(own, JSON.stringify({ pid: 0, temporaries: [...pending] })) : fs.unlinkSync(own);
+    } catch {}
+  });
+  if (!ended.length) return;
+  setTimeout(async () => {
+    const removed = [], kept = [];
+    try {
+      if (ended.some(({ record }) => !Array.isArray(record.temporaries))) {
+        const swept = await openvisionSweepAgentTemporaries(roots());
+        removed.push(...swept.removed);
+      }
+      const pattern = /^\..+\.openvision-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.tmp$/;
+      for (const temporary of ended.flatMap(({ record }) => Array.isArray(record.temporaries) ? record.temporaries : [])) {
+        if ("string" != typeof temporary || !path.isAbsolute(temporary) || !pattern.test(path.basename(temporary))) continue;
+        try {
+          const stats = await fsp.lstat(temporary);
+          if (!stats.isFile()) continue;
+          // Same rule as the writer's sweep: a recent temporary may belong to a live writer.
+          if (Date.now() - stats.mtimeMs > ${staleTemporaryMs}) { await fsp.unlink(temporary); removed.push(temporary); }
+          else kept.push(temporary);
+        } catch {}
+      }
+      for (const { file } of ended) await fsp.unlink(file).catch(() => {});
+      kept.length && fs.writeFileSync(path.join(directory, \`kept-\${require("node:crypto").randomUUID()}.json\`),
+        JSON.stringify({ pid: 0, temporaries: kept }));
+      removed.length && console.log("[OpenVision] Removed " + removed.length + " interrupted Agent write temporaries");
+    } catch {}
+  }, 2000).unref?.();
+}
+`;
+}
+
+// The agent-exec writer reports its in-flight temporary to the session record.
+export function registerAgentWriteTemporaries(text) {
+  if (text.includes(agentWriteRegistryMarker)) return text;
+  const { node, source } = durableAgentWriteHelper(text);
+  const fsp = source.match(/await \(0, ([\w$]+)\.rename\)\(ovTemporary, ovTarget\);/)?.[1];
+  const anchors = ['    let ovHandle;\n    try {\n      ovHandle = await (0, ', `      await (0, ${fsp}.rename)(ovTemporary, ovTarget);\n`,
+    `      await (0, ${fsp}.unlink)(ovTemporary).catch(() => {});\n`];
+  if (!fsp || anchors.some(anchor => source.split(anchor).length !== 2)) throw new Error('Agent write temporary contract changed');
+  const registry = '(globalThis.__openvisionAgentTemporaries ??= new Set())';
+  const patched = source
+    .replace(anchors[0], `    ${agentWriteRegistryMarker} ${registry}.add(ovTemporary);\n${anchors[0]}`)
+    .replace(anchors[1], `${anchors[1]}      ${registry}.delete(ovTemporary);\n`)
+    .replace(anchors[2], `${anchors[2]}      ${registry}.delete(ovTemporary);\n`);
+  return text.slice(0, node.start) + patched + text.slice(node.end);
+}
+
+export function sweepAgentTemporariesOnStartup(text) {
+  if (text.includes(agentTemporarySessionMarker)) {
+    if (text.split(agentTemporarySessionMarker).length !== 2) throw new Error('Agent temporary session marker is ambiguous');
+    return text;
+  }
+  if (!text.includes(agentWriteMarker)) throw new Error('Agent execution activation contract changed');
+  // Upgrade the exact v1 schedule from earlier builds.
+  if (text.includes(agentTemporarySweepMarker)) {
+    if (text.split(agentTemporarySweepMarker).length !== 2 || text.split(activation.replace('{\n', `{${v1Schedule}`)).length !== 2)
+      throw new Error('Agent temporary sweep v1 contract changed');
+    const index = text.indexOf(agentTemporarySweepMarker);
+    return text.slice(0, index) + agentTemporarySessions() + text.slice(index).replace(v1Schedule, sessionSchedule);
+  }
+  if (text.split(activation).length !== 2 || text.split('const G = require("vscode"),').length !== 2)
+    throw new Error('Agent execution activation contract changed');
+  const index = text.indexOf(activation);
+  return text.slice(0, index) + agentTemporarySweep() + agentTemporarySessions() + '    ' +
+    activation.replace('{\n', `{${sessionSchedule}`) + text.slice(index + activation.length);
 }
 
 export async function installAgentWriteDurability(root) {
@@ -374,7 +479,7 @@ export async function installAgentWriteDurability(root) {
     const path = join(root, 'source/app', target.entry);
     const before = await readFile(path, 'utf8');
     let after = preserveAgentWrites(before, target);
-    if (target.entry === agentWriteEntry) after = sweepAgentTemporariesOnStartup(after);
+    if (target.entry === agentWriteEntry) after = sweepAgentTemporariesOnStartup(registerAgentWriteTemporaries(after));
     if (before === after) continue;
     const backup = join(root, 'backups/agent-write', target.entry);
     await mkdir(dirname(backup), { recursive: true });
