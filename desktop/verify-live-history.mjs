@@ -12,6 +12,8 @@ async function composerId(page) {
 
 export const forkRecallPrompt = 'Without using tools, reply with BRANCHED: followed immediately by the exact single line you read earlier from probe.txt. Do not read the file again.';
 
+const failureText = { 401: /401|unauthorized|invalid.*key|authentication/i, 503: /503|server error|unavailable/i };
+
 async function retryForkFailure({ page, relay, before, retry }) {
   await Promise.race([
     page.getByText('Try again', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 90000 }),
@@ -19,10 +21,11 @@ async function retryForkFailure({ page, relay, before, retry }) {
   ]);
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
   await page.waitForTimeout(2500);
+  const status = retry.status ?? 401;
   assert.equal(relay.requests.length, before + 1, 'Fork failure must not cause an automatic retry');
-  assert.equal(relay.requests[before].httpStatus, 401);
-  assert.equal(relay.requests[before].expectedAuthenticationFailure, true);
-  assert.match(await page.locator('body').innerText(), /401|unauthorized|invalid.*key|authentication/i);
+  assert.equal(relay.requests[before].httpStatus, status);
+  assert.equal(relay.requests[before].expectedProviderFailure, true);
+  assert.match(await page.locator('body').innerText(), failureText[status] ?? new RegExp(String(status)));
   retry.restore();
   await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
 }

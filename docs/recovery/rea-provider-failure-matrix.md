@@ -227,3 +227,20 @@ the restart cells and the non-reachable host path. OV-204 remains **Partial**.
 Remaining gaps are live provider and Windows/macOS evidence, image capability
 before submission and process-wide header/log handling. This is source-build
 evidence. The preview.7 portable package does not contain these changes.
+
+## 19 October follow-up: stream limits, custom headers and retried placeholders
+
+[Agent history, Fork Chat, timeouts and provider failures on Linux](rea-agent-chat-failures-linux.md)
+extends this matrix on Linux x64, again with controlled fixtures only:
+
+- **Oversized unfinished event (Fixed).** The 4 MiB per-event limit applied
+  only in the unreachable host bundle. The exec transport now enforces it,
+  shows stream-limit guidance, closes the socket, keeps the partial output and
+  offers **Resume**.
+- **Truncated event at EOF (Verified).** A stream that ends cleanly inside an
+  event shows invalid-stream guidance and offers **Resume**.
+- **Custom authentication header (Verified).** `--custom-header` saves no API
+  key and authenticates with a reflected custom header. A raw scan of 360 run
+  files, in UTF-8 and UTF-16LE, and the visible UI found no matches.
+- **Retried failure placeholder (Fixed).** A retry, before or after restart,
+  no longer leaves an empty assistant bubble in the saved chat.

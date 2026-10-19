@@ -61,6 +61,8 @@ function connectionFailureGuidance(error) {
     if (code === 'ERR_SSL_WRONG_VERSION_NUMBER' || code === 'ERR_SSL_PACKET_LENGTH_TOO_LONG')
       return 'The API server could not establish HTTPS. Check the API base URL scheme and the server TLS configuration, then try again.';
     if (timeoutCodes.has(code)) return 'The API connection timed out. Check that the server is available and try again.';
+    if (code === 'OPENVISION_PROVIDER_STREAM_LIMIT')
+      return 'The provider sent a streaming event larger than the 4 MiB safety limit, so the response was stopped. Received output is kept; choose Resume or Try again, or check the API server.';
     pending.push(value.cause, value.lastError);
     if (Array.isArray(value.errors)) pending.push(...value.errors);
   }
