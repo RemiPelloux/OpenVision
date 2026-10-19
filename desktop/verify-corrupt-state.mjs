@@ -130,7 +130,7 @@ const sqliteRow = (file, rowKey) => async profile => {
 };
 const cells = {
   // Control: nothing corrupted. No guidance may appear and nothing may change.
-  'control': { store: 'none', control: true, expect: /$^/, affects: [], corrupt: async profile => ({ path: paths(profile).settings }) },
+  'control': { store: 'none', control: true, openReview: true, expect: /$^/, affects: ['review'], corrupt: async profile => ({ path: paths(profile).settings }) },
   'global-state-garbage': { store: 'global state.vscdb', expect: /profile storage/i, affects: ['global'],
     corrupt: async profile => { const path = paths(profile).global; await writeFile(path, garbage((await stat(path)).size));
       await rm(`${path}-wal`, { force: true }); await rm(`${path}-shm`, { force: true }); return { path }; } },
@@ -229,6 +229,20 @@ async function runCell(name, spec, base) {
       if (record.reviewControl) { await review.first().click().catch(() => {}); await session.page.waitForTimeout(2500); }
       record.afterReview = { notifications: await notifications(session.page), notes: await readFile(notes, 'utf8'),
         text: (await session.page.locator('body').innerText()).slice(-1200) };
+      // Reject the restored change: does the unreadable snapshot break restoring the original bytes?
+      const reject = session.page.getByText(/^(Undo All|Undo|Reject All|Reject)$/).filter({ visible: true });
+      record.rejectControl = await reject.count() ? (await reject.first().innerText()).trim() : undefined;
+      if (record.rejectControl) {
+        await reject.first().click().catch(() => {});
+        const confirm = session.page.getByText(/^(Confirm|Undo|Discard)$/).filter({ visible: true });
+        await session.page.waitForTimeout(800);
+        if (await confirm.count()) await confirm.first().click().catch(() => {});
+        await session.page.waitForTimeout(2500);
+      }
+      record.afterReject = { notifications: await notifications(session.page), notes: await readFile(notes, 'utf8') };
+      record.undoRestored = record.afterReject.notes === 'answer = 41\n';
+      record.notifications = [...new Set([...record.notifications, ...record.afterReject.notifications])];
+      await snapshot(session.page, directory, `${name}-after-reject`);
       record.notifications = [...new Set([...record.notifications, ...record.afterReview.notifications])];
       record.recoveryPanel = await session.page.locator('.openvision-profile-recovery').allInnerTexts().catch(() => []);
     }
@@ -263,8 +277,14 @@ async function runCell(name, spec, base) {
     fail('original corrupted bytes were neither kept in place nor backed up');
   if (spec.control) {
     if (record.recoveryPanel?.length) fail('recovery guidance shown for an intact profile');
+  } else if (spec.openReview && record.undoRestored && !record.guidance.length) {
+    // Nothing was lost: the review still opens and rejecting it restores the
+    // original bytes, so there is nothing to recover. Recorded, not a violation.
+    record.guidanceNotNeeded = 'review opened and Undo restored the original bytes despite the unreadable snapshot';
   } else if (!record.guidance.length) fail('no recovery guidance was shown');
   if (spec.openReview && record.afterReview?.notes !== projectFiles['notes.md']) fail('opening an unreadable review changed the project file');
+  if (spec.openReview && !spec.control && record.rejectControl && !record.undoRestored && !record.guidance.length)
+    fail(`rejecting the review left ${JSON.stringify(record.afterReject?.notes)} without guidance`);
   if (record.unrelatedChanges.length) fail(`unrelated data changed: ${record.unrelatedChanges.join(', ')}`);
   if (record.survivors.length) fail(`${record.survivors.length} owned processes survived`);
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
