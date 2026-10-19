@@ -81,6 +81,7 @@ import { installAgentReviewPersistence } from './agent-review-persist-customizat
 import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
 import { installReviewDescriptors } from './review-descriptors-customization.mjs';
 import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
+import { installRetrievalTool } from './retrieval-tool-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -151,6 +152,8 @@ await installReviewDescriptors(root);
 await installAgentReviewRecovery(root);
 await installAgentWriteDurability(root);
 await installReviewSnapshotGuidance(root);
+// installRetrievalTool(root) stays unwired until its extension-activation anchor
+// is fixed: it refuses to patch the current build (ov/retrieval-index worker report).
 await installRenameVersionGuard(root);
 await installNativeAddonGuard(root);
 await installProtectedExtensions(root);

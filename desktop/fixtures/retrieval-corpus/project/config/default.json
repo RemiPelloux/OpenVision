@@ -1,0 +1,22 @@
+{
+  "port": 8080,
+  "databaseUrl": "postgres://harbor@localhost:5432/harbor_dev",
+  "auth": {
+    "issuer": "harbor-dev",
+    "signingSecret": "replace-me-in-env",
+    "tokenTtlSeconds": 900
+  },
+  "rateLimit": {
+    "capacity": 60,
+    "refillPerSecond": 1
+  },
+  "uploads": {
+    "maxBytes": 5242880
+  },
+  "cache": {
+    "capacity": 500,
+    "ttlSeconds": 30
+  },
+  "defaultLocale": "en",
+  "featureFlagsFile": "config/feature-flags.json"
+}

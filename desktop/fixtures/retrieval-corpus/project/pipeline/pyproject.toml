@@ -1,0 +1,11 @@
+[project]
+name = "harbor-etl"
+version = "0.4.1"
+requires-python = ">=3.11"
+description = "Nightly scan log pipeline for Harbor"
+
+[project.scripts]
+harbor-etl = "harbor_etl.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

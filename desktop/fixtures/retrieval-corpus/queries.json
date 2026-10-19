@@ -1,0 +1,687 @@
+[
+  {
+    "id": "q01",
+    "query": "where do we verify the signature of access tokens",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/auth/tokenSigner.ts",
+        "startLine": 67,
+        "endLine": 97
+      }
+    ]
+  },
+  {
+    "id": "q02",
+    "query": "how is the delivery ETA rounded to minutes",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/services/etaService.ts",
+        "startLine": 18,
+        "endLine": 21
+      }
+    ]
+  },
+  {
+    "id": "q03",
+    "query": "how are user passwords stored and checked at login",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/auth/passwordHasher.ts",
+        "startLine": 17,
+        "endLine": 24
+      },
+      {
+        "path": "server/src/auth/passwordHasher.ts",
+        "startLine": 26,
+        "endLine": 39
+      }
+    ]
+  },
+  {
+    "id": "q04",
+    "query": "throttle clients that send too many requests",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/middleware/rateLimiter.ts",
+        "startLine": 32,
+        "endLine": 47
+      },
+      {
+        "path": "server/src/middleware/rateLimiter.ts",
+        "startLine": 62,
+        "endLine": 76
+      }
+    ]
+  },
+  {
+    "id": "q05",
+    "query": "evict the least recently used entry when the cache is full",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/utils/lruCache.ts",
+        "startLine": 57,
+        "endLine": 63
+      }
+    ]
+  },
+  {
+    "id": "q06",
+    "query": "retry a failing call with exponentially growing delays",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/utils/retry.ts",
+        "startLine": 20,
+        "endLine": 39
+      },
+      {
+        "path": "worker/internal/backoff/backoff.go",
+        "startLine": 45,
+        "endLine": 69
+      },
+      {
+        "path": "pipeline/harbor_etl/extract.py",
+        "startLine": 30,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "id": "q07",
+    "query": "where are customer emails and phone numbers hidden before logging",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/logging/redact.ts",
+        "startLine": 32,
+        "endLine": 52
+      },
+      {
+        "path": "server/src/logging/redact.ts",
+        "startLine": 17,
+        "endLine": 19
+      }
+    ]
+  },
+  {
+    "id": "q08",
+    "query": "which shipment status changes are allowed",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/services/shipmentService.ts",
+        "startLine": 25,
+        "endLine": 32
+      },
+      {
+        "path": "server/src/services/shipmentService.ts",
+        "startLine": 113,
+        "endLine": 127
+      }
+    ]
+  },
+  {
+    "id": "q09",
+    "query": "reject proof of delivery photos that are too big",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/middleware/uploadLimit.ts",
+        "startLine": 15,
+        "endLine": 35
+      }
+    ]
+  },
+  {
+    "id": "q10",
+    "query": "how do environment variables override settings from the config file",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/config/loadConfig.ts",
+        "startLine": 40,
+        "endLine": 58
+      },
+      {
+        "path": "worker/internal/config/config.go",
+        "startLine": 41,
+        "endLine": 65
+      }
+    ]
+  },
+  {
+    "id": "q11",
+    "query": "choose the user's language from the browser headers",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/i18n/messages.ts",
+        "startLine": 41,
+        "endLine": 52
+      }
+    ]
+  },
+  {
+    "id": "q12",
+    "query": "compute the shortest order to visit all of a courier's stops",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "geo/src/route.rs",
+        "startLine": 66,
+        "endLine": 80
+      },
+      {
+        "path": "geo/src/route.rs",
+        "startLine": 39,
+        "endLine": 62
+      }
+    ]
+  },
+  {
+    "id": "q13",
+    "query": "great circle distance between two lat/long points",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/utils/geo.ts",
+        "startLine": 11,
+        "endLine": 17
+      },
+      {
+        "path": "geo/src/distance.rs",
+        "startLine": 21,
+        "endLine": 27
+      }
+    ]
+  },
+  {
+    "id": "q14",
+    "query": "how do we stop SQL injection through column or table names",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/db/queryBuilder.ts",
+        "startLine": 10,
+        "endLine": 18
+      }
+    ]
+  },
+  {
+    "id": "q15",
+    "query": "convert the depot's local scan time to UTC",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/timezones.py",
+        "startLine": 22,
+        "endLine": 32
+      }
+    ]
+  },
+  {
+    "id": "q16",
+    "query": "protect spreadsheet exports from formula injection",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/csv_export.py",
+        "startLine": 17,
+        "endLine": 21
+      },
+      {
+        "path": "reporting/src/main/java/com/harbor/reporting/CsvReportWriter.java",
+        "startLine": 12,
+        "endLine": 22
+      }
+    ]
+  },
+  {
+    "id": "q17",
+    "query": "round invoice amounts to cents without drifting upwards",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "reporting/src/main/java/com/harbor/reporting/PriceRounding.java",
+        "startLine": 16,
+        "endLine": 19
+      },
+      {
+        "path": "server/src/utils/money.ts",
+        "startLine": 9,
+        "endLine": 19
+      }
+    ]
+  },
+  {
+    "id": "q18",
+    "query": "how does the tracking page reconnect when the live connection drops",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "client/src/liveUpdates.js",
+        "startLine": 33,
+        "endLine": 38
+      }
+    ]
+  },
+  {
+    "id": "q19",
+    "query": "send status changes to everyone watching a parcel",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/services/notificationHub.ts",
+        "startLine": 68,
+        "endLine": 79
+      }
+    ]
+  },
+  {
+    "id": "q20",
+    "query": "enable a feature for only a percentage of users",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/services/featureFlags.ts",
+        "startLine": 26,
+        "endLine": 32
+      },
+      {
+        "path": "server/src/services/featureFlags.ts",
+        "startLine": 17,
+        "endLine": 20
+      }
+    ]
+  },
+  {
+    "id": "q21",
+    "query": "readiness probe that checks the database connection",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/routes/health.ts",
+        "startLine": 42,
+        "endLine": 54
+      },
+      {
+        "path": "server/src/routes/health.ts",
+        "startLine": 9,
+        "endLine": 16
+      }
+    ]
+  },
+  {
+    "id": "q22",
+    "query": "dark theme colour palette",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "client/styles/theme.css",
+        "startLine": 15,
+        "endLine": 28
+      },
+      {
+        "path": "client/styles/theme.css",
+        "startLine": 30,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "id": "q23",
+    "query": "make keyboard focus visible for accessibility",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "client/styles/a11y.css",
+        "startLine": 2,
+        "endLine": 6
+      }
+    ]
+  },
+  {
+    "id": "q24",
+    "query": "skip schema changes that were already applied and detect edited ones",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "server/src/db/migrate.ts",
+        "startLine": 35,
+        "endLine": 72
+      }
+    ]
+  },
+  {
+    "id": "q25",
+    "query": "drop duplicate scans that handhelds upload twice",
+    "kind": "natural",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/transform.py",
+        "startLine": 31,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "id": "q26",
+    "query": "verifyAccessToken",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/auth/tokenSigner.ts",
+        "startLine": 67,
+        "endLine": 97
+      }
+    ]
+  },
+  {
+    "id": "q27",
+    "query": "LruCache",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/utils/lruCache.ts",
+        "startLine": 17,
+        "endLine": 80
+      }
+    ]
+  },
+  {
+    "id": "q28",
+    "query": "haversine distance",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/utils/geo.ts",
+        "startLine": 11,
+        "endLine": 17
+      },
+      {
+        "path": "geo/src/distance.rs",
+        "startLine": 21,
+        "endLine": 27
+      }
+    ]
+  },
+  {
+    "id": "q29",
+    "query": "withRetry",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/utils/retry.ts",
+        "startLine": 20,
+        "endLine": 39
+      }
+    ]
+  },
+  {
+    "id": "q30",
+    "query": "SelectQuery toSQL",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/db/queryBuilder.ts",
+        "startLine": 74,
+        "endLine": 90
+      }
+    ]
+  },
+  {
+    "id": "q31",
+    "query": "build_delivery_facts",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/transform.py",
+        "startLine": 44,
+        "endLine": 71
+      }
+    ]
+  },
+  {
+    "id": "q32",
+    "query": "optimise_route",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "geo/src/route.rs",
+        "startLine": 66,
+        "endLine": 80
+      }
+    ]
+  },
+  {
+    "id": "q33",
+    "query": "summarizeByDepot",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "reporting/src/main/java/com/harbor/reporting/DeliveryReport.java",
+        "startLine": 39,
+        "endLine": 70
+      }
+    ]
+  },
+  {
+    "id": "q34",
+    "query": "NotificationHub",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/services/notificationHub.ts",
+        "startLine": 33,
+        "endLine": 93
+      }
+    ]
+  },
+  {
+    "id": "q35",
+    "query": "parsePageRequest",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "server/src/utils/pagination.ts",
+        "startLine": 30,
+        "endLine": 37
+      }
+    ]
+  },
+  {
+    "id": "q36",
+    "query": "Redrive",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "worker/internal/queue/queue.go",
+        "startLine": 123,
+        "endLine": 141
+      }
+    ]
+  },
+  {
+    "id": "q37",
+    "query": "BoundingBox around",
+    "kind": "identifier",
+    "expected": [
+      {
+        "path": "geo/src/bbox.rs",
+        "startLine": 14,
+        "endLine": 23
+      }
+    ]
+  },
+  {
+    "id": "q38",
+    "query": "isValidTrackingNumber check digit",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "server/src/utils/validation.ts",
+        "startLine": 23,
+        "endLine": 29
+      }
+    ]
+  },
+  {
+    "id": "q39",
+    "query": "TokenBucketLimiter refill rate",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "server/src/middleware/rateLimiter.ts",
+        "startLine": 20,
+        "endLine": 60
+      }
+    ]
+  },
+  {
+    "id": "q40",
+    "query": "zoneOffsetMinutes for daylight saving time",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "server/src/utils/time.ts",
+        "startLine": 14,
+        "endLine": 28
+      }
+    ]
+  },
+  {
+    "id": "q41",
+    "query": "Queue Lease visibility timeout",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "worker/internal/queue/queue.go",
+        "startLine": 59,
+        "endLine": 74
+      }
+    ]
+  },
+  {
+    "id": "q42",
+    "query": "write_facts_csv with header row",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/csv_export.py",
+        "startLine": 36,
+        "endLine": 44
+      }
+    ]
+  },
+  {
+    "id": "q43",
+    "query": "estimateArrival delivery time window",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "server/src/services/etaService.ts",
+        "startLine": 23,
+        "endLine": 35
+      }
+    ]
+  },
+  {
+    "id": "q44",
+    "query": "upsert_facts rollback on failed batch",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/load.py",
+        "startLine": 36,
+        "endLine": 50
+      }
+    ]
+  },
+  {
+    "id": "q45",
+    "query": "backoff Policy Delay jitter",
+    "kind": "mixed",
+    "expected": [
+      {
+        "path": "worker/internal/backoff/backoff.go",
+        "startLine": 30,
+        "endLine": 41
+      }
+    ]
+  },
+  {
+    "id": "q46",
+    "query": "rate limiter middleware",
+    "kind": "path",
+    "expected": [
+      {
+        "path": "server/src/middleware/rateLimiter.ts",
+        "startLine": 62,
+        "endLine": 76
+      }
+    ]
+  },
+  {
+    "id": "q47",
+    "query": "go worker dead letter queue",
+    "kind": "path",
+    "expected": [
+      {
+        "path": "worker/internal/queue/queue.go",
+        "startLine": 85,
+        "endLine": 100
+      },
+      {
+        "path": "worker/internal/queue/queue.go",
+        "startLine": 113,
+        "endLine": 119
+      }
+    ]
+  },
+  {
+    "id": "q48",
+    "query": "client build script asset fingerprinting",
+    "kind": "path",
+    "expected": [
+      {
+        "path": "client/build.mjs",
+        "startLine": 31,
+        "endLine": 49
+      },
+      {
+        "path": "client/build.mjs",
+        "startLine": 11,
+        "endLine": 13
+      }
+    ]
+  },
+  {
+    "id": "q49",
+    "query": "server error classes",
+    "kind": "path",
+    "expected": [
+      {
+        "path": "server/src/errors.ts",
+        "startLine": 1,
+        "endLine": 17
+      }
+    ]
+  },
+  {
+    "id": "q50",
+    "query": "pipeline cli argument parser",
+    "kind": "path",
+    "expected": [
+      {
+        "path": "pipeline/harbor_etl/cli.py",
+        "startLine": 22,
+        "endLine": 35
+      }
+    ]
+  }
+]

@@ -1,0 +1,9 @@
+[package]
+name = "harbor-geo"
+version = "0.3.0"
+edition = "2021"
+description = "Distance and route planning helpers for Harbor couriers"
+publish = false
+
+[lib]
+path = "src/lib.rs"
