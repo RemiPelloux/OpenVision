@@ -188,6 +188,13 @@ async function slashCommand(page, label, name) {
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
   return result.requests.slice(before);
 }
+async function openNewChat(page) {
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('F1');
+  await page.locator('.quick-input-widget').getByRole('textbox', { name: 'input', exact: true }).fill('>Open New Agent Chat');
+  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'Open New Agent Chat' }).first().click();
+  await delay(1500);
+}
 const markersOf = requests => [...new Set(requests.flatMap(request => request.markers))].sort();
 
 // --precedence ------------------------------------------------------------
@@ -344,8 +351,13 @@ async function invalid() {
     return workbenchNotices.every(name => matching(texts, expectations[name]).length === 0);
   }, 45000).catch(error => { result.observations.noticesAfterFix = texts; throw error; });
   result.observations.noticesAfterFix = texts.map(text => text.replaceAll(directory, '<run>'));
-  const recovered = await ask(page, 'recovered-skills', 'OpenVision customization check: which skills are available now?');
-  const recoveredParent = recovered.filter(request => request.role === 'parent');
+  // The same conversation, then a new chat in the same window (no restart).
+  const continued = (await ask(page, 'recovered-same-chat', 'OpenVision customization check: which skills are available now?'))
+    .filter(request => request.role === 'parent');
+  result.observations.sameConversationMarkers = markersOf(continued);
+  await openNewChat(page);
+  const recoveredParent = (await ask(page, 'recovered-new-chat', 'OpenVision customization check: which skills are available in a new chat?'))
+    .filter(request => request.role === 'parent');
   result.observations.recoveredMarkers = markersOf(recoveredParent);
   assert.ok(markersOf(recoveredParent).includes('RECOVERED-SKILL-MARK'), 'The fixed skill is used without a restart');
   assert.ok(recoveredParent.some(request => request.taskMarkers.includes('WATCH-AGENT-ADDED')), 'The fixed subagent is offered without a restart');
