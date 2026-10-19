@@ -13,35 +13,35 @@ export function providerManualRetry(text) {
 
 // A terminal provider failure appends an empty AI bubble that only carries the
 // error. Retry or the next submission originally cleared just its error, leaving
-// an empty assistant turn in the saved transcript (and in every fork of it). Mark
-// the placeholder when it is created and remove it, while still empty, where the
-// error is cleared. A placeholder restored after restart has no in-memory error,
-// so the check precedes the recovered error test. Other bubbles keep the
-// recovered behaviour.
-const placeholderMarker = '/* OpenVision drop retried provider-failure placeholder v1 */';
-const clearMarker = '/* OpenVision drop retried provider-failure placeholder, restored too v2 */';
-const legacyClear = /\n {10}if \(r\.openvisionProviderFailurePlaceholder === true && r\.text === "" && !r\.toolFormerData && !r\.codeBlocks\?\.length\) \{\n {12}this\._composerDataService\.deleteComposerBubbles\([\w$]+, \[r\.bubbleId\]\);\n {12}break;\n {10}\}/g;
+// an empty assistant turn in the saved transcript (and in every fork of it). The
+// chat-level failure record (persisted across restart by
+// provider-failure-persistence.mjs) now names that placeholder, and the point that
+// clears the record before a new submission removes it. A dismissed failure keeps
+// the recovered behaviour.
+const placeholderMarker = '/* OpenVision drop retried provider-failure placeholder v3 */';
+// Earlier in-place builds of this change marked the bubble and checked it in the
+// recovered clearing loop; both are removed when upgrading.
+const legacyPlaceholder = /\/\* OpenVision drop retried provider-failure placeholder v1 \*\/\n {18}(const [\w$]+ = \{ \.\.\.[\w$]+\(\), codeBlocks: \[\], type: [\w$]+\.AI, text: "", errorDetails: [\w$]+),\n {20}\.\.\.\([\w$]+\.cause\?\.name === "LocalProviderError" \? \{ openvisionProviderFailurePlaceholder: true \} : \{\}\) \};/g;
+const legacyClear = /(?:\n {10}\/\* OpenVision drop retried provider-failure placeholder, restored too v2 \*\/)?\n {10}if \(r\.openvisionProviderFailurePlaceholder === true && r\.text === "" && !r\.toolFormerData && !r\.codeBlocks\?\.length\) \{\n {12}this\._composerDataService\.deleteComposerBubbles\([\w$]+, \[r\.bubbleId\]\);\n {12}break;\n {10}\}/g;
 function dropRetriedFailurePlaceholder(text) {
-  if (!text.includes(placeholderMarker)) {
-    const desktop = text.includes('function xjf(e, t) {');
-    const [error, details, bubble, factory, type] = desktop ? ['Os', 'Dv', 'tp', 'gf', 'wr'] : ['qr', 'Pu', 'ec', 'Vv', 'ys'];
-    const anchor = `const ${bubble} = { ...${factory}(), codeBlocks: [], type: ${type}.AI, text: "", errorDetails: ${details} };`;
-    if (text.split(anchor).length !== 2) throw new Error('Provider failure placeholder owner changed');
-    text = text.replace(anchor, `${placeholderMarker}
-                  const ${bubble} = { ...${factory}(), codeBlocks: [], type: ${type}.AI, text: "", errorDetails: ${details},
-                    ...(${error}.cause?.name === "LocalProviderError" ? { openvisionProviderFailurePlaceholder: true } : {}) };`);
-  }
-  if (text.includes(clearMarker)) return text;
-  // Upgrade an earlier build in place: v1 checked only bubbles that still had an error.
-  text = text.replace(legacyClear, '');
-  const clear = /(clearErrorDetailsAndServiceStatusUpdatesFromLatestAIMessages\(([\w$]+)\) \{\s+if \(!this\._composerDataService\.getComposerData\(\2\)\) return;\s+const ([\w$]+) = this\._composerDataService\.getLoadedConversation\(\2\);\s+for \(let i = \3\.length - 1; i >= 0; i--\) \{\s+const r = \3\[i\];\s+if \(r\.type === [\w$]+\.AI\) \{)(\s+if \(r\.errorDetails \|\| r\.serviceStatusUpdate\) \{)/g;
-  if ([...text.matchAll(clear)].length !== 1) throw new Error('Provider failure clearing owner changed');
-  return text.replace(clear, (_match, head, handle, _conversation, rest) => `${head}
-          ${clearMarker}
-          if (r.openvisionProviderFailurePlaceholder === true && r.text === "" && !r.toolFormerData && !r.codeBlocks?.length) {
-            this._composerDataService.deleteComposerBubbles(${handle}, [r.bubbleId]);
-            break;
-          }${rest}`);
+  if (text.includes(placeholderMarker)) return text;
+  text = text.replace(legacyPlaceholder, '$1 };').replace(legacyClear, '');
+  const desktop = text.includes('function xjf(e, t) {');
+  const [handle, details, bubble, factory, type] = desktop ? ['cn', 'Dv', 'tp', 'gf', 'wr'] : ['Et', 'Pu', 'ec', 'Vv', 'ys'];
+  const anchor = `const ${bubble} = { ...${factory}(), codeBlocks: [], type: ${type}.AI, text: "", errorDetails: ${details} };`;
+  if (text.split(anchor).length !== 2) throw new Error('Provider failure placeholder owner changed');
+  const clear = /(this\._composerUtilsService\.clearErrorDetailsAndServiceStatusUpdatesFromLatestAIMessages\(\s*([\w$]+),\s*\),\s*this\._composerDataService\.updateComposerDataSetStore\(\2, \(([\w$]+)\) =>\s*\3\("submitErrorDetails", void 0\),\s*\))/g;
+  const matches = [...text.matchAll(clear)];
+  if (matches.length !== 1 || matches[0][2] !== handle) throw new Error('Provider failure clearing owner changed');
+  return text.replace(anchor, `${anchor}
+                  ${placeholderMarker}
+                  ${handle}.data.submitErrorDetails?.openvisionProviderFailure === true &&
+                    this._composerDataService.updateComposerDataSetStore(${handle}, setter => setter("submitErrorDetails",
+                      { ...${handle}.data.submitErrorDetails, openvisionPlaceholderBubbleId: ${bubble}.bubbleId }));`)
+    .replace(clear, match => `(${handle}.data.submitErrorDetails?.openvisionProviderFailure === true &&
+                        typeof ${handle}.data.submitErrorDetails.openvisionPlaceholderBubbleId === "string" &&
+                        this._composerDataService.deleteComposerBubbles(${handle}, [${handle}.data.submitErrorDetails.openvisionPlaceholderBubbleId]),
+                      ${match})`);
 }
 
 function retainProviderFailure(text) {

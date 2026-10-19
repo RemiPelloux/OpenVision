@@ -22,6 +22,7 @@ import { enterWorkspace } from './verification-workspace.mjs';
 import { retryNativeTimeout, timeoutLimit } from './verify-live-timeout.mjs';
 import { createLiveEditFixture } from './verify-live-edits.mjs';
 import { createAgentFixtureProvider, fixtureModel } from './agent-fixture-provider.mjs';
+import { createLoopbackProxy } from './network-capture.mjs';
 
 const fixture = process.argv.includes('--fixture');
 if (!process.argv.includes('--live') && !fixture) {
@@ -106,6 +107,9 @@ if (process.platform === 'win32' && !fixture) {
 const { layout } = await loadRuntime(root);
 // The fixture is the relay's upstream provider; relay evidence and assertions are unchanged.
 const fixtureProvider = fixture ? await createAgentFixtureProvider({ project }) : undefined;
+// Opt-in: route the owned app through an owned loopback-only Chromium proxy (refuses non-loopback).
+const chromiumProxy = process.argv.includes('--chromium-proxy') ? await createLoopbackProxy() : undefined;
+assert.ok(!chromiumProxy || fixture, '--chromium-proxy is a fixture-only connectivity probe');
 if (fixture) provider = { name: 'Controlled Agent fixture', url: fixtureProvider.url, models: [{ id: model, enabled: true }] };
 const platformLabel = { win32: 'Windows', linux: 'Linux', darwin: 'macOS' }[process.platform] ?? process.platform;
 const result = { checkedAt: new Date().toISOString(), fixture, model, reasoning, subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, failureRestartRequested: failureRestart, provider: { name: provider.name, url: provider.url },
@@ -179,7 +183,8 @@ async function launch() {
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window', '--disable-updates',
       '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
-      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []),
+      ...(chromiumProxy ? [`--proxy-server=http://127.0.0.1:${chromiumProxy.port}`] : []), project] });
   // Private diagnostics for each owned launch; the run directory is ignored and never published.
   const hostLog = createWriteStream(join(directory, `host-${(result.nativeMainProcesses ?? []).length + 1}.log`));
   app.process().stderr?.pipe(hostLog); app.process().stdout?.pipe(hostLog);
@@ -197,7 +202,8 @@ async function closeOwnedApp() {
   await closing; if (child.exitCode === null && child.signalCode === null) await exited;
   result.launcherExit = { exitCode: child.exitCode, signalCode: child.signalCode };
   if (process.platform === 'linux') (result.survivorsAfterClose ??= []).push(execFileSync('ps', ['-u', String(process.getuid()), '-o', 'pid,ppid,etimes,args', '--no-headers'], { encoding: 'utf8' })
-    .split('\n').filter(line => line.includes(directory)).map(line => line.trim().slice(0, 240)));
+    .split('\n').filter(line => line.trim() && !/\b(ps|node|npm|bash|sh|xvfb-run|Xvfb|dbus-daemon|dbus-run-session|gnome-keyring-daemon)\b/.test(line.trim().split(/\s+/)[3] ?? ''))
+    .map(line => line.trim().slice(0, 240)));
   (result.launcherExits ??= []).push(result.launcherExit);
   app = undefined;
 }
@@ -361,6 +367,10 @@ try {
 } finally {
   const cleanupErrors = [];
   try { await relay.close(); } catch { cleanupErrors.push('Relay cleanup failed'); }
+  if (chromiumProxy) {
+    result.chromiumProxy = { port: chromiumProxy.port, events: chromiumProxy.events.map(({ at, method, host, port, allowed }) => ({ at, method, host, port, allowed })) };
+    await chromiumProxy.close().catch(() => cleanupErrors.push('Chromium proxy cleanup failed'));
+  }
   if (fixtureProvider) {
     try { await fixtureProvider.close(); } catch { cleanupErrors.push('Fixture provider cleanup failed'); }
     result.fixtureRequests = fixtureProvider.requests;
