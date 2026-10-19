@@ -196,7 +196,7 @@ Agent support accepts text/tools; Tab autocomplete uses API connections.
 
 ## Roadmap and honest progress
 
-**22 of 44 acceptance stories fully verified · 50.00%.**
+**25 of 44 acceptance stories fully verified · 56.82%.**
 Another **11 are Partial**, **14 Planned** and **1 Unknown**. Partial stories
 already contain working features; this score measures complete acceptance gates,
 not the percentage of code implemented or decompiled. Since 18 October, Windows,

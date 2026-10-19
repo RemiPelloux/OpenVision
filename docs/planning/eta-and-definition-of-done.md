@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **22 (50.00%)** |
-| Partial / Planned / Unknown | 8 / 13 / 1 |
-| 80% target | 36 Verified: **14 more** |
+| Verified | **25 (56.82%)** |
+| Partial / Planned / Unknown | 8 / 10 / 1 |
+| 80% target | 36 Verified: **11 more** |
 | Code on `main` | All worker branches merged; clean build and 13 unit suites pass with 0 failures |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
 | X | External: a machine, balance or account |
 
-### Verified (22)
+### Verified (25)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304.
+- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -66,7 +66,6 @@ merged code. "Gate" is what blocks promotion:
 | OV-1003 Idle resources | Merged | Startup traversal 1,394 > 1,300 listings; slope 15.7 > 15 MiB in 1 of 3 runs | L | Round 2 |
 | OV-1002 Responsiveness | Merged; stream defect fixed | Incremental-edit and scroll budgets; frame budgets on a no-GPU host | L, D | Round 2 |
 | OV-904 Updates and rollback | Merged; signed releases, installer | Second `verify:upgrade:linux` run | L | Round 2 |
-| OV-502–504 Retrieval and indexing | Merged, unit-tested; the build hook is **not wired** | Fix the anchor, wire the hook, then 3 native verifiers | L | Round 2 (2–3 sessions) |
 | OV-704 Specialized modes | Not started | Scope inventory, probe, image input, browser automation | L, D | Round 3 |
 | OV-604 Next-edit prediction | Not started | Support it or exclude it | D | Decision paper in round 3 |
 | OV-703 Remote (SSH) | Not started | Pinned and branded server, SSH verifier | L | Round 3 |
@@ -90,7 +89,7 @@ merged code. "Gate" is what blocks promotion:
 | Round | Work | Effect if it passes |
 | --- | --- | --- |
 | 1 (running) | MCP regression; release safety (OV-304, 501, 1005, 801 done: +4) | Up to +2: OV-303, 1004 |
-| 2 | Linux completion; idle resources; responsiveness; upgrade rerun; retrieval | Up to +7: OV-903, 1003, 1002, 904, 502, 503, 504 |
+| 2 (running) | Linux completion; idle resources; responsiveness; upgrade rerun (retrieval done: +3) | Up to +4: OV-903, 1003, 1002, 904 |
 | 3 | The four never-started groups (may need a second session each) | Up to +4: OV-704, 703, 802, 803 |
 | Owner decisions (#5) | OV-103, 402, 1001, 604 | Up to +4 |
 
