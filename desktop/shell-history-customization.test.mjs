@@ -104,3 +104,29 @@ test('patched bash state shell writes no history; the recovered one does', { ski
   assert.equal(after.stdout, '__OV_MARKER__\nset +o history\n~/.bash_history\n');
 });
 
+
+// The same check for the zsh state template with a real zsh (zsh 5.9 on the
+// Linux verification host). HOME's .zshrc saves history and adds an entry in
+// `-c` shells.
+const zsh = spawnSync('zsh', ['--version']).status === 0;
+test('patched zsh state shell writes no history; the recovered one does', { skip: !zsh && 'zsh not found' }, async () => {
+  const template = text => /`\$\{or\} ((?:builtin unset HISTFILE 2>\/dev\/null; )?builtin printf[^`]*dump_zsh_state)`/.exec(text)[1]
+    .replace('${r}', '__OV_MARKER__').replaceAll('\\\\', '\\');
+  const run = async script => {
+    const home = await mkdtemp(join(tmpdir(), 'ov-shell-history-zsh-'));
+    try {
+      await writeFile(join(home, '.zshrc'), 'HISTFILE=~/.zsh_history; SAVEHIST=100; HISTSIZE=100\n' +
+        '[[ -n $ZSH_EXECUTION_STRING ]] && print -s ov-agent-startup-history\n');
+      const dump = 'dump_zsh_state() { builtin print -r -- "${HISTFILE-unset}"; }; ';
+      const child = spawnSync('zsh', ['-o', 'extendedglob', '-ilc', dump + script], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+        env: { PATH: process.env.PATH, HOME: home, TERM: 'dumb' } });
+      const history = await readFile(join(home, '.zsh_history'), 'utf8').catch(() => undefined);
+      return { stdout: child.stdout.replaceAll(home, '~'), history };
+    } finally { await rm(home, { recursive: true, force: true }); }
+  };
+  const before = await run(template(fixture)), after = await run(template(disableAgentShellHistory(fixture)));
+  assert.match(before.history ?? '', /ov-agent-startup-history/, 'Control: the recovered zsh state shell saves startup history to HOME');
+  assert.equal(before.stdout, '__OV_MARKER__\n~/.zsh_history\n');
+  assert.equal(after.history, undefined, 'The guarded zsh state shell writes no HOME history');
+  assert.equal(after.stdout, '__OV_MARKER__\nunset\n');
+});
