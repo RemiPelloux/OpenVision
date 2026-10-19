@@ -100,7 +100,7 @@
     "verify:profile-io-faults": "node desktop/verify-profile-io-faults.mjs",
     "benchmark:native": "node desktop/verify-agent.mjs --baseline",
     "test:native-baseline": "node --test desktop/native-baseline.test.mjs",
-    "test:mcp-auth": "node --test desktop/customization-precedence.test.mjs desktop/mcp-oauth.test.mjs desktop/verify-mcp-oauth-fixture.test.mjs desktop/verify-mcp-auth-secrets.test.mjs",
+    "test:mcp-auth": "node --test desktop/customization-diagnostics.test.mjs desktop/customization-precedence.test.mjs desktop/mcp-oauth.test.mjs desktop/verify-mcp-oauth-fixture.test.mjs desktop/verify-mcp-auth-secrets.test.mjs",
     "test:mcp-lazy": "node --test desktop/mcp-lazy.test.mjs desktop/mcp-routing.test.mjs desktop/mcp-attempt.test.mjs desktop/mcp-cancel.test.mjs desktop/mcp-reconnect.test.mjs desktop/mcp-lifecycle-cleanup.test.mjs desktop/mcp-window-release.test.mjs desktop/mcp-project-approval.test.mjs desktop/linux-socket-owners.test.mjs",
     "smoke": "node test/smoke.mjs",
     "benchmark:models": "node --expose-gc desktop/benchmark-models.mjs",

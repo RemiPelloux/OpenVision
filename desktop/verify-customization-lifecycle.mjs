@@ -10,6 +10,7 @@ import { fileHash } from './import-files.mjs';
 import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { processFamily } from './process-family-linux.mjs';
+import { createMcpServerFixture } from './verify-mcp-server.mjs';
 
 // Native OV-304 customization lifecycle on Linux x64 with a disposable profile
 // and project and a controlled loopback provider (no live inference).
@@ -250,6 +251,109 @@ async function precedence() {
   await precedenceRound(second.page, 'restart');
 }
 
+// --invalid ----------------------------------------------------------------
+// Every message in the notification center (toasts collapse into it).
+async function notices(page) {
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('F1');
+  await page.keyboard.type('Notifications: Show Notifications');
+  await page.locator('.quick-input-widget .monaco-list-row').filter({ hasText: 'Notifications: Show Notifications' }).first().click();
+  await delay(500);
+  const texts = await page.locator('.notifications-center .notification-list-item-message').allInnerTexts();
+  await page.keyboard.press('Escape');
+  return texts;
+}
+async function invalid() {
+  const mcp = await createMcpServerFixture(), second = await createMcpServerFixture();
+  result.mcpFixtures = [mcp, second];
+  const userConfig = join(home, 'mcp.json'), projectConfig = join(project, '.openvision/mcp.json');
+  const invalidUser = `{
+  // JSONC: comments and trailing commas are accepted
+  "mcpServers": {
+    "ov-valid": ${JSON.stringify(mcp.configuration)},
+    "ov-bad-command": { "command": 5 },
+    "ov-pigeon": { "type": "carrier-pigeon", "url": "${mcp.configuration.url}" },
+    "ov-empty": {},
+  },
+}
+`;
+  await write(userConfig, invalidUser);
+  await write(projectConfig, '{ "mcpServers": { "ov-project": { "command": "node", ');
+  await write(join(project, '.openvision/skills/ov-valid-skill/SKILL.md'), skill('ov-valid-skill', 'Valid fixture skill VALID-SKILL-MARK'));
+  await write(join(project, '.openvision/skills/ov-bad-yaml/SKILL.md'), '---\nname: ov-bad-yaml\ndescription: [unclosed\n---\nBody.\n');
+  await write(join(project, '.openvision/skills/ov-no-description/SKILL.md'), '---\nname: ov-no-description\n---\nBody.\n');
+  await write(join(project, '.openvision/agents/ov-valid-agent.md'), agent('ov-valid-agent', 'Valid fixture agent PROJECT-AGENT-MARK', 'PROJECT-AGENT-BODY'));
+  await write(join(project, '.openvision/agents/ov-bad-agent.md'), 'This file has no front matter.\n');
+  await write(join(project, '.openvision/agents/ov-empty-agent.md'), '---\nname: ov-empty-agent\ndescription: empty\n---\n');
+  const plugin = join(home, '.openvision/plugins/local/ov-bad-plugin');
+  await write(join(plugin, '.cursor-plugin/plugin.json'), '{ "name": ');
+  await write(join(plugin, 'skills/ov-plugin-skill/SKILL.md'), skill('ov-plugin-skill', 'Plugin fixture skill PLUGIN-SKILL-MARK'));
+
+  const { page } = await launch();
+  await configureProvider(page); await selectModel(page);
+  await until('valid sibling MCP discovery', () => mcp.requests.some(item => item.method === 'tools/list' && item.authorized), 45000);
+  const expectations = {
+    userMcp: [userConfig, 'server "ov-bad-command" "command" must be a non-empty string', 'server "ov-pigeon" has an unknown transport',
+      'server "ov-empty" needs a "command"', 'The other servers in this file still load'],
+    projectMcp: [projectConfig, 'JSON syntax error', 'No servers from this file were loaded'],
+    badYaml: [join(project, '.openvision/skills/ov-bad-yaml/SKILL.md'), 'Failed to read skill file'],
+    noDescription: [join(project, '.openvision/skills/ov-no-description/SKILL.md'), 'Description is required'],
+    badAgent: [join(project, '.openvision/agents/ov-bad-agent.md'), 'this subagent was not loaded'],
+    emptyAgent: [join(project, '.openvision/agents/ov-empty-agent.md'), 'this subagent was not loaded'],
+    badPlugin: [join(plugin, '.cursor-plugin/plugin.json'), 'this plugin manifest could not be read'],
+  };
+  const matching = (texts, parts) => texts.filter(text => parts.every(part => text.includes(part)));
+  let texts = [];
+  await until('every diagnostic', async () => {
+    texts = await notices(page);
+    return Object.values(expectations).every(parts => matching(texts, parts).length >= 1);
+  }, 60000).catch(error => { result.observations.noticesAtTimeout = texts; throw error; });
+  await page.screenshot({ path: join(directory, 'invalid-notices.png') });
+  result.observations.notices = texts.map(text => text.replaceAll(directory, '<run>'));
+  for (const [name, parts] of Object.entries(expectations))
+    assert.equal(matching(texts, parts).length, 1, `${name}: exactly one diagnostic naming the file and reason`);
+  result.checks.visibleDiagnosticsNameFileAndReason = true;
+
+  const skills = await allRows(page, 'skills', 'skill');
+  result.observations.skillRows = skills;
+  assert.ok(skills.some(row => row.name === 'ov-valid-skill'), 'A valid skill beside invalid ones is listed');
+  assert.ok(skills.some(row => row.name === 'ov-plugin-skill'), 'A plugin with a broken manifest still loads its default components');
+  const agents = await allRows(page, 'agents', 'subagent');
+  result.observations.agentRows = agents;
+  assert.ok(agents.some(row => row.name === 'ov-valid-agent'));
+  await page.keyboard.press('Escape');
+  const asked = await ask(page, 'invalid-skills', 'OpenVision customization check: which skills are available?');
+  const parent = asked.filter(request => request.role === 'parent');
+  assert.ok(markersOf(parent).includes('VALID-SKILL-MARK') && markersOf(parent).includes('PLUGIN-SKILL-MARK'));
+  assert.ok(parent.some(request => request.taskMarkers.includes('PROJECT-AGENT-MARK')), 'The valid subagent is offered to Task');
+  assert.deepEqual(result.pageErrors, []);
+  result.checks.validSiblingsLoad = true;
+
+  // Fix every file while the window stays open.
+  await write(userConfig, JSON.stringify({ mcpServers: { 'ov-valid': mcp.configuration, 'ov-bad-command': second.configuration } }, null, 2));
+  await write(projectConfig, JSON.stringify({ mcpServers: {} }));
+  await write(join(project, '.openvision/skills/ov-bad-yaml/SKILL.md'), skill('ov-bad-yaml', 'Recovered fixture skill RECOVERED-SKILL-MARK'));
+  await write(join(project, '.openvision/skills/ov-no-description/SKILL.md'), skill('ov-no-description', 'Recovered fixture skill without error'));
+  await write(join(project, '.openvision/agents/ov-bad-agent.md'), agent('ov-bad-agent', 'Recovered fixture agent WATCH-AGENT-ADDED', 'Recovered body.'));
+  await write(join(plugin, '.cursor-plugin/plugin.json'), JSON.stringify({ name: 'ov-bad-plugin', version: '1.0.0' }));
+  await until('fixed MCP entry connects', () => second.requests.some(item => item.method === 'tools/list' && item.authorized), 45000);
+  const workbenchNotices = ['userMcp', 'projectMcp', 'badYaml', 'noDescription'];
+  await until('workbench diagnostics closed', async () => {
+    texts = await notices(page);
+    return workbenchNotices.every(name => matching(texts, expectations[name]).length === 0);
+  }, 45000).catch(error => { result.observations.noticesAfterFix = texts; throw error; });
+  result.observations.noticesAfterFix = texts.map(text => text.replaceAll(directory, '<run>'));
+  const recovered = await ask(page, 'recovered-skills', 'OpenVision customization check: which skills are available now?');
+  const recoveredParent = recovered.filter(request => request.role === 'parent');
+  result.observations.recoveredMarkers = markersOf(recoveredParent);
+  assert.ok(markersOf(recoveredParent).includes('RECOVERED-SKILL-MARK'), 'The fixed skill is used without a restart');
+  assert.ok(recoveredParent.some(request => request.taskMarkers.includes('WATCH-AGENT-ADDED')), 'The fixed subagent is offered without a restart');
+  assert.deepEqual(result.pageErrors, []);
+  assert.equal(session.app.process().exitCode, null, 'The window process is still running');
+  result.checks.recoveryWithoutRestart = true;
+  for (const fixture of [mcp, second]) assert.deepEqual(fixture.errors, []);
+}
+
 async function prepare() {
   await mkdir(home, { recursive: true }); await mkdir(project, { recursive: true });
   await writeFile(join(project, 'hello.js'), 'export const answer = 42;\n');
@@ -260,6 +364,7 @@ async function prepare() {
 try {
   await prepare();
   if (mode === '--precedence') await precedence();
+  if (mode === '--invalid') await invalid();
   assert.deepEqual(result.pageErrors, []);
   result.status = 'passed';
 } catch (error) {
@@ -271,6 +376,8 @@ try {
 } finally {
   result.cleanupErrors = [];
   if (session) await closeApp().catch(error => result.cleanupErrors.push(String(error)));
+  for (const fixture of result.mcpFixtures ?? []) await fixture.dispose().catch(error => result.cleanupErrors.push(String(error)));
+  delete result.mcpFixtures;
   provider.closeAllConnections(); await new Promise(done => provider.close(done));
   if (result.cleanupErrors.length) { result.status = 'failed'; process.exitCode = 1; }
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));

@@ -17,8 +17,10 @@ const promptMarker = '/* OpenVision MCP OAuth runtime re-authentication v1 */';
 // a fresh attempt. Nothing is stored and nothing is retried automatically.
 // The class expression that encloses `index` (minified bundles write `class{`).
 function enclosingClass(text, index) {
-  for (let start = text.lastIndexOf('class', index), tries = 0; start >= 0 && tries < 64; start = text.lastIndexOf('class', start - 1), tries++) {
+  // Count only real candidates: minified bundles also contain many `className` tokens.
+  for (let start = text.lastIndexOf('class', index), tries = 0; start >= 0 && tries < 400; start = text.lastIndexOf('class', start - 1)) {
     if (/[\w$]/.test(text[start - 1] ?? '') || /[\w$]/.test(text[start + 5] ?? '')) continue;
+    tries++;
     let node;
     try { node = parseExpressionAt(text, start, { ecmaVersion: 'latest' }); } catch { continue; }
     if (node.type === 'ClassExpression' && node.start <= index && node.end > index) return node;
