@@ -171,3 +171,12 @@ test('provider probe routes completion-quality mode and redacts the credential',
   assert.equal(typeof result.completionQuality.ok, 'boolean');
   assert.doesNotMatch(JSON.stringify(result), /fixture-key/);
 });
+
+test('reported latency covers the request only, not local syntax checking', async () => {
+  const slow = { name: 'slow', command: process.execPath, args: ['-e', 'setTimeout(() => process.exit(0), 400)'] };
+  const corpus = completionQualityCorpus.filter(entry => entry.language === 'python').slice(0, 2);
+  const result = await probeCompletionQuality(provider, 'coder', { fetch: recordedFetch('good'), corpus,
+    syntax: { toolchains: { python: [slow] } } });
+  assert.ok(result.cases.every(item => item.parser === 'slow' && item.ok));
+  assert.ok(result.cases.every(item => item.elapsedMs < 300), JSON.stringify(result.cases.map(item => item.elapsedMs)));
+});

@@ -109,8 +109,9 @@ export async function probeCompletionQuality(provider, model, { fetch, corpus = 
     const started = performance.now();
     const observed = { id: entry.id, language: entry.language, midProject: entry.midProject,
       promptCharacters: context.prefix.length + context.suffix.length };
+    let insertion;
     try {
-      const insertion = await fetchCompletion({ baseUrl: provider.url, apiKey: provider.key, model,
+      insertion = await fetchCompletion({ baseUrl: provider.url, apiKey: provider.key, model,
         customHeaders: provider.customHeaders, prefix: context.prefix, suffix: context.suffix, language: context.language }, {
         signal: AbortSignal.timeout(timeoutMs),
         fetch: async (...args) => {
@@ -120,16 +121,18 @@ export async function probeCompletionQuality(provider, model, { fetch, corpus = 
           return response;
         },
       });
-      Object.assign(observed, { insertion: insertion.slice(0, recordedCharacters), ...await scoreInsertion(entry, insertion, syntax) });
     } catch (error) {
       const message = error instanceof CompletionResponseError ? error.message :
         error.name === 'TimeoutError' ? 'Completion timed out after 15 seconds.' : 'Completion transport failed.';
       Object.assign(observed, { ok: false, parses: false, exact: false, expected: false, validRange: false,
         noMarkdown: !/Markdown/.test(message), error: message });
     }
+    // Request latency only: local syntax checking below is not part of it.
+    Object.assign(observed, { requests, elapsedMs: Math.round(performance.now() - started) });
+    if (insertion !== undefined)
+      Object.assign(observed, { insertion: insertion.slice(0, recordedCharacters), ...await scoreInsertion(entry, insertion, syntax) });
     observed.usage = await usage;
     if (!observed.usage) delete observed.usage;
-    Object.assign(observed, { requests, elapsedMs: Math.round(performance.now() - started) });
     cases.push(observed);
   }
   return { ...summarizeQuality(cases), model, corpusSha256, cases,
