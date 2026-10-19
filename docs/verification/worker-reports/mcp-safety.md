@@ -34,6 +34,7 @@ and on the untouched `src/` code (see Open risks).
 | Fresh profiles never latched shared-process MCP routing: the experiment service stayed uninitialized after the hosted bootstrap was disabled, and `mcp_shared_process_transports` defaults to off. Reproduced by `agent-verification-MIg5RP` | `desktop/network-defaults.mjs` | `2883160d` |
 | Project MCP approvals collided across folders with the same basename: opening `/b/app` revoked `/a/app` (`mcp-config-ownership-same-basename-a22JlK`), and an identical config in another `app` folder inherited approval | `desktop/mcp-project-approval-customization.mjs` (new, both workbench bundles) | `46a4a394` |
 | A legacy client's `connected` status survived the routing reset, so the server never subscribed to the utility (`af9fef`, `vieE2i`, trace probe 1 of 6 launches) | `desktop/mcp-routing-customization.mjs` | `3a5e0597` |
+| A legacy (extension-host) connect in flight when routing latched survived the reset's delete, orphaning a STDIO child; cause of the intermittent `--simultaneous` failures (`1ACuUN`; coordinator `EPeEu8`; trace `pNm0qf`) | `desktop/mcp-routing-customization.mjs` | `e68c9258` |
 | The anonymous hosted-call guard refused the team-policy read that legacy-route STDIO connections make: `require a signed-in Cursor account` (coordinator report `BYujHc`; reproduced as `CZr5WO` with main's routing restored in an overlay) | `desktop/network-defaults.mjs` | `2bfe8491` |
 
 Each fix has unit tests next to the existing ones: `network-defaults.test.mjs`,
@@ -157,3 +158,27 @@ rules for that flake and for the platform and live clauses moved out below.
   immediately, where before they waited or timed out. That is the same values
   they used after a timeout. No other feature was re-verified for it on this
   branch.
+
+## Follow-up: intermittent `--simultaneous` (19 October 2026, coordinator base)
+
+The coordinator's combined rerun on `ccr-a39d6f13-jurmdv` failed `--simultaneous`
+once (`EPeEu8`), which made 2 failures in 7 runs together with `1ACuUN`. The branch
+was reset onto that base. The verifier now records child revisions when the
+final-child wait times out (`21d8f86a`). A trace-logged loop passed 7 runs and
+failed the 8th (`pNm0qf`), which showed the root cause. It was a product race,
+not a harness wait: a legacy connect still in flight when routing latched was
+never deleted (defect above, fixed in `e68c9258`). The fix is unit-tested against
+the recovered reset method for both bundles (`mcp-routing.test.mjs`).
+
+After the fix, the acceptance runs passed first time, in order:
+
+| Mode | Runs (`logs/mcp-config-ownership-…`) |
+| --- | --- |
+| `--simultaneous` ×5, consecutive | `simultaneous-pAmDg8`, `-KOWitL`, `-lpb0tm`, `-92df1T`, `-EWYscL` |
+| default, `--failed-close`, `--http`, `--same-basename` | `wtmVXP`, `failed-close-WoPFav`, `http-AfqFq3`, `same-basename-jxqt7r` |
+
+Each of the five `--simultaneous` runs logs the extension handling
+`DeleteClient` for both windows' legacy clients. The failing trace had none.
+Updated recommendation: **promote OV-303 to Verified on Linux x64**. The earlier
+caveat about the unexplained simultaneous failure is resolved by this root cause.
+

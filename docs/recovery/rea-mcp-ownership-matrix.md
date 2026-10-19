@@ -185,6 +185,23 @@ through an owner header.
    legacy route behaves and is what fix 1 restores. `verify:telemetry` still
    records no HTTP URLs (`telemetry-verification-2bMD8u`).
 
+5. **A legacy connect outlived the routing reset.** When routing latched while
+   a window's legacy (extension-host) client was still connecting, the reset's
+   delete did not stop that connect. Its STDIO child stayed alive beside the
+   utility's child. The trace-logged run `simultaneous-pNm0qf` (1 of 8)
+   shows the legacy connect completing 2 s after the latch, with no
+   `DeleteClient` handled. This explains the intermittent `--simultaneous`
+   failures (`1ACuUN` here; `EPeEu8` in the coordinator's rerun: "Timed out
+   waiting for final profile child"). Owner fix in the
+   [routing customization](../../desktop/mcp-routing-customization.mjs): the
+   reset deletes a legacy client again once its pending creation settles.
+   Process clients are excluded. After the fix, on the coordinator base, 5
+   consecutive first-time `--simultaneous` passes (`pAmDg8`, `KOWitL`,
+   `lpb0tm`, `92df1T`, `EWYscL`) each show the extension handling
+   `DeleteClient` for both windows' legacy clients. The other modes passed
+   once each: `wtmVXP`, `failed-close-WoPFav`, `http-AfqFq3`,
+   `same-basename-jxqt7r`.
+
 ### Observations (final build)
 
 | Run (`logs/`) | Result |
