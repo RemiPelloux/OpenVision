@@ -42,6 +42,9 @@ const noBudgets = process.argv.includes('--no-budgets');
 // Diagnostic: --profile=stream,editorLarge records a renderer CPU profile per named phase (perturbs timings).
 const profiled = process.argv.find(value => value.startsWith('--profile='))?.slice(10).split(',') ?? [];
 const traceStorage = process.argv.includes('--trace-storage'); // diagnostic logpoints, perturbs timings
+// Diagnostic logpoints on the renderer's text delta coalescer: when each streamed delta
+// arrives in the renderer and when text is handed to the transcript (perturbs timings).
+const traceStream = process.argv.includes('--trace-stream');
 const budgetsPath = join(root, 'desktop/responsiveness-budgets.json');
 const budgets = JSON.parse(await readFile(budgetsPath, 'utf8'));
 const { layout } = await loadRuntime(root);
@@ -210,7 +213,7 @@ async function measure(name, work, { transcript = false } = {}) {
     fsWriteBytes: io.write_bytes, fsByRole: io.byRole, ioProcessesReadable: `${ioAfter.readable}/${ioAfter.members}`,
     ...await dom(), ...await heap(), hostLoad1m: loadBefore, ...cpuShare(cpuBefore, await cpuTimes()), ...extra };
   result.phases[name] = phase;
-  console.log(`${name}: ${JSON.stringify({ ...phase, mutatedRows: undefined, fsByRole: undefined, latencySamples: undefined, lastChunkDrainProgress: undefined })}`);
+  console.log(`${name}: ${JSON.stringify({ ...phase, mutatedRows: undefined, fsByRole: undefined, latencySamples: undefined, lastChunkDrainProgress: undefined, streamTrace: undefined })}`);
   return phase;
 }
 async function typeKeys(text, delay) { for (const key of text) { await page.keyboard.type(key); await page.waitForTimeout(delay); } }
@@ -243,6 +246,19 @@ async function launch() {
       ['          async cursorDiskKVSet(t, n) {', '(globalThis.__openvisionStorageTrace && globalThis.__openvisionStorageTrace.kv.push([String(t).split(":")[0], typeof n === "string" ? n.length : (n?.byteLength ?? 0)]), false)'],
       ['          async cursorDiskKVSetBinary(t, n) {', '(globalThis.__openvisionStorageTrace && globalThis.__openvisionStorageTrace.kv.push([String(t).split(":")[0] + "(binary)", n?.byteLength ?? 0]), false)'],
     ]) (result.storageTraceBreakpoints ??= []).push((await cdp.send('Debugger.setBreakpointByUrl', { urlRegex, lineNumber: lineOf(needle) + offset, condition })).locations.length);
+  }
+  if (traceStream) {
+    const workbench = await readFile(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js'), 'utf8');
+    const module = workbench.indexOf('"textDeltaCoalescer.js"() {');
+    // 0-based line of the first `needle` after the coalescer module anchor.
+    const lineAfter = needle => { const index = workbench.indexOf(needle, module); if (module < 0 || index < 0) throw new Error(`stream trace anchor missing: ${needle}`);
+      return workbench.slice(0, index).split('\n').length - 1; };
+    const record = (kind, size) => `((globalThis.__openvisionStreamTrace ??= []).length < 20000 && globalThis.__openvisionStreamTrace.push([${JSON.stringify(kind)}, performance.now(), ${size}]), false)`;
+    await cdp.send('Debugger.enable');
+    const urlRegex = 'workbench\\.desktop\\.main\\.js$';
+    for (const [needle, condition, offset] of [['enqueue(t, n) {', record('enqueue', 'n.length'), 1],
+      ['this.onFlush(t.ctx, o),', record('flushFrame', 'o.length'), 0], ['this.onFlush(t.ctx, t.text),', record('flush', 't.text.length'), 0]])
+      (result.streamTraceBreakpoints ??= []).push((await cdp.send('Debugger.setBreakpointByUrl', { urlRegex, lineNumber: lineAfter(needle) + offset, condition })).locations.length);
   }
 }
 const hostExits = [];
@@ -373,6 +389,8 @@ try {
     await typeKeys('typing during the long fixture stream to measure latency', 60);
     const typingEndedEpoch = epochNow(), typingMs = Math.round(performance.now() - typingStarted);
     const painted = await lastPaint;
+    const streamTrace = traceStream ? await page.evaluate(() => { const trace = globalThis.__openvisionStreamTrace ?? []; globalThis.__openvisionStreamTrace = undefined;
+      return { origin: performance.timeOrigin, events: trace }; }) : undefined;
     await idle();
     return { firstChunkPaintMs: firstPaintMs, chunksSent: fixture.streamChunksSent,
       fixtureStreamMs: Math.round(fixture.streamEndedAt - fixture.streamStartedAt),
@@ -382,7 +400,8 @@ try {
       lastChunkToPaintMs: Math.round(painted.paintedEpoch - fixture.lastChunkSentEpoch),
       lastChunkToFoundMs: Math.round(painted.foundEpoch - fixture.lastChunkSentEpoch), lastChunkCheckFrames: painted.frames, lastChunkDrainProgress: painted.progress,
       // Positive: the stream outlasted the typing; negative: typing continued after the last chunk.
-      lastChunkAfterTypingMs: Math.round(fixture.lastChunkSentEpoch - typingEndedEpoch), typingMs };
+      lastChunkAfterTypingMs: Math.round(fixture.lastChunkSentEpoch - typingEndedEpoch), typingMs,
+      ...streamTrace ? { streamTrace: { ...streamTrace, firstChunkSentEpoch: fixture.firstChunkSentEpoch, lastChunkSentEpoch: fixture.lastChunkSentEpoch } } : {} };
   }, { transcript: true });
   await input().fill('');
 
