@@ -9,7 +9,7 @@ import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
-import { processFamily } from './process-family-linux.mjs';
+import { processFamily, electronNames } from './process-family-linux.mjs';
 import { createMcpServerFixture } from './verify-mcp-server.mjs';
 import { spawn } from 'node:child_process';
 
@@ -358,7 +358,7 @@ async function invalid() {
 // --watchers ---------------------------------------------------------------
 // inotify watches held by the owned host family: per role, and the watched inodes.
 async function watches(app) {
-  const family = await processFamily({ rootPid: app.process().pid });
+  const family = await processFamily({ rootPid: app.process().pid, names: await electronNames(app) });
   const roles = {}, inodes = new Map();
   let total = 0;
   for (const member of family) {
@@ -386,6 +386,16 @@ async function inodeKeys(paths) {
   }
   return keys;
 }
+// Resolve watched inodes back to paths under the run directory (disposable data only).
+async function inodePaths(folder, keys = new Map()) {
+  for (const entry of await readdir(folder, { withFileTypes: true }).catch(() => [])) {
+    if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
+    const path = join(folder, entry.name);
+    for (const [key, value] of await inodeKeys([path])) keys.set(key, value);
+    if (keys.size < 20000) await inodePaths(path, keys);
+  }
+  return keys;
+}
 const watchedOf = (sample, keys) => [...keys].filter(([key]) => sample.inodes.has(key)).map(([, path]) => path.replace(directory, '<run>'));
 const holders = (sample, keys) => Object.fromEntries([...keys].filter(([key]) => sample.inodes.has(key))
   .map(([key, path]) => [path.replace(directory, '<run>'), sample.inodes.get(key)]));
@@ -395,6 +405,13 @@ async function untilRows(page, tab, kind, predicate, description) {
   await until(description, async () => predicate(names = await rowNames(page, tab, kind)), 30000)
     .catch(error => { (result.observations.rowsAtTimeout ??= {})[description] = names; throw error; });
   return names;
+}
+// A folder reopens in the profile it was last used with; a new named profile shows first-run setup.
+async function dismissOnboarding(page) {
+  const skip = page.getByRole('button', { name: 'Skip setup', exact: true }).filter({ visible: true });
+  if (await skip.first().waitFor({ timeout: 4000 }).then(() => true, () => false)) {
+    await skip.first().click(); (result.observations.onboardingDismissed ??= 0); result.observations.onboardingDismissed++;
+  }
 }
 async function forward(args) {
   const child = spawn(layout.executable, [...common, ...args], { env, stdio: 'ignore' });
@@ -418,6 +435,9 @@ async function watchers() {
   await page.keyboard.press('Escape');
   await delay(8000);
   const baseline = await watches(app);
+  const members = async () => (await processFamily({ rootPid: app.process().pid, names: await electronNames(app) }))
+    .map(item => `${item.role}#${item.pid} ${item.name ?? ''} ${item.cmdline.replace(/--[\w-]+=\S+/g, '').slice(0, 90)}`.trim());
+  const baselineMembers = await members();
   result.observations.baseline = { total: baseline.total, roles: baseline.roles, watchedProject: watchedOf(baseline, own) };
   assert.ok(watchedOf(baseline, own).length > 0, 'The open project is watched');
 
@@ -457,7 +477,7 @@ async function watchers() {
   await forward(['--new-window', '--profile', 'ov-watch-profile', other]);
   const second = await windows; second.on('pageerror', error => result.pageErrors.push(error.message));
   await second.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
-  await enterWorkspace(second); await delay(6000);
+  await enterWorkspace(second); await dismissOnboarding(second); await delay(6000);
   const withSecond = await watches(app);
   result.observations.secondWindow = { total: withSecond.total, holders: holders(withSecond, others) };
   assert.ok(watchedOf(withSecond, others).length > 0, 'The second project is watched while its window is open');
@@ -477,7 +497,7 @@ async function watchers() {
   await forward(['--reuse-window', other]);
   await switched;
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
-  await enterWorkspace(page);
+  await enterWorkspace(page); await dismissOnboarding(page);
   await until('workspace switched', async () => (await page.title()).includes('project-b'), 30000);
   await delay(6000);
   const afterSwitch = await watches(app);
@@ -499,7 +519,7 @@ async function watchers() {
   await forward(['--reuse-window', project]);
   await back;
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
-  await enterWorkspace(page);
+  await enterWorkspace(page); await dismissOnboarding(page);
   await until('workspace switched back', async () => !(await page.title()).includes('project-b'), 30000);
 
   // Profile switch to the named profile and back, in place.
@@ -510,16 +530,43 @@ async function watchers() {
     await until(`profile ${name}`, async () => name === 'Default' ? !(await page.title()).includes('ov-watch-profile') :
       (await page.title()).includes(name), 30000);
     await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
+    await dismissOnboarding(page);
     (result.observations.profileTitles ??= []).push(await page.title());
     await delay(4000);
   }
+  assert.equal(result.observations.profileTitles.length, 2);
+  assert.ok(result.observations.profileTitles[0].includes('ov-watch-profile') && !result.observations.profileTitles[1].includes('ov-watch-profile'));
+  result.checks.profileSwitchRoundTrip = true;
   result.observations.profileTitle = await page.title();
   await page.keyboard.press('Escape');
   await delay(8000);
   const final = await watches(app);
+  const known = await inodePaths(directory, await inodeKeys([directory]));
+  const describe = keys => keys.map(key => `${known.get(key)?.replace(directory, '<run>') ?? `outside run (${key})`} by ${final.inodes.get(key) ?? baseline.inodes.get(key)}`);
+  const finalMembers = await members();
+  result.observations.processDifference = { added: finalMembers.filter(item => !baselineMembers.includes(item)),
+    removed: baselineMembers.filter(item => !finalMembers.includes(item)) };
+  result.observations.holderDifference = Object.fromEntries([...final.inodes.keys()].filter(key => !known.has(key))
+    .map(key => [key, { baseline: baseline.inodes.get(key) ?? [], final: final.inodes.get(key) }]));
+  result.observations.watchDifference = {
+    added: describe([...final.inodes.keys()].filter(key => !baseline.inodes.has(key) || final.inodes.get(key).length > baseline.inodes.get(key).length)),
+    removed: describe([...baseline.inodes.keys()].filter(key => !final.inodes.has(key) || final.inodes.get(key).length < baseline.inodes.get(key).length)),
+  };
   result.observations.final = { total: final.total, roles: final.roles, watchedProject: watchedOf(final, own), watchedOther: watchedOf(final, others) };
   assert.deepEqual(watchedOf(final, others), [], 'No watch remains on the closed and switched-away project');
-  assert.deepEqual(final.roles, baseline.roles, 'inotify watches per process role return to the baseline');
+  // Two differences are expected and recorded rather than hidden: the named profile
+  // created above keeps its folder watched by the main process, and the MCP utility
+  // started for the added server stays alive idle (idle disposal is tracked under OV-1003).
+  const profiles = [...known].filter(([, path]) => path.startsWith(join(home, 'profiles') + '/') &&
+    path.split('/').length === join(home, 'profiles').split('/').length + 1).map(([key]) => key);
+  const adjusted = { ...final.roles };
+  const newProfileWatches = profiles.reduce((sum, key) => sum + (final.inodes.get(key)?.length ?? 0) - (baseline.inodes.get(key)?.length ?? 0), 0);
+  if (newProfileWatches > 0) adjusted['main'] -= newProfileWatches;
+  const idleMcp = baseline.roles['mcp-utility'] === undefined ? adjusted['mcp-utility'] ?? 0 : 0;
+  if (idleMcp) delete adjusted['mcp-utility'];
+  result.observations.expectedDifferences = { newProfileFolderWatches: newProfileWatches, idleMcpUtilityWatches: idleMcp };
+  assert.ok(newProfileWatches <= 1, 'At most the new profile folder is watched in addition');
+  assert.deepEqual(adjusted, baseline.roles, 'inotify watches per process role return to the baseline');
   result.checks.watchCountsReturnToBaseline = true;
   for (const fixture of [mcp, stale]) assert.deepEqual(fixture.errors, []);
 }
