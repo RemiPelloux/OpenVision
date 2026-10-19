@@ -27,6 +27,7 @@ import { enterWorkspace } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
 import { startCapture } from './capture-network.mjs';
 import { canaryNeedles, findCanaries, payloadViews, summarizeRecords } from './data-destinations.mjs';
+import { fixtureVector } from './retrieval-embedding-fixture.mjs';
 import { inventoryAddons, threadGroups, tgidOf } from './addon-inventory.mjs';
 import { captureEnvironment, removedProxyVariables, startHeartbeat, startMapsSampler, summarizeSignals } from './capture-harness.mjs';
 import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
@@ -123,6 +124,12 @@ async function inner(directory) {
     if (!['agent', 'mcp', 'idle-indexing'].includes(phase) && request.url === '/v1/chat/completions') record.excerpt = body.subarray(0, 3000).toString('utf8');
     response.setHeader('content-type', 'application/json');
     if (request.url === '/v1/models') return response.end(JSON.stringify({ data: [{ id: 'fixture-model' }] }));
+    if (request.url === '/v1/embeddings') {
+      // Optional retrieval embeddings (indexing phase): deterministic vectors.
+      const input = JSON.parse(body).input ?? [];
+      record.kind = 'embeddings'; record.inputs = input.length;
+      return response.end(JSON.stringify({ data: input.map((text, index) => ({ index, embedding: fixtureVector(text) })) }));
+    }
     if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end('{}'); }
     const payload = JSON.parse(body);
     record.kind = payload.tools?.length ? 'agent' : phase;
@@ -266,6 +273,7 @@ async function inner(directory) {
       { id: 'ov_glob', name: 'Glob', args: { target_directory: project, glob_pattern: `**/${canary.fileName}*` } },
       { id: 'ov_semantic', name: 'SemanticSearch', args: { query: canary.content } },
       { id: 'ov_codebase', name: 'codebase_search', args: { query: canary.content } },
+      { id: 'ov_codebase_local', name: 'CodebaseSearch', args: { query: canary.content, target_directories: [] } },
     ];
     const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
     await input.fill('Inspect the private canary module and search the project for it. Do not modify files.');
@@ -275,6 +283,35 @@ async function inner(directory) {
     result.agentFirstRequestMs = Date.parse(provider.find(item => item.phase === 'agent')?.at ?? '') - Date.parse(phases.find(item => item.phase === 'agent').at);
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' }).catch(() => {});
     result.checks.agent = true;
+    result.checks.localCodebaseSearch = provider.some(item => item.phase === 'agent' && item.tools?.includes('CodebaseSearch'));
+
+    // Indexing: the OpenVision index with embeddings from the configured
+    // provider. Chunk text may reach only that provider.
+    enter('indexing');
+    const settingsFile = join(profile, 'User/settings.json');
+    const settingsValue = JSON.parse(await readFile(settingsFile, 'utf8'));
+    await writeFile(settingsFile, JSON.stringify({ ...settingsValue, 'openvision.retrieval.embeddings.provider': `http://${providerHost}:${server.address().port}/v1`,
+      'openvision.retrieval.embeddings.model': 'fixture-embed' }));
+    await page.waitForTimeout(2500);
+    agentPlan = [{ id: 'ov_index_search', name: 'CodebaseSearch', args: { query: canary.content, target_directories: [] } }];
+    agentReply = 'OpenVision indexing destination complete.';
+    await page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true }).first().click().catch(() => {});
+    // The new chat's input replaces the previous one; type only once it is
+    // empty and confirm the prompt is in it before sending.
+    const indexPrompt = 'Search the codebase index for the canary. Do not modify files.';
+    const indexInput = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+    await page.waitForFunction(() => [...document.querySelectorAll('.aislash-editor-input[contenteditable=true]')]
+      .some(element => element.getClientRects().length && !element.textContent.trim()), null, { timeout: 15000 });
+    await indexInput.fill(indexPrompt);
+    await page.waitForFunction(text => [...document.querySelectorAll('.aislash-editor-input[contenteditable=true]')]
+      .some(element => element.getClientRects().length && element.textContent.includes(text)), indexPrompt, { timeout: 15000 });
+    await indexInput.press('Enter');
+    await page.getByText(agentReply, { exact: true }).first().waitFor({ timeout: 90000 });
+    await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' }).catch(() => {});
+    const embedded = provider.filter(item => item.phase === 'indexing' && item.kind === 'embeddings');
+    result.indexing = { embeddingRequests: embedded.length, inputs: embedded.reduce((sum, item) => sum + item.inputs, 0),
+      contentCanaryToProvider: embedded.some(item => item.canaries.includes('content')) };
+    result.checks.indexingEmbeddingsToProvider = embedded.length > 0 && result.indexing.contentCanaryToProvider;
 
     enter('tab');
     await page.locator('.tabs-container .tab').filter({ hasText: 'main.js' }).first().click();

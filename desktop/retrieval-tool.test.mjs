@@ -29,7 +29,7 @@ test('codebase search customization enables the local tool and is idempotent', (
   assert.match(patched, /e\.enableSemanticSearch && \(i\.length > 0 \|\| !0 === a\?\.openvisionLocal\)\)/);
   assert.match(patched, /searchImplementation: openvisionCodebaseSearch\.searchFor\(\(c \?\? r\.localProvider\)\?\.openvisionProviders\)/);
   assert.match(patched, /enableSemanticSearch: !0,\s+enableGrepTool: !0,/);
-  assert.match(patched, /openvisionCodebaseSearch\.activate\(e\);\s+if \(G\.cursor\.cursorAgentHostEnabled\)/);
+  assert.match(patched, /async function [\w$]+\(e\) \{\n\s+openvisionCodebaseSearch\.activate\(e\);/);
   assert.ok(!/\}\)\("aes-256-ctr", d\.pathEncryptionKey\)/.test(patched), 'hosted path encryption is bypassed only for the local index');
 });
 

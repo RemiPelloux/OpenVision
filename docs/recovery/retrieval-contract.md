@@ -116,7 +116,8 @@ the recorded baseline.
 ## Optional embedding endpoint
 
 - Disabled unless `openvision.retrieval.embeddings.provider` names a saved
-  OpenVision model provider **and** `openvision.retrieval.embeddings.model` is set.
+  OpenVision model provider (by id, display name or saved base URL; a URL that is
+  not a saved provider is never used) **and** `openvision.retrieval.embeddings.model` is set.
   There is no default provider, model or URL.
 - `POST <provider base URL>/embeddings` (OpenAI-compatible:
   `{ model, input: string[] }` → `{ data: [{ index, embedding }] }`) with the
@@ -147,5 +148,13 @@ the recorded baseline.
 - Idle release: after `idleMs` (default 60 s) without work the worker closes
   the database and exits; the next query or change starts it again and
   reconciles by stat.
-- Commands: **OpenVision: Rebuild Codebase Index** (delete then rebuild) and
-  **OpenVision: Delete Codebase Index** (delete; rebuilds on next use).
+- Commands: **OpenVision: Rebuild Codebase Index** (delete then rebuild),
+  **OpenVision: Delete Codebase Index** (delete; rebuilds on next use) and
+  **OpenVision: Pause / Resume / Cancel Codebase Indexing**. A canceled full
+  reconcile resumes on the next search.
+- Observability: beside each database, `status.json` (rewritten atomically after
+  every write job: counters, job type, elapsed time, error code, ranking mode and
+  reason, file/chunk counts) and `service.json` (activations, releases, last
+  release reason, last cancel latency, worker exits). They hold counters and
+  paths of the index directory only, no file content. The output channel
+  **OpenVision Codebase Index** logs service events.

@@ -27,6 +27,10 @@ test('embeddings are off unless a saved provider and a model are both configured
   assert.equal(embeddingSettings({ provider: 'missing', model: 'm' }, []).reason, 'saved provider "missing" not found');
   const enabled = embeddingSettings({ provider: 'Local', model: 'embed' }, [{ id: 'x', name: 'Local', url: 'http://127.0.0.1:9/v1/', apiKey: 'k' }]);
   assert.deepEqual(enabled, { enabled: true, provider: 'Local', baseUrl: 'http://127.0.0.1:9/v1', apiKey: 'k', model: 'embed' });
+  assert.equal(embeddingSettings({ provider: 'http://127.0.0.1:9/v1', model: 'embed' }, [{ id: 'x', url: 'http://127.0.0.1:9/v1/' }]).enabled, true,
+    'a saved provider can be named by its saved base URL');
+  assert.equal(embeddingSettings({ provider: 'http://127.0.0.1:8/v1', model: 'embed' }, [{ id: 'x', url: 'http://127.0.0.1:9/v1' }]).enabled, false,
+    'an unsaved URL is never used');
   const ranker = new EmbeddingRanker({}, undefined);
   assert.deepEqual(ranker.status, { mode: 'lexical', reason: 'disabled' });
 });

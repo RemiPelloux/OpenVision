@@ -7,7 +7,9 @@ export const embeddingLimits = Object.freeze({ batchSize: 32, batchChars: 64 * 1
 
 export function embeddingSettings({ provider, model } = {}, providers = []) {
   if (!provider || !model) return { enabled: false, reason: 'disabled' };
-  const saved = providers.find(entry => entry.id === provider || entry.name === provider);
+  // A saved provider is named by its id, display name or saved base URL.
+  const url = value => typeof value === 'string' ? value.replace(/\/+$/, '') : value;
+  const saved = providers.find(entry => entry.id === provider || entry.name === provider || (entry.url && url(entry.url) === url(provider)));
   if (!saved?.url) return { enabled: false, reason: `saved provider "${provider}" not found` };
   return { enabled: true, provider: saved.name ?? saved.id, baseUrl: saved.url.replace(/\/+$/, ''), apiKey: saved.apiKey, model };
 }
