@@ -230,6 +230,38 @@ could coalesce. The verifier now captures the count before removal and waits for
 a new native disposal acknowledgement. The final successful run uses that
 causal boundary. Failed records remain available locally.
 
+## Linux HTTP cleanup verification (19 October 2026)
+
+[verify-mcp-http-cleanup](../../desktop/verify-mcp-http-cleanup.mjs) now runs
+on Linux x64 as well. It uses a plain directory symlink instead of the junction
+and the namespace-sandbox flag when the setuid helper is absent. At each phase
+it records which processes hold the fixture's TCP sockets, read-only, from
+`/proc/net/tcp{,6}` inodes and `/proc/<pid>/fd` links
+([helper](../../desktop/linux-socket-owners.mjs)). Every holder must descend
+from the launched host, and after host exit no process may hold one.
+
+```sh
+npm run verify:mcp-http-cleanup
+npm run verify:mcp-http-cleanup -- --pending
+```
+
+| Run (`logs/mcp-http-cleanup-verification-…`) | Mode | Result |
+| --- | --- | --- |
+| `@@http-cleanup-a@@`, `@@http-cleanup-b@@` | Two consecutive close rejections | @@http-cleanup-result@@ |
+| `@@http-cleanup-pending-a@@`, `@@http-cleanup-pending-b@@` | Pending close, then release | @@http-cleanup-pending-result@@ |
+
+Covered: two consecutive rejections, a pending close then its eventual release,
+the bounded five-second acknowledgement with exactly one real close in flight,
+and no replacement `initialize` before release. In the socket records, the
+extension host held the discovery socket briefly; afterwards only the
+`mcp-process` utility held sockets to the fixture.
+
+Interim-build runs: `8Hzapx`, `iZ8lVf` (rejections) and `See7jo`, `oehHX9`
+(pending, acknowledgement at 5,000 ms) passed. `af9fef` (pending) failed first
+time: the utility never committed the server. That was the routing-reset defect
+in the [ownership follow-up](rea-mcp-ownership-matrix.md#19-october-2026-linux-follow-up),
+fixed before the final-build runs above. It is not counted as a pass.
+
 ## Repeat and coverage limits
 
 From the prepared OpenVision folder:

@@ -98,3 +98,35 @@ Follow-up: [MCP disconnect and timeout recovery](rea-mcp-recovery.md) records
 the expanded native failure scenarios and the subsequent STDIO readiness fix.
 Use that report for the later build's hashes and outcomes; the records above
 remain evidence for their original builds.
+
+## Linux x64 rerun (19 October 2026)
+
+The Windows-only Agent MCP workflows now also run on Linux x64. Environment:
+an Ubuntu 24.04 container, Xvfb, a disposable D-Bus session with a
+gnome-keyring login keyring (provider keys need a Secret Service; without
+one, **Save** in Add Provider never completes, runs `JB66lO` and `3CTR1k`), and
+a source build on branch `ov/mcp-safety`.
+
+```sh
+npm run verify:agent -- --mcp
+npm run verify:agent -- --mcp-stdio
+```
+
+The first Linux attempt, `MIg5RP`, found that a fresh profile never started the
+shared MCP utility. The hosted experiment bootstrap had been disabled, so
+shared-process routing never latched. The fix and its owner are described in
+the [ownership matrix follow-up](rea-mcp-ownership-matrix.md#19-october-2026-linux-follow-up).
+
+| Run (`logs/agent-verification-…`) | Transport | Result |
+| --- | --- | --- |
+| `@@agent-mcp@@` | HTTP | @@agent-mcp-result@@ |
+| `@@agent-mcp-stdio@@` | STDIO | @@agent-mcp-stdio-result@@ |
+
+Each run checks late configuration, native discovery, approval and **Skip**
+denial, real tool output in the continuation, **Stop** reaching the server
+through the shared utility, a successful call after Stop, and a full restart
+followed by another approved call. STDIO also checks that each recorded child
+PID is absent after shutdown. Stop times are single observations, not a
+benchmark. The failure-injection variants are in
+[MCP disconnect and timeout recovery](rea-mcp-recovery.md#linux-x64-rerun-19-october-2026).
+

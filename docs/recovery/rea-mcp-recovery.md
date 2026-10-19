@@ -87,3 +87,30 @@ checks and production build pass. OAuth, native cleanup failures, multi-window
 ownership, long-session growth and macOS/Linux remain open. OV-303 and OV-1003
 remain Partial; the accepted denominator stays at 42 stories with three fully
 Verified.
+
+## Linux x64 rerun (19 October 2026)
+
+Same environment as the [Linux lifecycle rerun](rea-mcp-lifecycle.md#linux-x64-rerun-19-october-2026):
+
+```sh
+npm run verify:agent -- --mcp --mcp-failures
+npm run verify:agent -- --mcp-stdio --mcp-failures
+```
+
+| Run (`logs/agent-verification-…`) | Transport | Result |
+| --- | --- | --- |
+| `@@agent-mcp-failures@@` | HTTP | @@agent-mcp-failures-result@@ |
+| `@@agent-mcp-stdio-failures@@` | STDIO | @@agent-mcp-stdio-failures-result@@ |
+
+Both runs cover denial with **Skip**, Stop through the shared utility, real
+output, a disconnect during a call, and the production two-minute idle timeout.
+Each failed call executes exactly once: the complete-trace assertion fails if
+`disconnect` or `timeout` reaches the server twice. Later separately approved
+calls succeed, and a full restart is followed by another approved call. The
+timeout flow includes approval and the continuation, so it exceeds 120 s.
+
+Interim builds on the same branch also passed both variants: `kHPQVp` (HTTP,
+Stop 298 ms, timeout flow 128,410 ms) and `BPNzSJ` (STDIO, Stop 275 ms,
+timeout flow 127,910 ms, all child PIDs absent). They precede the routing-reset
+fix and are superseded by the final-build runs above.
+
