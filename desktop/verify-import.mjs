@@ -1,31 +1,48 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { release, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { _electron } from '../tooling/browser.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash, optionalFile } from './import-files.mjs';
-import { parseConfiguration } from './import-json.mjs';
-import { execFile } from 'node:child_process';
+import { parseConfiguration, protectedSettings } from './import-json.mjs';
+import { categories, declaredDestinations, excludedData } from './cursor-import.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
+import { createCursorLinuxProfile, fixtureExtensions, fixtureMarker, fixtureSettings, namedProfile, reinstallForLinux, treeDigest } from './cursor-profile-fixture.mjs';
+import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { enterWorkspace } from './verification-workspace.mjs';
 
 // Never attach to desktop-launch.json: every verification launch has a disposable profile.
+// --realistic-profile imports a generated Cursor 3.21.x Linux layout through default
+// discovery (disposable HOME/XDG_CONFIG_HOME) and named source profiles in the dialog.
+const realisticMode = process.argv.includes('--realistic-profile');
+if (realisticMode) assert.equal(process.platform, 'linux', '--realistic-profile generates the Cursor Linux layout');
 const root = resolve(import.meta.dirname, '..'), { layout, appRoot, runtimeRoot } = await verificationRuntime(root);
-const directory = await mkdtemp(join(root, 'logs/import-verification-'));
-const source = await mkdtemp(join(tmpdir(), 'openvision-import-source-'));
+await mkdir(join(root, 'logs'), { recursive: true });
+const directory = await mkdtemp(join(root, `logs/import-verification-${realisticMode ? 'realistic-' : ''}`));
+// Sources must be outside the installation, which owns logs/.
+const source = await mkdtemp(join(tmpdir(), realisticMode ? 'openvision-cursor-fixture-' : 'openvision-import-source-'));
 const profile = join(directory, 'profile'), extensions = join(directory, 'extensions'), project = join(directory, 'project');
 const user = join(profile, 'User'), sourceUser = join(source, 'User'), sourceExtensions = join(source, 'extensions');
 const settingsPath = join(user, 'settings.json'), extensionName = 'openvision.import-verification-1.0.0';
-const result = { directory, source, checks: {}, errors: [], workbenchHash: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
-  scope: 'Native import IPC and settings dialog with disposable profiles and synthetic files. No AI requests.',
-  limitations: ['Windows native check; named profile import fails closed until profile resource ownership is supported.',
-    'Interrupted process, physical full-disk and multi-file restore I/O failure are not established.'] };
+const platform = `${process.platform}-${process.arch}`;
+const result = { directory, source, mode: realisticMode ? 'realistic-profile' : 'synthetic', checks: {}, errors: [],
+  identity: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+    dirty: execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean).length,
+    platform, osRelease: release(), node: process.version, checkedAt: new Date().toISOString() },
+  workbenchHash: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+  scope: `Native import IPC and settings dialog on ${platform} with disposable profiles and ${realisticMode
+    ? 'a locally generated, controlled Cursor 3.21.x Linux profile layout (not real user data)' : 'synthetic files'}. No AI requests.`,
+  limitations: [`Native ${platform} check only; other platforms need their own run.`,
+    'Named OpenVision profiles are not import destinations (fail closed); a named Cursor profile can only be a source.',
+    'Interruption and full/read-only volume recovery are covered by verify:import-faults, not this run.'] };
 let app, page;
 const preserved = new Map();
 const normalPaths = [join(root, 'data/local/User/settings.json'), join(root, 'data/local/User/keybindings.json'), join(root, 'data/local-extensions/extensions.json')];
 const normalHashes = await Promise.all(normalPaths.map(fileHash));
+let fixture, sourceDigest;
 
 async function file(path, content) {
   await mkdir(join(path, '..'), { recursive: true }); await writeFile(path, content);
@@ -38,40 +55,60 @@ async function rejected(request, pattern) {
   const value = await invoke(request); assert.equal(value.ok, false); assert.match(value.error, pattern); return value;
 }
 
-async function prepare() {
-  await Promise.all([mkdir(user, { recursive: true }), mkdir(extensions), mkdir(project), mkdir(sourceUser), mkdir(sourceExtensions)]);
+async function prepareDestination() {
+  await Promise.all([mkdir(user, { recursive: true }), mkdir(extensions), mkdir(project)]);
   await file(settingsPath, '// Byte-exact settings backup — 日本語\r\n' + JSON.stringify({ ...verificationSettings,
     'git.enabled': false, 'editor.fontSize': 13, 'window.restoreWindows': 'none' }, null, 2) + '\r\n');
   await file(join(user, 'keybindings.json'), '// retain comment\r\n[{"key":"ctrl+j","command":"old.command"}]\r\n');
   await file(join(user, 'tasks.json'), '{"version":"2.0.0","tasks":[]}\r\n');
   await file(join(user, 'snippets/import-fixture.code-snippets'), '{"old":{"prefix":"old","body":"original"}}\r\n');
-  await file(join(sourceUser, 'settings.json'), '{"editor.fontSize":17,"window.title":"Wrong title","openvision.importVerification":true}');
-  await file(join(sourceUser, 'keybindings.json'), '[{"key":"ctrl+j","command":"new.command"}]');
-  await file(join(sourceUser, 'tasks.json'), '{"version":"2.0.0","tasks":[{"label":"fixture","type":"shell","command":"echo fixture"}]}');
-  await file(join(sourceUser, 'snippets/import-fixture.code-snippets'), '{"new":{"prefix":"new","body":"imported"}}');
-  await file(join(sourceExtensions, extensionName, 'package.json'), JSON.stringify({ name: 'import-verification', publisher: 'openvision',
-    version: '1.0.0', engines: { vscode: '^1.96.0' }, displayName: 'Import Fixture' }));
-  await file(join(sourceExtensions, 'extensions.json'), JSON.stringify([{ identifier: { id: 'openvision.import-verification' }, version: '1.0.0', relativeLocation: extensionName }]));
   await file(join(directory, 'other-profile/User/settings.json'), 'Unrelated profile sentinel');
 }
 
-async function launch() {
-  const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
-  app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
+async function prepare() {
+  await prepareDestination();
+  await Promise.all([mkdir(sourceUser), mkdir(sourceExtensions)]);
+  await file(join(sourceUser, 'settings.json'), JSON.stringify({ 'editor.fontSize': 17, 'openvision.importVerification': true, ...fixtureSettings.protected }));
+  await file(join(sourceUser, 'keybindings.json'), '[{"key":"ctrl+j","command":"new.command"}]');
+  await file(join(sourceUser, 'tasks.json'), '{"version":"2.0.0","tasks":[{"label":"fixture","type":"shell","command":"echo fixture"}]}');
+  await file(join(sourceUser, 'snippets/import-fixture.code-snippets'), '{"new":{"prefix":"new","body":"imported"}}');
+  // Excluded stores beside the imported categories; every one carries the private marker.
+  await file(join(sourceUser, 'globalStorage/state.vscdb'), `${fixtureMarker}_STATE secret://openvision.fixture ${fixtureMarker}_SECRET`);
+  await file(join(sourceUser, 'globalStorage/storage.json'), JSON.stringify({ userDataProfiles: [{ location: '-1a2b', name: `${fixtureMarker}_PROFILE` }] }));
+  await file(join(sourceUser, 'workspaceStorage/0f1e/state.vscdb'), `${fixtureMarker}_WORKSPACE_CHAT`);
+  await file(join(sourceUser, 'profiles/-1a2b/settings.json'), JSON.stringify({ 'editor.fontSize': 30, marker: `${fixtureMarker}_NAMED` }));
+  await file(join(sourceExtensions, '.obsolete'), JSON.stringify({ [`${fixtureMarker}-1.0.0`]: true }));
+  await file(join(sourceExtensions, extensionName, 'package.json'), JSON.stringify({ name: 'import-verification', publisher: 'openvision',
+    version: '1.0.0', engines: { vscode: '^1.96.0' }, displayName: 'Import Fixture' }));
+  await file(join(sourceExtensions, 'extensions.json'), JSON.stringify([{ identifier: { id: 'openvision.import-verification' }, version: '1.0.0', relativeLocation: extensionName }]));
+  sourceDigest = await treeDigest([source]);
+}
+
+async function launch(env = {}) {
+  const environment = { ...process.env, ...env }; delete environment.ELECTRON_RUN_AS_NODE;
+  app = await _electron.launch({ executablePath: layout.executable, env: environment, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', extensions, '--new-window', '--disable-updates',
-      '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes', project] });
+      '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes',
+      ...await linuxSandboxArguments(layout.host), project] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('pageerror', error => result.errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
-  result.nativeOwnership = await app.evaluate(() => {
+  result.nativeOwnership ??= await app.evaluate(() => {
     const owner = globalThis.openvisionImportOwner, window = owner?.windowsMainService.getWindows()[0], profile = window?.profile;
     return { resources: Object.fromEntries(['settingsResource', 'keybindingsResource', 'tasksResource', 'snippetsHome', 'extensionsResource']
       .map(key => [key, { scheme: profile?.[key]?.scheme, fsPath: profile?.[key]?.fsPath }])),
       isDefault: profile?.isDefault, userDataPath: owner?.environmentMainService.userDataPath, extensionsPath: owner?.environmentMainService.extensionsPath };
   });
 }
+async function close() {
+  const child = app.process();
+  await app.close().catch(error => { result.cleanupError = String(error); process.exitCode = 1; });
+  (result.hostExits ??= []).push(child.exitCode);
+  if (child.exitCode !== 0) throw new Error(`Owned host exited ${child.exitCode}`);
+  app = undefined;
+}
 
-async function dialogPreview(options) {
+async function openDialog() {
   const general = page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^General$/ });
   for (let attempt = 0; attempt < 3; attempt++) {
     const tab = page.locator('.tabs-container .tab').filter({ hasText: 'OpenVision Settings' });
@@ -82,18 +119,70 @@ async function dialogPreview(options) {
   }
   await page.getByRole('button', { name: 'Import from Cursor', exact: true }).click();
   const dialog = page.locator('.openvision-import-dialog');
+  await dialog.getByRole('status').filter({ hasText: 'Ready' }).waitFor();
+  // The exclusion declaration is visible before any preview.
+  const note = await dialog.locator('.openvision-import-exclusions').innerText();
+  for (const entry of excludedData) assert.ok(note.includes(entry), `dialog declares exclusion: ${entry}`);
+  return dialog;
+}
+
+async function dialogPreview(options) {
+  const dialog = await openDialog();
   await dialog.getByLabel('Cursor User directory', { exact: true }).fill(options.user);
   await dialog.getByLabel('Cursor extensions directory', { exact: true }).fill(options.extensions);
   await dialog.getByRole('button', { name: 'Preview Import', exact: true }).click();
   await dialog.getByRole('status').filter({ hasText: '6 files to import' }).waitFor();
-  assert.ok((await dialog.locator('pre').innerText()).toLowerCase().includes(user.toLowerCase()));
+  const details = await dialog.locator('pre').innerText();
+  assert.ok(details.toLowerCase().includes(user.toLowerCase()));
+  for (const entry of excludedData) assert.ok(details.includes(entry), `preview declares exclusion: ${entry}`);
   await page.screenshot({ path: join(directory, 'preview.png') });
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
-  result.checks.native_dialog_previews_selected_profile = true;
+  result.checks.native_dialog_previews_selected_profile_and_declares_exclusions = true;
+}
+
+// Every path a preview or backup manifest names must be one of the declared category files.
+function assertDeclared(paths) {
+  for (const path of paths) {
+    const [owner, ...rest] = path.split('/'), relative = rest.join('/');
+    const extension = owner === 'extensions' && relative !== 'extensions.json' ? rest[0] : undefined;
+    assert.ok(declaredDestinations[owner]?.(relative, extension), `declared destination: ${path}`);
+  }
+}
+async function manifestPaths(backup) {
+  const manifest = JSON.parse(await readFile(join(backup, 'manifest.json'), 'utf8'));
+  return manifest.records.map(record => `${record.owner}/${record.path.split('\\').join('/')}`);
+}
+async function profileFiles(directoryPath) {
+  return (await readdir(directoryPath, { recursive: true, withFileTypes: true })).filter(entry => entry.isFile()).map(entry => join(entry.parentPath, entry.name));
+}
+// No byte of any excluded source store (all marked) reached the destination profile or extensions.
+async function assertNoPrivateData(check) {
+  const leaked = [];
+  for (const path of [...await profileFiles(profile), ...await profileFiles(extensions)])
+    if ((await readFile(path).catch(() => Buffer.alloc(0))).includes(fixtureMarker)) leaked.push(path);
+  assert.deepEqual(leaked, [], 'no excluded source data in the destination');
+  result.checks[check] = true;
+}
+function assertProtected(settings, expectedTitle = verificationSettings['window.title']) {
+  assert.equal(settings['window.title'], expectedTitle);
+  assert.equal(settings['update.mode'], 'none');
+  assert.equal(settings['extensions.autoUpdate'], false);
+  assert.equal(settings['telemetry.telemetryLevel'], 'off');
+  assert.equal(settings['telemetry.enableTelemetry'], false);
+  for (const [key, value] of Object.entries(fixtureSettings.protected))
+    assert.ok(!protectedSettings.has(key) || JSON.stringify(settings[key]) !== JSON.stringify(value), `protected ${key} not imported`);
+}
+async function assertRelaunchedTitle() {
+  await close(); await launch(realisticMode ? fixture.env : {});
+  const title = await page.title();
+  result.relaunchedTitle = title;
+  assert.ok(title.startsWith('OpenVision TEST'), `window title stays OpenVision's: ${title}`);
+  for (const value of ['Cursor fixture title', 'Named fixture title']) assert.ok(!title.includes(value));
+  result.checks.relaunched_window_uses_protected_title = true;
 }
 
 async function verify() {
-  const options = { user: sourceUser, extensions: sourceExtensions, categories: ['settings', 'keybindings', 'tasks', 'snippets', 'extensions'], overwrite: true };
+  const options = { user: sourceUser, extensions: sourceExtensions, categories, overwrite: true };
   const paths = [settingsPath, join(user, 'keybindings.json'), join(user, 'tasks.json'), join(user, 'snippets/import-fixture.code-snippets'),
     join(extensions, 'extensions.json'), join(extensions, extensionName, 'package.json')];
   for (const path of paths) preserved.set(path, await optionalFile(path));
@@ -101,6 +190,7 @@ async function verify() {
   for (const [path, before] of preserved) assert.deepEqual(await optionalFile(path), before);
   result.checks.preview_read_only = true;
   let preview = await ok({ action: 'preview', options });
+  assertDeclared(preview.paths);
   await writeFile(settingsPath, '{"changedAfterPreview":true}');
   await rejected({ action: 'apply', token: preview.token }, /changed since/);
   await writeFile(settingsPath, preserved.get(settingsPath));
@@ -116,6 +206,10 @@ async function verify() {
   assert.ok(registry.some(entry => entry.identifier.id === 'openvision.import-verification'
     && entry.location.path.toLowerCase().includes('/extensions/openvision.import-verification-1.0.0')));
   result.checks.native_import_targets_selected_profile_and_extensions = true;
+  assertProtected(settings);
+  result.checks.protected_settings_not_imported_telemetry_off = true;
+  assertDeclared(await manifestPaths(imported.backup));
+  await assertNoPrivateData('excluded_stores_neither_imported_nor_written');
   const repeated = await ok({ action: 'preview', options }); assert.equal(repeated.files, 0);
   assert.equal((await ok({ action: 'apply', token: repeated.token })).backup, null);
   result.checks.idempotent_import = true;
@@ -140,6 +234,87 @@ async function verify() {
   result.checks.normal_and_other_profiles_untouched = true;
   const recoveryPreview = await ok({ action: 'preview', options });
   result.cliRecoveryBackup = (await ok({ action: 'apply', token: recoveryPreview.token })).backup;
+  await assertRelaunchedTitle();
+}
+
+async function verifyRealistic() {
+  const discovered = await ok({ action: 'defaults' });
+  assert.equal(discovered.options.user, fixture.user); assert.equal(discovered.options.extensions, fixture.extensions);
+  assert.deepEqual(discovered.profiles.map(entry => entry.name), ['Default', `${namedProfile.name} (${namedProfile.location})`]);
+  result.checks.default_discovery_finds_generated_linux_layout = true;
+  const paths = [settingsPath, join(user, 'keybindings.json'), join(user, 'tasks.json'), join(user, 'snippets/import-fixture.code-snippets'),
+    join(user, 'snippets/python.json'), join(user, 'snippets/javascript.json'), join(user, 'snippets/global.code-snippets'), join(extensions, 'extensions.json'),
+    ...[fixtureExtensions.universal, fixtureExtensions.native].map(extension => join(extensions, extension.relativeLocation, 'package.json'))];
+  for (const path of paths) preserved.set(path, await optionalFile(path));
+  const snapshot = async () => Promise.all([...preserved.keys()].map(optionalFile));
+  const before = await snapshot();
+  // 1. The dialog opens with the discovered paths; all categories with a win32-x64 extension registered fail closed.
+  let dialog = await openDialog();
+  assert.equal(await dialog.getByLabel('Cursor User directory', { exact: true }).inputValue(), fixture.user);
+  assert.equal(await dialog.getByLabel('Cursor extensions directory', { exact: true }).inputValue(), fixture.extensions);
+  await dialog.getByRole('button', { name: 'Preview Import', exact: true }).click();
+  await dialog.getByRole('status').filter({ hasText: `${fixtureExtensions.wrongPlatform.id} targets win32-x64` }).waitFor();
+  assert.equal(await dialog.getByRole('button', { name: 'Import', exact: true }).isDisabled(), true);
+  assert.deepEqual(await snapshot(), before);
+  result.checks.wrong_platform_extension_fails_closed_without_writes = true;
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  // 2. The user's remedy: reinstall the Linux build in Cursor. Re-baseline the source digest.
+  const reinstalled = await reinstallForLinux(fixture);
+  preserved.set(join(extensions, reinstalled.relativeLocation, 'package.json'), undefined);
+  sourceDigest = await treeDigest(fixture.roots);
+  // 3. Import the named source profile through the real dialog Import button.
+  dialog = await openDialog();
+  await dialog.getByLabel('Cursor profile', { exact: true }).selectOption({ label: `${namedProfile.name} (${namedProfile.location})` });
+  assert.equal(await dialog.getByLabel('Cursor User directory', { exact: true }).inputValue(), fixture.named);
+  await dialog.getByRole('button', { name: 'Preview Import', exact: true }).click();
+  await dialog.getByRole('status').filter({ hasText: /files to import/ }).waitFor();
+  const details = await dialog.locator('pre').innerText();
+  for (const entry of excludedData) assert.ok(details.includes(entry), `preview declares exclusion: ${entry}`);
+  assert.ok(details.includes(join(fixture.named, 'tasks.json')), 'named profile without tasks.json reports it as not found');
+  await page.screenshot({ path: join(directory, 'realistic-preview.png') });
+  await dialog.getByRole('button', { name: 'Import', exact: true }).click();
+  await dialog.getByRole('status').filter({ hasText: /^Imported \d+ files/ }).waitFor();
+  const named = { backup: (await dialog.locator('pre').innerText()).replace(/^Backup: /, '').trim() };
+  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  named.paths = await manifestPaths(named.backup);
+  result.namedImport = named;
+  assertDeclared(named.paths);
+  const settings = parseConfiguration(await readFile(settingsPath, 'utf8'));
+  assert.equal(settings['editor.fontSize'], fixtureSettings.named['editor.fontSize']);
+  assert.equal(settings['openvision.fixture.namedProfile'], true);
+  assert.equal(settings['openvision.fixture.defaultProfile'], undefined, 'default profile settings not mixed in');
+  assertProtected(settings);
+  const bindings = parseConfiguration(await readFile(join(user, 'keybindings.json'), 'utf8'), 'array');
+  assert.ok(bindings.some(binding => binding.command === 'workbench.action.files.newUntitledFile'));
+  assert.ok(await optionalFile(join(user, 'snippets/python.json')));
+  assert.equal(await optionalFile(join(user, 'snippets/javascript.json')), undefined, 'only the named profile snippets');
+  const registry = JSON.parse(await readFile(join(extensions, 'extensions.json'), 'utf8'));
+  assert.deepEqual(registry.map(entry => entry.identifier.id).sort(), [fixtureExtensions.universal.id, fixtureExtensions.native.id, reinstalled.id].sort());
+  assert.ok(registry.every(entry => [undefined, 'linux-x64'].includes(entry.metadata?.targetPlatform)));
+  assert.equal(await optionalFile(join(extensions, '.obsolete')), undefined);
+  assert.equal(await optionalFile(join(extensions, fixtureExtensions.wrongPlatform.relativeLocation, 'package.json')), undefined);
+  result.checks.named_source_profile_imports_declared_categories_through_dialog = true;
+  result.checks.protected_settings_not_imported_telemetry_off = true;
+  // 4. A settings-only import of the default profile moves settings.json and nothing else.
+  const keybindingsBefore = await readFile(join(user, 'keybindings.json'));
+  const preview = await ok({ action: 'preview', options: { ...discovered.options, categories: ['settings'] } });
+  assert.deepEqual(preview.paths, ['user/settings.json']);
+  const settingsOnly = await ok({ action: 'apply', token: preview.token });
+  assert.deepEqual(await manifestPaths(settingsOnly.backup), ['user/settings.json']);
+  const defaultSettings = parseConfiguration(await readFile(settingsPath, 'utf8'));
+  assert.equal(defaultSettings['openvision.fixture.defaultProfile'], true);
+  assertProtected(defaultSettings);
+  assert.deepEqual(await readFile(join(user, 'keybindings.json')), keybindingsBefore);
+  result.checks.only_selected_category_moves = true;
+  await assertNoPrivateData('excluded_stores_neither_imported_nor_written');
+  await assertRelaunchedTitle();
+  // 5. Restore newest first: every file returns to its exact pre-import bytes or absence.
+  assert.equal((await ok({ action: 'restore', backup: settingsOnly.backup })).restored, 1);
+  assert.ok((await ok({ action: 'restore', backup: named.backup })).restored >= named.paths.length);
+  for (const [path, bytes] of preserved) assert.deepEqual(await optionalFile(path), bytes, path);
+  result.checks.byte_exact_restore_of_realistic_imports = true;
+  assert.deepEqual(await Promise.all(normalPaths.map(fileHash)), normalHashes);
+  result.checks.normal_and_other_profiles_untouched = true;
 }
 
 async function verifyCliRecovery() {
@@ -161,21 +336,28 @@ async function verifyCliRecovery() {
   result.checks.cli_restores_native_backup_byte_exact_after_host_exit = true;
 }
 
+async function sourceUnchanged() {
+  assert.deepEqual(await treeDigest(realisticMode ? fixture.roots : [source]), sourceDigest, 'source tree byte-identical');
+  result.sourceTree = { files: sourceDigest.files, sha256: sourceDigest.sha256 };
+  result.checks.source_tree_unchanged = true;
+}
+
 try {
-  await prepare(); await launch(); await verify();
+  if (realisticMode) {
+    await prepareDestination();
+    fixture = await createCursorLinuxProfile(source);
+    fixture.env = { HOME: fixture.home, XDG_CONFIG_HOME: fixture.config };
+    sourceDigest = await treeDigest(fixture.roots);
+    await launch(fixture.env); await verifyRealistic();
+  } else { await prepare(); await launch(); await verify(); }
   assert.deepEqual(result.errors, []); result.status = 'passed';
 } catch (error) {
   result.status = 'failed'; result.error = error.stack; process.exitCode = 1;
   await page?.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
 } finally {
-  if (app) {
-    const child = app.process();
-    await app.close().catch(error => { result.cleanupError = String(error); process.exitCode = 1; });
-    result.exitCode = child.exitCode;
-    if (child.exitCode !== 0) { result.status = 'failed'; process.exitCode = 1; }
-  }
+  if (app) await close().catch(error => { result.status = 'failed'; result.error ??= error.stack; process.exitCode = 1; });
   if (result.status === 'passed') {
-    try { await verifyCliRecovery(); }
+    try { if (!realisticMode) await verifyCliRecovery(); await sourceUnchanged(); }
     catch (error) { result.status = 'failed'; result.error = error.stack; process.exitCode = 1; }
   }
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
