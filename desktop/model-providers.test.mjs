@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { ModelProviders, normalizeBaseUrl, normalizeCustomHeaders, parseModels, activeModelIds, allCatalog, modelPreference, modelPreferences, requestProvider, requestAgentProvider } from './model-providers.js';
+import { ModelProviders, backupAndResetProviders, normalizeBaseUrl, normalizeCustomHeaders, parseModels, activeModelIds, allCatalog, modelPreference, modelPreferences, requestProvider, requestAgentProvider } from './model-providers.js';
 import { customModels } from './custom-models.mjs';
 import { providerDefaultReasoning } from './model-reasoning.js';
 import { modelSelectionId } from './model-identity.js';
@@ -388,4 +388,33 @@ test('a failed edit and rollback is committed before the next change instead of 
   await reopened.ready;
   assert.deepEqual(reopened.state.providers.map(item => item.name), ['Renamed']);
   assert.equal(await services.secrets.get(`openvision.provider.${saved.id}`), 'test-secret');
+});
+
+test('an unreadable provider configuration degrades the catalog, stays unchanged, and resets only after a verified backup', async () => {
+  const cache = new Map([['openvision.model-providers.v1', '{"version":1,"providers":[{"id":']]), commits = [];
+  const application = { flush: async () => {}, database: { updateItems: async request => {
+    commits.push(request);
+    request.insert?.forEach((value, key) => commits.disk.set(key, value));
+    request.delete?.forEach(key => commits.disk.delete(key));
+  } } };
+  commits.disk = new Map(cache);
+  const storage = { get: key => cache.get(key), store: (key, value) => cache.set(key, value), remove: key => cache.delete(key),
+    getStorage: scope => scope === -1 ? application : undefined };
+  const queue = globalThis.openvisionProfileRecoveryQueue = [];
+  try {
+    assert.deepEqual(allCatalog(storage), [], 'catalog readers fall back instead of throwing');
+    assert.throws(() => activeModelIds(storage), 'request routing stays strict');
+    assert.equal(queue.length, 1, 'the unreadable configuration is reported once');
+    assert.match(queue[0].title, /could not be read/);
+    allCatalog(storage);
+    assert.equal(queue.length, 1);
+    assert.throws(() => new ModelProviders({ storage }), /JSON|Unexpected|Invalid/, 'writers still refuse');
+    assert.equal(cache.get('openvision.model-providers.v1'), '{"version":1,"providers":[{"id":');
+    const backup = await backupAndResetProviders(storage, 1234);
+    assert.equal(backup, 'openvision.model-providers.v1.unreadable.1234');
+    assert.equal(commits.disk.get(backup), '{"version":1,"providers":[{"id":', 'the exact bytes are backed up and acknowledged');
+    assert.equal(commits.disk.has('openvision.model-providers.v1'), false);
+    assert.ok(commits.findIndex(request => request.insert?.has(backup)) < commits.findIndex(request => request.delete), 'backup before delete');
+    await assert.rejects(backupAndResetProviders({ ...storage, get: () => '{"version":1,"providers":[],"activeId":null}' }), /readable/);
+  } finally { delete globalThis.openvisionProfileRecoveryQueue; }
 });

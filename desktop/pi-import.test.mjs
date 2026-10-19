@@ -144,8 +144,13 @@ test('user-specified capabilities override discovery per field and feed reasonin
   assert.throws(() => normalizeUserCapabilities({ reasoningEffortValues: ['low', 'low'] }), /unique/);
   assert.throws(() => normalizeUserCapabilities({ supportsVision: 'yes' }), /true or false/);
   assert.equal(normalizeUserCapabilities({ contextLength: undefined }), undefined);
-  assert.throws(() => allCatalog(state({ userCapabilities: { contextLength: -1 } })), /Invalid saved model capabilities/);
-  assert.throws(() => allCatalog(state({}, { importSource: { kind: 'other' } })), /Invalid saved provider/);
+  // The display catalog reports unreadable saved data instead of throwing (OV-1004).
+  const queue = globalThis.openvisionProfileRecoveryQueue = [];
+  try {
+    assert.deepEqual(allCatalog(state({ userCapabilities: { contextLength: -1 } })), []);
+    assert.deepEqual(allCatalog(state({}, { importSource: { kind: 'other' } })), []);
+    assert.deepEqual(queue.map(finding => finding.title.match(/\((.*)\)/)[1]), ['Invalid saved model capabilities.', 'Invalid saved provider.']);
+  } finally { delete globalThis.openvisionProfileRecoveryQueue; }
 });
 
 test('pi host reads only, withholds keys until the previewed digest is confirmed, and the CLI queues without keys', async () => {
