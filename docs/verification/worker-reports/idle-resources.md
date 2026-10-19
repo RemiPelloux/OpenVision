@@ -155,3 +155,75 @@ The evidence is in [idle memory](../../performance/idle-memory-linux.md),
   the duration of a run. It is off by default and is not used in budgeted runs.
 - The proxy-variable and Secret Service host requirements apply to any
   verifier that adds a provider. Other workers report the same.
+
+## Round 2: merged main (19 October 2026, late)
+
+The branch was reset to `origin/main` (`3b97df1e`, all earlier work merged).
+Builds were clean rebuilds, with Node 24.18.0 and user `ov` under
+`xvfb-run` + `dbus-run-session` with a disposable keyring and no proxy
+variables.
+
+**Gaps given.** On merged main, startup traversal measured 1,394 > 1,300
+listings, and the memory slope was 15.7 > 15 MiB in 1 of 3 runs.
+
+### Startup traversal: fixed, 3/3
+
+- **Cause (observed).** The OV-103 startup sweep for interrupted Agent-write
+  temporaries (`agent-write-durability-customization.mjs`, merged after the
+  first round) walked every open root in-process on every activation. That
+  is 132 extra fixture listings in the agent-exec host (`DkWJ9H`: 1,398).
+- **Correction to round 1.** The `exec:exe` listings are the file watcher's
+  crawl, not sandbox-preflight children.
+- **Fix** (`508e3674`). The sweep now runs from per-session records in
+  profile storage. A walk happens only after an unclean ending; temporaries
+  recorded at a clean exit are removed by path; a fresh profile does no work.
+  Details are in [startup traversal](../../performance/startup-traversal-linux.md#merged-code-19-october-2026-round-2).
+- `verify:startup-traversal`: `UMdGBr` 1,242, `ca7P1K` 1,256, `1L0S88` 1,254.
+  **3/3 pass, first attempts**, on a clean rebuild. Budget unchanged.
+- OV-103 regression check: `verify:agent-interruption` passed
+  (`agent-interruption-H5f6EY`), as did `npm run test:agent-review` (114/114).
+  The new session-record tests run real child processes for SIGKILL, clean
+  exit, in-flight temporaries and live windows.
+
+### Slope: fixed, 3/3
+
+The settled iteration samples now follow a forced renderer GC. The slope was
+6.5, 9.0 and 10.2 MiB per iteration in the three full runs below; the budget
+is 15. The renderer climbs evenly by about 7 MiB per iteration, which is the
+chat retention.
+
+### Idle CPU: fails 3/3 on this host (host change, shown by A/B)
+
+`idle-memory-round2-1-qqsKOq`, `-2-yOd4xb` and `-3-QtPsrT` each failed only
+`idleCpuSecondsPer10Min`:
+
+- renderer 17.4–18.6 against a limit of 15;
+- extension hosts 24.8–25.7 against a limit of 20.
+
+Every other budget passed. A/B on this host against the pre-merge build
+`fa5f880d` (`ab-old3-VRnMal`, `ab-old4-BTxGzV`, against current
+`ab-new1/2/3`, interleaved) gave the same CPU for both builds:
+
+| Build | Renderer CPU s/10 min | Extension hosts CPU s/10 min |
+| --- | --- | --- |
+| `fa5f880d` | 17.7–17.8 | 24.1–24.4 |
+| Current | 17.9–18.5 | 23.6–24.5 |
+
+The same `fa5f880d` build measured 10.5 / 16.7 earlier in this session. The
+increase is the host, not the product. The limits were not raised.
+
+### Recommendation
+
+**Hold OV-1003.** Startup traversal and the long-session slope meet their
+budgets 3/3 first-time on merged code. The idle-CPU budget cannot pass on the
+current host for either build. It needs an owner decision: rerun on a host
+comparable to the one the limits came from, or adopt a host-normalized
+idle-CPU budget (for example a calibration workload measured in the same run).
+
+### Defaults pending owner decision (added)
+
+- Interrupted-write temporaries are swept from session records instead of a
+  walk per start. Temporaries left by the agent-host or daemon writers while
+  the agent-exec host exits cleanly fall back to the same-file sweep.
+- The forced renderer GC before settled iteration samples is a method change.
+  `--no-forced-gc` reproduces the earlier method.
