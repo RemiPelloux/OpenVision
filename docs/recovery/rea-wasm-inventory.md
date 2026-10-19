@@ -86,3 +86,27 @@ only: no WASM module execution, implicit network fetch or live application
 verification occurred. Recovering or replacing matching upstream implementations,
 testing the JavaScript bindings, and independently rebuilding the runtime remain
 separate roadmap work. No performance advantage is inferred from these records.
+
+## 19 October Linux follow-up: esbuild without REA limits
+
+The remaining record gap now has non-REA evidence (OV-801; acceptance of this
+evidence instead of a REA record is a default pending owner decision):
+
+- The Linux x64 3.21.13 payload has the same digest
+  (`c4f8ab7b1cd318f6423b737c5da275c57c24489fe0ea926adc04d62e58394103`) and is
+  byte-identical to `esbuild.wasm` in the npm `esbuild-wasm@0.25.9` tarball.
+- Its embedded Go module information names `github.com/evanw/esbuild`,
+  `vcs.revision=195e05c16f03a341390feef38b8ebf17d3075e14` (tag `v0.25.9`),
+  `-trimpath`, `GOOS=js GOARCH=wasm`; its producers section names Go 1.23.12.
+- `npm run recovery:esbuild-wasm` rebuilt it from a fresh clone of the tag with
+  the pinned Go 1.23.12 archive (`go build -ldflags=-s -w -trimpath ./cmd/esbuild`,
+  as in the tag's `scripts/esbuild.js`). Run `logs/esbuild-wasm-evidence-PzuSSB`:
+  12,216,279 bytes, **digest identical**.
+- Callers: the Agent canvas renderer in `cursor-agent-exec` and
+  `cursor-agent-host` lazily imports `esbuild-wasm` to transform canvas JSX.
+  The measured Linux workload did not read it
+  ([loaded roles](native-loaded-roles-linux.md)).
+
+The bounded summary (V8 validation, section headers, imports/exports, producers,
+`go:buildid`) is in the run's `result.json` and the committed
+[inventory](native-inventory-linux-x64.json). No WAT was produced.
