@@ -71,6 +71,7 @@ import { installUnopenedAgentUndo } from './agent-closed-file-undo-customization
 import { installAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
 import { installProfileRecovery } from './profile-recovery-customization.mjs';
 import { installReviewSnapshotGuidance } from './review-snapshot-guidance-customization.mjs';
+import { installAutomaticTasksOff } from './automatic-tasks-customization.mjs';
 import { installAgentReviewPersistence } from './agent-review-persist-customization.mjs';
 import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
 import { installReviewDescriptors } from './review-descriptors-customization.mjs';
@@ -146,6 +147,7 @@ await installProtectedExtensions(root);
 await installCompletion(root);
 await installInlineEdit(root);
 await installApprovalDefault(root);
+await installAutomaticTasksOff(root);
 await installLocalChatTitles(root);
 await installExplicitWorktrees(root);
 await installLocalProfile(root);

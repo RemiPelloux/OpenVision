@@ -98,17 +98,21 @@ async function roles(app, hostPid) {
 // Re-identifies the target immediately before the signal: same pid and start
 // time, still in the owned host's group, still reported by Electron under the
 // expected role. Only then is SIGKILL sent.
+// Every process of the role is killed (the workbench runs several extension
+// hosts; the Agent's is one of them).
 async function killOwned(app, hostPid, role) {
   const candidates = (await roles(app, hostPid)).filter(entry => entry.role === role);
   assert.equal(candidates.length >= 1, true, `No owned ${role} process`);
-  const target = candidates[0];
-  const now = procStat(target.pid);
-  assert.ok(now && now.start === target.start && now.pgid === hostPid && now.state !== 'Z', `${role} identity changed before signal`);
-  const again = (await roles(app, hostPid)).find(entry => entry.pid === target.pid);
-  assert.equal(again?.role, role, `${role} was not re-identified by Electron`);
-  process.kill(target.pid, 'SIGKILL');
-  await waitFor(() => { const stat = procStat(target.pid); return !stat || stat.start !== target.start || stat.state === 'Z'; }, `${role} did not exit`, 10000);
-  return target;
+  const again = await roles(app, hostPid);
+  for (const target of candidates) {
+    const now = procStat(target.pid);
+    assert.ok(now && now.start === target.start && now.pgid === hostPid && now.state !== 'Z', `${role} identity changed before signal`);
+    assert.equal(again.find(entry => entry.pid === target.pid)?.role, role, `${role} was not re-identified by Electron`);
+  }
+  for (const target of candidates) process.kill(target.pid, 'SIGKILL');
+  for (const target of candidates)
+    await waitFor(() => { const stat = procStat(target.pid); return !stat || stat.start !== target.start || stat.state === 'Z'; }, `${role} did not exit`, 10000);
+  return { ...candidates[0], count: candidates.length, pids: candidates.map(target => target.pid) };
 }
 
 // Orphans: processes carrying this run's nonce that are no longer descendants
@@ -152,11 +156,19 @@ const editorText = page => page.locator('.monaco-editor .view-lines').first().in
 const terminalText = page => page.locator('.terminal-wrapper .xterm-rows, .terminal .xterm-rows').evaluateAll(elements =>
   elements.map(element => element.textContent).join('\n')).catch(() => '');
 
-async function startTerminal(page, cell) {
+// A new terminal through the command palette (the row also shows its keybinding).
+async function newTerminal(page) {
+  const before = await page.locator('.terminal-wrapper').count();
   await page.keyboard.press('ControlOrMeta+Shift+p');
   await page.locator('.quick-input-widget').getByRole('textbox', { name: 'input', exact: true }).fill('>Terminal: Create New Terminal');
-  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: /^Terminal: Create New Terminal$/ }).first().click();
-  await page.locator('.terminal-wrapper .xterm').filter({ visible: true }).first().waitFor({ timeout: 20000 });
+  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'Terminal: Create New Terminal' })
+    .filter({ hasNotText: /Editor|Profile|Window|Side/ }).first().click();
+  await waitFor(async () => await page.locator('.terminal-wrapper').count() > before, 'terminal was not created', 20000);
+  await page.locator('.terminal-wrapper .xterm').filter({ visible: true }).last().waitFor({ timeout: 20000 });
+}
+
+async function startTerminal(page, cell) {
+  await newTerminal(page);
   await page.waitForTimeout(1500);
   await page.keyboard.type(`node "${terminalScript}" ${cell}`); await page.keyboard.press('Enter');
   await waitFor(() => terminals.has(cell), 'Terminal fixture did not connect', 20000);
@@ -164,9 +176,7 @@ async function startTerminal(page, cell) {
 
 async function terminalUsable(page, cell) {
   const marker = join(project, `terminal-ok-${cell}.txt`);
-  await page.keyboard.press('ControlOrMeta+Shift+p');
-  await page.locator('.quick-input-widget').getByRole('textbox', { name: 'input', exact: true }).fill('>Terminal: Create New Terminal');
-  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: /^Terminal: Create New Terminal$/ }).first().click();
+  if (!await newTerminal(page).then(() => true, () => false)) return false;
   await page.waitForTimeout(2500);
   await page.keyboard.type(`echo ok > "${marker}"`); await page.keyboard.press('Enter');
   return waitFor(() => readFile(marker, 'utf8').then(text => text.trim() === 'ok', () => false), 'terminal not usable', 15000).catch(() => false);
@@ -174,8 +184,12 @@ async function terminalUsable(page, cell) {
 
 // Recovery of the killed role: a new process with a different identity in the
 // same role, without a new owned host. `act` is the app's own recovery control.
+// Every killed process of the role is replaced by a new one.
 async function recovered(app, hostPid, role, killed, timeout) {
-  return waitFor(async () => (await roles(app, hostPid)).find(entry => entry.role === role && (entry.pid !== killed.pid || entry.start !== killed.start)),
+  return waitFor(async () => {
+    const fresh = (await roles(app, hostPid)).filter(entry => entry.role === role && !killed.pids?.includes(entry.pid));
+    return fresh.length >= (killed.count ?? 1) ? { ...fresh[0], count: fresh.length } : undefined;
+  },
     `${role} did not come back`, timeout, 500).catch(() => undefined);
 }
 
@@ -260,7 +274,9 @@ async function runCell(scenario, role) {
       record.editorRestored = (await editorText(page)).includes(unsavedText(cell));
       if (scenario === 'agent') {
         const held = fixture.requests[record.agentRequest];
-        record.agentStreamClosed = await waitFor(() => held.closed, 'held stream not closed', 15000).then(() => true, () => false);
+        // Whether the kill ended the in-flight provider stream (recorded), and
+        // that it is closed once the user stops the turn (asserted below).
+        record.agentStreamClosedByKill = await waitFor(() => held.closed, 'held stream not closed', 10000).then(() => true, () => false);
         await openChat(page).catch(() => {});
         record.chatRestored = await page.getByText(prompt, { exact: false }).filter({ visible: true }).count() > 0;
         // The same window can still use the Agent after recovery.
@@ -268,6 +284,7 @@ async function runCell(scenario, role) {
         if (input) {
           const stop = page.locator('.stop-button').filter({ visible: true });
           if (await stop.count()) await stop.first().click().catch(() => {});
+          record.agentStreamClosedAfterStop = await waitFor(() => held.closed, 'held stream not closed', 10000).then(() => true, () => false);
           await input.fill(`REPLY-${cell} now.`); await input.press('Enter');
           record.agentUsable = await page.getByText(`Recovered reply ${cell}.`, { exact: true }).first().waitFor({ timeout: 30000 }).then(() => true, () => false);
         }
@@ -311,7 +328,9 @@ function judge(record) {
   if (record.editorRestored === false) fail('unsaved editor text not present after recovery');
   if (record.restart && !record.restart.editorRestored) fail('unsaved editor text not restored after restart');
   if (record.scenario === 'agent') {
-    if (record.agentStreamClosed === false) fail('held Agent stream was not closed');
+    const held = fixture.requests[record.agentRequest];
+    record.agentStreamClosedAtEnd = !!held?.closed;
+    if (!record.agentStreamClosedAtEnd) fail('the interrupted provider stream was never closed');
     if (record.chatRestored === false && record.restart?.chatRestored === false) fail('chat state not restored');
     if (record.agentUsable === false) fail('Agent unusable after recovery');
   }
@@ -341,7 +360,8 @@ try {
   result.finalSurvivors = await survivors(runId, [], 3000);
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify({ directory: result.directory, success: result.success, failure: result.failure?.split('\n')[0],
-    cells: result.cells.map(cell => ({ cell: cell.cell, recovery: cell.recovery?.mode, recoveryMs: cell.recoveryMs, editor: cell.editorRestored,
+    cells: result.cells.map(cell => ({ cell: cell.cell, killed: cell.killed?.count, recovery: cell.recovery?.mode,
+      streamClosedByKill: cell.agentStreamClosedByKill, streamClosedAfterStop: cell.agentStreamClosedAfterStop, recoveryMs: cell.recoveryMs, editor: cell.editorRestored,
       restart: cell.restart, chat: cell.chatRestored, agentUsable: cell.agentUsable, terminalUsable: cell.terminalUsable,
       orphans: cell.orphans?.length, notifications: cell.notifications, violations: cell.violations })) }, null, 2));
 }

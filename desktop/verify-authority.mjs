@@ -92,10 +92,12 @@ async function setMode(page, mode) {
   if (mode === 'run-everything') {
     await label.locator('xpath=ancestor::*[.//*[@role="combobox"]][1]').getByRole('combobox').click();
     await page.getByRole('option', { name: 'Run Everything', exact: true }).click();
-    const confirm = page.getByRole('button', { name: /^Enable Run Everything/ });
-    await confirm.waitFor({ timeout: 10000 });
-    observed.confirmation = (await confirm.locator('xpath=ancestor::*[contains(., "Enable Run Everything?")][1]').innerText().catch(() => '')).slice(0, 400);
-    await confirm.click();
+    // The warning dialog's primary action is marked with the Enter key.
+    const heading = page.getByText('Enable Run Everything?', { exact: true });
+    await heading.waitFor({ timeout: 10000 });
+    observed.confirmation = (await heading.locator('xpath=ancestor::*[contains(., "Cancel")][1]').innerText().catch(() => '')).slice(0, 400);
+    await page.keyboard.press('Enter');
+    await heading.waitFor({ state: 'hidden', timeout: 10000 });
     await page.waitForTimeout(800);
   }
   observed.runMode = await label.locator('xpath=ancestor::*[.//*[@role="combobox"]][1]').getByRole('combobox').innerText();
@@ -112,7 +114,7 @@ function specsFor(mode) {
   return {
     [`${mode}-shell-unlisted`]: { kind: 'shell', tool: 'Shell', marker: marker('unlisted'),
       args: { command: `node "${markerScript}" "${marker('unlisted')}"`, working_directory: project, description: `Authority ${mode} unlisted`, block_until_ms: 20000 } },
-    [`${mode}-shell-allowlisted`]: { kind: 'shell', tool: 'Shell', marker: marker('allowlisted'),
+    [`${mode}-shell-allowlisted`]: { kind: 'shell', tool: 'Shell', marker: marker('allowlisted'), touch: true,
       args: { command: `touch "${marker('allowlisted')}"`, working_directory: project, description: `Authority ${mode} allowlisted`, block_until_ms: 20000 } },
     [`${mode}-shell-echo-redirect`]: { kind: 'shell', tool: 'Shell', marker: marker('echo'),
       args: { command: `echo ran > "${marker('echo')}"`, working_directory: project, description: `Authority ${mode} echo`, block_until_ms: 20000 } },
@@ -127,6 +129,7 @@ function specsFor(mode) {
   };
 }
 const ran = async path => (await readFile(path, 'utf8').catch(() => '')).length > 0;
+const exists = path => stat(path).then(() => true, () => false);
 const controls = async page => (await page.locator('button,[role=button],.anysphere-button,.anysphere-text-button').evaluateAll(elements =>
   elements.filter(element => element.offsetParent !== null).map(element => element.textContent.trim())
     .filter(text => /^(Keep( All| File)?|Undo( All| File)?|Reject( All)?|Review|Run|Skip|Allow|Accept)\b/.test(text)))).sort();
@@ -143,7 +146,8 @@ async function runCell(page, mode, name, spec) {
   const state = await waitFor(async () => (await finished.count()) ? 'finished' : (await pending.count()) ? 'pending' : undefined,
     `${name}: neither finished nor pending`, 45000, 250).catch(() => 'timeout');
   record.firstState = state;
-  record.executedBeforeDecision = spec.kind === 'shell' ? await ran(spec.marker) : spec.kind === 'mcp' ? mcpCalls() > mcpBefore : undefined;
+  const executed = async () => spec.kind === 'shell' ? (spec.touch ? await exists(spec.marker) : await ran(spec.marker)) : spec.kind === 'mcp' ? mcpCalls() > mcpBefore : undefined;
+  record.executedBeforeDecision = await executed();
   record.controlsAtDecision = await controls(page);
   await snapshot(page, directory, `${name}-decision`);
   if (state === 'pending') {
@@ -152,7 +156,7 @@ async function runCell(page, mode, name, spec) {
     record.skipAvailable = await skip.count() > 0;
     if (record.skipAvailable) await skip.first().click();
     await finished.waitFor({ timeout: 30000 }).catch(() => {});
-    record.executedAfterSkip = spec.kind === 'shell' ? await ran(spec.marker) : spec.kind === 'mcp' ? mcpCalls() > mcpBefore : undefined;
+    record.executedAfterSkip = await executed();
   }
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(1500);
@@ -167,7 +171,8 @@ async function runCell(page, mode, name, spec) {
     record.fileState = /= 2/.test(text) ? 'changed' : /= 1/.test(text) ? 'original' : text;
     record.reviewShown = record.controlsAfter.some(control => /^(Keep|Undo|Review)/.test(control));
   }
-  if (spec.kind === 'shell') record.executions = (await readFile(spec.marker, 'utf8').catch(() => '')).split('\n').filter(Boolean).length;
+  if (spec.kind === 'shell') record.executions = spec.touch ? Number(await exists(spec.marker))
+    : (await readFile(spec.marker, 'utf8').catch(() => '')).split('\n').filter(Boolean).length;
   if (spec.kind === 'mcp') record.executions = mcpCalls() - mcpBefore;
   judge(mode, record, spec);
   // Undo an applied in-project edit so later cells start from known bytes.
