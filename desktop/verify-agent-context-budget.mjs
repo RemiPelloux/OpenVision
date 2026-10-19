@@ -415,7 +415,7 @@ try {
   // workloads again in the same running application, in new chats.
   for (const pass of live ? ['cold'] : ['cold', 'warm']) {
     result.passes[pass] = {};
-    const only = process.argv.find(value => value.startsWith('--workloads='))?.slice(12).split(',') ?? (live && !dryRun ? ['single', 'reads'] : undefined);
+    const only = process.argv.find(value => value.startsWith('--workloads='))?.slice(12).split(',') ?? (live ? (dryRun ? ['single', 'reads', 'edit', 'fork'] : ['single', 'reads']) : undefined); // relay limit: 32 requests
     for (const [name, turns] of Object.entries(workloads(pass)).filter(([name]) => !only || only.includes(name))) {
       result.passes[pass][name] = await runWorkload(pass, name, turns);
       const s = result.passes[pass][name].summary;
