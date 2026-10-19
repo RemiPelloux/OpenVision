@@ -166,10 +166,17 @@ handler and gate code.
   tail (178–291 ms) varies between runs as much as the small file's (98–241 ms).
   The built-in TypeScript server wrote about 3.9 MB to its pipes while typing in
   the large file. No OpenVision customization appeared in the renderer profile.
-- **Closed-chat history (OV-1001 finding).** 642–647 of 650–661 marker strings
-  stay in the renderer 75 s after the chat closes, while its DOM is released.
-  The retainers were not identified in this work, so no low-risk fix was
-  available; it stays open under OV-1003.
+- **Closed-chat history (OV-1001 finding).** Before 19 October, 642–647 of
+  650–661 marker strings stayed in the renderer 75 s after the chat closed,
+  while its DOM was released. The owners and the release added on
+  19 October are described in
+  [the closed-chat release](agent-context-linux.md#closed-chat-release-19-october-2026):
+  with it, the full dataset keeps 364 of 670 marker strings and 118 of 309
+  reply strings (`logs/responsiveness-Av9fiJ`), and the chat reopens from
+  Chat History with its last reply. The remainder of this long chat is held
+  by React DOM's nested-update root reference and a Solid observer on a
+  module-level settings signal (heap-snapshot retainers); it stays open under
+  OV-1003.
 - **Remaining persisted lists.** Three published model-name lists (1,260,240
   bytes together) are still saved with every application save; their consumers
   were not audited.
@@ -193,13 +200,15 @@ persisted-record budget was set after the fix; both baselines exceed it.
 | Scroll | frame p95 ≤ 50 ms; longest task ≤ 400 ms; ≤ 24 rows and ≤ 1,300 elements at the top |
 | Turn | reply painted ≤ 3,500 ms; long tasks ≤ 400 ms; typing p95 ≤ 110 ms |
 | Editor | small-file long tasks ≤ 300 ms, p95 ≤ 360 ms; 50,000-line open ≤ 900 ms, frame p95 ≤ 50 ms, long tasks ≤ 300 ms, p95 ≤ 450 ms |
-| Closed chat | ≤ 5,000 live DOM nodes; ≤ 700 marker strings (non-regression); heap ≤ 330 MiB |
+| Closed chat | ≤ 5,000 live DOM nodes; ≤ 400 marker strings and ≤ 130 reply strings after 75 s; reopens from Chat History with its last reply; heap ≤ 330 MiB |
 | Persisted | application-user record ≤ 2,000,000 B; catalog 0 B |
 | Restart | selected model restored; ≥ 10,001 models; launch to selected model ≤ 31,000 ms |
 
 `ED40At` fails the two persisted budgets; `y46mxf` and `Kz2TFM` pass all.
-Timing budgets carry host load; the closed-chat string budget records the
-current retention and does not establish release.
+Timing budgets carry host load. The closed-chat string budgets (19 October)
+come from the `--full` run `logs/responsiveness-Av9fiJ` with the release
+(364 and 118, +10%); they establish partial release, not the ≤ 5 target that
+the shorter `verify:agent-context-budget` chat meets.
 
 ## Commands
 
@@ -238,7 +247,7 @@ stream with concurrent typing, a 50,000-line file and a 10,001-model picker;
 native measurement of frames, long tasks, input latency, mounted rows, DOM,
 heap and process-family filesystem work; numeric budgets with a verifier; one
 measured waste fixed at its owner. Open: Windows and macOS runs, live provider
-streams, scroll layout cost, closed-chat renderer retention (OV-1003), the
+streams, scroll layout cost, the remaining long-chat retention after close (OV-1003), the
 remaining persisted model-name lists, budgets on an unloaded host, and editor
 work with language features beyond the built-in TypeScript server. This is
 **source-build evidence**; the preview.7 portable package does not contain

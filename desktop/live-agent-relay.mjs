@@ -17,6 +17,8 @@ function streamEvidence(record, marker, redact) {
       if (!line.startsWith('data:') || line.slice(5).trim() === '[DONE]') continue;
       const event = JSON.parse(line.slice(5));
       observeTools(event);
+      const usage = providerUsage(event);
+      if (usage) record.usage = usage;
       if (event.model) record.responseModel = redact(event.model);
       const content = event.type === 'response.output_text.delta' ? event.delta : event.choices?.[0]?.delta?.content;
       if (typeof content === 'string') {
@@ -26,6 +28,23 @@ function streamEvidence(record, marker, redact) {
         output = output.slice(-marker.length);
       }
     }
+  };
+}
+
+// Provider-reported token usage: the final Chat Completions chunk (`usage`,
+// when the provider sends it) or the Responses `response.completed` event.
+// Values are copied as reported; absent fields stay undefined, never estimated.
+export function providerUsage(event) {
+  const usage = event.type === 'response.completed' ? event.response?.usage : event.usage;
+  if (!usage || typeof usage !== 'object') return undefined;
+  const number = value => Number.isFinite(value) ? value : undefined;
+  return {
+    promptTokens: number(usage.prompt_tokens ?? usage.input_tokens),
+    completionTokens: number(usage.completion_tokens ?? usage.output_tokens),
+    cachedTokens: number(usage.prompt_tokens_details?.cached_tokens ?? usage.input_tokens_details?.cached_tokens ??
+      usage.prompt_cache_hit_tokens),
+    reasoningTokens: number(usage.completion_tokens_details?.reasoning_tokens ?? usage.output_tokens_details?.reasoning_tokens),
+    totalTokens: number(usage.total_tokens),
   };
 }
 

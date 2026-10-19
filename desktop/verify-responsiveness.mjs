@@ -11,7 +11,7 @@ import { loadRuntime } from './source-assembly.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
-import { enterWorkspace, openChat } from './verification-workspace.mjs';
+import { enterWorkspace, openChat, openChatFromHistory } from './verification-workspace.mjs';
 import { electronNames, hostLoad, processFamily } from './process-family-linux.mjs';
 import { applicableBudgets, checkBudgets, collectProbe, installProbe, ioDelta, parseProcIo, percentile, profileHotspots, summarizeFrames, summarizeLatency } from './responsiveness-measure.mjs';
 
@@ -475,14 +475,34 @@ try {
   // Closed chat: renderer heap and marker strings before and after closing the transcript chat.
   if (wants('closedChat')) {
   await openChat(page);
-  const markersOpen = await heapMarkerStrings(marker), heapOpen = await heap();
+  // Reply text is chat history only; prompts are also kept by the bounded (10)
+  // prompt-input history and the chat title.
+  const historyNeedle = `${marker} reply `;
+  const markersOpen = await heapMarkerStrings(marker), historyOpen = await heapMarkerStrings(historyNeedle), heapOpen = await heap();
   const tab = page.locator('li.composite-bar-action-tab').filter({ hasText: marker }).first();
+  const closedId = await input().evaluate(element => element.closest('[data-composer-id]')?.getAttribute('data-composer-id'));
+  const closedTitle = (await tab.getAttribute('aria-label')) || (await tab.innerText()).trim();
+  // The chat's latest persisted reply (the transcript is virtualized, so read SQLite, not the DOM).
+  const lastReply = (() => {
+    const db = new DatabaseSync(join(profile, 'User/globalStorage/state.vscdb'), { readOnly: true });
+    try {
+      const read = key => { const row = db.prepare('SELECT value FROM cursorDiskKV WHERE key = ?').get(key); return row ? JSON.parse(String(row.value)) : undefined; };
+      const texts = (read(`composerData:${closedId}`)?.fullConversationHeadersOnly ?? [])
+        .map(header => read(`bubbleId:${closedId}:${header.bubbleId}`)?.text ?? '');
+      return Math.max(...texts.flatMap(text => [...text.matchAll(new RegExp(`${marker} turn (\\d+) done`, 'g'))].map(match => Number(match[1]))));
+    } finally { db.close(); }
+  })();
   await tab.hover(); await tab.locator('.remove-button').click({ force: true });
   const confirm = page.getByText('Close Tab', { exact: false }).filter({ visible: true });
   if (await confirm.first().waitFor({ timeout: 3000 }).then(() => true, () => false)) await confirm.first().click();
   await page.waitForTimeout(75000); // past the recovered composer handle cache's 60 s idle window
   const markersClosed = await heapMarkerStrings(marker, process.argv.includes('--save-closed-snapshot') ? 'closed.heapsnapshot' : undefined), heapClosed = await heap();
+  const historyClosed = await heapMarkerStrings(historyNeedle);
+  // Reopen from Chat History: the released chat comes back from SQLite with its latest reply.
+  const reopenRestored = Number(await openChatFromHistory(page, { id: closedId, title: closedTitle,
+    expected: Number.isFinite(lastReply) ? [`${marker} turn ${lastReply} done`] : ['(no reply found before close)'] }));
   result.phases.closedChat = { markerStringsOpen: markersOpen, markerStringsClosed: markersClosed,
+    historyStringsOpen: historyOpen, historyStringsClosed: historyClosed, reopenRestoresTranscript: reopenRestored, reopenExpectedTurn: lastReply,
     heapOpenMiB: heapOpen.heapUsedMiB, heapClosedMiB: heapClosed.heapUsedMiB,
     heapReleasedMiB: Math.round((heapOpen.heapUsedMiB - heapClosed.heapUsedMiB) * 10) / 10,
     domNodesLiveOpen: heapOpen.domNodesLive, domNodesLiveClosed: heapClosed.domNodesLive };

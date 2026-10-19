@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { createLiveAgentRelay } from './live-agent-relay.mjs';
+import { createLiveAgentRelay, providerUsage } from './live-agent-relay.mjs';
 
 const model = 'fixture-model', marker = 'OPENVISION_READ_fixture', key = 'fixture-transport-secret';
 const headers = { Authorization: 'Bearer native-probe-key', 'Content-Type': 'application/json' };
@@ -314,3 +314,17 @@ for (const action of ['downstream cancellation', 'relay cleanup']) {
     assert.equal(relay.requests.length, 1);
   });
 }
+
+test('relay records provider-reported usage, including cached tokens, without estimating absent fields', async t => {
+  const relay = await fixture(t, (_request, response) => sse(response, [
+    { model, choices: [{ delta: { content: marker } }] },
+    { model, choices: [], usage: { prompt_tokens: 1200, completion_tokens: 30, total_tokens: 1230,
+      prompt_tokens_details: { cached_tokens: 1024 }, completion_tokens_details: { reasoning_tokens: 12 } } }]));
+  const body = JSON.stringify({ model, stream: true, messages: [{ role: 'user', content: 'Read probe.txt' }] });
+  await (await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body })).text();
+  assert.deepEqual(relay.requests[0].usage, { promptTokens: 1200, completionTokens: 30, cachedTokens: 1024, reasoningTokens: 12, totalTokens: 1230 });
+  assert.deepEqual(providerUsage({ type: 'response.completed', response: { usage: { input_tokens: 9, output_tokens: 2,
+    input_tokens_details: { cached_tokens: 4 } } } }), { promptTokens: 9, completionTokens: 2, cachedTokens: 4, reasoningTokens: undefined, totalTokens: undefined });
+  assert.equal(providerUsage({ choices: [{ delta: { content: 'x' } }] }), undefined);
+  assert.equal(providerUsage({ usage: { prompt_tokens: 5, prompt_cache_hit_tokens: 3 } }).cachedTokens, 3);
+});
