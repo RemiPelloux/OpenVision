@@ -7,7 +7,7 @@ import { platformLayout } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { denyFixtureWrites } from './verification-write-denial.mjs';
-import { enterWorkspace } from './verification-workspace.mjs';
+import { dismissKeyringPrompt, enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..'), layout = platformLayout(root);
 const directory = await mkdtemp(join(root, 'logs/project-lifecycle-verification-'));
@@ -135,8 +135,19 @@ async function hotExit() {
   await launch();
   await until('unsaved editor restored after restart', () => editorContains('Unsaved recovery marker'));
   assert.equal(await disk(hotExitFile), 'Saved baseline\n');
-  await page.keyboard.press('Control+s');
-  await until('restored unsaved editor saves', async () => await disk(hotExitFile) === 'Unsaved recovery marker\n');
+  // Save from the editor itself. A modal keyring prompt (no Secret Service on
+  // the host) takes keyboard focus; it is closed without choosing a store, and
+  // the save is repeated only when the prompt swallowed it.
+  const save = async () => {
+    while (await dismissKeyringPrompt(page)) result.keyringPromptsDismissed = (result.keyringPromptsDismissed ?? 0) + 1;
+    await editor().locator('.inputarea').focus(); await page.keyboard.press('Control+s');
+  };
+  await save();
+  await until('restored unsaved editor saves', async () => {
+    if (await disk(hotExitFile) === 'Unsaved recovery marker\n') return true;
+    if (await dismissKeyringPrompt(page)) { result.keyringPromptsDismissed = (result.keyringPromptsDismissed ?? 0) + 1; await save(); }
+    return false;
+  });
   result.checks.hot_exit_restores_unsaved_edits = true;
   result.finalFiles = { primary: await readdir(primary), secondary: await readdir(secondary) };
 }
