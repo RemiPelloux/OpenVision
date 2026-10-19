@@ -13,7 +13,7 @@ test('critical manifest names real stories, node verifier scripts and known plat
   const suite = await loadCriticalSuite(root);
   for (const entry of suite.entries) assert.ok(requiredStoryIds.includes(entry.story), entry.id);
   const linux = selectEntries(suite, { platform: 'linux-x64', subset: 'linux-critical' });
-  assert.deepEqual(linux.map(({ entry }) => entry.id), ['package-linux', 'welcome', 'project', 'explorer', 'development',
+  assert.deepEqual(linux.map(({ entry }) => entry.id), ['package-linux', 'welcome', 'project-home', 'project', 'explorer', 'development',
     'git', 'agent', 'completion', 'extensions', 'linux-secrets']);
   assert.ok(linux.every(item => item.run));
   const windows = selectEntries(suite, { platform: 'win32-x64', subset: 'linux-critical' });
