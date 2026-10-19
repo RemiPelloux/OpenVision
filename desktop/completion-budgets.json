@@ -1,0 +1,10 @@
+{
+  "workload": {
+    "fixture": "Controlled local HTTP fixture; not live inference.",
+    "burstIntervalsMs": [30, 150, 600],
+    "burstKeystrokes": 8,
+    "burstResponseDelayMs": 250,
+    "longLineCharacters": 20030
+  },
+  "budgets": {}
+}

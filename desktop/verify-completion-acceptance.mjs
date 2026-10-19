@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { checkCompletionBudgets, loadCompletionBudgets } from './completion-budgets.mjs';
 import { until, typePrefix, savedText, savedRaw, pressTab } from './verify-completion-editing.mjs';
 
 // Acceptance-safety cases for OV-603. Every response comes from a controlled
@@ -217,34 +219,43 @@ async function unicodeCrlf({ page, file, fixture }) {
   return { exactCrlf: true, undoSteps: 1, prefixUsedCrlf: event.prefixTail.includes('\r\n') };
 }
 
-// A 20,000-character line: bounded request context and exact line reconstruction.
+// A 20,000-character line: bounded request context, trigger latency and exact
+// line reconstruction. The line is on disk before launch and only the trigger is
+// typed. Typing it instead (one 20,030-character insertText) makes the editor's
+// type command apply it one character at a time; each of those 20,030 edits runs
+// the autocomplete model listener (a full model copy and a diff-history call to
+// the extension host). That queued the trigger 14.7 s or more and, on the
+// 19 October Linux host, grew the renderer past Chromium's 8 GiB data limit
+// (WsP8Z2, 2iGuCB). No user types a line in one input event; pasting is one edit.
+const longPrefix = 'const long = "' + 'x'.repeat(20000) + '"; const tail =';
 async function longLine({ page, file, fixture }) {
-  const prefix = 'const long = "' + 'x'.repeat(20000) + '"; const tail = ', insertion = 'done;';
+  const long = join(dirname(file), 'long.js'), insertion = 'done;';
   fixture.begin('long', { match: context => context.prefix.endsWith('const tail = '), content: insertion });
-  await typePrefix(page, prefix);
-  // The native trigger reaches a 20,000-character line late or not at all.
+  await openFile(page, 'long.js');
+  await page.keyboard.press('ControlOrMeta+End');
   const typed = performance.now();
-  let event;
-  try { event = await requestFor(page, fixture, 'long', 25000); } catch { event = undefined; }
-  if (event) await ghost(page, 'done').waitFor({ timeout: 5000 }).catch(() => {});
-  else await page.waitForTimeout(1500);
-  await pressTab(page);
-  await savedText(page, file);
-  // A 20 KB save can land after the default read delay; wait for this case's text.
-  // Save participants hold this save for several seconds on Linux.
-  let saved;
-  const saveStarted = performance.now();
-  for (let attempt = 0; attempt < 200; attempt++) {
-    saved = (await readFile(file, 'utf8')).replaceAll('\r\n', '\n');
-    if (saved.startsWith('const long = ') && saved.includes('const tail =')) break;
-    await page.waitForTimeout(100);
-  }
-  const saveWaitMs = Math.round(performance.now() - saveStarted);
-  const accepted = saved === prefix + insertion, discarded = squash(saved) === squash(prefix);
-  assert.ok(accepted || discarded, `Long-line acceptance corrupted the line: ${JSON.stringify(saved.slice(-40))}`);
-  if (event) assert.ok(event.prefixLength <= 8000, 'Long-line request context must stay bounded');
-  return { requested: !!event, typedToRequestMs: event && Math.round(event.receivedAt - typed), prefixLength: event?.prefixLength, requestBytes: event?.requestBytes,
-    outcome: accepted ? 'accepted-exact' : 'not-accepted', lineLength: prefix.length, saveWaitMs };
+  await page.keyboard.insertText(' ');
+  const event = await requestFor(page, fixture, 'long', 25000);
+  // A whole-line replacement this long is shown as a diff: the old line on a red
+  // background with the added text as an inline decoration, not as ghost text.
+  const shown = page.locator('.cursor-ghost-text').filter({ hasText: 'done' }).or(page.locator('.cpp-suggestion-red-background')).first();
+  await shown.waitFor();
+  const presentation = await shown.evaluate(element => element.classList.contains('cursor-ghost-text') ? 'ghost-text' : 'line-diff');
+  const visibleAt = performance.now();
+  await page.keyboard.press('Tab');
+  await page.waitForFunction(() => !document.querySelector('.cpp-suggestion-red-background') &&
+    ![...document.querySelectorAll('.cursor-ghost-text')].some(element => element.textContent.includes('done')))
+    .catch(() => { throw Error('Tab left the long-line suggestion on screen'); });
+  const saved = await savedText(page, long);
+  await page.keyboard.press('ControlOrMeta+z');
+  const undone = await savedText(page, long);
+  await openFile(page, 'completion.js');
+  assert.equal(saved, longPrefix + ' ' + insertion, 'Long-line acceptance must reconstruct the line exactly');
+  assert.equal(undone, longPrefix + ' ', 'Long-line acceptance must undo as one exact step');
+  assert.ok(event.prefixLength <= 8000, 'Long-line request context must stay bounded');
+  return { requested: true, typedToRequestMs: Math.round(event.receivedAt - typed), requestToVisibleMs: Math.round(visibleAt - event.receivedAt),
+    presentation, prefixLength: event.prefixLength, requestBytes: event.requestBytes, outcome: 'accepted-exact', undoExact: true,
+    lineLength: longPrefix.length + 1 };
 }
 
 // Fast typing with a slow fixture: count requests and bytes per burst, check
@@ -280,7 +291,266 @@ async function burst({ page, file, fixture }, interval) {
     requestBytes: requests.reduce((sum, item) => sum + item.requestBytes, 0),
     responseBytes: requests.reduce((sum, item) => sum + (item.responseBytes ?? 0), 0),
     lastKeyToFinalRequestMs: Math.round(finalRequests[0].receivedAt - lastKey),
-    lastKeyToVisibleMs: Math.round(visibleAt - lastKey) };
+    finalRequestToVisibleMs: Math.round(visibleAt - finalRequests[0].receivedAt),
+    lastKeyToVisibleMs: Math.round(visibleAt - lastKey), staleVisible };
+}
+
+// Controlled harness fixture, not product code: widens the asynchronous accept
+// window. A DevTools conditional breakpoint on the first statement of the
+// recovered accept owner wraps the word-diff provider registered with that
+// instance's diffing service once (the service is a delayed-instantiation proxy
+// that caches its bound methods). The condition always evaluates to false, so
+// nothing pauses. The wrapper holds each
+// word diff for globalThis.__openvisionAcceptDelayMs and records its timing.
+async function installAcceptDelay(page, appRoot) {
+  const workbench = await readFile(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js'), 'utf8');
+  const anchor = workbench.indexOf('async makeChangesOnAcceptCppSuggestion(');
+  if (anchor < 0) throw Error('Accept owner missing from the workbench');
+  const owner = parseExpressionAt(workbench, workbench.lastIndexOf('class ', anchor), { ecmaVersion: 'latest' });
+  const first = owner.body.body.find(item => item.key?.name === 'makeChangesOnAcceptCppSuggestion')?.value.body.body[0];
+  if (!first) throw Error('Accept owner body missing');
+  const before = workbench.slice(0, first.start), lineNumber = before.split('\n').length - 1;
+  const columnNumber = first.start - before.lastIndexOf('\n') - 1;
+  const condition = `(globalThis.__openvisionAcceptHits = (globalThis.__openvisionAcceptHits ?? 0) + 1, globalThis.__openvisionAcceptDelay ??= (() => {
+    const provider = this._diffingService._diffingProvider, original = provider.wordDiff, calls = [];
+    provider.wordDiff = async function (...args) {
+      const entry = { delayMs: globalThis.__openvisionAcceptDelayMs ?? 0, startedAt: performance.now() };
+      calls.push(entry);
+      if (entry.delayMs) await new Promise(resolve => setTimeout(resolve, entry.delayMs));
+      entry.releasedAt = performance.now();
+      try { return await original.apply(this, args); } finally { entry.returnedAt = performance.now(); }
+    };
+    return { calls };
+  })(), false)`;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Debugger.enable');
+  const { breakpointId, locations } = await cdp.send('Debugger.setBreakpointByUrl',
+    { urlRegex: 'workbench\\.desktop\\.main\\.js$', lineNumber, columnNumber, condition });
+  if (locations.length !== 1) throw Error(`Accept delay breakpoint resolved to ${locations.length} locations`);
+  return {
+    async release() {
+      await cdp.send('Debugger.removeBreakpoint', { breakpointId }).catch(() => {});
+      await cdp.send('Debugger.disable').catch(() => {});
+      await page.evaluate(() => { globalThis.__openvisionAcceptDelayMs = 0; });
+      await cdp.detach().catch(() => {});
+    },
+  };
+}
+
+const delayCalls = page => page.evaluate(() => structuredClone(globalThis.__openvisionAcceptDelay?.calls ?? []));
+
+// One keystroke between the accept key and the delayed edit. `edit` types it;
+// the case fails unless the keystroke lands inside the held word-diff window.
+async function racedAccept(page, file, fixture, { mode, prefix, insertion, word, key, edit, delayMs }) {
+  fixture.begin(mode, { match: context => context.prefix === prefix, content: insertion });
+  await typePrefix(page, prefix);
+  await requestFor(page, fixture, mode);
+  await ghost(page, insertion.slice(0, 5)).waitFor();
+  const callsBefore = (await delayCalls(page)).length;
+  await page.evaluate(ms => { globalThis.__openvisionAcceptDelayMs = ms; }, delayMs);
+  await page.keyboard.press(key);
+  await edit();
+  const typedAt = await page.evaluate(() => performance.now());
+  let call;
+  for (const deadline = performance.now() + delayMs + 10000; !call?.returnedAt && performance.now() < deadline;) {
+    call = (await delayCalls(page))[callsBefore];
+    if (!call?.returnedAt) await page.waitForTimeout(25);
+  }
+  await page.evaluate(() => { globalThis.__openvisionAcceptDelayMs = 0; });
+  if (!call?.returnedAt) throw Error(`${mode}: the accept never reached the held word diff ${JSON.stringify(await page.evaluate(() =>
+    [globalThis.__openvisionAcceptHits, globalThis.__openvisionAcceptDelay]))} ${JSON.stringify(await savedText(page, file))}`);
+  assert.ok(call.startedAt < typedAt && typedAt < call.releasedAt,
+    `${mode}: the keystroke must land inside the held word-diff window`);
+  // The continuation edits the model in the turn after the diff returns.
+  await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
+  return { word, keystrokeInsideWindow: true, windowMs: Math.round(call.releasedAt - call.startedAt),
+    keystrokeAfterDiffStartMs: Math.round(typedAt - call.startedAt) };
+}
+
+// A keystroke inside or next to the suggestion range while Tab (or word accept)
+// waits on its asynchronous word diff. The accept may apply to the current text
+// or be dropped; it must never be applied at positions computed from the text
+// captured before the keystroke.
+async function acceptRace({ page, file, fixture, appRoot, trace }) {
+  const hook = await installAcceptDelay(page, appRoot), delayMs = 1500, outcomes = {};
+  try {
+    const classify = (saved, accepted, dropped) => {
+      const outcome = saved === accepted ? 'accepted-at-current-text' : saved === dropped ? 'accept-dropped' : 'corrupted';
+      return { outcome, saved };
+    };
+    // Full accept, then a keystroke at the start of the line (inside the range).
+    let prefix = 'const raced = ', insertion = 'raceValue();';
+    let timing = await racedAccept(page, file, fixture, { mode: 'race-inside', prefix, insertion, key: 'Tab', delayMs,
+      edit: async () => { await page.keyboard.press('Home'); await page.keyboard.insertText('y'); } });
+    outcomes.fullInside = { ...timing, ...classify(await savedText(page, file), 'y' + prefix + insertion, 'y' + prefix) };
+    let undo = await undoTo(page, file, prefix, trace);
+    outcomes.fullInside.undo = undo;
+    // Full accept, then a keystroke at the insertion point (next to the range).
+    prefix = 'const nearby = '; insertion = 'nearValue();';
+    timing = await racedAccept(page, file, fixture, { mode: 'race-near', prefix, insertion, key: 'Tab', delayMs,
+      edit: () => page.keyboard.insertText('z') });
+    outcomes.fullNear = { ...timing, ...classify(await savedText(page, file), prefix + insertion + 'z', prefix + 'z') };
+    undo = await undoTo(page, file, prefix, trace);
+    outcomes.fullNear.undo = undo;
+    // Word (partial) accept, then a keystroke at the start of the line.
+    prefix = 'const partly = '; insertion = 'alpha + beta;';
+    timing = await racedAccept(page, file, fixture, { mode: 'race-word', prefix, insertion, word: true, key: 'ControlOrMeta+ArrowRight',
+      delayMs, edit: async () => { await page.keyboard.press('Home'); await page.keyboard.insertText('q'); } });
+    const saved = await savedText(page, file);
+    outcomes.wordInside = { ...timing, ...classify(saved.trimEnd(), 'q' + prefix + 'alpha', 'q' + prefix.trimEnd()) };
+    if (saved === 'q' + prefix) outcomes.wordInside.outcome = 'accept-dropped';
+    undo = await undoTo(page, file, prefix, trace);
+    outcomes.wordInside.undo = undo;
+  } finally { await hook.release(); trace?.push({ acceptRace: outcomes }); }
+  for (const [name, item] of Object.entries(outcomes)) {
+    assert.notEqual(item.outcome, 'corrupted', `${name}: raced accept corrupted the document: ${JSON.stringify(item.saved)}`);
+    assert.ok(item.undo.exact, `${name}: undo must restore the exact pre-accept text`);
+  }
+  return outcomes;
+}
+
+const editorText = editor => editor.locator('.view-lines').innerText().then(text => text.replaceAll(' ', ' ').trimEnd());
+
+// Saves and reads while two editor groups show the document. The shared helpers
+// expect exactly one active tab, so this waits for every tab's dirty mark.
+async function splitSaved(page, file) {
+  await page.keyboard.press('ControlOrMeta+s');
+  const deadline = performance.now() + 30000;
+  while (await page.locator('.tabs-container .tab.dirty').count()) {
+    if (performance.now() > deadline) throw Error('Split save did not complete');
+    await page.waitForTimeout(25);
+  }
+  return (await readFile(file, 'utf8')).replaceAll('\r\n', '\n');
+}
+
+async function splitTab(page) {
+  const shown = await page.locator('.cursor-ghost-text').filter({ visible: true }).first().elementHandle().catch(() => null);
+  await page.keyboard.press('Tab');
+  if (shown) await page.waitForFunction(element => !element.isConnected || !element.getClientRects().length, shown, { timeout: 15000 });
+  const deadline = performance.now() + 15000;
+  while (!await page.locator('.tabs-container .tab.dirty').count()) {
+    if (performance.now() > deadline) throw Error('Tab had no effect in the split editor');
+    await page.waitForTimeout(25);
+  }
+}
+
+// Two editor groups show the same document. Accepting in one must update both
+// views once, and undo must restore the exact text in both.
+async function splitEditors({ page, file, fixture, trace }) {
+  const prefix = 'const split = ', insertion = 'both();';
+  fixture.begin('split', { match: context => context.prefix === prefix, content: insertion });
+  await page.keyboard.press('Escape');
+  await page.locator('.monaco-editor .inputarea').first().focus();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText(prefix.trimEnd());
+  await command(page, 'View: Split Editor Right');
+  const editors = page.locator('.part.editor .monaco-editor');
+  await page.waitForFunction(() => document.querySelectorAll('.part.editor .editor-group-container .monaco-editor').length === 2);
+  const [left, right] = [editors.nth(0), editors.nth(1)];
+  await right.locator('.inputarea').focus();
+  await page.keyboard.press('ControlOrMeta+End');
+  await page.keyboard.insertText(' ');
+  const event = await requestFor(page, fixture, 'split');
+  await right.locator('.cursor-ghost-text').filter({ hasText: 'both' }).first().waitFor();
+  const ghosts = { left: await left.locator('.cursor-ghost-text').count(), right: await right.locator('.cursor-ghost-text').count() };
+  await splitTab(page);
+  const accepted = await splitSaved(page, file);
+  const views = { left: await editorText(left), right: await editorText(right) };
+  assert.equal(accepted, prefix + insertion, 'Split accept must insert exactly once');
+  assert.deepEqual(views, { left: prefix + insertion, right: prefix + insertion }, 'Both split views must show the single insertion');
+  await page.keyboard.press('ControlOrMeta+z');
+  const undone = await splitSaved(page, file);
+  assert.equal(undone, prefix, 'Split accept must undo as one exact step');
+  assert.deepEqual({ left: await editorText(left), right: await editorText(right) }, { left: prefix.trimEnd(), right: prefix.trimEnd() });
+  // A suggestion shown in the right view, then Tab in the left view.
+  const crossPrefix = 'const cross = ', crossInsertion = 'other();';
+  fixture.begin('split-cross', { match: context => context.prefix === crossPrefix, content: crossInsertion });
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.insertText(crossPrefix.trimEnd());
+  await page.keyboard.insertText(' ');
+  await requestFor(page, fixture, 'split-cross');
+  await right.locator('.cursor-ghost-text').filter({ hasText: 'other' }).first().waitFor();
+  await left.locator('.inputarea').focus();
+  await page.keyboard.press('ControlOrMeta+End');
+  await splitTab(page);
+  const cross = await splitSaved(page, file);
+  const crossOutcome = cross === crossPrefix + crossInsertion ? 'accepted-once' :
+    squash(cross) === squash(crossPrefix) ? 'not-accepted' : 'corrupted';
+  assert.notEqual(crossOutcome, 'corrupted', `Cross-view Tab corrupted the document: ${JSON.stringify(cross)}`);
+  assert.equal((cross.match(/other\(\)/g) ?? []).length <= 1, true, 'Cross-view Tab duplicated the insertion');
+  const crossViews = { left: await editorText(left), right: await editorText(right) };
+  assert.equal(crossViews.left, crossViews.right, 'Split views diverged after cross-view Tab');
+  await right.locator('.inputarea').focus();
+  await command(page, 'View: Close Editor Group');
+  await page.waitForFunction(() => document.querySelectorAll('.part.editor .editor-group-container .monaco-editor').length === 1);
+  await page.locator('.monaco-editor .inputarea').first().focus();
+  trace?.push({ split: { accepted, undone, cross } });
+  return { ghostsShown: ghosts, requestPrefix: event.prefixTail, exactInsertion: true, bothViewsConsistent: true, undoSteps: 1,
+    crossViewTab: crossOutcome, crossSaved: cross };
+}
+
+// IME composition through the DevTools protocol, the same path a platform input
+// method uses in Chromium: a visible suggestion, then a composition that is
+// updated and committed; and a pending request, then a composition.
+async function imeComposition({ page, file, fixture }) {
+  const cdp = await page.context().newCDPSession(page);
+  const prefix = 'const ime = ', composing = ['に', 'にほ'], committed = '日本';
+  try {
+    fixture.begin('ime', { match: context => context.prefix === prefix, content: 'imeValue;' });
+    await typePrefix(page, prefix);
+    await requestFor(page, fixture, 'ime');
+    await ghost(page, 'imeValue').waitFor();
+    const started = performance.now();
+    for (const text of composing) {
+      await cdp.send('Input.imeSetComposition', { text, selectionStart: text.length, selectionEnd: text.length });
+      await page.waitForTimeout(600);
+    }
+    const visibleWhileComposing = await ghost(page, 'imeValue').isVisible();
+    await cdp.send('Input.insertText', { text: committed });
+    await page.waitForTimeout(settleMs);
+    const during = fixture.log.filter(item => item.mode === 'ime' && item.receivedAt >= started);
+    const uncommitted = during.filter(item => composing.some(text => item.prefixTail.endsWith(text)));
+    const saved = await savedText(page, file);
+    assert.equal(saved, prefix + committed, `IME composition corrupted the document: ${JSON.stringify(saved)}`);
+    assert.equal(uncommitted.length, 0, 'A completion was requested for uncommitted composition text');
+    // A pending request, then a composition; the late response must not apply.
+    const pendingPrefix = 'const imePending = ';
+    fixture.begin('ime-pending', { match: context => context.prefix === pendingPrefix, content: 'lateValue;', delayMs: 2000 });
+    await typePrefix(page, pendingPrefix);
+    const pending = await requestFor(page, fixture, 'ime-pending');
+    await cdp.send('Input.imeSetComposition', { text: 'か', selectionStart: 1, selectionEnd: 1 });
+    await page.waitForTimeout(300);
+    await cdp.send('Input.insertText', { text: 'カ' });
+    await until(page, () => pending.closedAt, 'Pending IME request never closed', 10000);
+    await page.waitForTimeout(settleMs);
+    const lateVisible = await page.locator('.cursor-ghost-text').filter({ hasText: 'lateValue' }).count();
+    const pendingSaved = await savedText(page, file);
+    assert.equal(pendingSaved, pendingPrefix + 'カ', `IME composition with a pending request corrupted the document: ${JSON.stringify(pendingSaved)}`);
+    assert.equal(lateVisible, 0, 'A response for text before the composition became visible');
+    return { visibleWhileComposing, requestsDuringComposition: during.length, uncommittedRequests: 0, exactCommit: true,
+      pendingAborted: pending.aborted === true, lateSuggestionVisible: false };
+  } finally { await cdp.detach().catch(() => {}); }
+}
+
+// Line-wise accept: the recovered runtime has "Accept Next Line" only for VS Code
+// inline suggestions (precondition inlineSuggestionVisible). Cursor Tab ghost text
+// is a separate owner. Record that the command is not offered while it is shown.
+async function lineAccept({ page, file, fixture }) {
+  const prefix = 'const lined = ';
+  fixture.begin('line', { match: context => context.prefix === prefix, content: 'first();\nsecond();' });
+  await typePrefix(page, prefix);
+  await requestFor(page, fixture, 'line');
+  await ghost(page, 'first').waitFor();
+  await page.keyboard.press('ControlOrMeta+Shift+p');
+  const input = page.locator('.quick-input-widget input[type="text"]');
+  await input.fill('>Accept Next Line');
+  await page.waitForTimeout(1000);
+  const offered = await page.locator('.quick-input-widget .monaco-list-row').filter({ hasText: 'Accept Next Line' }).count();
+  await page.keyboard.press('Escape');
+  await page.locator('.monaco-editor .inputarea').first().focus();
+  const saved = await savedText(page, file);
+  assert.equal(saved, prefix, 'Probing line-wise accept changed the document');
+  return { lineAcceptOffered: offered > 0, supported: false, documentUnchanged: true };
 }
 
 // Quick Open serves its previous file list (warmed at startup, also by the chat
@@ -291,6 +561,7 @@ async function burst({ page, file, fixture }, interval) {
 export async function prepareCompletionAcceptanceProject(project) {
   await writeFile(join(project, 'other.js'), '// Other document must remain unchanged.\n');
   await writeFile(join(project, 'crlf.js'), crlfOriginal);
+  await writeFile(join(project, 'long.js'), longPrefix);
 }
 
 export async function verifyCompletionAcceptance(context, result) {
@@ -298,17 +569,29 @@ export async function verifyCompletionAcceptance(context, result) {
   context.trace = result.trace = [];
   const cases = [['fullAccept', fullAccept], ['staleSameLine', staleSameLine], ['staleLineShift', staleLineShift],
     ['wrongTab', wrongTab], ['externalChange', externalChange], ['multiCursor', multiCursor],
-    ['unicodeCrlf', unicodeCrlf], ['longLine', longLine]];
+    ['unicodeCrlf', unicodeCrlf], ['longLine', longLine], ['accept-race', acceptRace], ['split-editors', splitEditors],
+    ['ime', imeComposition], ['line-accept', lineAccept]];
   // `--cases=a,b` limits a diagnostic run; full verification runs every case.
   const only = process.argv.find(item => item.startsWith('--cases='))?.slice(8).split(',');
   if (only) result.selectedCases = only;
   const selected = name => !only || only.includes(name);
-  for (const [name, run] of cases) if (selected(name)) { result.current = name; result[name] = await run(context); }
+  // A crashed renderer leaves page calls pending; fail the case instead of waiting.
+  const crashed = new Promise((_, reject) => context.page.once('crash', () => reject(Error('Renderer crashed'))));
+  crashed.catch(() => {});
+  const run = task => Promise.race([task, crashed]);
+  for (const [name, test] of cases) if (selected(name)) { result.current = name; result[name] = await run(test(context)); }
   result.bursts = [];
   for (const interval of [30, 150, 600]) if (selected('bursts')) {
-    result.current = `burst-${interval}`; result.bursts.push(await burst(context, interval));
+    result.current = `burst-${interval}`; result.bursts.push(await run(burst(context, interval)));
   }
   delete result.current;
   context.fixture.end();
+  // Declared workload budgets (desktop/completion-budgets.json): an exceeded or
+  // unmeasured metric fails. A diagnostic selection checks only what it ran.
+  const budgets = await loadCompletionBudgets();
+  result.budgets = checkCompletionBudgets(result, budgets, metric =>
+    metric.startsWith('burst') ? selected('bursts') : selected(metric.split('.')[0]));
+  const failed = result.budgets.checks.filter(check => check.status !== 'pass');
+  assert.equal(failed.length, 0, `Completion budgets failed: ${JSON.stringify(failed)}`);
   return result;
 }
