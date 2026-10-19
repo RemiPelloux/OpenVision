@@ -184,6 +184,182 @@ handler and gate code.
   3–7) and up to 6.8 s in exploratory runs at load 34, flat across turns 10–110. The first
   chunk took 1.1 s after submit. Neither was attributed.
 
+## Linux follow-up: stream delivery, edit sync, scroll (19 October 2026)
+
+This section covers a second Linux x64 host. It is a cloud container with 4
+CPUs and 15 GB of RAM, running Xvfb at 1920×1080 with **no GPU**, so Chromium
+renders in software. Runs were serialized, under a non-root user, with
+`dbus-run-session` and a plaintext gnome-keyring as the Secret Service. The
+model fixture is the same controlled loopback fixture as above. The run list
+and commands are in the
+[worker report](../verification/worker-reports/responsiveness.md).
+
+### `stream.lastChunkToPaintMs`
+
+The smoke failure `xXcKIA` (1,789 ms) had three causes:
+
+1. **Measurement (fixed in the verifier).**
+   - Old behaviour: the "stream done" text was polled only after the 56 typed
+     keys. With 500 chunks the stream ends before the typing does, so smoke
+     figures included leftover typing time.
+   - New behaviour: once the fixture sends the last chunk, the page checks the
+     streaming reply every frame, concurrently with the typing. The time is
+     taken one frame after the text is found. Both clocks are wall-clock based
+     (`performance.timeOrigin + now()`) on the same host.
+   - New fields: `lastChunkToFoundMs`, `lastChunkAfterTypingMs`, `typingMs`,
+     `submitToRequestMs` and `firstChunkSentToSeenMs`.
+2. **Delivery (fixed in the product).** The recovered Agent loop
+   (`consumeStream` in `cursor-agent-exec`) awaits renderer round trips for
+   every text delta: `sendUpdate(textDelta)`, `sendUpdate(tokenDelta)` and
+   `recordText`. Delivery therefore runs at the renderer main thread's pace.
+   - Observed with the `--trace-stream` logpoints on the renderer's
+     `textDeltaCoalescer`: 500 deltas sent in 2.2 s arrived at 25–50 per
+     second, with a median inter-arrival of 25 ms at 51 fps. The coalescer
+     flushed each one promptly.
+   - Observed with strace of the extension host: the SSE response was read in
+     about 3 s; writes to the renderer IPC socket ran for about 20 s.
+   - The rate did not depend on transcript size: 41 deltas/s with 2 turns and
+     35/s with 30.
+   - Fix: `desktop/agent-stream-delivery-customization.mjs` reads the model
+     stream as it arrives and merges text deltas that are already waiting, so
+     one round trip carries the backlog. Order, text, token counts and other
+     events are unchanged. When the renderer keeps up, nothing is waiting and
+     each delta goes alone.
+3. **Fixture (fixed in the verifier).** The fixture project lives under
+   `logs/` inside the OpenVision checkout. The Agent's per-turn
+   `git status --short --branch` found that checkout and walked it. The launch
+   now sets `GIT_CEILING_DIRECTORIES` to the run directory.
+   - Submit → model request: 6,477 → 427 ms.
+   - Transcript turns: 7.4 → 1.25 s.
+   - About 100 MB of extension-host reads per stream disappeared.
+
+Last chunk sent → painted (ms). The budget of 1,000 ms is unchanged.
+
+| Build | Smoke (500 chunks) | Full (2,000 chunks) |
+| --- | --- | --- |
+| Before (`R0Nvs0`, `oJF6cs`; full `0IZqo5`) | 12,167; 12,219 | **44,960** |
+| After, stream-only runs (10 smoke, 10 full) | **650–847** | **448–763** |
+| After, all-phase runs (3 smoke, 3 full) | 437–542 | 478–543 |
+
+### Incremental edits in the 50,000-line file
+
+Default pending owner decision: "incremental" means editor-model and
+language-server synchronisation, not Agent multi-edit application.
+
+Each editor phase now records, per typed key and by process role:
+
+- renderer writes;
+- extension-host reads and writes;
+- TypeScript server reads and writes;
+- CPU per role, over all threads.
+
+The large-file phase also records ratios to the 40-line control file
+(`*Ratio`) and the per-key edit payload as a share of the file
+(`syncBytesPerKeyFileShare`).
+
+Baselines (`dQjcNM`, `o5bjuB`, `vCBiFW`; 165 keys each):
+
+| Per typed key | 40-line file | 50,000-line file (3,538,890 B) |
+| --- | ---: | ---: |
+| Renderer writes (edits to the extension host, upper bound) | 142–924 B | 169–173 B |
+| TypeScript server input (edits) | 814–997 B | 893–1,348 B |
+| Large/small ratio, TypeScript server input | | 0.90–1.66 |
+| Edit payload as a share of the file | | 0.00025–0.00038 |
+| TypeScript server output (replies) | 2.1–2.4 KB | **68–143 KB** |
+| CPU: renderer / extension host / TypeScript server | 32–33 / 12.5–14.2 / 6.1–6.8 ms | 55–61 / 52–60 / 41–72 ms |
+
+What these show:
+
+- **Edits are incremental (observed).** What reaches the extension host and
+  the TypeScript server per key is the same in both files, about 1 KB.
+- **Replies are not.** strace of the semantic server
+  (`logs/strace-ts.txt`, a diagnostic run) attributes the large replies to
+  `documentHighlights`: one response was 4,077,984 bytes, listing a keyword's
+  occurrence on all 50,000 lines (every fixture line starts with
+  `export const`).
+  - This is occurrence highlighting after cursor moves, from the built-in
+    TypeScript extension. It is not edit sync and not re-tokenization.
+  - It explains the 4× extension-host and 7–12× TypeScript-server CPU per key,
+    and the large-file long tasks (532–1,143 ms against 0–152 ms).
+  - It was not changed. Capping occurrence highlighting in large files is
+    listed as an owner decision.
+
+New `editorLarge` budgets were set from these baselines:
+
+| Budget | Value |
+| --- | ---: |
+| `rendererWritePerKey` | ≤ 1,000 B |
+| `tsserverReadPerKey` | ≤ 2,700 B (worst baseline ×2) |
+| `syncBytesPerKeyFileShare` | ≤ 0.001 (full only) |
+| `tsserverReadPerKeyRatio` | ≤ 2.5 (worst ×1.5) |
+
+### Scroll frame p95
+
+Each phase now records `frameRefreshHistogram`: frame gaps counted in whole
+60 Hz refresh intervals (1, 2, 3, 4, and 5 or more).
+
+Five full-size runs (`HKUSkP`, `zQbbWT`, `W9CeOx`, `Hp2Pzz`, `umLLPW`): p95
+was 100, 100, 116.7, 100 and 100 ms.
+
+- **Histograms** (frames of 1 / 2 / 3 / 4 / 5 or more refresh intervals):
+  - `[305,16,2,18,55]`
+  - `[302,20,1,12,61]`
+  - `[306,15,2,7,66]`
+  - `[311,14,0,20,52]`
+  - `[307,17,1,20,51]`
+- **Longest task:** 136–514 ms.
+- **Smoke (`m69jLf`, `hTqwTq`, `J0q3KU`):** p95 66.6–83.2 ms, with 14–19 frames
+  of 5 or more refreshes.
+
+What this shows:
+
+- On this host the scroll cost is real, not noise. About 15% of the frames
+  are 5 or more refresh intervals long, so the p95 lands on them.
+- The 49.9 ms in `y46mxf` (GPU host) was a single 3-refresh frame at the 95th
+  percentile; 33.4 ms and 49.9 ms differ by one refresh.
+- Inference: the long frames are software raster and forced layout of the
+  virtualized transcript under scrolling. The row-measurement owner noted
+  above was not changed.
+
+### Software rendering and the frame budgets
+
+The following budgets fail on this host in every full all-phase run, or in
+most of them:
+
+- `stream.longTaskTotalMs` and `stream.latencyP95Ms` (also some
+  `framesOver100Ms`);
+- `scroll.frameP95Ms` and `scroll.longTaskMaxMs`;
+- `turn.longTaskTotalMs` and `turn.latencyP95Ms`;
+- `editorLarge.openMs` and `editorLarge.longTaskTotalMs`;
+- `picker.latencyP95Ms` (2 of 3).
+
+They pass or nearly pass on the GPU-accelerated reference host. The pre-fix
+stream runs here failed long tasks and typing too. The closed-chat string
+budgets (OV-1001's phase) fail at 581/224 in all three full runs and are left
+to that story.
+
+**Budgets were not changed.** If software-rendered Linux hosts should be
+verifiable, the owner could adopt a separate budget set derived the same way
+as the originals: worst observed value on this host after the fixes ×1.5,
+rounded up.
+
+| Budget | Reference (GPU host) | Worst here (full) | Proposed software-rendering budget |
+| --- | ---: | ---: | ---: |
+| `picker.latencyP95Ms` | 190 | 221.9 | 340 |
+| `stream.frameP95Ms` | 50 | 66.7 | 100 |
+| `stream.framesOver100Ms` | 3 | 9 | 14 |
+| `stream.longTaskTotalMs` | 600 | 2,542 | 3,900 |
+| `stream.latencyP95Ms` | 60 | 145.6 | 220 |
+| `scroll.frameP95Ms` | 50 | 116.7 | 180 |
+| `scroll.longTaskMaxMs` | 400 | 514 | 780 |
+| `turn.longTaskTotalMs` | 400 | 581 | 880 |
+| `turn.latencyP95Ms` | 110 | 271.2 | 410 |
+| `editorLarge.openMs` | 900 | 1,644 | 2,500 |
+| `editorLarge.longTaskTotalMs` | 300 | 1,143 | 1,750 |
+
+Every other budget, including the new edit-sync budgets and
+`stream.lastChunkToPaintMs`, passes here unchanged.
+
 ## Budgets
 
 `desktop/responsiveness-budgets.json` holds the budgets and
@@ -199,7 +375,7 @@ persisted-record budget was set after the fix; both baselines exceed it.
 | Stream | ≥ 2,000 chunks; last chunk painted ≤ 1,000 ms; frame p95 ≤ 50 ms; ≤ 3 frames over 100 ms; long tasks ≤ 600 ms; typing p95 ≤ 60 ms; ≤ 16 rows mutated; ≤ 16 mounted rows; ≤ 12,500 transcript elements; heap ≤ 330 MiB; `wchar` ≤ 3 MB |
 | Scroll | frame p95 ≤ 50 ms; longest task ≤ 400 ms; ≤ 24 rows and ≤ 1,300 elements at the top |
 | Turn | reply painted ≤ 3,500 ms; long tasks ≤ 400 ms; typing p95 ≤ 110 ms |
-| Editor | small-file long tasks ≤ 300 ms, p95 ≤ 360 ms; 50,000-line open ≤ 900 ms, frame p95 ≤ 50 ms, long tasks ≤ 300 ms, p95 ≤ 450 ms |
+| Editor | small-file long tasks ≤ 300 ms, p95 ≤ 360 ms; 50,000-line open ≤ 900 ms, frame p95 ≤ 50 ms, long tasks ≤ 300 ms, p95 ≤ 450 ms; per typed key ≤ 1,000 B renderer writes and ≤ 2,700 B TypeScript server input, ≤ 0.001 of the file (full only), TypeScript server input ≤ 2.5× the control file |
 | Closed chat | ≤ 5,000 live DOM nodes; ≤ 400 marker strings and ≤ 130 reply strings after 75 s; reopens from Chat History with its last reply; heap ≤ 330 MiB |
 | Persisted | application-user record ≤ 2,000,000 B; catalog 0 B |
 | Restart | selected model restored; ≥ 10,001 models; launch to selected model ≤ 31,000 ms |
@@ -220,7 +396,7 @@ npm run verify:responsiveness              # smoke: every phase, 30 turns, 500 c
 npm run verify:responsiveness -- --full    # the datasets the budgets were set on (logs/responsiveness-y46mxf)
 npm run verify:responsiveness -- --phases=editorSmall,editorLarge   # repeat one flaky phase only
 node desktop/verify-responsiveness.mjs --full --no-budgets   # record a baseline
-# diagnostics: --turns=N, --chunks=N, --lines=N, --bursts=N, --trace-storage, --profile=stream,editorLarge, --dump-dom, --save-closed-snapshot
+# diagnostics: --turns=N, --chunks=N, --lines=N, --bursts=N, --trace-storage, --trace-stream, --profile=stream,editorLarge, --dump-dom, --save-closed-snapshot
 npm run verify:model-menu:large            # selector fixed, see below
 npm run test:desktop                       # 184/184
 npm run test:agent-review                  # 95/95
@@ -246,8 +422,23 @@ fixed datasets for a 220-message transcript with code blocks, a 2,000-chunk
 stream with concurrent typing, a 50,000-line file and a 10,001-model picker;
 native measurement of frames, long tasks, input latency, mounted rows, DOM,
 heap and process-family filesystem work; numeric budgets with a verifier; one
-measured waste fixed at its owner. Open: Windows and macOS runs, live provider
-streams, scroll layout cost, the remaining long-chat retention after close (OV-1003), the
+measured waste fixed at its owner.
+
+The 19 October follow-up added three fixes, all on the no-GPU container:
+
+- last-chunk-to-paint is now measured concurrently with typing and passes in
+  every run;
+- per-delta Agent delivery is fixed at its owner;
+- the fixture's git walk is fixed.
+
+It also proved, with budgets, that large-file edits are synchronised
+incrementally. It recorded that many timing budgets fail under software
+rendering, and proposed derived budgets above as an owner decision.
+
+Open: Windows and macOS runs, live provider
+streams, a rerun of every timing budget on a GPU-accelerated Linux host (or an owner
+decision on software-rendering budgets), occurrence highlighting that is O(file) in
+large files, scroll layout cost, the remaining long-chat retention after close (OV-1003), the
 remaining persisted model-name lists, budgets on an unloaded host, and editor
 work with language features beyond the built-in TypeScript server. This is
 **source-build evidence**; the preview.7 portable package does not contain

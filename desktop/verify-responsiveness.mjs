@@ -519,9 +519,11 @@ try {
     await editorPhase('editorLarge', Math.floor(LARGE_LINES / 2), largeOpenMs);
     const large = result.phases.editorLarge;
     large.largeFileBytes = Buffer.byteLength(largeFile);
-    // Largest per-key synchronisation payload as a share of the file (1 = the whole file per key).
-    large.syncBytesPerKeyFileShare = Math.round(Math.max(large.rendererWritePerKey ?? 0, large.extensionHostReadPerKey ?? 0,
-      large.tsserverReadPerKey ?? 0) / large.largeFileBytes * 1e5) / 1e5;
+    // Largest per-key edit-synchronisation payload (renderer -> extension host, extension host
+    // -> TypeScript server) as a share of the file (1 = the whole file per key). Replies are not
+    // edits: tsserver's documentHighlights for a keyword on every line is O(file) (4 MB here).
+    large.syncBytesPerKeyFileShare = Math.round(Math.max(large.rendererWritePerKey ?? 0, large.tsserverReadPerKey ?? 0)
+      / large.largeFileBytes * 1e5) / 1e5;
     if (result.phases.editorSmall) Object.assign(large, sizeRatios(large, result.phases.editorSmall, SIZE_COMPARED));
     console.log(`editorLarge sync: ${JSON.stringify(Object.fromEntries(Object.entries(large).filter(([key]) =>
       /PerKey|Ratio$|FileShare|editKeys/.test(key))))}`);
@@ -591,7 +593,11 @@ try {
   }
   result.fixture = { ...fixture };
   result.hostLoad.end = await hostLoad();
-  result.budgetFailures = noBudgets ? [] : checkBudgets(result, applicableBudgets(budgets, { full: FULL, selectedPhases }));
+  const applicable = applicableBudgets(budgets, { full: FULL, selectedPhases });
+  // Large/small ratios need the control file: without editorSmall they are not measured.
+  if (!wants('editorSmall') && applicable.phases.editorLarge)
+    applicable.phases.editorLarge = Object.fromEntries(Object.entries(applicable.phases.editorLarge).filter(([key]) => !key.endsWith('Ratio')));
+  result.budgetFailures = noBudgets ? [] : checkBudgets(result, applicable);
   // Smoke datasets are smaller, so the full-only minimums are replaced by exact dataset checks.
   if (!noBudgets && !FULL) {
     if (wants('stream') && result.phases.stream?.chunksSent !== STREAM_CHUNKS)
