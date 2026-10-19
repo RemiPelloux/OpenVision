@@ -228,6 +228,15 @@ fixture: `7c276783907b151a7dc1345b35a07958d3681be228432e4804b4d1426ebfe243`.
 This is the first Linux pass of the kept-edit Undo/Redo stage. It used a
 controlled fixture, not live inference.
 
+## Follow-up, 19 October 2026
+
+The [Linux closure report](rea-agent-editing-linux-closure.md) runs Undo on a full project volume. Undo that
+shrinks the file passed; Undo that grows it **tore the file** (28,672-byte prefix,
+no error) because the renderer's disk provider ignored a short write. The provider
+now writes every byte and restores the previous bytes on failure. The ItemTable
+flush loss inferred below was already fixed by the
+[profile storage owner](rea-profile-io-faults.md#main-process-storage-queue-retry-and-acknowledge-only-after-sqlite).
+
 ## Not verified
 
 - Review snapshots, rules and provider configuration were not tested with the

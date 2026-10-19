@@ -182,6 +182,13 @@ nor removes it. The first build backups are kept under `backups/`.
 edit still keeps its saved bytes on a full volume, and retry, Keep and restart
 still work. Profile storage is on the ordinary disk in that verifier.
 
+## Follow-up, 19 October 2026
+
+The [Linux closure report](rea-agent-editing-linux-closure.md) adds Undo of a pending review with the profile
+full (review snapshot and record deletion): the bytes are restored, no review row
+remains after space is freed and no review returns after restart. The stale
+settings-status selector in this verifier was corrected.
+
 ## Not verified
 
 - **EIO, torn sectors and power loss.** Not producible here without root.
