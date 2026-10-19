@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import { lstat, mkdir, mkdtemp, open, readFile, readdir, realpath, rm, statfs, symlink, unlink, writeFile } from 'node:fs/promises';
-import { release } from 'node:os';
+import { release, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
@@ -83,7 +83,9 @@ async function outer() {
     platform: process.platform, arch: process.arch, osRelease: release(), node: process.version, uid: process.getuid(),
     transaction: await fileHash(join(root, 'desktop/import-transaction.mjs')), main: await fileHash(join(appRoot, 'out/main.js')) };
   try {
-    const source = join(directory, 'source'); await writeSource(source);
+    // Sources must be outside the installation (logs/ is inside it).
+    const source = await mkdtemp(join(tmpdir(), 'openvision-import-faults-source-')); await writeSource(source);
+    result.source = source;
     // Disposable overlay: hard-linked host and app, with desktop/ replaced by the instrumented copy.
     const overlay = await createImportOverlay(root, join(directory, 'overlay-root'));
     const overlayHost = join(directory, 'host'), overlayApp = join(overlayHost, 'resources/app');
@@ -103,23 +105,29 @@ async function outer() {
       }
       throw new Error(`Probe did not pause at ${kind} ${index}`);
     };
-    for (const [kind, index] of [['import', 0], ['import', 3], ['import', changeCount - 1], ['restore', 3]])
-      result.interruptions.push(await nativeInterruption({ directory, layout, overlayHost, source, probeDirectory, probeEnv, paused, kind, index }));
-    for (const [kind, index] of [['import', 1], ['import', 5], ['restore', 2]])
-      result.cli.push(await cliInterruption({ directory, overlay, source, probeDirectory, probeEnv, paused, kind, index }));
+    // Each record is kept in the result before its assertions run, so a failure keeps its observations.
+    for (const [kind, index] of [['import', 0], ['import', 3], ['import', changeCount - 1], ['restore', 3]]) {
+      const record = { case: `native-${kind}-${index}`, kind, index }; result.interruptions.push(record);
+      await nativeInterruption({ record, directory, layout, overlayHost, source, probeDirectory, probeEnv, paused, kind, index });
+    }
+    for (const [kind, index] of [['import', 1], ['import', 5], ['restore', 2]]) {
+      const record = { case: `cli-${kind}-${index}`, kind, index }; result.cli.push(record);
+      await cliInterruption({ record, directory, overlay, source, probeDirectory, probeEnv, paused, kind, index });
+    }
     await save();
     // Namespace stages: the outer namespace root mounts and remounts; each stage runs as the invoking uid.
     for (const name of ['full-volume', 'readonly-volume', 'native-volume']) await mkdir(join(directory, name));
     const self = fileURLToPath(import.meta.url), uid = process.getuid(), gid = process.getgid();
-    const run = name => `OPENVISION_IMPORT_FAULT_DIRECTORY="${directory}" unshare --map-user=${uid} --map-group=${gid} "${process.execPath}" "${self}" --stage ${name}`;
+    const run = name => `OPENVISION_IMPORT_FAULT_DIRECTORY="${directory}" OPENVISION_IMPORT_FAULT_SOURCE="${source}" unshare --map-user=${uid} --map-group=${gid} "${process.execPath}" "${self}" --stage ${name}`;
     const ro = join(directory, 'readonly-volume');
     await writeFile(join(directory, 'namespace.sh'), ['set -e',
       `mount -t tmpfs -o size=4m openvision-import-full "${join(directory, 'full-volume')}"`,
       `mount -t tmpfs -o size=64m openvision-import-readonly "${ro}"`,
       `mount -t tmpfs -o size=384m openvision-import-native "${join(directory, 'native-volume')}"`,
       run('enospc'), run('erofs-prepare'),
-      `mount -o remount,ro "${ro}"`, run('erofs'),
-      `mount -o remount,rw "${ro}"`,
+      // A read-only bind over the volume gives EROFS; unmounting the bind restores write access.
+      `mount --bind "${ro}" "${ro}"`, `mount -o remount,bind,ro "${ro}"`, run('erofs'),
+      `umount "${ro}"`,
       `mount --bind "${join(ro, 'extensions')}" "${join(ro, 'extensions')}"`, `mount -o remount,bind,ro "${join(ro, 'extensions')}"`,
       run('erofs-extensions'), `umount "${join(ro, 'extensions')}"`, run('erofs-after'),
       run('native-volume'), ''].join('\n'));
@@ -132,9 +140,12 @@ async function outer() {
     for (const [name, value] of Object.entries(result.namespace)) if (name !== 'exit') assert.equal(value.status, 'passed', `${name} stage`);
     result.success = true;
   } catch (error) { result.error = error.stack; process.exitCode = 1; }
+  // A failed case must not leave its owned app running.
+  for (const app of openApps) await app.app.close().catch(() => {});
   await save();
   console.log(JSON.stringify(result, null, 2));
 }
+const openApps = new Set();
 
 function procStat(pid) {
   try {
@@ -157,23 +168,26 @@ async function launchApp(executable, host, userData, extensions, project, env = 
   assert.equal(procStat(child.pid)?.pgid, child.pid, 'The owned host must lead its own process group');
   const invoke = request => page.evaluate(request => window.vscode.ipcRenderer.invoke('vscode:openvision-cursor-import', request), request);
   const recovery = await app.evaluate(() => globalThis.openvisionImportRecovery);
-  return { app, page, errors, invoke, recovery,
-    async close() { await app.close(); return child.exitCode; },
+  const owned = { app, page, errors, invoke, recovery,
+    async close() { openApps.delete(owned); await app.close(); return child.exitCode; },
     async kill() {
       // The group was created by this verifier's launch and checked above; never a PID chosen by name.
       assert.equal(child.exitCode, null); assert.equal(procStat(child.pid)?.pgid, child.pid);
       const exited = once(child, 'exit', { signal: AbortSignal.timeout(15000) });
-      process.kill(-child.pid, 'SIGKILL');
+      process.kill(-child.pid, 'SIGKILL'); openApps.delete(owned);
       const [code, signal] = await exited; return { code, signal };
     } };
+  openApps.add(owned);
+  return owned;
 }
 
-const userSkip = key => /^User\/(globalStorage|workspaceStorage|History)\//.test(key) || /^(?!User\/|Backups\/)/.test(key);
-async function nativeInterruption({ directory, layout, overlayHost, source, probeDirectory, probeEnv, paused, kind, index }) {
-  const name = `native-${kind}-${index}`, userData = join(directory, name, 'profile'), extensions = join(directory, name, 'extensions');
+// While an app owns the profile it writes its own runtime files (globalStorage, .openvision,
+// agents, logs). Compare the import's destination set, where temporaries would also appear.
+const userSkip = key => !/^(User\/|User\/(settings|keybindings|tasks)\.json|User\/snippets\/.*|Backups\/.*)$/.test(key);
+async function nativeInterruption({ record, directory, layout, overlayHost, source, probeDirectory, probeEnv, paused, kind, index }) {
+  const name = record.case, userData = join(directory, name, 'profile'), extensions = join(directory, name, 'extensions');
   const project = join(directory, name, 'project'); await mkdir(project, { recursive: true });
   await writeDestination(userData, extensions);
-  const record = { case: name, kind, index };
   const options = { user: join(source, 'User'), extensions: join(source, 'extensions'), categories: ['settings', 'keybindings', 'snippets', 'tasks', 'extensions'], overwrite: true };
   // The original state as seen while an app owns the profile (app-owned stores excluded).
   let original = { user: await tree(userData, userSkip), extensions: await tree(extensions) };
@@ -182,6 +196,7 @@ async function nativeInterruption({ directory, layout, overlayHost, source, prob
     const app = await launchApp(layout.executable, layout.host, userData, extensions, project);
     original = { user: await tree(userData, userSkip), extensions: await tree(extensions) };
     const preview = await app.invoke({ action: 'preview', options });
+    assert.equal(preview.ok, true, preview.error);
     backup = (await app.invoke({ action: 'apply', token: preview.token })).backup;
     assert.equal(await app.close(), 0);
   }
@@ -192,7 +207,7 @@ async function nativeInterruption({ directory, layout, overlayHost, source, prob
   let pending;
   if (kind === 'import') {
     const preview = await owned.invoke({ action: 'preview', options });
-    assert.equal(preview.files, changeCount);
+    assert.equal(preview.ok, true, preview.error); assert.equal(preview.files, changeCount);
     pending = owned.invoke({ action: 'apply', token: preview.token }).catch(error => ({ killed: error.message }));
   } else pending = owned.invoke({ action: 'restore', backup }).catch(error => ({ killed: error.message }));
   await paused(kind, index);
@@ -216,6 +231,7 @@ async function nativeInterruption({ directory, layout, overlayHost, source, prob
   record.listed = listing.json.backups.map(entry => ({ status: entry.status, files: entry.files }));
   assert.ok(listing.json.backups.length >= 1 && listing.json.backups.every(entry => ['restored', 'complete'].includes(entry.status)));
   const preview = await restarted.invoke({ action: 'preview', options });
+  assert.equal(preview.ok, true, preview.error);
   const reimport = await restarted.invoke({ action: 'apply', token: preview.token });
   assert.equal(reimport.ok, true, reimport.error); assert.equal(reimport.files, changeCount);
   assert.equal((await restarted.invoke({ action: 'restore', backup: reimport.backup })).restored, changeCount);
@@ -225,14 +241,12 @@ async function nativeInterruption({ directory, layout, overlayHost, source, prob
   record.restartedExit = await restarted.close();
   assert.equal(record.restartedExit, 0);
   record.status = 'passed';
-  return record;
 }
 
-async function cliInterruption({ directory, overlay, source, probeDirectory, probeEnv, paused, kind, index }) {
-  const name = `cli-${kind}-${index}`, userData = join(directory, name, 'profile'), extensions = join(directory, name, 'extensions');
+async function cliInterruption({ record, directory, overlay, source, probeDirectory, probeEnv, paused, kind, index }) {
+  const name = record.case, userData = join(directory, name, 'profile'), extensions = join(directory, name, 'extensions');
   await writeDestination(userData, extensions);
   const original = { user: await tree(userData), extensions: await tree(extensions) };
-  const record = { case: name, kind, index };
   let backup;
   if (kind === 'restore') { const run = cli([...targetArgs(userData, extensions), ...importArgs(source)]); assert.equal(run.status, 0, run.stderr); backup = run.json.backup; }
   const imported = { user: await tree(userData), extensions: await tree(extensions) };
@@ -263,13 +277,12 @@ async function cliInterruption({ directory, overlay, source, probeDirectory, pro
   record.byteExactAfterReimportRestore = JSON.stringify(strip({ user: await tree(userData), extensions: await tree(extensions) })) === JSON.stringify(strip(original));
   assert.ok(record.byteExactAfterReimportRestore);
   record.status = 'passed';
-  return record;
 }
 
 // ---- namespace stages (run as the invoking uid inside the mount namespace) ------
 async function namespaceStage(name) {
   const directory = process.env.OPENVISION_IMPORT_FAULT_DIRECTORY;
-  const output = join(directory, `stage-${name}.json`), source = join(directory, 'source');
+  const output = join(directory, `stage-${name}.json`), source = process.env.OPENVISION_IMPORT_FAULT_SOURCE;
   const result = { stage: name, status: 'failed', steps: [] };
   try {
     if (name === 'enospc') await enospc(join(directory, 'full-volume'), source, result);
@@ -408,6 +421,7 @@ async function nativeVolume(directory, volume, source, result) {
   try {
     const original = await declared();
     let preview = await app.invoke({ action: 'preview', options });
+    assert.equal(preview.ok, true, preview.error);
     result.steps.push({ preview: preview.files });
     await fill(volume, 0);
     const failedImport = await app.invoke({ action: 'apply', token: preview.token });
@@ -416,6 +430,7 @@ async function nativeVolume(directory, volume, source, result) {
     assert.deepEqual(strip((await declared()).user), strip(original.user)); assert.deepEqual((await declared()).extensions, original.extensions);
     await fillers(volume);
     preview = await app.invoke({ action: 'preview', options });
+    assert.equal(preview.ok, true, preview.error);
     const imported = await app.invoke({ action: 'apply', token: preview.token });
     assert.equal(imported.ok, true, imported.error);
     const importedState = await declared();

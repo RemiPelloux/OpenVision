@@ -6,8 +6,9 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 // together with its directories, so that adoption replaced the imported entries
 // (dropping gallery metadata, uuid and target platform) and made the import's
 // exact restore refuse the changed registry. Skip directories the default profile
-// already registers; unregistered external directories are still adopted.
-export const importWatcherMarker = '/* OpenVision import keeps registered extension directories v1 */';
+// already registers, and directories already gone again (an import restored right
+// after it was applied); unregistered external directories are still adopted.
+export const importWatcherMarker = '/* OpenVision import keeps registered extension directories v2 */';
 const adoption = 'r && r.installedTimestamp === void 0 && (this.knownDirectories.add(i), t.push(r));';
 
 export function keepRegisteredExtensionDirectories(text) {
@@ -25,6 +26,7 @@ export function keepRegisteredExtensionDirectories(text) {
     throw Error('Extension folder watcher contract changed.');
   const replacement = `r && r.installedTimestamp === void 0 && (this.knownDirectories.add(i), ${importWatcherMarker}
           (await this.extensionsProfileScannerService.scanProfileExtensions(this.userDataProfilesService.defaultProfile.extensionsResource)
-            .catch(() => [])).some((o) => this.uriIdentityService.extUri.isEqual(o.location, i)) || t.push(r));`;
+            .catch(() => [])).some((o) => this.uriIdentityService.extUri.isEqual(o.location, i)) ||
+          !(await this.fileService.exists(i)) || t.push(r));`;
   return text.slice(0, method.start) + source.replace(adoption, replacement) + text.slice(method.end);
 }

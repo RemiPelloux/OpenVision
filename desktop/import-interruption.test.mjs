@@ -142,9 +142,9 @@ test('shared-process folder watcher keeps directories the default profile regist
   const Ex = new Function('B', `${installed}; return Ex;`)(class {});
   const watcher = Object.assign(new Ex(), {
     extensionsScanner: { scanUserExtensionAtLocation: async location => ({ location }) }, knownDirectories: new Set(),
-    addExtensionsToProfile: async () => {}, userDataProfilesService: { defaultProfile: { extensionsResource: 'registry' } },
+    addExtensionsToProfile: async () => {}, fileService: { exists: async location => location !== 'removed' }, userDataProfilesService: { defaultProfile: { extensionsResource: 'registry' } },
     extensionsProfileScannerService: { scanProfileExtensions: async () => [{ location: 'imported' }] },
     uriIdentityService: { extUri: { isEqual: (left, right) => left === right } } });
-  assert.deepEqual((await watcher.onDidFilesChange({ rawAdded: ['imported', 'external'] })).map(entry => entry.location), ['external']);
+  assert.deepEqual((await watcher.onDidFilesChange({ rawAdded: ['imported', 'removed', 'external'] })).map(entry => entry.location), ['external']);
   assert.throws(() => keepRegisteredExtensionDirectories(text.replace('t.push(r)', 't.push(r, r)')), /contract changed/);
 });
