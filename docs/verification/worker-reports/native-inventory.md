@@ -132,3 +132,28 @@ The remaining items are follow-on stories, not Linux OV-801 gaps:
     counts wording).
 
   OV-802 and OV-803 are separate stories.
+
+## Completion on the merged branch
+
+After the coordinator merged every branch (`ccr-a39d6f13-jurmdv` at `3ee197e5`,
+then `2b61fcbc`), the build was redone from a clean `source/` and
+`electron-host/`. Both verifiers were then rerun at head `2b61fcbc` as user
+`ov`:
+
+| Command | Run ID | Result |
+| --- | --- | --- |
+| `npm run verify:native-inventory` | console | pass, second run: pinned AppImage digest matched; 39/34 native, 22/15 WASM, 49 dispositions, 0 failures |
+| `npm run verify:native-loaded` (10 min idle) | `logs/native-loaded-7hcCs8` | pass, first run on the merged build: 15 mapped, 2 executed, 2 read, 1 opened-not-mapped, 41 never-loaded; 603 trace files, 233 executions; clean exit, no survivors |
+
+Compared with `XCwv4L`, all 61 paths have the same state and trigger. Four
+paths gain only role labels:
+
+- `cursor`, `libEGL.so`, `libGLESv2.so` and `libffmpeg.so` add `gpu-process`.
+- `cursor` and `libffmpeg.so` also add `child:bash`.
+
+The merged sampler (`process-family-linux.mjs`) now labels these processes from
+their command line when Electron's metrics do not name them. The loaded native
+set did not change.
+
+Every item from "Status at stop" is now complete. Recommendation unchanged:
+**promote OV-801 to Verified on Linux x64**, pending the owner defaults above.
