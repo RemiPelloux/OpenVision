@@ -8,9 +8,11 @@ import { fileHash } from './import-files.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { prepareCpp, cppArguments } from './setup-cpp.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(import.meta.dirname, '..'), tools = await prepareCpp(root);
 const { layout } = await loadRuntime(root);
+await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/cpp-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 const extension = join(directory, 'driver'), extensions = join(directory, 'extensions');
@@ -34,9 +36,15 @@ const files = {
   'complete.c': 'int addNumbers(int a, int b);\nint completionProbe() { return add; }\n',
 };
 for (const [name, text] of Object.entries(files)) await writeFile(join(project, name), text);
-const compiler = 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe';
+const windows = process.platform === 'win32';
+// Windows uses the installed MSVC Build Tools; Linux uses the system GCC for the
+// compilation database and builds with both GCC and Clang.
+const compiler = windows ? 'C:/Program Files (x86)/Microsoft Visual Studio/2022/BuildTools/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe'
+  : { c: '/usr/bin/gcc', cpp: '/usr/bin/g++' };
 const commands = Object.keys(files).filter(name => /\.(c|cpp)$/.test(name)).map(name => ({ directory: project,
-  file: join(project, name), arguments: [compiler, '/nologo', '/c', ...(name.endsWith('.cpp') ? ['/std:c++17'] : []), join(project, name)] }));
+  file: join(project, name), arguments: windows
+    ? [compiler, '/nologo', '/c', ...(name.endsWith('.cpp') ? ['/std:c++17'] : []), join(project, name)]
+    : name.endsWith('.cpp') ? [compiler.cpp, '-std=c++17', '-c', join(project, name)] : [compiler.c, '-std=c11', '-c', join(project, name)] }));
 await writeFile(join(project, 'compile_commands.json'), JSON.stringify(commands, null, 2));
 await writeFile(join(extension, 'package.json'), JSON.stringify({ name: 'openvision-cpp-verifier',
   publisher: 'openvision-local-verification', version: '0.0.0', engines: { vscode: '^1.90.0' },
@@ -46,17 +54,21 @@ await copyFile(join(root, 'desktop/verify-language-cross-file.cjs'), join(extens
 const workbench = join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js');
 const result = { directory, platform: process.platform, launcher_node: process.version,
   workbench: await fileHash(workbench), server: await fileHash(tools.executable),
-  extension: await fileHash(join(tools.extension, 'out/bundle.js')), compiler: await fileHash(compiler),
+  extension: await fileHash(join(tools.extension, 'out/bundle.js')),
+  compiler: windows ? await fileHash(compiler) : Object.fromEntries(await Promise.all(['gcc', 'g++', 'clang', 'clang++'].map(async name =>
+    [name, { path: `/usr/bin/${name}`, sha256: await fileHash(`/usr/bin/${name}`).catch(() => null),
+      version: spawnSync(`/usr/bin/${name}`, ['--version'], { encoding: 'utf8' }).stdout?.split('\n')[0] ?? null }]))),
   driver: await fileHash(join(root, 'desktop/verify-cpp-extension.cjs')),
   cross_file_driver: await fileHash(join(root, 'desktop/verify-language-cross-file.cjs')),
-  scope: 'Native Windows OpenVision with official clangd extension/server; public API driver; no AI inference or mock language provider.' };
+  scope: `Native ${process.platform}-${process.arch} OpenVision with official clangd extension/server; public API driver; no AI inference or mock language provider.` };
 const errors = [];
 let app, page;
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', extensions, '--extensionDevelopmentPath', extension,
-      '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', project] });
+      '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
   page = await app.firstWindow(); page.on('pageerror', error => errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   const deadline = Date.now() + 240000;
@@ -67,19 +79,34 @@ try {
   }
   assert.ok(result.native, 'Native C/C++ driver must finish');
   assert.equal(result.native.success, true, result.native.failure);
-  const buildScript = join(project, 'verify-build.cmd');
-  await writeFile(buildScript, '@echo off\r\ncall "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat" >nul\r\nif errorlevel 1 exit /b 1\r\ncl /nologo /EHsc main.cpp math.cpp /Fe:verify-cpp.exe\r\nexit /b %errorlevel%\r\n');
-  const build = spawnSync('cmd.exe', ['/d', '/c', 'verify-build.cmd'], { cwd: project, encoding: 'utf8', windowsHide: true });
-  result.build = { status: build.status, stdout: build.stdout, stderr: build.stderr };
-  assert.equal(build.status, 0);
-  const run = spawnSync(join(project, 'verify-cpp.exe'), [], { cwd: project, timeout: 10000, windowsHide: true });
-  assert.equal(run.status, 0); result.compiled_program_exit = run.status;
-  await writeFile(buildScript, '@echo off\r\ncall "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat" >nul\r\nif errorlevel 1 exit /b 1\r\ncl /nologo /TC c-main.c c-math.c /Fe:verify-c.exe\r\nexit /b %errorlevel%\r\n');
-  const cBuild = spawnSync('cmd.exe', ['/d', '/c', 'verify-build.cmd'], { cwd: project, encoding: 'utf8', windowsHide: true });
-  result.c_build = { status: cBuild.status, stdout: cBuild.stdout, stderr: cBuild.stderr };
-  assert.equal(cBuild.status, 0);
-  const cRun = spawnSync(join(project, 'verify-c.exe'), [], { cwd: project, timeout: 10000, windowsHide: true });
-  assert.equal(cRun.status, 0); result.c_compiled_program_exit = cRun.status;
+  if (windows) {
+    const buildScript = join(project, 'verify-build.cmd');
+    await writeFile(buildScript, '@echo off\r\ncall "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat" >nul\r\nif errorlevel 1 exit /b 1\r\ncl /nologo /EHsc main.cpp math.cpp /Fe:verify-cpp.exe\r\nexit /b %errorlevel%\r\n');
+    const build = spawnSync('cmd.exe', ['/d', '/c', 'verify-build.cmd'], { cwd: project, encoding: 'utf8', windowsHide: true });
+    result.build = { status: build.status, stdout: build.stdout, stderr: build.stderr };
+    assert.equal(build.status, 0);
+    const run = spawnSync(join(project, 'verify-cpp.exe'), [], { cwd: project, timeout: 10000, windowsHide: true });
+    assert.equal(run.status, 0); result.compiled_program_exit = run.status;
+    await writeFile(buildScript, '@echo off\r\ncall "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat" >nul\r\nif errorlevel 1 exit /b 1\r\ncl /nologo /TC c-main.c c-math.c /Fe:verify-c.exe\r\nexit /b %errorlevel%\r\n');
+    const cBuild = spawnSync('cmd.exe', ['/d', '/c', 'verify-build.cmd'], { cwd: project, encoding: 'utf8', windowsHide: true });
+    result.c_build = { status: cBuild.status, stdout: cBuild.stdout, stderr: cBuild.stderr };
+    assert.equal(cBuild.status, 0);
+    const cRun = spawnSync(join(project, 'verify-c.exe'), [], { cwd: project, timeout: 10000, windowsHide: true });
+    assert.equal(cRun.status, 0); result.c_compiled_program_exit = cRun.status;
+  } else {
+    // The renamed sources must still compile warning-free and run with both toolchains.
+    result.builds = {};
+    for (const [label, tool, sources, standard] of [['g++', '/usr/bin/g++', ['main.cpp', 'math.cpp'], '-std=c++17'],
+      ['clang++', '/usr/bin/clang++', ['main.cpp', 'math.cpp'], '-std=c++17'], ['gcc', '/usr/bin/gcc', ['c-main.c', 'c-math.c'], '-std=c11'],
+      ['clang', '/usr/bin/clang', ['c-main.c', 'c-math.c'], '-std=c11']]) {
+      const output = join(directory, `verify-${label.replace(/\+/g, 'p')}`);
+      const build = spawnSync(tool, [standard, '-Wall', '-Wextra', '-Werror', ...sources, '-o', output], { cwd: project, encoding: 'utf8' });
+      const run = build.status === 0 ? spawnSync(output, [], { cwd: project, timeout: 10000 }) : null;
+      result.builds[label] = { status: build.status, stderr: build.stderr, program_exit: run?.status ?? null };
+      assert.equal(build.status, 0, `${label} build: ${build.stderr}`);
+      assert.equal(run.status, 0, `${label} program exit`);
+    }
+  }
   assert.equal(await fileHash(workbench), result.workbench);
   assert.equal(await fileHash(join(root, 'desktop/verify-cpp-extension.cjs')), result.driver);
   assert.equal(await fileHash(join(root, 'desktop/verify-language-cross-file.cjs')), result.cross_file_driver);
