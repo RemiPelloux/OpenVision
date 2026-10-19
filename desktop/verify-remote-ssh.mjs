@@ -115,6 +115,8 @@ let app, page;
 async function launch(name) {
   app = await _electron.launch({ executablePath: traced, env, timeout: 90000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
+      // No Secret Service under Xvfb; the disposable profile stores the fixture key with basic encryption.
+      '--password-store=basic',
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', '--log', 'trace',
       ...await linuxSandboxArguments(layout.host), '--folder-uri', folderUri] });
   page = await app.firstWindow(); page.setDefaultTimeout(30000);
