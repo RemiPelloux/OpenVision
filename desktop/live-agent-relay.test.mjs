@@ -260,11 +260,29 @@ test('a fork probe can arm exactly one real unauthorized response after successf
   relay.expectUnauthorizedOnNextRequest(); relay.setKey('invalid-fork');
   const failed = await submit(); assert.equal(failed.status, 401); await failed.text();
   assert.equal(relay.requests[1].expectedAuthenticationFailure, true);
-  assert.throws(() => relay.expectUnauthorizedOnNextRequest(), /single authentication failure/);
+  assert.throws(() => relay.expectUnauthorizedOnNextRequest(), /single provider failure/);
   relay.setKey(key);
   const recovered = await submit(); assert.equal(recovered.status, 200); await recovered.text();
   assert.equal(relay.requests.length, 3);
   assert.equal(relay.requests[2].assistantReturnedMarker, true);
+});
+
+test('a fork probe can arm one non-authentication provider failure; an unarmed one still fails the probe', async t => {
+  let fail = false;
+  const relay = await fixture(t, (_request, response) => {
+    if (fail) { fail = false; response.writeHead(503, { 'content-type': 'application/json' }); response.end('{"error":{"message":"unavailable"}}'); return; }
+    sse(response, [{ choices: [{ delta: { content: marker } }] }]);
+  });
+  const submit = () => fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) });
+  relay.expectFailureOnNextRequest(503); fail = true;
+  const failed = await submit(); assert.equal(failed.status, 503); await failed.text();
+  assert.equal(relay.requests[0].expectedProviderFailure, true);
+  assert.equal(relay.requests[0].expectedAuthenticationFailure, undefined);
+  assert.throws(() => relay.expectFailureOnNextRequest(503), /single provider failure/);
+  const recovered = await submit(); assert.equal(recovered.status, 200); await recovered.text();
+  fail = true;
+  const unarmed = await submit(); assert.equal(unarmed.status, 502, 'An unarmed failure is not shown as provider output'); await unarmed.text();
+  assert.match(await relay.failure, /HTTP 503/);
 });
 
 test('unexpected acceptance of the invalid credential stops the probe before forwarding model output', async t => {

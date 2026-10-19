@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, writeFile, unlink } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -20,13 +21,15 @@ import { liveReadPrompt, invalidProbeKey, inspectRetryPrompt, retryAuthenticatio
 import { enterWorkspace } from './verification-workspace.mjs';
 import { retryNativeTimeout, timeoutLimit } from './verify-live-timeout.mjs';
 import { createLiveEditFixture } from './verify-live-edits.mjs';
+import { createAgentFixtureProvider, fixtureModel } from './agent-fixture-provider.mjs';
 
-if (!process.argv.includes('--live')) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID [--reasoning default|high] [--subagent] [--history|--history-failure] [--stop|--retry-auth [--failure-restart]|--timeout headers|body] [--paste|--rules|--memory|--edit] [--capture-payload]\nRuns a native Agent workflow through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key; --failure-restart restarts the app before that retry and requires the saved error and Try again to be restored without a request. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Edit requires real StrReplace calls for two files, review rejection/retry/acceptance, Undo/Redo and restart persistence. Capture saves the first request locally with the transport key redacted.');
+const fixture = process.argv.includes('--fixture');
+if (!process.argv.includes('--live') && !fixture) {
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID|--fixture [--fork-status 401|503] [--reasoning default|high] [--subagent] [--history|--history-failure] [--stop|--retry-auth [--failure-restart]|--timeout headers|body] [--paste|--rules|--memory|--edit] [--capture-payload]\nRuns a native Agent workflow through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key; --failure-restart restarts the app before that retry and requires the saved error and Try again to be restored without a request. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Edit requires real StrReplace calls for two files, review rejection/retry/acceptance, Undo/Redo and restart persistence. Capture saves the first request locally with the transport key redacted. --fixture replaces the saved provider with a deterministic loopback OpenAI-compatible fixture (no quota, not live inference) for --history/--history-failure and --timeout; with --timeout, --failure-restart restarts before Try again.');
   process.exit(0);
 }
-const modelIndex = process.argv.indexOf('--model'), model = process.argv[modelIndex + 1];
-assert.ok(modelIndex >= 0 && model && !model.startsWith('--'), 'Select an enabled saved model with --model');
+const modelIndex = process.argv.indexOf('--model'), model = fixture ? fixtureModel : process.argv[modelIndex + 1];
+assert.ok(fixture ? modelIndex < 0 : modelIndex >= 0 && model && !model.startsWith('--'), fixture ? '--fixture uses its own model' : 'Select an enabled saved model with --model');
 const reasoningIndex = process.argv.indexOf('--reasoning');
 const reasoning = reasoningIndex < 0 ? 'default' : process.argv[reasoningIndex + 1];
 const subagent = process.argv.includes('--subagent');
@@ -38,10 +41,14 @@ const memory = process.argv.includes('--memory');
 const edit = process.argv.includes('--edit');
 const stop = process.argv.includes('--stop');
 const failureRestart = process.argv.includes('--failure-restart');
-const retryAuth = process.argv.includes('--retry-auth') || failureRestart;
-assert.ok(!historyFailure || !subagent, '--history-failure verifies a direct Agent fork');
 const timeoutIndex = process.argv.indexOf('--timeout');
 const timeoutPhase = timeoutIndex < 0 ? undefined : process.argv[timeoutIndex + 1];
+// With --timeout, --failure-restart restarts between the timeout and Try again.
+const retryAuth = process.argv.includes('--retry-auth') || (failureRestart && !timeoutPhase);
+const forkStatusIndex = process.argv.indexOf('--fork-status');
+const forkStatus = forkStatusIndex < 0 ? 401 : Number(process.argv[forkStatusIndex + 1]);
+assert.ok([401, 503].includes(forkStatus) && (forkStatus === 401 || fixture), '--fork-status 503 is a fixture-only provider failure');
+assert.ok(!historyFailure || !subagent, '--history-failure verifies a direct Agent fork');
 if (timeoutIndex >= 0) timeoutLimit(timeoutPhase);
 assert.ok(!timeoutPhase || (!retryAuth && !stop && !memory && !rules && !paste && !history && !subagent), '--timeout headers|body is a separate controlled stall followed by live retry');
 assert.ok(!retryAuth || (!stop && !memory && !rules && !paste && !history && !subagent), '--retry-auth is a separate real authentication failure/manual recovery probe');
@@ -51,9 +58,12 @@ assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to
 assert.ok(!rules || (!paste && !history && !subagent), '--rules is a separate persisted-rules probe');
 assert.ok(!edit || (!rules && !paste && !history && !subagent && !stop && !retryAuth && !timeoutPhase && !memory), '--edit is a separate live multi-file editing probe');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
+assert.ok(!fixture || ((history || timeoutPhase) && !subagent && !edit && !stop && !retryAuth && !paste && !rules && !memory && reasoning === 'default'),
+  '--fixture covers only the history/Fork Chat and timeout cells');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const db = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
 let provider, encrypted;
+if (!fixture) {
+const db = new DatabaseSync(join(root, 'data/local/User/globalStorage/state.vscdb'), { readOnly: true });
 try {
   const state = JSON.parse(String(db.prepare('SELECT value FROM ItemTable WHERE key = ?').get('openvision.model-providers.v1').value));
   const matches = state.providers.filter(provider => provider.models.some(entry => entry.id === model && entry.enabled));
@@ -61,6 +71,7 @@ try {
   provider = matches[0]; encrypted = db.prepare('SELECT value FROM ItemTable WHERE key = ?').get(`secret://openvision.provider.${provider.id}`)?.value;
   assert.ok(encrypted, 'Selected provider has no saved credential');
 } finally { db.close(); }
+}
 let nativeDeadlineHash, nativeDispatchHash, proxyFetchHash;
 if (timeoutPhase) {
   nativeDeadlineHash = await fileHash(join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-provider-deadlines.cjs'));
@@ -70,7 +81,8 @@ if (timeoutPhase) {
     assert.equal(await fileHash(join(root, 'source/app', directory, 'openvision-provider-dispatch.cjs')), nativeDispatchHash, 'Deadline marker and final dispatcher must share the source policy');
   proxyFetchHash = await fileHash(join(root, 'source/app/node_modules/@vscode/proxy-agent/out/index.js'));
 }
-const directory = await mkdtemp(join(root, 'logs/live-agent-verification-'));
+await mkdir(join(root, 'logs'), { recursive: true });
+const directory = await mkdtemp(join(root, fixture ? 'logs/agent-fixture-verification-' : 'logs/live-agent-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'git.openRepositoryInParentFolders': 'never' }));
@@ -86,14 +98,17 @@ if (rules) {
   await writeFile(join(project, '.openvision/rules/live-check.mdc'),
     `---\ndescription: Native live rule verification\nalwaysApply: true\n---\nProject label: ${projectRule}. Do not include this label in replies unless explicitly asked.\n`);
 }
-if (process.platform === 'win32') {
+if (process.platform === 'win32' && !fixture) {
   const state = JSON.parse(await readFile(join(root, 'data/local/Local State'), 'utf8'));
   assert.equal(typeof state.os_crypt?.encrypted_key, 'string');
   await writeFile(join(profile, 'Local State'), JSON.stringify({ os_crypt: { encrypted_key: state.os_crypt.encrypted_key } }));
 }
 const { layout } = await loadRuntime(root);
+// The fixture is the relay's upstream provider; relay evidence and assertions are unchanged.
+const fixtureProvider = fixture ? await createAgentFixtureProvider({ project }) : undefined;
+if (fixture) provider = { name: 'Controlled Agent fixture', url: fixtureProvider.url, models: [{ id: model, enabled: true }] };
 const platformLabel = { win32: 'Windows', linux: 'Linux', darwin: 'macOS' }[process.platform] ?? process.platform;
-const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, failureRestartRequested: failureRestart, provider: { name: provider.name, url: provider.url },
+const result = { checkedAt: new Date().toISOString(), fixture, model, reasoning, subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, failureRestartRequested: failureRestart, provider: { name: provider.name, url: provider.url },
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
   scope: edit
     ? `${platformLabel} native Agent selection and real provider multi-file StrReplace, review rejection/retry, acceptance, Undo/Redo and restart persistence in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`
@@ -103,6 +118,7 @@ const result = { checkedAt: new Date().toISOString(), model, reasoning, subagent
     ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
     ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['relay', join(root, 'desktop/live-agent-relay.mjs')],
+    ...(fixture ? [['fixtureProvider', join(root, 'desktop/agent-fixture-provider.mjs')]] : []),
     ...(edit ? [['editVerifier', join(root, 'desktop/verify-live-edits.mjs')], ['editFixtureBase', join(root, 'desktop/verify-agent-edits.mjs')]] : []),
     ...(stop ? [['stopVerifier', join(root, 'desktop/verify-live-stop.mjs')]] : []),
     ...(retryAuth ? [['retryVerifier', join(root, 'desktop/verify-live-retry.mjs')]] : []),
@@ -125,11 +141,18 @@ const captureRequest = async body => {
   if (process.argv.includes('--capture-payload')) await writeFile(join(directory, 'native-request.json'), body);
 };
 if (retryAuth) result.liveRetry = { promptOccurrences: [], scope: 'Real upstream HTTP 401 with a deliberately invalid key, then native Try again using the saved credential. No upstream failure is simulated.' };
-if (historyFailure) result.forkFailure = { promptOccurrences: [], scope: 'Real upstream 401 on the first fork recall, explicit native retry and persisted source/fork isolation.' };
+if (historyFailure) result.forkFailure = { promptOccurrences: [], status: forkStatus, scope: fixture
+  ? `Controlled fixture HTTP ${forkStatus} on the first fork recall, explicit native retry and persisted source/fork isolation. Not live inference.`
+  : 'Real upstream 401 on the first fork recall, explicit native retry and persisted source/fork isolation.' };
+if (fixture && history) result.scope = 'Native Agent Read, restart recall, Fork Chat and fork-only follow-up against a deterministic loopback OpenAI-compatible fixture behind the verification relay. The fixture answers recall only from the outgoing assistant history. Controlled fixture responses, not live inference.';
 if (timeoutPhase) {
   result.scope = 'Native Agent controlled loopback timeout followed by real saved-provider Read continuation. Initial stalled request is not forwarded upstream; subsequent inference bodies are unchanged.';
   result.timeout = { phase: timeoutPhase, productionDeadlineMs: timeoutLimit(timeoutPhase), promptOccurrences: [],
     scope: 'Controlled local transport stall at unchanged production deadlines, then native Try again with real saved-provider inference. The stall is not an upstream provider failure.' };
+  if (fixture) {
+    result.scope = 'Native Agent controlled loopback timeout at unchanged production deadlines, then native Try again answered by a deterministic loopback fixture with a Read roundtrip. Controlled fixture responses, not live inference.';
+    result.timeout.scope = 'Controlled local transport stall at unchanged production deadlines, then native Try again answered by a deterministic fixture. Not an upstream provider failure and not live inference.';
+  }
   result.hashes.timeoutVerifier = await fileHash(join(root, 'desktop/verify-live-timeout.mjs'));
   result.hashes.execDeadlines = nativeDeadlineHash;
   result.hashes.dispatcherPolicy = nativeDispatchHash;
@@ -157,6 +180,9 @@ async function launch() {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window', '--disable-updates',
       '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
+  // Private diagnostics for each owned launch; the run directory is ignored and never published.
+  const hostLog = createWriteStream(join(directory, `host-${(result.nativeMainProcesses ?? []).length + 1}.log`));
+  app.process().stderr?.pipe(hostLog); app.process().stdout?.pipe(hostLog);
   (result.nativeMainProcesses ??= []).push(await app.evaluate(() => ({ pid: process.pid, ppid: process.ppid, executable: process.execPath })));
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
@@ -170,6 +196,8 @@ async function closeOwnedApp() {
   await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 3000 }).catch(() => {});
   await closing; if (child.exitCode === null && child.signalCode === null) await exited;
   result.launcherExit = { exitCode: child.exitCode, signalCode: child.signalCode };
+  if (process.platform === 'linux') (result.survivorsAfterClose ??= []).push(execFileSync('ps', ['-u', String(process.getuid()), '-o', 'pid,ppid,etimes,args', '--no-headers'], { encoding: 'utf8' })
+    .split('\n').filter(line => line.includes(directory)).map(line => line.trim().slice(0, 240)));
   (result.launcherExits ??= []).push(result.launcherExit);
   app = undefined;
 }
@@ -182,7 +210,8 @@ async function dismissMenu() {
 }
 try {
   await launch();
-  const key = await app.evaluate(({ safeStorage }, saved) => safeStorage.decryptString(Buffer.from(JSON.parse(String(saved)).data)), encrypted);
+  const key = fixture ? fixtureProvider.key
+    : await app.evaluate(({ safeStorage }, saved) => safeStorage.decryptString(Buffer.from(JSON.parse(String(saved)).data)), encrypted);
   relay.setKey(retryAuth ? invalidProbeKey : key);
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
@@ -269,7 +298,8 @@ try {
     }
     if (retryAuth) await retryAuthenticationFailure({ page, relay, restoreCredential: () => relay.setKey(key), result: result.liveRetry,
       restart: failureRestart ? async () => { await closeOwnedApp(); return launch(); } : undefined });
-    if (timeoutPhase) await retryNativeTimeout({ page, relay, phase: timeoutPhase, result: result.timeout });
+    if (timeoutPhase) await retryNativeTimeout({ page, relay, phase: timeoutPhase, result: result.timeout,
+      restart: failureRestart ? async () => { await closeOwnedApp(); return launch(); } : undefined });
     await Promise.race([
       page.getByText(marker, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: subagent ? 180000 : 90000 }),
       relay.failure.then(message => { throw new Error(message); }),
@@ -288,10 +318,13 @@ try {
         request.toolResults?.some(result => result.callId === task.id && result.containsFileMarker)), 'The parent must receive the Task result and return its marker');
       result.subagentContinuationVerified = true;
     }
-    if (history) await verifyLiveHistory({ page, relay, marker, result, retryFork: historyFailure ? {
+    if (history) await verifyLiveHistory({ page, relay, marker, result, retryFork: !historyFailure ? undefined : forkStatus === 401 ? {
       prepare() { relay.expectUnauthorizedOnNextRequest(); relay.setKey(invalidProbeKey); },
       restore() { relay.setKey(key); },
-    } : undefined, restart: async () => {
+    } : { status: forkStatus,
+      prepare() { relay.expectFailureOnNextRequest(forkStatus); fixtureProvider.failNextRequest(forkStatus); },
+      restore() {},
+    }, restart: async () => {
       await closeOwnedApp(); return launch();
     } });
     if (paste) await verifySavedLivePaste(pasted, result.paste);
@@ -328,6 +361,14 @@ try {
 } finally {
   const cleanupErrors = [];
   try { await relay.close(); } catch { cleanupErrors.push('Relay cleanup failed'); }
+  if (fixtureProvider) {
+    try { await fixtureProvider.close(); } catch { cleanupErrors.push('Fixture provider cleanup failed'); }
+    result.fixtureRequests = fixtureProvider.requests;
+    // Every inference the relay forwarded reached the fixture exactly once.
+    if (fixtureProvider.requests.length !== relay.requests.filter(request => request.httpStatus !== undefined).length) {
+      result.success = false; result.fixtureRequestMismatch = true;
+    }
+  }
   try {
     if (app) {
       try {
