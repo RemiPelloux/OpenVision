@@ -40,7 +40,14 @@ test('bundled-extension network defaults are set at the contributed configuratio
 });
 
 test('workbench experiment refresh and Cursor Tab fate reports never reach the backend client', async () => {
-  const text = `const Owner = class {
+  const text = `const Experiments = class {
+  constructor() { this._initialized = !1; this.events = []; this._onDidChangeGates = { fire: e => this.events.push(e) }; }
+  isInitialized() {
+    return this._initialized;
+  }
+};
+const Owner = class {
+  constructor(e) { (this.experimentService = e); }
   _startPolling() { this.timer = setInterval(() => {}, 1); }
   async _refreshBootstrapFromServer(e = "poll") { return this._doRefreshBootstrapFromServer(e); }
   async _doRefreshBootstrapFromServer(e) { const n = await this.client(); return n.bootstrapStatsig({}); }
@@ -48,14 +55,25 @@ test('workbench experiment refresh and Cursor Tab fate reports never reach the b
 const Cpp = class {
   recordCppFate(e, t, n, i) { this.cppClient().then(o => o.recordCppFate({})); }
 };
-return { Owner, Cpp };`;
+return { Experiments, Owner, Cpp };`;
   const patched = disableWorkbenchHostedReports(text);
   assert.equal(disableWorkbenchHostedReports(patched), patched);
-  const { Owner, Cpp } = new Function(patched)();
-  const owner = Object.assign(new Owner(), { client() { throw Error('backend touched'); } });
+  const { Experiments, Owner, Cpp } = new Function(patched)();
+  const experiments = new Experiments();
+  const owner = Object.assign(new Owner(experiments), { client() { throw Error('backend touched'); } });
   owner._startPolling();
   assert.equal(owner.timer, undefined);
   assert.equal(await owner._refreshBootstrapFromServer(), undefined);
+  // Initialized once with bundled/local defaults, like upstream hydration; a later refusal is a no-op.
+  assert.equal(experiments.isInitialized(), true); assert.deepEqual(experiments.events, [{}]);
+  await owner._refreshBootstrapFromServer('auth_change'); assert.deepEqual(experiments.events, [{}]);
+  const hydrated = new Experiments(); hydrated._initialized = !0;
+  await new Owner(hydrated)._refreshBootstrapFromServer(); assert.deepEqual(hydrated.events, [], 'a persisted bootstrap stays authoritative');
+  // Builds patched with v1 upgrade in place.
+  const v1 = patched.replace(/disabled v2 \*\/ .*? return; \}/, 'disabled v1 */ return; }');
+  assert.notEqual(v1, patched); assert.equal(disableWorkbenchHostedReports(v1), patched);
+  assert.throws(() => disableWorkbenchHostedReports(text.replace('return this._initialized;', 'return !0;')), /initialization contract/);
+  assert.throws(() => disableWorkbenchHostedReports(text.replace('(this.experimentService = e)', '(this.x = e)')), /refresh service contract/);
   Object.assign(new Cpp(), { cppClient() { throw Error('fate sent'); } }).recordCppFate('id', 1, '.js', 0);
   assert.throws(() => disableWorkbenchHostedReports(text.replace('bootstrapStatsig', 'other')), /bootstrap caller/);
 });
@@ -95,10 +113,11 @@ for (const [name, text] of [['minified', minified], ['daemon', daemon]]) {
 }
 
 test('local gate defaults keep project scopes in Customize without a Statsig bootstrap', () => {
-  assert.deepEqual(localGateDefaults, { customize_manage_scope_multiselect: true });
-  const table = 'F = { customize_page: { client: !0, default: !1 },\n customize_manage_scope_multiselect: { client: !0, default: !1 },\n x: 1 };';
+  assert.deepEqual(localGateDefaults, { customize_manage_scope_multiselect: true, mcp_shared_process_transports: true });
+  const table = 'F = { customize_page: { client: !0, default: !1 },\n customize_manage_scope_multiselect: { client: !0, default: !1 },\n mcp_shared_process_transports: { client: !0, default: !1 },\n x: 1 };';
   const once = setLocalGateDefaults(table);
   assert.match(once, /customize_manage_scope_multiselect: \{ client: !0, default: !0 \}/);
+  assert.match(once, /mcp_shared_process_transports: \{ client: !0, default: !0 \}/);
   assert.match(once, /customize_page: \{ client: !0, default: !1 \}/, 'other gates are unchanged');
   assert.equal(setLocalGateDefaults(once), once);
   assert.throws(() => setLocalGateDefaults('F = {};'), /gate default missing/);

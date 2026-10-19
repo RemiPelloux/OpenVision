@@ -80,7 +80,17 @@ export function setContributedDefaults(manifest, defaults) {
 
 // Workbench experiment refresh (aiserver.v1.AnalyticsService/BootstrapStatsig
 // polling) and Cursor Tab fate reports (aiserver.v1.CppService/RecordCppFate).
-const workbenchMarker = '/* OpenVision hosted experiment and fate reporting disabled v1 */';
+// With no hosted bootstrap, the experiment service would never report itself
+// initialized, and consumers that wait for it (shared-process MCP routing
+// waits 30 s per decision, then stays on the legacy route) never decide. The
+// refused refresh therefore reports the service initialized with its bundled
+// and local gate defaults, as Cursor's own test mode does. A persisted
+// bootstrap still hydrates first; the `{}` event matches upstream hydration.
+const workbenchMarker = '/* OpenVision hosted experiment and fate reporting disabled v2 */';
+const workbenchMarkerV1 = '/* OpenVision hosted experiment and fate reporting disabled v1 */';
+const localInitialization = 'const openvisionExperiments = this.experimentService; ' +
+  'if (openvisionExperiments && "_initialized" in openvisionExperiments && !openvisionExperiments.isInitialized()) ' +
+  '{ openvisionExperiments._initialized = !0; openvisionExperiments._onDidChangeGates?.fire({}); } return;';
 function uniqueMatch(text, pattern, name) {
   const matches = [...text.matchAll(pattern)];
   if (matches.length !== 1) throw new Error(`${name} owner missing or ambiguous`);
@@ -88,11 +98,18 @@ function uniqueMatch(text, pattern, name) {
 }
 export function disableWorkbenchHostedReports(text) {
   if (text.includes(workbenchMarker)) return text;
+  if (!/isInitialized\(\) \{\s*return this\._initialized;\s*\}/.test(text)) throw new Error('Experiment initialization contract changed');
+  if (text.includes(workbenchMarkerV1)) {
+    const v1 = `${workbenchMarkerV1} return;`;
+    if (text.split(v1).length !== 2) throw new Error('Experiment refresh v1 patch missing or ambiguous');
+    return text.replace(v1, `${workbenchMarker} ${localInitialization}`);
+  }
   if ([...text.matchAll(/\.bootstrapStatsig\(/g)].length !== 1) throw new Error('Experiment bootstrap caller contract changed');
   const refresh = classAt(text, uniqueMatch(text, /async _doRefreshBootstrapFromServer\([\w$]+\) \{/g, 'Experiment refresh'));
+  if (!text.slice(refresh.start, refresh.end).includes('(this.experimentService = ')) throw new Error('Experiment refresh service contract changed');
   const fate = classAt(text, uniqueMatch(text, /\n\s+recordCppFate\([\w$]+, [\w$]+, [\w$]+, [\w$]+\) \{/g, 'Cursor Tab fate'));
   return applyTelemetryPatches(text, [
-    ...replaceMethods(refresh, { _refreshBootstrapFromServer: `${workbenchMarker} return;`, _startPolling: '' }),
+    ...replaceMethods(refresh, { _refreshBootstrapFromServer: `${workbenchMarker} ${localInitialization}`, _startPolling: '' }),
     ...replaceMethods(fate, { recordCppFate: '' }),
   ]);
 }
@@ -101,8 +118,10 @@ export function disableWorkbenchHostedReports(text) {
 // every client gate at its bundled default. Local features that the anonymous
 // bootstrap used to switch on keep their previous value here. The Customize
 // manage scope selector is single-scope ("User") when this gate is off, which
-// hides project skills, commands and rules.
-export const localGateDefaults = { customize_manage_scope_multiselect: true };
+// hides project skills, commands and rules. Shared-process MCP transports
+// (one utility owns each configured server; the OV-303 lifecycle, cleanup and
+// window-release fixes live there) were likewise on through that bootstrap.
+export const localGateDefaults = { customize_manage_scope_multiselect: true, mcp_shared_process_transports: true };
 export function setLocalGateDefaults(text) {
   let result = text;
   for (const [gate, value] of Object.entries(localGateDefaults)) {
@@ -179,5 +198,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate default`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally`);
 }
