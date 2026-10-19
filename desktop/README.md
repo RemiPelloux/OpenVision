@@ -11,6 +11,8 @@ product changes.
 | Build the customized application | `build-source.mjs` · `npm run build:desktop` |
 | Launch | `start.mjs` · `npm start` |
 | Create a portable package | `package-portable.mjs` · `npm run package:windows` or `npm run package:linux` |
+| Sign and verify a Linux release | `release-linux.mjs` · `npm run release:linux`; `release-verify.mjs` · `npm run release:verify` |
+| Install, upgrade, roll back or uninstall on Linux | `linux-install.mjs` · `npm run install:linux` (packaged as `openvision-install`) |
 | Check JavaScript syntax | `check.mjs` · `npm run check:desktop` |
 | Calculate feature acceptance | `feature-status.mjs` · `npm run status:features` |
 
