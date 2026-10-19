@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { access, mkdir, mkdtemp, readdir, readFile, readlink, realpath, rename, stat, writeFile, unlink } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readdir, readFile, readlink, realpath, rename, rm, stat, statfs, writeFile, unlink } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, relative, resolve } from 'node:path';
 import { ozoneArguments } from '../tooling/browser.mjs';
@@ -15,6 +15,11 @@ assert.notEqual(process.getuid(), 0, 'Run as a normal user: Chromium refuses to 
 const root = resolve(import.meta.dirname, '..');
 const { version } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 await mkdir(join(root, 'logs'), { recursive: true });
+// Each run copies the whole runtime (about 1.1 GiB); refuse to start on a nearly full volume.
+const freeBytes = async () => { const { bavail, bsize } = await statfs(join(root, 'logs')); return bavail * bsize; };
+const freeAtStart = await freeBytes();
+if (freeAtStart < 4 * 1024 ** 3) throw Error(`verify:package:linux needs 4 GiB free under logs/; ${(freeAtStart / 1024 ** 3).toFixed(1)} GiB available`);
+const keep = process.argv.includes('--keep');
 const directory = await mkdtemp(join(root, 'logs/package-linux-verification-'));
 const staged = join(directory, 'stage/OpenVision-linux-x64');
 const portable = join(directory, 'Ünïcødé Ωrbit path', 'Open Vision 测试 package');
@@ -84,7 +89,16 @@ async function launch(name, args, act, match = 'true') {
         if (await candidate.evaluate(match).catch(() => false)) return candidate;
         candidate.close();
       }
-    }, 60000, 'No matching workbench window');
+    }, 60000, 'No matching workbench window').catch(async error => {
+      // Diagnostics: the launcher discards host output, so keep the targets, processes, disk and main log.
+      record.targets = await fetch(`http://127.0.0.1:${port}/json/list`).then(response => response.json(), () => [])
+        .then(items => items.map(({ type, url }) => ({ type, url: url.slice(-80) })));
+      record.processesAlive = (await packageProcesses()).length;
+      record.freeBytes = await freeBytes();
+      record.mainLog = await readdir(join(profile, 'logs')).then(async runs => (await readFile(join(profile, 'logs',
+        runs.sort().at(-1), 'main.log'), 'utf8')).slice(-4000)).catch(() => null);
+      throw error;
+    });
     record.workbenchUrlInsidePackage = true;
     record.pids = await packageProcesses();
     assert.ok(record.pids.length > 0, 'Package processes must run from the relocated executable');
@@ -283,6 +297,12 @@ try {
   result.success = true;
 } catch (error) { result.failure = error.stack; }
 finally {
+  result.freeBytes = { start: freeAtStart, end: await freeBytes().catch(() => null) };
+  // A passing run keeps only its record; a failing run keeps the package for inspection.
+  if (result.success && !keep) {
+    for (const path of [portable, staged]) await rm(path, { recursive: true, force: true });
+    result.packageRemoved = true;
+  }
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify(result, null, 2));
   if (!result.success) process.exitCode = 1;
