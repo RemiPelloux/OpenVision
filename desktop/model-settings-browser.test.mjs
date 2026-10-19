@@ -9,7 +9,7 @@ async function fixture(t) {
   const page = await browser.newPage({ viewport: { width: 850, height: 900 } });
   const files = new Set(['model-settings.js', 'model-accounts.js', 'account-picker.js', 'model-settings.css', 'model-providers.js',
     'completion-provider.js', 'model-catalog.js', 'model-reasoning.js', 'model-identity.js', 'account-models.js',
-    'provider-headers.js', 'provider-credentials.js']);
+    'provider-headers.js', 'provider-credentials.js', 'pi-import.js']);
   await page.route('http://127.0.0.1/**', async route => {
     const name = new URL(route.request().url()).pathname.slice(1).replace(/^openvision-/, '');
     if (!name) return route.fulfill({ contentType: 'text/html', body: '<link rel="stylesheet" href="/model-settings.css"><main class="openvision-model-settings"></main>' });
@@ -37,9 +37,11 @@ async function fixture(t) {
       secrets: { get: async key => window.secrets.get(key), set: async (key, value) => window.secrets.set(key, value), delete: async key => window.secrets.delete(key) },
       auth: { storeOpenAIKeyAndWait: async () => {} },
       reactive: { setApplicationUserPersistentStorage() {}, manualSave() {} },
+      piImport: async () => ({ ok: true, staged: false }),
       ai: { modelConfigService: { getModelConfig: () => ({}), setModelConfig() {} }, handleAvailableModelsChange() {} },
       request: async (url, key, headers) => { window.requests.push({ url, key, ...(Object.keys(headers ?? {}).length ? { headers } : {}) }); return { data: [{ id: 'discovered-model' }] }; },
     };
+    window.bridge = bridge;
     const { mountModels } = await import('/model-settings.js');
     mountModels(document.querySelector('main'), bridge);
   });
@@ -257,4 +259,39 @@ test('settings and account dialogs keep text readable in dark and light themes w
     assert.deepEqual(ratios.filter(item => item.ratio < 4.5), []);
     await page.getByRole('dialog').getByRole('button', { name: 'Cancel', exact: true }).click();
   }
+});
+
+async function saveWithSecretStorage(t, type) {
+  const page = await fixture(t);
+  await page.evaluate(type => {
+    const secrets = window.bridge.secrets;
+    secrets.type = type; secrets.resolvedStorageService = Promise.resolve();
+    secrets.set = (key, value) => new Promise(resolve => {
+      window.dialogOpenDuringSet = !!document.querySelector('dialog[open]');
+      window.finishSet = () => { window.secrets.set(key, value); resolve(); };
+    });
+  }, type);
+  await page.getByRole('button', { name: 'Add Provider', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Provider Name' }).fill('No keyring');
+  await page.getByRole('textbox', { name: 'API Base URL' }).fill('https://fixture.invalid/v1');
+  await page.getByLabel('API Key', { exact: true }).fill('fixture-key');
+  await page.getByRole('checkbox', { name: 'Discover Models', exact: true }).uncheck();
+  await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
+  await page.waitForFunction(() => window.finishSet);
+  const dialogOpen = await page.evaluate(() => window.dialogOpenDuringSet);
+  await page.evaluate(() => window.finishSet());
+  return { page, dialogOpen };
+}
+
+test('without a Secret Service, Save releases the provider dialog so the keyring choice is reachable (issue #6)', async t => {
+  const { page, dialogOpen } = await saveWithSecretStorage(t, 'in-memory');
+  assert.equal(dialogOpen, false, 'A modal provider dialog would cover and disable the workbench keyring prompt');
+  await page.getByText(/^Saved for this session only: no Secret Service is available/).waitFor();
+  assert.equal(await page.evaluate(() => window.secrets.has([...window.secrets.keys()][0])), true);
+});
+
+test('with a persisted Secret Service, Save keeps the dialog until the key is stored', async t => {
+  const { page, dialogOpen } = await saveWithSecretStorage(t, 'persisted');
+  assert.equal(dialogOpen, true);
+  await page.locator('.openvision-model-status').getByText('Saved', { exact: true }).waitFor();
 });
