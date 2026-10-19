@@ -1,0 +1,29 @@
+# Infrastructure settings consumed by the deploy tooling (not by the API itself).
+services:
+  api:
+    replicas: 4
+    port: 8080
+    env:
+      HARBOR_ENV: production
+      HARBOR_LOG_LEVEL: info
+      HARBOR_RATE_LIMIT__CAPACITY: "120"
+    healthcheck:
+      path: /readyz
+      intervalSeconds: 10
+      failureThreshold: 3
+  worker:
+    replicas: 2
+    env:
+      HARBOR_WORKER_CONCURRENCY: "8"
+      HARBOR_WORKER_VISIBILITY: 3m
+    healthcheck:
+      path: /readyz
+      port: 8081
+  pipeline:
+    schedule: "15 2 * * *"
+    command: ["harbor-etl", "run", "--csv", "/exports/daily.csv"]
+secrets:
+  # Values live in the secret store; only the names are listed here.
+  - HARBOR_AUTH__SIGNING_SECRET
+  - HARBOR_DATABASE_URL
+  - HARBOR_SMTP_RELAY

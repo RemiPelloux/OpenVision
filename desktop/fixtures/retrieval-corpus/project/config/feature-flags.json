@@ -1,0 +1,16 @@
+{
+  "liveMapTracking": {
+    "enabled": true,
+    "rolloutPercent": 25,
+    "description": "Show the courier's live position on the tracking page"
+  },
+  "routeOptimiserV2": {
+    "enabled": true,
+    "allowRoles": ["dispatcher", "admin"],
+    "description": "Use the 2-opt route planner from the geo crate"
+  },
+  "smsNotifications": {
+    "enabled": false,
+    "description": "Text message alerts when a parcel is out for delivery"
+  }
+}
