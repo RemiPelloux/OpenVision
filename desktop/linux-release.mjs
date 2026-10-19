@@ -11,6 +11,11 @@ import { basename, join, posix } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { createGzip } from 'node:zlib';
 
+// Under OpenVision's own runtime (ELECTRON_RUN_AS_NODE, the packaged
+// openvision-install), Electron's fs presents .asar files as directories; a
+// release must be hashed and compared as the plain files it contains.
+if (process.versions.electron) process.noAsar = true;
+
 export const signatureNamespace = 'openvision-release';
 export const defaultSignerIdentity = 'openvision-release';
 export const manifestSchema = 1;

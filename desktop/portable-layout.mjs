@@ -53,5 +53,5 @@ set -eu
 here=$(CDPATH= cd -- "$(dirname -- "$(readlink -f -- "$0")")" && pwd)
 root=$(dirname -- "$(dirname -- "$here")")
 if [ -z "\${OPENVISION_INSTALL_ROOT:-}" ] && [ -f "$root/openvision-install.json" ]; then export OPENVISION_INSTALL_ROOT="$root"; fi
-ELECTRON_RUN_AS_NODE=1 exec "$here/electron-host/openvision" "$here/electron-host/desktop/linux-install.mjs" "$@"
+ELECTRON_RUN_AS_NODE=1 ELECTRON_NO_ASAR=1 exec "$here/electron-host/openvision" "$here/electron-host/desktop/linux-install.mjs" "$@"
 `;

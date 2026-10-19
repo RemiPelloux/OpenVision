@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { appendFile, copyFile, mkdir, mkdtemp, readFile, rm, symlink, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createArchive, packageTree, safeRelativePath, signManifest, validateManifest, verifyRelease, verifyTree } from './linux-release.mjs';
 import { createRelease, createSigner } from './linux-release-fixture.mjs';
@@ -152,4 +153,17 @@ test('release:linux signs an existing package and self-verifies with allowed sig
     '--version', '6.0.0', '--out', await mkdtemp(join(directory, 'cli-nokey-'))], { encoding: 'utf8',
     env: { ...process.env, OPENVISION_RELEASE_SIGNING_KEY: '' } });
   assert.notEqual(unsigned.status, 0); assert.match(unsigned.stderr, /signing key is required/);
+});
+
+test('the packaged runtime (ELECTRON_RUN_AS_NODE) hashes .asar archives as files', { skip: process.platform !== 'linux' ||
+  !existsSync(join(root, 'electron-host/openvision')) }, async () => {
+  const tree = await mkdtemp(join(directory, 'asar-'));
+  await writeFile(join(tree, 'node_modules.asar'), 'not an archive the runtime may open as a folder');
+  const result = spawnSync(join(root, 'electron-host/openvision'), ['--input-type=module', '-e',
+    `const { packageTree } = await import(${JSON.stringify(new URL('./linux-release.mjs', import.meta.url).href)}); console.log(JSON.stringify(await packageTree(${JSON.stringify(tree)})));`],
+  { encoding: 'utf8', env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } });
+  assert.equal(result.status, 0, result.stderr);
+  const listed = JSON.parse(result.stdout.trim().split('\n').at(-1));
+  assert.deepEqual(listed.directories, []);
+  assert.deepEqual(listed.files.map(entry => entry.path), ['node_modules.asar']);
 });
