@@ -45,8 +45,23 @@ async function checkFiles(destinations, changes, hashField) {
   }
 }
 
+// Node's recursive mkdir reports a read-only (or otherwise unwritable) parent as ENOENT.
+// Retry the first missing level without recursion so the error names the real cause.
+async function makeDirectory(path) {
+  try { return await mkdir(path, { recursive: true }); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    let missing = path;
+    while (dirname(missing) !== missing && !await lstat(dirname(missing)).then(() => true, () => false)) missing = dirname(missing);
+    if (dirname(missing) === missing) throw error;
+    const created = await mkdir(missing).then(() => missing, cause => { if (cause.code !== 'EEXIST') throw cause; });
+    const deeper = await mkdir(path, { recursive: true });
+    return created ?? deeper;
+  }
+}
+
 async function stage(path, write, expectedHash, created) {
-  const made = await mkdir(dirname(path), { recursive: true });
+  const made = await makeDirectory(dirname(path));
   if (made) created.push(made);
   const temporary = temporaryPath(path);
   try {
@@ -116,7 +131,7 @@ export async function applyImport(plan) {
   const temporaries = [], created = [];
   let manifest;
   try {
-    const backupParent = await mkdir(backup, { recursive: true });
+    const backupParent = await makeDirectory(backup);
     if (backupParent && backupParent !== backup) created.push(backupParent);
     const records = [];
     for (const [index, change] of plan.changes.entries()) {
