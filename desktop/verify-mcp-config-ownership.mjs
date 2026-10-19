@@ -197,7 +197,16 @@ async function owned(app, transport, label) {
   return records;
 }
 async function closeApp(app) {
-  const child = app.process(); await app.close(); apps.delete(app);
+  const child = app.process();
+  // A quit can wait on UI (e.g. an Agent awaiting approval after a failure); bound it and exit
+  // through the same automation connection rather than signalling a PID.
+  const closed = app.close().then(() => true);
+  if (!await Promise.race([closed, delay(60000).then(() => false)])) {
+    result.hostExits.push({ pid: child.pid, closeTimedOut: true });
+    await app.evaluate(({ app: electron }) => electron.exit(1)).catch(() => {});
+    await closed.catch(() => {});
+  }
+  apps.delete(app);
   result.hostExits.push({ pid: child.pid, code: child.exitCode }); assert.equal(child.exitCode, 0);
 }
 async function writeJson(path, value) { await writeFile(path, JSON.stringify(value)); }
@@ -551,6 +560,7 @@ try {
   result.status = 'passed';
 } catch (error) {
   result.status = 'failed'; result.error = error.stack; process.exitCode = 1;
+  await writeFile(join(directory, 'error.txt'), error.stack).catch(() => {});
   for (const [index, page] of pages.entries()) if (!page.isClosed()) {
     await page.screenshot({ path: join(directory, `failure-${index}.png`), timeout: 5000 }).catch(() => {});
     await writeFile(join(directory, `failure-${index}.txt`), await page.locator('body').innerText({ timeout: 5000 })).catch(() => {});
