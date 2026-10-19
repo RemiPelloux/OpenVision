@@ -6,7 +6,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { disableSpellcheckDownloads, removeControlUrl, controlManifestGuard, setContributedDefaults, extensionDefaults,
   disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile,
-  localGateDefaults, setLocalGateDefaults, emptyAnonymousTeamSettings, ignoreCachedStatsigBootstrap } from './network-defaults.mjs';
+  localGateDefaults, setLocalGateDefaults, emptyAnonymousTeamSettings, ignoreCachedStatsigBootstrap,
+  skipVsixGalleryMetadata, vsixInstallTargets } from './network-defaults.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'source/app');
@@ -143,6 +144,31 @@ test('a cached Statsig bootstrap is ignored like a cache miss, idempotently', ()
   assert.throws(() => ignoreCachedStatsigBootstrap(service.replace('STATSIG_BOOTSTRAP_STORAGE_KEY', 'OTHER_KEY')), /contract changed/);
 });
 
+test('a local VSIX install records no Marketplace metadata and makes no gallery query', async () => {
+  const task = `class T {
+  async run(e) { return (this.source instanceof x && this.updateMetadata(s, e), n); }
+  async updateMetadata(e, t) {
+    try {
+      let [i] = await this.galleryService.getExtensions(
+        [{ id: e.identifier.id, version: e.manifest.version }],
+        t,
+      );
+      if ((i || ([i] = await this.galleryService.getExtensions([{ id: e.identifier.id }], t)), i)) this.updated = i;
+    } catch {}
+  }
+}`;
+  const once = skipVsixGalleryMetadata(task);
+  assert.equal(skipVsixGalleryMetadata(once), once);
+  const T = new Function(`${once}\nreturn T;`)();
+  const queries = [];
+  const instance = Object.assign(new T(), { galleryService: { getExtensions: async ids => { queries.push(ids); return [{}]; } } });
+  await instance.updateMetadata({ identifier: { id: 'p.n' }, manifest: { version: '1.0.0' } }, undefined);
+  assert.deepEqual(queries, []);
+  assert.equal(instance.updated, undefined);
+  assert.throws(() => skipVsixGalleryMetadata(task.replace('this.source instanceof x && ', '')), /VSIX install metadata owner/);
+  assert.throws(() => skipVsixGalleryMetadata(task.replace('version: e.manifest.version', 'version: e.version')), /VSIX install metadata owner/);
+});
+
 test('anonymous-call guard refuses a changed transport contract', () => {
   assert.throws(() => refuseAnonymousHostedCalls(minified.replace('Authorization header omitted', 'changed')), /authorization owner/);
 });
@@ -214,6 +240,10 @@ test('built source carries every network-default owner change', { skip: !built &
     assert.ok(setLocalGateDefaults(text) === text, `${relative} local gate defaults`);
     assert.ok(ignoreCachedStatsigBootstrap(text) === text, `${relative} cached Statsig bootstrap`);
     assert.ok(emptyAnonymousTeamSettings(text) === text, `${relative} anonymous team settings`);
+  }
+  for (const relative of vsixInstallTargets) {
+    const text = await read(relative);
+    assert.ok(skipVsixGalleryMetadata(text) === text, relative);
   }
   for (const relative of transportTargets) {
     const text = await read(relative);

@@ -207,6 +207,25 @@ export function ignoreCachedStatsigBootstrap(text) {
   return text.slice(0, at) + ` ${cachedBootstrapMarker} return !1;` + text.slice(at);
 }
 
+// --- Local VSIX installs (OV-501 data destinations; ov/data-telemetry) -----
+// After installing from a VSIX file, the install task's updateMetadata looks the
+// extension up in the Marketplace by its identifier (extensionquery with
+// publisher.name, logs/data-destinations-daLpz9), sending the identity of a
+// possibly private, locally built extension to marketplace.cursorapi.com. A
+// local install now records no Marketplace metadata and makes no request;
+// installs from the Marketplace are unchanged. Owner decision pending
+// (worker report ov/data-telemetry).
+const vsixMetadataMarker = '/* OpenVision local VSIX install keeps Marketplace metadata unset v1 */';
+export function skipVsixGalleryMetadata(text) {
+  if (text.includes(vsixMetadataMarker)) return text;
+  const methods = [...text.matchAll(/\n(\s*)async updateMetadata\(([\w$]+), ([\w$]+)\) \{\s*try \{\s*let \[([\w$]+)\] = await this\.galleryService\.getExtensions\(\s*\[\{ id: \2\.identifier\.id, version: \2\.manifest\.version \}\],/g)];
+  const callers = [...text.matchAll(/this\.source instanceof [\w$]+ && this\.updateMetadata\(/g)];
+  if (methods.length !== 1 || callers.length !== 1) throw new Error('VSIX install metadata owner missing or changed');
+  const at = text.indexOf('{', methods[0].index + 1) + 1;
+  return text.slice(0, at) + ` ${vsixMetadataMarker} return;` + text.slice(at);
+}
+export const vsixInstallTargets = ['out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js', 'out/vs/code/node/cliProcessMain.js'];
+
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
   'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs'];
 
@@ -233,6 +252,10 @@ export async function installNetworkDefaults(root) {
     await backedWrite(root, `${app}/${relative}`, text,
       ignoreCachedStatsigBootstrap(emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text)))));
   }
+  for (const relative of vsixInstallTargets) {
+    const text = await readFile(join(root, app, relative), 'utf8');
+    await backedWrite(root, `${app}/${relative}`, text, skipVsixGalleryMetadata(text));
+  }
   for (const relative of transportTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
     await backedWrite(root, `${app}/${relative}`, text, refuseAnonymousHostedCalls(text));
@@ -251,5 +274,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally; cached Statsig bootstrap ignored`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally; cached Statsig bootstrap ignored; local VSIX installs make no Marketplace lookup`);
 }
