@@ -38,8 +38,25 @@ export async function openChatFromHistory(page, { id, title, expected = [], time
     .then(() => true, () => false);
   if (!opened) return false;
   const chat = page.locator(`[data-composer-id="${id}"]`).filter({ visible: true });
-  for (const text of expected)
-    if (!await chat.getByText(new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).filter({ visible: true }).first()
-      .waitFor({ timeout }).then(() => true, () => false)) return false;
+  // The transcript is virtualized: look at the bottom first, then scroll from the top down.
+  await chat.first().waitFor({ timeout });
+  for (const text of expected) {
+    const match = chat.getByText(new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).filter({ visible: true }).first();
+    if (await match.waitFor({ timeout: Math.min(timeout, 3000) }).then(() => true, () => false)) continue;
+    let found = false;
+    for (let step = 0; !found && step < 200; step++) {
+      const moved = await chat.first().evaluate((root, step) => {
+        const scroller = [...root.querySelectorAll('*')].find(element => element.scrollHeight > element.clientHeight + 20 &&
+          /(auto|scroll)/.test(getComputedStyle(element).overflowY));
+        if (!scroller) return false;
+        const before = scroller.scrollTop;
+        scroller.scrollTop = step === 0 ? 0 : before + scroller.clientHeight * 0.7;
+        return step === 0 || scroller.scrollTop !== before;
+      }, step);
+      found = await match.waitFor({ timeout: 400 }).then(() => true, () => false);
+      if (!moved && step > 0) break;
+    }
+    if (!found) return false;
+  }
   return true;
 }

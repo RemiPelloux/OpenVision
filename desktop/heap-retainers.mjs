@@ -27,15 +27,31 @@ export function retainerPaths(snapshot, marker, { depth = 14, objectName, nodeId
     return type === 'element' || type === 'hidden' ? `[${name}]` : String(strings[name]);
   };
   // Breadth-first from the synthetic root over strong edges: shortest retaining paths.
+  // A WeakMap entry (edge named "part of key (... @id) -> value ...") keeps its
+  // value only while the key is also alive, so it is followed once both the
+  // table and the key have been reached.
+  const idOffset = at('id'), indexById = new Map();
+  for (let node = 0; node < count; node++) indexById.set(nodes[node * N + idOffset], node);
   const parent = new Int32Array(count).fill(-1), parentEdge = new Int32Array(count).fill(-1);
+  const waiting = new Map(); // key node -> [[table node, edge]]
   parent[0] = 0; const queue = [0];
+  const reach = (from, edge) => {
+    const to = edges[edge + edgeToOffset] / N;
+    if (parent[to] !== -1) return;
+    parent[to] = from; parentEdge[to] = edge; queue.push(to);
+  };
   for (let head = 0; head < queue.length; head++) {
     const node = queue[head];
+    for (const [table, edge] of waiting.get(node) ?? []) reach(table, edge);
+    waiting.delete(node);
     for (let edge = firstEdge[node]; edge < firstEdge[node + 1]; edge += E) {
       if (edgeTypes[edges[edge + edgeTypeOffset]] === 'weak') continue;
-      const to = edges[edge + edgeToOffset] / N;
-      if (parent[to] !== -1) continue;
-      parent[to] = node; parentEdge[to] = edge; queue.push(to);
+      const label = edgeTypes[edges[edge + edgeTypeOffset]] === 'element' || edgeTypes[edges[edge + edgeTypeOffset]] === 'hidden'
+        ? '' : String(strings[edges[edge + edgeNameOffset]]);
+      const ephemeron = label.includes('part of key') && /part of key \([^)]*@(\d+)\) -> value/.exec(label);
+      const key = ephemeron ? indexById.get(Number(ephemeron[1])) : undefined;
+      if (key !== undefined && parent[key] === -1) { waiting.set(key, [...(waiting.get(key) ?? []), [node, edge]]); continue; }
+      reach(node, edge);
     }
   }
   const describe = node => {
@@ -44,7 +60,6 @@ export function retainerPaths(snapshot, marker, { depth = 14, objectName, nodeId
       ? `${type}(${name.length})` : `${type}:${String(name).slice(0, 60)}`;
   };
   const groups = new Map(); let matched = 0, unreachable = 0, bytes = 0;
-  const idOffset = at('id');
   const wanted = nodeId !== undefined ? node => nodes[node * N + idOffset] === nodeId : objectName
     ? node => nodeType(node) === 'object' && nodeName(node) === objectName
     : node => { const type = nodeType(node);
@@ -76,8 +91,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const [path, marker, out] = process.argv.slice(2).filter(value => !value.startsWith('--'));
   const objectName = process.argv.find(value => value.startsWith('--object='))?.slice(9);
   const nodeId = process.argv.find(value => value.startsWith('--id='))?.slice(5);
-  if (!path || !(marker || objectName || nodeId)) { console.log('Usage: node desktop/heap-retainers.mjs SNAPSHOT MARKER [OUT.json] [--object=CONSTRUCTOR]'); process.exit(2); }
-  const report = retainerPaths(JSON.parse(await readFile(path, 'utf8')), marker, { objectName, nodeId: nodeId === undefined ? undefined : Number(nodeId), depth: objectName || nodeId ? 40 : 14 });
+  if (!path || !(marker || objectName || nodeId)) { console.log('Usage: node desktop/heap-retainers.mjs SNAPSHOT MARKER [OUT.json] [--object=CONSTRUCTOR|--id=NODE_ID] [--depth=N]'); process.exit(2); }
+  const report = retainerPaths(JSON.parse(await readFile(path, 'utf8')), marker, { objectName, nodeId: nodeId === undefined ? undefined : Number(nodeId),
+    depth: Number(process.argv.find(value => value.startsWith('--depth='))?.slice(8) ?? (objectName || nodeId ? 40 : 14)) });
   if (out) await writeFile(out, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ matched: report.matched, unreachable: report.unreachable, selfBytes: report.selfBytes,
     groups: report.groups.slice(0, 25).map(group => ({ count: group.count, key: group.key, sample: group.sample.slice(0, 80) })) }, null, 2));
