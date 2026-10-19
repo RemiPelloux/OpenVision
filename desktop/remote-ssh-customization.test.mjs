@@ -35,7 +35,7 @@ test('client product with a prepared server names the bundled resolver and archi
 });
 
 // The shape of open-remote-ssh 0.4.0 lib/extension.js around the Linux installer.
-const resolver = 'installCodeServer=async function(e,t,r,i,n,s,o,c,h,p){const _=a.randomBytes(12).toString("hex"),' +
+const resolver = 'resolve=function(){const o=d.workspace.getConfiguration("remote.SSH"),a=o.get("enableDynamicForwarding",!0)};t.installCodeServer=async function(e,t,r,i,n,s,o,c,h,p){const _=a.randomBytes(12).toString("hex"),' +
   'E=await(0,l.getVSCodeServerConfig)(),m=t||E.serverDownloadUrlTemplate||"https://example.invalid",' +
   'b={id:_,serverDownloadUrlTemplate:m,customInstallPath:c,serverValidation:E.serverValidation};let w;' +
   'if("windows"===s){w=1}else{const t=d(b);h.trace("Server install command:",t);const r=Buffer.from(t).toString("base64");' +
@@ -50,6 +50,7 @@ test('resolver uploads the local archive before running the Linux installer', ()
   assert.match(result, /startsWith\("openvision-local:"\)/);
   assert.match(result, /Linux x86_64/);
   assert.match(result, /sha256sum -c --status/);
+  assert.ok(result.includes('a=o.get("enableDynamicForwarding",!1)'));
   assert.equal(localServerUpload(result), result);
   new Function(result);
 });
@@ -57,7 +58,8 @@ test('resolver uploads the local archive before running the Linux installer', ()
 test('resolver drift fails closed', () => {
   assert.throws(() => localServerUpload(bundle.replace('getVSCodeServerConfig', 'getServerConfig')), /server configuration contract/);
   assert.throws(() => localServerUpload(bundle.replace('base64 -d | bash -l', 'base64 -d | sh')), /Linux install command contract/);
-  assert.throws(() => localServerUpload(bundle + bundle), /ambiguous/);
+  assert.throws(() => localServerUpload(bundle + bundle), /contract changed|ambiguous/);
+  assert.throws(() => localServerUpload(bundle.replace('"enableDynamicForwarding",!0', '"enableDynamicForwarding"')), /dynamic forwarding contract/);
 });
 
 const script = `#!/bin/bash
@@ -158,4 +160,14 @@ test('Agent provider configurations are refused in remote windows', async () => 
   assert.doesNotThrow(() => assertLocalProviderWindow(undefined));
   assert.throws(() => assertLocalProviderWindow({ remoteAuthority: 'ssh-remote+host' }),
     error => error.name === 'LocalProviderError' && /does not send provider keys/.test(error.message));
+});
+
+test('resolver does not open a SOCKS proxy unless the user enables it', async () => {
+  const { resolverDefaults } = await import('./remote-ssh-customization.mjs');
+  const { setContributedDefaults } = await import('./network-defaults.mjs');
+  const manifest = { contributes: { configuration: { properties: {
+    'remote.SSH.enableDynamicForwarding': { type: 'boolean', default: true } } } } };
+  const result = setContributedDefaults(manifest, resolverDefaults);
+  assert.equal(result.contributes.configuration.properties['remote.SSH.enableDynamicForwarding'].default, false);
+  assert.equal(manifest.contributes.configuration.properties['remote.SSH.enableDynamicForwarding'].default, true);
 });

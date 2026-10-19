@@ -16,7 +16,8 @@ import { connect, createServer } from 'node:net';
 import { homedir, userInfo } from 'node:os';
 import { join, resolve } from 'node:path';
 
-export const commands = ['status', 'authorize', 'start', 'stop', 'kill-sessions', 'processes', 'scan', 'journal', 'reset-server', 'shutdown'];
+export const commands = ['status', 'authorize', 'start', 'stop', 'kill-sessions', 'processes', 'scan', 'journal', 'trace', 'reset-trace',
+  'reset-server', 'shutdown'];
 
 // /proc rows for one uid: pid, start time (clock ticks since boot) and argv.
 export async function processesOf(uid) {
@@ -37,7 +38,9 @@ export async function processesOf(uid) {
 export function classify(row) {
   const command = row.argv.join(' ');
   if (/^sshd: [\w-]+@/.test(command) || /^sshd: [\w-]+ \[/.test(command)) return 'ssh-session';
-  if (/\/usr\/sbin\/sshd\b.*-D/.test(command)) return 'sshd-listener';
+  // sshd retitles its listener ("sshd: /usr/sbin/sshd -D … [listener] …").
+  if ((row.argv[0] === '/usr/sbin/sshd' && row.argv.includes('-D')) || /^sshd: \/usr\/sbin\/sshd .*-D.*\[listener\]/.test(command))
+    return 'sshd-listener';
   if (/openvision-server|\.openvision-server\/|server-main\.js|bootstrap-fork|extensionHostProcess|ptyHost/.test(command)) return 'remote-server';
   if (/remote-ssh-host\.mjs/.test(command)) return 'fixture-controller';
   return 'other';
@@ -85,15 +88,21 @@ async function main(control) {
   if (!await stat(hostKey).catch(() => undefined))
     spawnSync('ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-f', hostKey], { stdio: 'ignore' });
   let sshd, port;
-  const start = async () => {
+  // `port` restarts on the previous port; `trace` records every execve and
+  // connect/sendto of the sshd family (installer, server, extension hosts).
+  const trace = join(fixture, 'remote-trace.log');
+  const start = async ({ port: requested, trace: traced } = {}) => {
     if (sshd) return { port, already: true };
-    port = await new Promise(done => { const probe = createServer().listen(0, '127.0.0.1', () => { const value = probe.address().port; probe.close(() => done(value)); }); });
+    port = Number.isInteger(requested) && requested > 1024 ? requested : await new Promise(done => { const probe = createServer().listen(0, '127.0.0.1', () => { const value = probe.address().port; probe.close(() => done(value)); }); });
     await writeFile(config, [`Port ${port}`, 'ListenAddress 127.0.0.1', `HostKey ${hostKey}`, `PidFile ${join(fixture, 'sshd.pid')}`,
       `AuthorizedKeysFile ${authorized}`, 'PubkeyAuthentication yes', 'PasswordAuthentication no', 'KbdInteractiveAuthentication no',
       'UsePAM no', 'StrictModes yes', 'AllowTcpForwarding local', 'X11Forwarding no', 'PermitTTY yes', 'LogLevel VERBOSE',
       'ClientAliveInterval 5', 'ClientAliveCountMax 2', `AllowUsers ${userInfo().username}`, ''].join('\n'));
-    sshd = spawn('/usr/sbin/sshd', ['-D', '-f', config, '-E', journal], { stdio: 'ignore' });
-    sshd.once('exit', () => { sshd = undefined; });
+    const command = ['/usr/sbin/sshd', '-D', '-f', config, '-E', journal];
+    sshd = traced ? spawn('strace', ['-f', '-qq', '-ttt', '-yy', '-e', 'trace=execve,connect,sendto,sendmsg,sendmmsg', '-e', 'signal=none', '-s', '200', '-A', '-o', trace, ...command], { stdio: 'ignore' })
+      : spawn(command[0], command.slice(1), { stdio: 'ignore' });
+    const child = sshd;
+    child.once('exit', () => { if (sshd === child) sshd = undefined; });
     for (let i = 0; i < 100; i++) {
       const ready = await new Promise(done => { const probe = connect(port, '127.0.0.1');
         probe.once('connect', () => { probe.destroy(); done(true); }).once('error', () => done(false)); });
@@ -104,8 +113,16 @@ async function main(control) {
   };
   const stop = async () => {
     const listener = sshd;
-    if (listener) { listener.kill('SIGTERM'); await once(listener, 'exit'); }
     const sessions = await signalMatching(uid, ['ssh-session'], 'SIGTERM', new Set([process.pid]));
+    if (listener) {
+      // The handle may be strace, which keeps tracing a still-running remote
+      // server; the listener itself is matched by uid and argv.
+      await signalMatching(uid, ['sshd-listener'], 'SIGTERM', new Set([process.pid]));
+      for (let i = 0; i < 100 && (await processesOf(uid)).some(row => classify(row) === 'sshd-listener'); i++)
+        await new Promise(done => setTimeout(done, 100));
+      if ((await processesOf(uid)).some(row => classify(row) === 'sshd-listener')) throw new Error('sshd listener did not exit');
+      if (sshd === listener) sshd = undefined;
+    }
     return { stopped: Boolean(listener), sessions };
   };
   const handlers = {
@@ -114,7 +131,7 @@ async function main(control) {
       if (!/^ssh-ed25519 [A-Za-z0-9+/=]+( [\w@.-]+)?$/.test(publicKey ?? '')) throw new Error('invalid public key');
       await writeFile(authorized, publicKey + '\n', { mode: 0o600 }); await chmod(authorized, 0o600); return { ok: true };
     },
-    start, stop,
+    start: request => start(request), stop,
     'kill-sessions': async () => ({ sessions: await signalMatching(uid, ['ssh-session'], 'SIGKILL', new Set([process.pid])) }),
     processes: async () => ({ rows: (await processesOf(uid)).map(row => ({ ...row, kind: classify(row), argv: row.argv.join(' ').slice(0, 240) })) }),
     scan: async ({ needles }) => {
@@ -122,6 +139,8 @@ async function main(control) {
       return scanTree(home, needles, [fixture]);
     },
     journal: async () => ({ text: await readFile(journal, 'utf8').catch(() => '') }),
+    trace: async () => ({ text: await readFile(trace, 'utf8').catch(() => '') }),
+    'reset-trace': async () => { await rm(trace, { force: true }); await rm(journal, { force: true }); return { ok: true }; },
     'reset-server': async () => {
       const running = (await processesOf(uid)).filter(row => classify(row) === 'remote-server');
       if (running.length) throw new Error('remote server processes are running');

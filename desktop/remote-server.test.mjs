@@ -77,6 +77,8 @@ test('remote process classification separates sessions, server and fixture', () 
   assert.equal(classify(row('sshd: ovremote@notty')), 'ssh-session');
   assert.equal(classify(row('sshd: ovremote [priv]')), 'ssh-session');
   assert.equal(classify(row('/usr/sbin/sshd -D -f /home/ovremote/.openvision-fixture/sshd_config')), 'sshd-listener');
+  assert.equal(classify(row('sshd: /usr/sbin/sshd -D -f /home/ovremote/.openvision-fixture/sshd_config -E /home/ovremote/.openvision-fixture/sshd.log [listener] 0 of 10-100 startups')), 'sshd-listener');
+  assert.equal(classify(row('strace -f -o /home/ovremote/.openvision-fixture/remote-trace.log /usr/sbin/sshd -D -f /home/ovremote/.openvision-fixture/sshd_config')), 'other');
   assert.equal(classify(row('/home/ovremote/.openvision-server/bin/abc/node /home/ovremote/.openvision-server/bin/abc/out/server-main.js --start-server')), 'remote-server');
   assert.equal(classify(row('/opt/node desktop/remote-ssh-host.mjs logs/remote-ssh-control')), 'fixture-controller');
   assert.equal(classify(row('bash -l')), 'other');

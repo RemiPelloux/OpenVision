@@ -11,11 +11,15 @@ import { parseJavaScript } from '../tooling/dependencies.mjs';
 import { fileHash } from './import-files.mjs';
 import { exists } from './source-assembly.mjs';
 import { localServerTemplate, remoteSshExtension, serverNames } from './remote-server.mjs';
+import { setContributedDefaults } from './network-defaults.mjs';
 
 export const marker = '/* OpenVision local remote-server upload v1 */';
 export const extensionDirectory = 'extensions/open-remote-ssh';
 export const archiveDirectory = 'openvision-remote';
 export const proposals = ['resolvers', 'contribViewsRemote'];
+// The resolver otherwise opens a local SOCKS proxy into the remote network on
+// every connection; users can still enable it.
+export const resolverDefaults = { 'remote.SSH.enableDynamicForwarding': false };
 
 export function remoteClientProduct(product, server) {
   const result = { ...product, ...serverNames, serverDownloadUrlTemplate: localServerTemplate };
@@ -88,6 +92,9 @@ function unique(text, pattern, label) {
 
 export function localServerUpload(text) {
   if (text.includes(marker)) return text;
+  const forwarding = 'getConfiguration("remote.SSH"),a=o.get("enableDynamicForwarding",!0)';
+  if (text.split(forwarding).length !== 2) throw new Error('Remote-SSH dynamic forwarding contract changed');
+  text = text.replace(forwarding, forwarding.replace(',!0)', ',!1)'));
   const config = unique(text, /([\w$]+)=await\(0,[\w$]+\.getVSCodeServerConfig\)\(\),([\w$]+)=[\w$]+\|\|\1\.serverDownloadUrlTemplate\|\|/g, 'server configuration');
   const [, configName, templateName] = config;
   const installPath = unique(text, new RegExp(`serverDownloadUrlTemplate:${templateName.replace('$', '\\$')},customInstallPath:([\\w$]+),`, 'g'), 'install path')[1];
@@ -190,13 +197,8 @@ export function localServerScript(text) {
 
 async function installExtension(root, vsix, app) {
   if (await fileHash(vsix) !== remoteSshExtension.sha256) throw new Error(`${vsix} does not match the pinned SHA-256`);
+  // Re-derived from the pinned VSIX on every build, so patch changes always land.
   const target = join(app, extensionDirectory);
-  const manifestPath = join(target, 'package.json');
-  if (await exists(manifestPath)) {
-    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-    const main = await readFile(join(target, 'lib/extension.js'), 'utf8');
-    if (manifest.version === remoteSshExtension.version && main.includes(marker) && main.includes(hostKeyMarker)) return false;
-  }
   const staging = await mkdtemp(join(root, 'build/remote/vsix-'));
   try {
     const unzip = spawnSync('unzip', ['-q', vsix, 'extension/*', '-d', staging]);
@@ -205,6 +207,8 @@ async function installExtension(root, vsix, app) {
     const manifest = JSON.parse(await readFile(join(extension, 'package.json'), 'utf8'));
     if (`${manifest.publisher}.${manifest.name}` !== remoteSshExtension.id || manifest.version !== remoteSshExtension.version)
       throw new Error('Pinned open-remote-ssh VSIX has an unexpected identity');
+    const manifestFile = join(extension, 'package.json');
+    await writeFile(manifestFile, JSON.stringify(setContributedDefaults(manifest, resolverDefaults), null, 2) + '\n');
     for (const [relative, transform] of [['lib/extension.js', text => verifyHostKeys(localServerUpload(text))], ['src/scripts/server-setup.sh', localServerScript]])
       await writeFile(join(extension, relative), transform(await readFile(join(extension, relative), 'utf8')));
     await rm(target, { recursive: true, force: true });
