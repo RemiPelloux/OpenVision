@@ -73,9 +73,32 @@ export function markInterruptedAgentEdits(text) {
   return (text.slice(0, start) + loadFixed + text.slice(end)).replace(live, liveFixed);
 }
 
+// Stop leaves the live edit bubble "loading": the transcript shows it as running
+// while the turn is generating and as completed ("Edited") once it stops. The
+// activity step now carries an error for an edit without a result; the renderer
+// still shows a live "loading" state first, so an edit in progress is unchanged.
+export const agentEditDisplayMarker = '/* OpenVision interrupted Agent edit display v1 */';
+const stepError = 'error: o.status === "error" || k || void 0,';
+const stepErrorFixed = `${agentEditDisplayMarker}
+      error: o.status === "error" || k ||
+        ((o.status === "loading" || o.status === "cancelled") && ${unconfirmedEdit('o')}) || void 0,`;
+
+export function showInterruptedAgentEdits(text) {
+  if (text.includes(agentEditDisplayMarker)) {
+    if (!once(text, agentEditDisplayMarker)) throw new Error('Interrupted Agent edit display marker is ambiguous');
+    return text;
+  }
+  const start = text.indexOf('\nfunction fh_({'), end = start < 0 ? -1 : text.indexOf('\n}\n', start);
+  const owner = start < 0 ? '' : text.slice(start, end);
+  if (!once(text, '\nfunction fh_({') || !once(owner, stepError) || !owner.includes('const o = t.toolFormerData,') ||
+      !owner.includes('status: h ? "generating" : "none",'))
+    throw new Error('Interrupted Agent edit display contract changed');
+  return text.slice(0, start) + owner.replace(stepError, stepErrorFixed) + text.slice(end);
+}
+
 export async function installInterruptedAgentEdits(root) {
   const path = join(root, 'source/app', agentEditInterruptionEntry);
-  const before = await readFile(path, 'utf8'), after = markInterruptedAgentEdits(before);
+  const before = await readFile(path, 'utf8'), after = showInterruptedAgentEdits(markInterruptedAgentEdits(before));
   if (before === after) return;
   const backup = join(root, 'backups/agent-edit-interruption', agentEditInterruptionEntry);
   await mkdir(dirname(backup), { recursive: true });

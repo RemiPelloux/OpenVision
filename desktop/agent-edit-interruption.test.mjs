@@ -7,10 +7,10 @@ import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableApp } from './recovered-source.mjs';
 import { agentEditInterruptionEntry, installInterruptedAgentEdits, interruptedEditMessage,
-  markInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
+  markInterruptedAgentEdits, showInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
 
 const original = await readFile(new URL(agentEditInterruptionEntry, readableApp), 'utf8');
-const patched = markInterruptedAgentEdits(original);
+const patched = showInterruptedAgentEdits(markInterruptedAgentEdits(original));
 
 // Executes the recovered (or patched) load owner and live cancel owner with
 // controlled storage revival, error class and bubble store.
@@ -78,8 +78,32 @@ test('live cancellation marks an unfinished edit failed and keeps other tools ca
   }
 });
 
+// The activity step that feeds the transcript label, with the converter and
+// view-model helpers controlled: only the error flag is under test.
+function stepOwner(source) {
+  const start = source.indexOf('\nfunction fh_({') + 1;
+  const node = parseExpressionAt(source, start, { ecmaVersion: 'latest' });
+  return runInNewContext(`(${source.slice(node.start, node.end)})`, {
+    Jr: { TOOL_FORMER: 'tool' }, Je: { EDIT_FILE_V2: 38, EDIT_FILE: 7, UNSPECIFIED: 0, ASK_QUESTION: 1, RUN_TERMINAL_COMMAND_V2: 2, TASK_V2: 3, COMPUTER_USE: 4 },
+    _Uh: () => ({ tool: { case: 'editToolCall', value: {} } }), sh_: () => ({ kind: 'rendered' }), cBn: value => value,
+    zXs: () => false, xd_: value => value, Cd_: value => value, nh_: () => undefined, vh_: () => undefined, k7h: () => 'lane', kUh: () => ({}) });
+}
+test('recovered transcript step shows a stopped edit without a result as completed; patched step marks it failed', () => {
+  const step = (source, data, isStreaming = false) => stepOwner(source)({ bubbleId: 'b',
+    bubble: { capabilityType: 'tool', toolFormerData: { tool: 38, toolCallId: 'c', ...data } }, isStreaming }).step;
+  for (const status of ['loading', 'cancelled']) {
+    assert.equal(step(original, { status }).error, undefined, 'Recovered: no failure, rendered as "Edited"');
+    assert.equal(step(patched, { status }).error, true);
+  }
+  assert.equal(step(patched, { status: 'loading' }, true).status, 'generating', 'A live edit is still shown as running');
+  assert.equal(step(patched, { status: 'completed', result: {} }).error, undefined);
+  assert.equal(step(patched, { status: 'cancelled', result: { case: 'rejected' } }).error, undefined);
+  assert.equal(step(patched, { status: 'loading', tool: 2 }).error, undefined, 'Other tools are unchanged');
+});
+
 test('transform is idempotent, fails closed on drift and the installer keeps the first backup', async () => {
-  assert.equal(markInterruptedAgentEdits(patched), patched);
+  assert.equal(showInterruptedAgentEdits(markInterruptedAgentEdits(patched)), patched);
+  assert.throws(() => showInterruptedAgentEdits(original.replace('error: o.status === "error" || k || void 0,', 'error: k,')), /display contract/);
   for (const changed of [original.replace('e.status === "loading" && (e.status = "cancelled");', ''),
     original.replace('t.setBubbleData(i, { status: "cancelled", ...(o ? { additionalData: o } : {}) }),', 't.setBubbleData(i, { status: "cancelled" }),')])
     assert.throws(() => markInterruptedAgentEdits(changed), /contract changed/);
