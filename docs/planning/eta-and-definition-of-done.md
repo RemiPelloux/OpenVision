@@ -487,3 +487,10 @@ The owner asked that all work be finished. Workers run 5 at a time, each startin
 **ETA:** about 3 rounds of 5 sessions. Rounds 1–2 should finish the 14 stories in progress. Round 3 covers the 4 never-started groups, which may each need a second session.
 
 **What can be verified:** if the owner decisions in [#5](https://github.com/RemiPelloux/OpenVision/issues/5) are taken, Linux can reach **about 35–39/44**. OV-205, OV-901, OV-902, OV-905 and OV-804 stay with the owner: balance, a Windows host, a Mac, other Linux machines and the source-distribution decision.
+
+**Merged into `main` (owner request, 19 October 2026).** `main` was fast-forwarded to the
+integration branch (`b4f52a56..2b61fcbc`, 211 commits). The finishing rounds keep merging
+into `ccr-a39d6f13-jurmdv`, and `main` is fast-forwarded after each verified merge. The 20
+fully merged `ov/*` branches could not be deleted from the agent environment (the git
+proxy answers 403 to deletions). The owner deletes them with
+`git push origin --delete <branches>`.
