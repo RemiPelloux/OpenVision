@@ -10,8 +10,9 @@ import { createRuntimeOverlay } from './verification-runtime-overlay.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 
-assert.equal(process.platform, 'win32', 'Local metadata native verification currently covers Windows');
+assert.ok(['win32', 'linux'].includes(process.platform), 'Local metadata native verification covers Windows and Linux');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/local-metadata-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
@@ -42,10 +43,12 @@ const insertions = [
 for (const [position, text] of insertions.sort((a, b) => b[0] - a[0]))
   source = source.slice(0, position) + text + source.slice(position);
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, source]]));
-await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
+await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), process.platform === 'win32' ? 'junction' : 'dir');
 const requests = [], errors = [];
 let phase = 'initial';
 const prompt = 'metadata title persistence probe';
+// The local first-message fallback keeps four words in title case (desktop/local-chat-title.test.mjs).
+const expectedTitle = 'Metadata Title Persistence Probe';
 const reply = () => `OpenVision metadata reply ${phase}.`;
 const server = createServer(async (request, response) => {
   if (request.url === '/v1/models') return response.end(JSON.stringify({ data: [{ id: 'fixture-metadata' }] }));
@@ -63,14 +66,15 @@ const result = { directory, hostedControl: hosted, checkedAt: new Date().toISOSt
   identity: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     platform: process.platform, arch: process.arch, node: process.version, originalHash, overlay: overlay.records,
     verifierHash: await fileHash(join(root, 'desktop/verify-local-metadata.mjs')) },
-  scope: 'Windows native local title/history persistence and actual contribution/client invocation counters in a disposable workbench overlay. Controlled inference; no process-wide network or live AI claim.',
+  scope: `${process.platform} native local title/history persistence and actual contribution/client invocation counters in a disposable workbench overlay. Controlled inference; no process-wide network or live AI claim.`,
   checks: {}, probes: [], pageErrors: errors, hostExits: [], hostStderr: [] };
 let app, page, chatId;
 async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: overlay.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(profile, 'extensions'), '--new-window',
-      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', project, join(project, 'hello.js')] });
+      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(join(directory, 'host')) : []), project, join(project, 'hello.js')] });
   const stderr = { tail: '' }; result.hostStderr.push(stderr);
   app.process().stderr?.on('data', chunk => { stderr.tail = (stderr.tail + chunk).slice(-16384); });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
@@ -119,7 +123,7 @@ try {
   await page.getByText('fixture-metadata', { exact: true }).last().click(); await page.keyboard.press('Escape');
   chatId = await submit(prompt); assert.ok(chatId); assert.equal(requests.length, 1);
   await close();
-  const initial = stored(); assert.equal(initial.name, prompt);
+  const initial = stored(); assert.equal(initial.name, expectedTitle);
   assert.ok(initial.texts.includes(prompt)); assert.ok(initial.texts.includes('OpenVision metadata reply initial.'));
   result.checks.localTitleAndHistoryPersist = true;
   await launch(); await openChat(page);

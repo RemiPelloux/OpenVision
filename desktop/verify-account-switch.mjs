@@ -22,9 +22,13 @@ await writeFile(join(driver, 'extension.cjs'), `
 const vscode = require('vscode'), fs = require('node:fs/promises');
 exports.activate = async context => {
   const documentFile = ${JSON.stringify(join(project, 'switch.txt'))};
+  let snapshots = 0, written = Promise.resolve();
   const snapshot = document => {
-    if (require('node:path').relative(document.uri.fsPath, documentFile) === '') return fs.writeFile(${JSON.stringify(join(directory, 'document.json'))},
-      JSON.stringify({ text: document.getText(), dirty: document.isDirty }));
+    if (require('node:path').relative(document.uri.fsPath, documentFile) !== '') return;
+    // Serialized write-then-rename: change events overlap, and the verifier must never read a partial or older snapshot.
+    const target = ${JSON.stringify(join(directory, 'document.json'))}, temporary = target + '.' + process.pid + '.' + ++snapshots;
+    const content = JSON.stringify({ text: document.getText(), dirty: document.isDirty });
+    return written = written.then(() => fs.writeFile(temporary, content)).then(() => fs.rename(temporary, target));
   };
   context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => snapshot(event.document)));
   await Promise.all(vscode.workspace.textDocuments.map(snapshot));

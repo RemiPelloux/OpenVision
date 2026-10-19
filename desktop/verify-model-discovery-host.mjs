@@ -1,17 +1,18 @@
 import assert from 'node:assert/strict';
 import { copyFile, link, mkdir, mkdtemp, readdir, symlink, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { _electron } from '../tooling/browser.mjs';
 import { modelDiscoveryFixture } from '../test/fixtures/model-discovery.mjs';
 import { verificationRuntime } from './verification-runtime.mjs';
 import { fileHash } from './import-files.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 
 // Separate from full-workbench acceptance: execute the production IPC adapter
 // with actual Electron windows/networking in a disposable minimal host.
 const root = resolve(import.meta.dirname, '..');
 const { layout, appRoot } = await verificationRuntime(root);
-if (process.platform !== 'win32') throw Error('This isolated-host fixture currently supports Windows only.');
+if (!['win32', 'linux'].includes(process.platform)) throw Error('This isolated-host fixture supports Windows and Linux.');
 const directory = await mkdtemp(join(root, 'logs/discovery-host-'));
 const host = join(directory, 'host'), appDirectory = join(host, 'resources/app');
 await mkdir(appDirectory, { recursive: true });
@@ -20,7 +21,7 @@ for (const entry of await readdir(layout.host, { withFileTypes: true })) {
   if (entry.isDirectory() || entry.name.startsWith('unins')) continue;
   await link(join(layout.host, entry.name), join(host, entry.name));
 }
-await symlink(join(layout.host, 'locales'), join(host, 'locales'), 'junction');
+await symlink(join(layout.host, 'locales'), join(host, 'locales'), process.platform === 'win32' ? 'junction' : 'dir');
 await copyFile(join(root, 'test/fixtures/discovery-electron-main.mjs'), join(appDirectory, 'main.mjs'));
 await writeFile(join(appDirectory, 'package.json'), JSON.stringify({ type: 'module', main: 'main.mjs' }));
 const adapter = join(appRoot, 'out/openvision-model-http.js');
@@ -52,7 +53,8 @@ try {
   const env = { ...process.env, OPENVISION_DISCOVERY_FIXTURE: JSON.stringify({ adapter,
     profile: join(directory, 'profile'), preload: join(root, 'test/fixtures/discovery-electron-preload.cjs') }) };
   delete env.ELECTRON_RUN_AS_NODE;
-  app = await _electron.launch({ executablePath: join(host, 'OpenVision.exe'), env, timeout: 30000 });
+  app = await _electron.launch({ executablePath: join(host, basename(layout.executable)), env, timeout: 30000,
+    args: process.platform === 'linux' ? await linuxSandboxArguments(host) : [] });
   child = app.process();
   child.stderr?.on('data', chunk => { result.hostStderr = ((result.hostStderr ?? '') + chunk).slice(-8192); });
   page = await app.firstWindow();
