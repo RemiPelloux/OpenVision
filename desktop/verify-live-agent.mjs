@@ -3,6 +3,8 @@ import { DatabaseSync } from 'node:sqlite';
 import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, writeFile, unlink } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
+import { readdir, readlink } from 'node:fs/promises';
+import { connect } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -108,7 +110,8 @@ const { layout } = await loadRuntime(root);
 // The fixture is the relay's upstream provider; relay evidence and assertions are unchanged.
 const fixtureProvider = fixture ? await createAgentFixtureProvider({ project }) : undefined;
 // Opt-in: route the owned app through an owned loopback-only Chromium proxy (refuses non-loopback).
-const chromiumProxy = process.argv.includes('--chromium-proxy') ? await createLoopbackProxy() : undefined;
+// --chromium-proxy-loopback also removes Chromium's implicit loopback bypass.
+const chromiumProxy = process.argv.some(value => value.startsWith('--chromium-proxy')) ? await createLoopbackProxy() : undefined;
 assert.ok(!chromiumProxy || fixture, '--chromium-proxy is a fixture-only connectivity probe');
 if (fixture) provider = { name: 'Controlled Agent fixture', url: fixtureProvider.url, models: [{ id: model, enabled: true }] };
 const platformLabel = { win32: 'Windows', linux: 'Linux', darwin: 'macOS' }[process.platform] ?? process.platform;
@@ -184,15 +187,48 @@ async function launch() {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window', '--disable-updates',
       '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []),
-      ...(chromiumProxy ? [`--proxy-server=http://127.0.0.1:${chromiumProxy.port}`] : []), project] });
+      ...(chromiumProxy ? [`--proxy-server=http://127.0.0.1:${chromiumProxy.port}`,
+        ...(process.argv.includes('--chromium-proxy-loopback') ? ['--proxy-bypass-list=<-loopback>'] : [])] : []), project] });
   // Private diagnostics for each owned launch; the run directory is ignored and never published.
   const hostLog = createWriteStream(join(directory, `host-${(result.nativeMainProcesses ?? []).length + 1}.log`));
   app.process().stderr?.pipe(hostLog); app.process().stdout?.pipe(hostLog);
-  (result.nativeMainProcesses ??= []).push(await app.evaluate(() => ({ pid: process.pid, ppid: process.ppid, executable: process.execPath })));
   page = await app.firstWindow(); page.setDefaultTimeout(15000);
+  // Evaluating in the main process before its first window raced Electron startup on
+  // Linux ("Execution context was destroyed"); the window proves the main is up.
+  (result.nativeMainProcesses ??= []).push(await app.evaluate(() => ({ pid: process.pid, ppid: process.ppid, executable: process.execPath })));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
   await page.waitForTimeout(8000);
   return page;
+}
+// VS Code hands a new launch to any process still accepting on the profile's main
+// IPC socket and exits 0. Record who holds it after close and wait (bounded) for its
+// release, so a relaunch never silently attaches to a leftover.
+async function mainSocketHolders() {
+  const runtime = process.env.XDG_RUNTIME_DIR;
+  if (process.platform !== 'linux' || !runtime) return [];
+  const sockets = (await readdir(runtime).catch(() => [])).filter(name => name.endsWith('-main.sock')).map(name => join(runtime, name));
+  const accepting = [];
+  for (const path of sockets) {
+    const accepted = await new Promise(resolve => {
+      const socket = connect(path, () => { socket.destroy(); resolve(true); });
+      socket.once('error', () => resolve(false));
+    });
+    if (!accepted) continue;
+    const inodes = (await readFile('/proc/net/unix', 'utf8')).split('\n').filter(line => line.endsWith(path)).map(line => line.trim().split(/\s+/)[6]);
+    const holders = [];
+    for (const pid of (await readdir('/proc')).filter(name => /^\d+$/.test(name))) {
+      const fds = await readdir(`/proc/${pid}/fd`).catch(() => []);
+      for (const fd of fds) {
+        const target = await readlink(`/proc/${pid}/fd/${fd}`).catch(() => '');
+        if (inodes.some(inode => target === `socket:[${inode}]`)) {
+          holders.push({ pid: Number(pid), command: (await readFile(`/proc/${pid}/cmdline`, 'utf8').catch(() => '')).replaceAll('\0', ' ').trim().slice(0, 200) });
+          break;
+        }
+      }
+    }
+    accepting.push({ socket: path.slice(runtime.length + 1), holders });
+  }
+  return accepting;
 }
 async function closeOwnedApp() {
   if (!app) return;
@@ -201,6 +237,15 @@ async function closeOwnedApp() {
   await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 3000 }).catch(() => {});
   await closing; if (child.exitCode === null && child.signalCode === null) await exited;
   result.launcherExit = { exitCode: child.exitCode, signalCode: child.signalCode };
+  const releaseStarted = performance.now();
+  let holders = await mainSocketHolders();
+  if (holders.length) (result.mainSocketHeldAfterClose ??= []).push(holders);
+  while (holders.length && performance.now() - releaseStarted < 30000) {
+    await new Promise(resolve => setTimeout(resolve, 250));
+    holders = await mainSocketHolders();
+  }
+  (result.mainSocketReleaseMs ??= []).push(Math.round(performance.now() - releaseStarted));
+  if (holders.length) throw new Error(`The closed app's main IPC socket is still accepting: ${JSON.stringify(holders)}`);
   if (process.platform === 'linux') (result.survivorsAfterClose ??= []).push(execFileSync('ps', ['-u', String(process.getuid()), '-o', 'pid,ppid,etimes,args', '--no-headers'], { encoding: 'utf8' })
     .split('\n').filter(line => line.trim() && !/\b(ps|node|npm|bash|sh|xvfb-run|Xvfb|dbus-daemon|dbus-run-session|gnome-keyring-daemon)\b/.test(line.trim().split(/\s+/)[3] ?? ''))
     .map(line => line.trim().slice(0, 240)));
