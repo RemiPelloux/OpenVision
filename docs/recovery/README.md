@@ -23,6 +23,8 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Agent review recovery and repeated edits](rea-agent-review-recovery.md)
 - [Native Agent runtime verification](rea-agent-runtime.md)
 - [REA sprint follow-up: autocomplete contracts and cancellation](rea-autocomplete-contract.md)
+- [Specialized modes: image, browser and computer use (OV-704)](rea-specialized-modes.md)
+- [Next-edit prediction: release-scope decision paper (OV-604)](next-edit-decision.md)
 - [Windows Agent command ownership and cancellation](rea-command-cancellation.md)
 - [Custom-provider Tab autocomplete](rea-custom-autocomplete.md)
 - [Autocomplete quality harness and live editor acceptance](rea-autocomplete-quality.md)

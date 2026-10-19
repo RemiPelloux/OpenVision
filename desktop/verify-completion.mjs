@@ -12,6 +12,7 @@ import { fileHash } from './import-files.mjs';
 import { createCompletionEditingFixture, verifyCompletionEditing, saveFile, pressTab } from './verify-completion-editing.mjs';
 import { createCompletionAcceptanceFixture, verifyCompletionAcceptance, prepareCompletionAcceptanceProject } from './verify-completion-acceptance.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
+import { watchPredictionTraffic, observePredictionDom, verifyNextEditAbsent } from './verify-completion-next-edit.mjs';
 
 // Live saved-provider editor acceptance has its own owner module (verify-completion-live.mjs).
 if (process.argv.includes('--live')) { await import('./verify-completion-live.mjs'); process.exit(); }
@@ -23,6 +24,7 @@ const directory = await mkdtemp(join(root, 'logs/completion-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
 const editing = process.argv.includes('--editing'), editingFixture = createCompletionEditingFixture();
 const acceptance = process.argv.includes('--acceptance'), acceptanceFixture = createCompletionAcceptanceFixture();
+const nextEditAbsent = process.argv.includes('--next-edit-absent');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never',
@@ -46,7 +48,7 @@ const server = createServer(async (request, response) => {
   if (phase === 'editing' && editingFixture.respond(context, response)) return;
   if (phase === 'acceptance' && acceptanceFixture.respond(context, response, body.length)) return;
   const matchesMultiline = phase === 'multiline' && /const items = \[\r?\n  $/.test(context.prefix);
-  const content = phase === 'simple' ? '42' : matchesMultiline ? '"café 日本語",\n  "😀"' : '';
+  const content = phase === 'simple' ? '42' : phase === 'next-edit' ? '1;' : matchesMultiline ? '"café 日本語",\n  "😀"' : '';
   response.end(JSON.stringify({ choices: [{ message: { role: 'assistant', content }, finish_reason: 'stop' }] }));
   if (matchesMultiline) multiline.resolve();
   inference.resolve();
@@ -63,10 +65,12 @@ try {
       '--disable-telemetry', '--disable-crash-reporter',
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project, file] });
   const page = await app.firstWindow();
+  const rendererUrls = watchPredictionTraffic(page);
   const ghost = text => page.locator('.cursor-ghost-text').filter({ hasText: text }).first();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);
+  if (nextEditAbsent) await observePredictionDom(page);
   await page.waitForTimeout(8000);
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
@@ -127,6 +131,9 @@ try {
     phase = 'acceptance';
     result.acceptance = {};
     await verifyCompletionAcceptance({ page, file, directory, appRoot, fixture: acceptanceFixture }, result.acceptance);
+  } else if (nextEditAbsent) {
+    result.nextEdit = {};
+    await verifyNextEditAbsent({ page, file, requests, urls: rendererUrls, setPhase: value => { phase = value; } }, result.nextEdit);
   } else failures = await verifyCompletionFailures({ page, file, directory, requests, setPhase: value => { phase = value; } });
   phase = 'simple';
   await page.keyboard.press('Escape'); await page.keyboard.press('ControlOrMeta+a');
@@ -139,7 +146,7 @@ try {
   assert.deepEqual(errors, []);
   Object.assign(result, { success: true, checked_at: new Date().toISOString(), platform: process.platform,
     native_suggestion: true, tab_accept: true, undo: true, multiline_unicode_accept_undo: true, failures,
-    ...(editing ? { editing: editingResult } : acceptance ? { acceptance: result.acceptance } : { recovery_after_rejection: true }), requests, errors,
+    ...(editing ? { editing: editingResult } : acceptance ? { acceptance: result.acceptance } : nextEditAbsent ? { next_edit_absent: result.nextEdit } : { recovery_after_rejection: true }), requests, errors,
     hashes: { completionHttp: await fileHash(join(runtimeRoot, 'desktop/completion-http.mjs')),
       completionIpc: await fileHash(join(appRoot, 'out/openvision-completion-ipc.js')),
       workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
