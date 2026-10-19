@@ -128,3 +128,23 @@ test('native owner customization notifies import recovery once and is idempotent
   finally { delete globalThis.openvisionImportOwnerReady; delete globalThis.openvisionImportOwner; }
   assert.equal(notified.environmentMainService, 'environment');
 });
+
+test('shared-process folder watcher keeps directories the default profile registers', async () => {
+  const { keepRegisteredExtensionDirectories, importWatcherMarker } = await import('./import-extension-watcher-customization.mjs');
+  const text = 'var Ex = class extends B { async watchForExtensionsNotInstalledBySystem() {} async onDidFilesChange(e) { const t = []; ' +
+    'for (const i of e.rawAdded) { const r = await this.extensionsScanner.scanUserExtensionAtLocation(i); ' +
+    'r && r.installedTimestamp === void 0 && (this.knownDirectories.add(i), t.push(r)); } ' +
+    't.length && (await this.addExtensionsToProfile(t, this.userDataProfilesService.defaultProfile.extensionsResource)); return t; } };\n' +
+    'class S { scanProfileExtensions(e, t) {} }';
+  const installed = keepRegisteredExtensionDirectories(text);
+  assert.ok(installed.includes(importWatcherMarker));
+  assert.equal(keepRegisteredExtensionDirectories(installed), installed);
+  const Ex = new Function('B', `${installed}; return Ex;`)(class {});
+  const watcher = Object.assign(new Ex(), {
+    extensionsScanner: { scanUserExtensionAtLocation: async location => ({ location }) }, knownDirectories: new Set(),
+    addExtensionsToProfile: async () => {}, userDataProfilesService: { defaultProfile: { extensionsResource: 'registry' } },
+    extensionsProfileScannerService: { scanProfileExtensions: async () => [{ location: 'imported' }] },
+    uriIdentityService: { extUri: { isEqual: (left, right) => left === right } } });
+  assert.deepEqual((await watcher.onDidFilesChange({ rawAdded: ['imported', 'external'] })).map(entry => entry.location), ['external']);
+  assert.throws(() => keepRegisteredExtensionDirectories(text.replace('t.push(r)', 't.push(r, r)')), /contract changed/);
+});

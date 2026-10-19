@@ -129,6 +129,7 @@ async function importExtensions(plan) {
   const before = await optionalFile(destination);
   const registry = before ? parseConfiguration(before.toString('utf8'), 'array') : [];
   for (const entry of registry) extensionPath(directory, entry);
+  const first = plan.changes.length;
   for (const entry of entries) {
     const input = extensionPath(plan.options.extensions, entry);
     const existing = registry.findIndex(item => item.identifier.id.toLowerCase() === entry.identifier.id.toLowerCase());
@@ -147,6 +148,9 @@ async function importExtensions(plan) {
   const normalized = registry.map(entry => extensionRecord(entry, extensionPath(directory, entry)));
   if (JSON.stringify(normalized) !== JSON.stringify(before ? parseConfiguration(before.toString('utf8'), 'array') : []))
     await addFile(plan, destination, Buffer.from(JSON.stringify(normalized)), 'extensions', source);
+  // Commit the registry before the directories it names: a running app then finds
+  // each new directory already registered and keeps the imported metadata.
+  if (plan.changes.length > first && plan.changes.at(-1).path === destination) plan.changes.splice(first, 0, plan.changes.pop());
 }
 
 export async function planImport(input) {
