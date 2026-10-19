@@ -1,0 +1,5628 @@
+{
+  "schema": 1,
+  "story": "OV-801",
+  "scope": "Linux x64 pinned AppImage, extracted squashfs; paths relative to squashfs-root",
+  "input": {
+    "file": "Cursor-3.21.13-x86_64.AppImage",
+    "version": "3.21.13",
+    "bytes": 304671224,
+    "sha256": "285eaa38de049c44322ec9365ff9d48337ddacf43234041248a723cb44ade25b"
+  },
+  "method": {
+    "tool": "desktop/native-inventory.mjs",
+    "selection": "regular files with an ELF, PE or WebAssembly signature, or named *.node, *.so*, *.wasm",
+    "wasmValidation": "V8 WebAssembly.validate plus a section parser cross-checked against WebAssembly.Module imports/exports",
+    "limitations": [
+      "Static linkage facts only; loaded roles are measured separately (verify:native-loaded).",
+      "Nested AppImage payloads are recorded as one file; their embedded squashfs is not inventoried.",
+      "Nearest package.json metadata is the shipped manifest, not authenticated upstream provenance.",
+      "WebAssembly embedded as JavaScript strings is not part of this file inventory."
+    ]
+  },
+  "counts": {
+    "nativePaths": 39,
+    "distinctNatives": 34,
+    "wasmPaths": 22,
+    "distinctWasm": 15,
+    "elf": 38,
+    "pe": 1,
+    "unrecognized": 0,
+    "symlinks": 2
+  },
+  "runtimes": {
+    "usr/share/cursor/cursor": {
+      "observedBy": "executed with ELECTRON_RUN_AS_NODE=1 -p process.versions",
+      "node": "24.18.1",
+      "v8": "14.8.178.38-electron.0",
+      "modules": "146",
+      "napi": "10",
+      "electron": "42.10.0",
+      "chrome": "148.0.7778.280",
+      "uv": "1.52.1",
+      "openssl": "0.0.0",
+      "zlib": "1.3.2.1-motley",
+      "icu": "78.2"
+    },
+    "usr/share/cursor/resources/app/resources/helpers/node": {
+      "observedBy": "executed with ELECTRON_RUN_AS_NODE=1 -p process.versions",
+      "node": "24.18.1",
+      "v8": "13.6.233.17-node.50",
+      "modules": "137",
+      "napi": "10",
+      "uv": "1.52.1",
+      "openssl": "3.5.7",
+      "zlib": "1.3.1-e00f703",
+      "icu": "78.3"
+    }
+  },
+  "distinctNatives": [
+    {
+      "sha256": "033cbc12324fb7f56fa84bceb3a07d4b0412a320eb0f5faca766397db11344a3",
+      "paths": [
+        "usr/share/cursor/libffmpeg.so"
+      ]
+    },
+    {
+      "sha256": "0636c96f07de2c74a3eaf8692fc1743d81259c0bf66c8ebde7f7179211a8aff9",
+      "paths": [
+        "usr/share/cursor/cursor"
+      ]
+    },
+    {
+      "sha256": "18892d0568c685c006f903559b35db6294eb01649773b4b7bf86f6412c7a9941",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/kerberos/build/Release/kerberos.node",
+        "usr/share/cursor/resources/app/node_modules/kerberos/build/Release/obj.target/kerberos.node"
+      ]
+    },
+    {
+      "sha256": "19e3f28befb0a39d23a26e200a45fe2bcb156d69bc00ef885551182d979dd942",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/cursor-proclist/build/Release/cursor_proclist.node"
+      ]
+    },
+    {
+      "sha256": "2015304df43beff0b74409cdc4d858107efcde650d9bc8afb1288041d62cec4b",
+      "paths": [
+        "usr/share/cursor/chrome-sandbox"
+      ]
+    },
+    {
+      "sha256": "2451a5a2a1ba3c95071e7709afe27b429c7627dad3a451a1ac8e883c5a57ebc0",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/node-pty/build/Release/pty.node"
+      ]
+    },
+    {
+      "sha256": "36f84c1e420dab98117949a71cb9fd73a2e29247fcbde3df9abae610eebd354e",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/whichlang-node-linux-x64-gnu/whichlang-node.linux-x64-gnu.node"
+      ]
+    },
+    {
+      "sha256": "3b0290b101e8d8f772b829689e5cdc1b082608a4596be0627f3d86c3a76b7cb0",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-retrieval/node_modules/@anysphere/file-service/file_service.linux-x64-gnu.node"
+      ]
+    },
+    {
+      "sha256": "422adf6df5e85256bcded8dc1a8cec7b0648a07c72231205cc723e0c423ba994",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/windows-foreground-love/build/Release/foreground_love.node",
+        "usr/share/cursor/resources/app/node_modules/windows-foreground-love/build/Release/obj.target/foreground_love.node"
+      ]
+    },
+    {
+      "sha256": "510449f3c2f06f9d7e4791859b2832249f781fc9b0c2cae7d6fe906aea1b6d39",
+      "paths": [
+        "usr/share/cursor/libGLESv2.so"
+      ]
+    },
+    {
+      "sha256": "5b313fbec62ec84f0202a75fa3b09319d802cad661753a2522975d1f2f852b7f",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node"
+      ]
+    },
+    {
+      "sha256": "5e73fa7d520e22cc7e743aeda99e7474dcbc576a9f14c2f8f5dfbdf97dc88731",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@parcel/watcher/build/Release/watcher.node"
+      ]
+    },
+    {
+      "sha256": "6a4fb7705c05da9d8e2771cf315b6c53dafa814136f9a74b611bb2ee4921db1e",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/spdlog/build/Release/spdlog.node"
+      ]
+    },
+    {
+      "sha256": "6aa1e796e006c8cafccd95774e8704074714d7c70c3ecd99d8bdf390578ce542",
+      "paths": [
+        "usr/share/cursor/libEGL.so"
+      ]
+    },
+    {
+      "sha256": "6dbfb46f03a9486741964441e81847c7261222a1b09373044e8bb8fa0d51f1f1",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@anysphere/tree-chunk-napi/tree-chunk-napi.linux-x64-gnu.node",
+        "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/tree-chunk-napi.linux-x64-gnu.node"
+      ]
+    },
+    {
+      "sha256": "7a2a27967657ebbfc6967b7e6af5bb5186f103e05405cac0a46ae8198d5ad2ef",
+      "paths": [
+        "usr/share/cursor/resources/app/resources/helpers/node"
+      ]
+    },
+    {
+      "sha256": "7da765fb84d9ce55b1fe0172cb8619a4b8c8a8720416ed38e0ef6c2fe05821f9",
+      "paths": [
+        "usr/share/cursor/bin/code-tunnel",
+        "usr/share/cursor/bin/cursor-tunnel"
+      ]
+    },
+    {
+      "sha256": "80fcddbf185f64445364251c7102d798a5b5a0f106a688b8b6275f6278d51b15",
+      "paths": [
+        "usr/share/cursor/resources/app/resources/helpers/cursorsandbox"
+      ]
+    },
+    {
+      "sha256": "8d16289ce35196a347c27ca3c6b24e9ab7c35643ea73e0077e2a1cf75cf29788",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node"
+      ]
+    },
+    {
+      "sha256": "90a98b86a73b70a367ea33c76e24c8cbb3f6bc2f1d9095ea2da716ae8ceedb7d",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/sqlite3/build/Release/vscode-sqlite3.node"
+      ]
+    },
+    {
+      "sha256": "92d870c953da1a4dc1ea082271d035d9f665efddb6e47c1436c52831cf596829",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/native-keymap/build/Release/keymapping.node"
+      ]
+    },
+    {
+      "sha256": "a145cdb8b2a0235123448a2c1150f5ebf40984729b5670bf711513db3c39d2ca",
+      "paths": [
+        "usr/share/cursor/resources/app/resources/helpers/crepectl"
+      ]
+    },
+    {
+      "sha256": "aa70c5dcc2ae21aabd0432af283d220f0611337e7d9cd98d64404523aca05902",
+      "paths": [
+        "usr/share/cursor/libvk_swiftshader.so"
+      ]
+    },
+    {
+      "sha256": "ad42dfe67a2467131c2c9748fbb1bd3e0b7ece2ea7b5726271b08efdfe60bcd6",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/better-sqlite3/build/Release/better_sqlite3.node"
+      ]
+    },
+    {
+      "sha256": "ad7190814fac94685bccd7f9f55e11e558baa419a9002b6a0ecfb27720c6f10a",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/native-is-elevated/build/Release/iselevated.node"
+      ]
+    },
+    {
+      "sha256": "c2bf2adebcf6a710f2af0252b7544460c97a3e27d8bc86f6a3379b121dfbd26f",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@anysphere/policy-watcher/build/Release/vscode-policy-watcher.node"
+      ]
+    },
+    {
+      "sha256": "c58f5478650638a4775276d8d400862281c1cb117ee1a69b6a7e13bbac4a2369",
+      "paths": [
+        "usr/share/cursor/chrome_crashpad_handler"
+      ]
+    },
+    {
+      "sha256": "d42ae51b08e3a368ff9504ea713dc05934a6315f759531eb1f714147dd9989a5",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/ripgrep/bin/rg"
+      ]
+    },
+    {
+      "sha256": "d6b9a2888ffe0527df592f9bec9b88e317ddcad3a852bfd65408fe60959f00a7",
+      "paths": [
+        "usr/share/cursor/libvulkan.so.1"
+      ]
+    },
+    {
+      "sha256": "ddc2ba327b1838b6b7dff13b6d1003b2fbbee2fea62b1ce298911de911c05ab9",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node",
+        "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node"
+      ]
+    },
+    {
+      "sha256": "f1d187ac86ac3b890fa11f206ff1c4f64eb329e1eee6b0320fbe0e53b5bcbeb7",
+      "paths": [
+        "usr/share/cursor/resources/appimageupdatetool.AppImage"
+      ]
+    },
+    {
+      "sha256": "f9530ee183f9ecd49d8950333dc99793fae770d4a2f8e5c7c1c062329b431aa7",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/deviceid/build/Release/windows.node"
+      ]
+    },
+    {
+      "sha256": "fe26b77f6ef44c99edddb0a7a507d28597930ac9bfdaf7ea9a8d22ec30c9fede",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/ms-vscode.js-debug/src/w32appcontainertokens-XTRA77NA.node"
+      ]
+    },
+    {
+      "sha256": "ff9195e571ec0625d243733f8a27052f8960978ff22cd82f8bf8f5eb3e4f3180",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/native-watchdog/build/Release/watchdog.node"
+      ]
+    }
+  ],
+  "distinctWasm": [
+    {
+      "sha256": "19154d9be73ea313f45f510a319b9401c1991728551102600161da5ee18526ad",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/ms-vscode.js-debug/src/chromehash_bg.wasm"
+      ]
+    },
+    {
+      "sha256": "30fb52fa2a80166d25ba7debf902218904ba1f05ccce9f959f722beff9e2f344",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp/codec/dec/webp_dec.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp/codec/dec/webp_dec.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp/codec/dec/webp_dec.wasm"
+      ]
+    },
+    {
+      "sha256": "3451e4e4bac92ba9a76998bc168f33d993cf87b947f7dd5509221a78fc2b93ca",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-css.wasm"
+      ]
+    },
+    {
+      "sha256": "39c279269ec1163b987b6d69749458e3d5b03b9585f58b6ca5455b76b504a305",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp/codec/enc/webp_enc_simd.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp/codec/enc/webp_enc_simd.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp/codec/enc/webp_enc_simd.wasm"
+      ]
+    },
+    {
+      "sha256": "6bd21cdde74a9cf2e64534847d42d1b68d249f3622d36d3c66995909463b288f",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.wasm"
+      ]
+    },
+    {
+      "sha256": "89641aa4900d4e1a015b5b124d0cae11a5d0e0281e8b8818f1c7bd57cdbc923f",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-regex.wasm"
+      ]
+    },
+    {
+      "sha256": "acf2b84255ecaef4bca6a17dea58fc72a59b91ffc3a89657e639b8c3b8ce9a10",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/ms-vscode.vscode-js-profile-table/out/a443ca1a33b96237dd48.module.wasm"
+      ]
+    },
+    {
+      "sha256": "b59a640a9416d53ad21f47e47c28264b2b1a691f6c2a1dec9b53b3270f5c67d4",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/ms-vscode.vscode-js-profile-table/out/dbd61d846b1102299709.module.wasm"
+      ]
+    },
+    {
+      "sha256": "b6085bb6702f144e9dc6016d58d230b34a84976bf0d080b7390b4b4b137d6ab7",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp/codec/enc/webp_enc.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp/codec/enc/webp_enc.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-computer-use/dist/webp_enc.wasm",
+        "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp/codec/enc/webp_enc.wasm"
+      ]
+    },
+    {
+      "sha256": "b92b8f1b09429b26953a73928a40c56496eedfb373dc19a84bde3e205de7f438",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-typescript.wasm"
+      ]
+    },
+    {
+      "sha256": "c4f8ab7b1cd318f6423b737c5da275c57c24489fe0ea926adc04d62e58394103",
+      "paths": [
+        "usr/share/cursor/resources/app/extensions/node_modules/esbuild-wasm/esbuild.wasm"
+      ]
+    },
+    {
+      "sha256": "cd48aefa974e9fc21adec14ef0c73f0ad501b598078b12568ed129c320318154",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@connectrpc/connect-node/node_modules/undici/lib/llhttp/llhttp_simd.wasm"
+      ]
+    },
+    {
+      "sha256": "d82edb24208ab7d0a6f2820270117a2a75d77e5ed413928359d09077b9c3b4a3",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-ini.wasm"
+      ]
+    },
+    {
+      "sha256": "ee82b848a5ca8e9f99fda109e59bbc20193d049a7f6bff93f4130cba5b68261c",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/@connectrpc/connect-node/node_modules/undici/lib/llhttp/llhttp.wasm"
+      ]
+    },
+    {
+      "sha256": "fd885c2d12e5951e59d761ebd4a006e06254b1491fd6f530c92b69fb4d8d77d9",
+      "paths": [
+        "usr/share/cursor/resources/app/node_modules/vscode-oniguruma/release/onig.wasm"
+      ]
+    }
+  ],
+  "natives": [
+    {
+      "path": "usr/share/cursor/bin/code-tunnel",
+      "kind": "elf",
+      "bytes": 19484152,
+      "sha256": "7da765fb84d9ce55b1fe0172cb8619a4b8c8a8720416ed38e0ef6c2fe05821f9",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libgcc_s.so.1",
+        "librt.so.1",
+        "libpthread.so.0",
+        "libm.so.6",
+        "libdl.so.2",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "librt.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.2.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.12"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.10",
+          "GLIBC_2.14",
+          "GLIBC_2.15",
+          "GLIBC_2.16",
+          "GLIBC_2.17",
+          "GLIBC_2.18",
+          "GLIBC_2.25",
+          "GLIBC_2.27",
+          "GLIBC_2.28"
+        ]
+      },
+      "dynamicImports": 272,
+      "dynamicExports": 0,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/bin/cursor-tunnel",
+      "kind": "elf",
+      "bytes": 19484152,
+      "sha256": "7da765fb84d9ce55b1fe0172cb8619a4b8c8a8720416ed38e0ef6c2fe05821f9",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libgcc_s.so.1",
+        "librt.so.1",
+        "libpthread.so.0",
+        "libm.so.6",
+        "libdl.so.2",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "librt.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.2.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.12"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.10",
+          "GLIBC_2.14",
+          "GLIBC_2.15",
+          "GLIBC_2.16",
+          "GLIBC_2.17",
+          "GLIBC_2.18",
+          "GLIBC_2.25",
+          "GLIBC_2.27",
+          "GLIBC_2.28"
+        ]
+      },
+      "dynamicImports": 272,
+      "dynamicExports": 0,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/chrome-sandbox",
+      "kind": "elf",
+      "bytes": 15232,
+      "sha256": "2015304df43beff0b74409cdc4d858107efcde650d9bc8afb1288041d62cec4b",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libpthread.so.0",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "42f633ec8d28e46e850ad58ffc5f831c734ab159",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.4"
+      },
+      "glibcMax": "2.4",
+      "requiredVersions": {
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4"
+        ]
+      },
+      "dynamicImports": 51,
+      "dynamicExports": 6,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/chrome_crashpad_handler",
+      "kind": "elf",
+      "bytes": 1906240,
+      "sha256": "c58f5478650638a4775276d8d400862281c1cb117ee1a69b6a7e13bbac4a2369",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libglib-2.0.so.0",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "bbfee2ce1ad4da9b5287f16cedb4a6beaaf6a777",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.3",
+          "GLIBC_2.12"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.10",
+          "GLIBC_2.14",
+          "GLIBC_2.15",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 232,
+      "dynamicExports": 213,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/cursor",
+      "kind": "elf",
+      "bytes": 219765976,
+      "sha256": "0636c96f07de2c74a3eaf8692fc1743d81259c0bf66c8ebde7f7179211a8aff9",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libffmpeg.so",
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libglib-2.0.so.0",
+        "libgobject-2.0.so.0",
+        "libgio-2.0.so.0",
+        "libnspr4.so",
+        "libnss3.so",
+        "libnssutil3.so",
+        "libsmime3.so",
+        "libatk-1.0.so.0",
+        "libatk-bridge-2.0.so.0",
+        "libcups.so.2",
+        "libdbus-1.so.3",
+        "libcairo.so.2",
+        "libgtk-3.so.0",
+        "libpango-1.0.so.0",
+        "libX11.so.6",
+        "libXcomposite.so.1",
+        "libXdamage.so.1",
+        "libXext.so.6",
+        "libXfixes.so.3",
+        "libXrandr.so.2",
+        "libgbm.so.1",
+        "libexpat.so.1",
+        "libxcb.so.1",
+        "libxkbcommon.so.0",
+        "libudev.so.1",
+        "libasound.so.2",
+        "libatspi.so.0",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [
+        "$ORIGIN"
+      ],
+      "runpath": [],
+      "buildId": "ce01977e9f17c5e8323104ea77396ae310b404ad",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.25",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.25",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.3",
+          "GLIBC_2.3.4",
+          "GLIBC_2.12"
+        ],
+        "libnss3.so": [
+          "NSS_3.2",
+          "NSS_3.3",
+          "NSS_3.4",
+          "NSS_3.5",
+          "NSS_3.6",
+          "NSS_3.9.2",
+          "NSS_3.11",
+          "NSS_3.12",
+          "NSS_3.12.1",
+          "NSS_3.22",
+          "NSS_3.30"
+        ],
+        "libnssutil3.so": [
+          "NSSUTIL_3.12.3"
+        ],
+        "libsmime3.so": [
+          "NSS_3.2",
+          "NSS_3.10"
+        ],
+        "libdbus-1.so.3": [
+          "LIBDBUS_1_3"
+        ],
+        "libxkbcommon.so.0": [
+          "V_0.5.0"
+        ],
+        "libudev.so.1": [
+          "LIBUDEV_183"
+        ],
+        "libasound.so.2": [
+          "ALSA_0.9",
+          "ALSA_0.9.0rc4"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.0.0",
+          "GCC_4.2.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.8",
+          "GLIBC_2.9",
+          "GLIBC_2.10",
+          "GLIBC_2.11",
+          "GLIBC_2.12",
+          "GLIBC_2.14",
+          "GLIBC_2.15",
+          "GLIBC_2.16",
+          "GLIBC_2.17",
+          "GLIBC_2.18",
+          "GLIBC_2.25"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 1491,
+      "dynamicExports": 11078,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/libEGL.so",
+      "kind": "elf",
+      "bytes": 256744,
+      "sha256": "6aa1e796e006c8cafccd95774e8704074714d7c70c3ecd99d8bdf390578ce542",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "libEGL.so",
+      "needed": [
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "dd2d60bfe4c18e442d541be8c9f987d54c6a508d",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.7",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 82,
+      "dynamicExports": 136,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/libGLESv2.so",
+      "kind": "elf",
+      "bytes": 6427376,
+      "sha256": "510449f3c2f06f9d7e4791859b2832249f781fc9b0c2cae7d6fe906aea1b6d39",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "libGLESv2.so",
+      "needed": [
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libX11.so.6",
+        "libXext.so.6",
+        "libxcb.so.1",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "259339b34fa9aa9552780445c91f4258d9fc6a0a",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2",
+          "GLIBC_2.12"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.7",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 212,
+      "dynamicExports": 1821,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/libffmpeg.so",
+      "kind": "elf",
+      "bytes": 2714344,
+      "sha256": "033cbc12324fb7f56fa84bceb3a07d4b0412a320eb0f5faca766397db11344a3",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "libffmpeg.so",
+      "needed": [
+        "libpthread.so.0",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [
+        "$ORIGIN"
+      ],
+      "buildId": "bc44a44dbe083c49f69c3cb4d11d57ae67ec6347",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 151,
+      "dynamicExports": 1641,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/libvk_swiftshader.so",
+      "kind": "elf",
+      "bytes": 4636728,
+      "sha256": "aa70c5dcc2ae21aabd0432af283d220f0611337e7d9cd98d64404523aca05902",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "libvk_swiftshader.so",
+      "needed": [
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "9f5ae2b570b696576b34ebde7c0cc2f3647fe4fb",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.12"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 165,
+      "dynamicExports": 4,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/libvulkan.so.1",
+      "kind": "elf",
+      "bytes": 2450648,
+      "sha256": "d6b9a2888ffe0527df592f9bec9b88e317ddcad3a852bfd65408fe60959f00a7",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "libvulkan.so.1",
+      "needed": [
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libgcc_s.so.1",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "e3de3a1646243ebe53056dcbf7a190a6eaa958a3",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.7",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 107,
+      "dynamicExports": 290,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@anysphere/tree-chunk-napi/tree-chunk-napi.linux-x64-gnu.node",
+      "kind": "elf",
+      "bytes": 11404408,
+      "sha256": "6dbfb46f03a9486741964441e81847c7261222a1b09373044e8bb8fa0d51f1f1",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": null,
+      "needed": [
+        "libgcc_s.so.1",
+        "librt.so.1",
+        "libpthread.so.0",
+        "libm.so.6",
+        "libdl.so.2",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "librt.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.2.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.18",
+          "GLIBC_2.25",
+          "GLIBC_2.28"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.12"
+        ]
+      },
+      "dynamicImports": 152,
+      "dynamicExports": 1,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 48,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": false
+      },
+      "executable": false,
+      "package": {
+        "name": "@anysphere/tree-chunk-napi",
+        "version": "0.0.0",
+        "license": null,
+        "repository": null,
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@anysphere/tree-chunk-napi"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/better-sqlite3/build/Release/better_sqlite3.node",
+      "kind": "elf",
+      "bytes": 2269408,
+      "sha256": "ad42dfe67a2467131c2c9748fbb1bd3e0b7ece2ea7b5726271b08efdfe60bcd6",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "better_sqlite3.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.28"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 183,
+      "dynamicExports": 125,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "nan-v8-abi",
+        "napiImports": 0,
+        "napiRegister": false,
+        "v8Imports": 65,
+        "nodeModuleVersions": [
+          146
+        ],
+        "declaresNapiVersion": false
+      },
+      "executable": false,
+      "package": {
+        "name": "better-sqlite3",
+        "version": "12.11.1",
+        "license": "MIT",
+        "repository": "git://github.com/WiseLibs/better-sqlite3.git",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/better-sqlite3"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node",
+      "kind": "elf",
+      "bytes": 745768,
+      "sha256": "ddc2ba327b1838b6b7dff13b6d1003b2fbbee2fea62b1ce298911de911c05ab9",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "tree_sitter_runtime_binding.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 108,
+      "dynamicExports": 492,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 62,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": false,
+      "package": {
+        "name": "tree-sitter",
+        "version": "0.21.1",
+        "license": "MIT",
+        "repository": "http://github.com/tree-sitter/node-tree-sitter.git",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/tree-sitter"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node",
+      "kind": "elf",
+      "bytes": 1588208,
+      "sha256": "8d16289ce35196a347c27ca3c6b24e9ab7c35643ea73e0077e2a1cf75cf29788",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "tree_sitter_bash_binding.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GCC": "3.0",
+        "GLIBC": "2.16"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 62,
+      "dynamicExports": 37,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 26,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": false,
+      "package": {
+        "name": "tree-sitter-bash",
+        "version": "0.21.0",
+        "license": "MIT",
+        "repository": "github:tree-sitter/tree-sitter-bash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/tree-sitter-bash"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/whichlang-node-linux-x64-gnu/whichlang-node.linux-x64-gnu.node",
+      "kind": "elf",
+      "bytes": 727832,
+      "sha256": "36f84c1e420dab98117949a71cb9fd73a2e29247fcbde3df9abae610eebd354e",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": null,
+      "needed": [
+        "libgcc_s.so.1",
+        "librt.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.14",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.14",
+      "requiredVersions": {
+        "librt.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.2.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.4",
+          "GLIBC_2.14"
+        ]
+      },
+      "dynamicImports": 87,
+      "dynamicExports": 1,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 20,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": false
+      },
+      "executable": false,
+      "package": {
+        "name": "whichlang-node-linux-x64-gnu",
+        "version": "0.2.1",
+        "license": "MIT",
+        "repository": "https://github.com/amehashi/whichlang-node",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/whichlang-node-linux-x64-gnu"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/tree-chunk-napi.linux-x64-gnu.node",
+      "kind": "elf",
+      "bytes": 11404408,
+      "sha256": "6dbfb46f03a9486741964441e81847c7261222a1b09373044e8bb8fa0d51f1f1",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": null,
+      "needed": [
+        "libgcc_s.so.1",
+        "librt.so.1",
+        "libpthread.so.0",
+        "libm.so.6",
+        "libdl.so.2",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "librt.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.2.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.18",
+          "GLIBC_2.25",
+          "GLIBC_2.28"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.12"
+        ]
+      },
+      "dynamicImports": 152,
+      "dynamicExports": 1,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 48,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": false
+      },
+      "executable": false,
+      "package": {
+        "name": "cursor-agent-host",
+        "version": "0.0.1",
+        "license": null,
+        "repository": null,
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-host"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node",
+      "kind": "elf",
+      "bytes": 745768,
+      "sha256": "ddc2ba327b1838b6b7dff13b6d1003b2fbbee2fea62b1ce298911de911c05ab9",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "tree_sitter_runtime_binding.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 108,
+      "dynamicExports": 492,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 62,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": false,
+      "package": {
+        "name": "tree-sitter",
+        "version": "0.21.1",
+        "license": "MIT",
+        "repository": "http://github.com/tree-sitter/node-tree-sitter.git",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node",
+      "kind": "elf",
+      "bytes": 1383184,
+      "sha256": "5b313fbec62ec84f0202a75fa3b09319d802cad661753a2522975d1f2f852b7f",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "tree_sitter_bash_binding.node",
+      "needed": [
+        "libstdc++.so.6",
+        "libgcc_s.so.1",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "56bcfc8693c414b63f02183b9e2984bad6131c42",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GCC": "3.0",
+        "GLIBC": "2.14",
+        "CXXABI": "1.3.9",
+        "GLIBCXX": "3.4.21"
+      },
+      "glibcMax": "2.14",
+      "requiredVersions": {
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.14"
+        ],
+        "libstdc++.so.6": [
+          "CXXABI_1.3",
+          "CXXABI_1.3.9",
+          "GLIBCXX_3.4",
+          "GLIBCXX_3.4.21"
+        ]
+      },
+      "dynamicImports": 66,
+      "dynamicExports": 47,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 29,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": false,
+      "package": {
+        "name": "tree-sitter-bash",
+        "version": "0.21.0",
+        "license": "MIT",
+        "repository": "github:tree-sitter/tree-sitter-bash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter-bash"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-retrieval/node_modules/@anysphere/file-service/file_service.linux-x64-gnu.node",
+      "kind": "elf",
+      "bytes": 42177240,
+      "sha256": "3b0290b101e8d8f772b829689e5cdc1b082608a4596be0627f3d86c3a76b7cb0",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": null,
+      "needed": [
+        "libgcc_s.so.1",
+        "librt.so.1",
+        "libpthread.so.0",
+        "libm.so.6",
+        "libdl.so.2",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "4.2.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "librt.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.3",
+          "GCC_4.2.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.12"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.14",
+          "GLIBC_2.15",
+          "GLIBC_2.16"
+        ]
+      },
+      "dynamicImports": 310,
+      "dynamicExports": 1,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 59,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": false
+      },
+      "executable": false,
+      "package": {
+        "name": "@anysphere/file-service",
+        "version": "0.0.0",
+        "license": "UNLICENSED",
+        "repository": null,
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-retrieval/node_modules/@anysphere/file-service"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/ms-vscode.js-debug/src/w32appcontainertokens-XTRA77NA.node",
+      "kind": "pe",
+      "bytes": 263168,
+      "sha256": "fe26b77f6ef44c99edddb0a7a507d28597930ac9bfdaf7ea9a8d22ec30c9fede",
+      "format": {
+        "platform": "win32",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "peType": "dll",
+      "needed": [
+        "KERNEL32.dll",
+        "ADVAPI32.dll"
+      ],
+      "delayNeeded": [
+        "node.exe"
+      ],
+      "dynamicImports": 121,
+      "dynamicExports": 1,
+      "glibcMax": null,
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 29,
+        "napiRegister": false,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": false
+      },
+      "executable": false,
+      "package": {
+        "name": "js-debug",
+        "version": "1.93.0",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-pwa.git",
+        "directory": "usr/share/cursor/resources/app/extensions/ms-vscode.js-debug"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@anysphere/policy-watcher/build/Release/vscode-policy-watcher.node",
+      "kind": "elf",
+      "bytes": 257744,
+      "sha256": "c2bf2adebcf6a710f2af0252b7544460c97a3e27d8bc86f6a3379b121dfbd26f",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "vscode-policy-watcher.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GCC": "3.0",
+        "GLIBC": "2.16"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 62,
+      "dynamicExports": 60,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 34,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "@anysphere/policy-watcher",
+        "version": "1.3.2-cursor.2",
+        "license": "MIT",
+        "repository": "git+https://github.com/microsoft/vscode-policy-watcher.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@anysphere/policy-watcher"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@parcel/watcher/build/Release/watcher.node",
+      "kind": "elf",
+      "bytes": 1033384,
+      "sha256": "5e73fa7d520e22cc7e743aeda99e7474dcbc576a9f14c2f8f5dfbdf97dc88731",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "watcher.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 155,
+      "dynamicExports": 227,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 46,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "@parcel/watcher",
+        "version": "2.5.1-cursor",
+        "license": "MIT",
+        "repository": "https://github.com/parcel-bundler/watcher.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@parcel/watcher"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/deviceid/build/Release/windows.node",
+      "kind": "elf",
+      "bytes": 6216,
+      "sha256": "f9530ee183f9ecd49d8950333dc99793fae770d4a2f8e5c7c1c062329b431aa7",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "windows.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.2.5"
+      },
+      "glibcMax": "2.2.5",
+      "requiredVersions": {
+        "libc.so.6": [
+          "GLIBC_2.2.5"
+        ]
+      },
+      "dynamicImports": 4,
+      "dynamicExports": 0,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "no-entry-point",
+        "napiImports": 0,
+        "napiRegister": false,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": false
+      },
+      "executable": true,
+      "package": {
+        "name": "@vscode/deviceid",
+        "version": "0.1.1",
+        "license": "MIT",
+        "repository": null,
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/deviceid"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/ripgrep/bin/rg",
+      "kind": "elf",
+      "bytes": 5396392,
+      "sha256": "d42ae51b08e3a368ff9504ea713dc05934a6315f759531eb1f714147dd9989a5",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": null,
+      "needed": [],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {},
+      "glibcMax": null,
+      "requiredVersions": {},
+      "dynamicImports": 0,
+      "dynamicExports": 0,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": {
+        "name": "@cursor/ripgrep",
+        "version": "15.1.0-cursor5",
+        "license": "MIT",
+        "repository": "https://github.com/anysphere/cursor",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/ripgrep"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/spdlog/build/Release/spdlog.node",
+      "kind": "elf",
+      "bytes": 1257816,
+      "sha256": "6a4fb7705c05da9d8e2771cf315b6c53dafa814136f9a74b611bb2ee4921db1e",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "spdlog.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.17",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.17",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.4",
+          "GLIBC_2.7",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 136,
+      "dynamicExports": 198,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 36,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "@vscode/spdlog",
+        "version": "0.15.8",
+        "license": "MIT",
+        "repository": "git+https://github.com/microsoft/node-spdlog.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/spdlog"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/sqlite3/build/Release/vscode-sqlite3.node",
+      "kind": "elf",
+      "bytes": 2264392,
+      "sha256": "90a98b86a73b70a367ea33c76e24c8cbb3f6bc2f1d9095ea2da716ae8ceedb7d",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "vscode-sqlite3.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.28"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 172,
+      "dynamicExports": 487,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 63,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "@vscode/sqlite3",
+        "version": "5.1.12-vscode",
+        "license": "BSD-3-Clause",
+        "repository": "https://github.com/microsoft/vscode-node-sqlite3.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/sqlite3"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/cursor-proclist/build/Release/cursor_proclist.node",
+      "kind": "elf",
+      "bytes": 284648,
+      "sha256": "19e3f28befb0a39d23a26e200a45fe2bcb156d69bc00ef885551182d979dd942",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "cursor_proclist.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 89,
+      "dynamicExports": 34,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 45,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "cursor-proclist",
+        "version": "1.0.0",
+        "license": null,
+        "repository": null,
+        "directory": "usr/share/cursor/resources/app/node_modules/cursor-proclist"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/kerberos/build/Release/kerberos.node",
+      "kind": "elf",
+      "bytes": 488296,
+      "sha256": "18892d0568c685c006f903559b35db6294eb01649773b4b7bf86f6412c7a9941",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "kerberos.node",
+      "needed": [
+        "libdl.so.2",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 91,
+      "dynamicExports": 124,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 49,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "kerberos",
+        "version": "2.1.1",
+        "license": "Apache-2.0",
+        "repository": "https://github.com/mongodb-js/kerberos.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/kerberos"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/kerberos/build/Release/obj.target/kerberos.node",
+      "kind": "elf",
+      "bytes": 488296,
+      "sha256": "18892d0568c685c006f903559b35db6294eb01649773b4b7bf86f6412c7a9941",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "kerberos.node",
+      "needed": [
+        "libdl.so.2",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 91,
+      "dynamicExports": 124,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 49,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "kerberos",
+        "version": "2.1.1",
+        "license": "Apache-2.0",
+        "repository": "https://github.com/mongodb-js/kerberos.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/kerberos"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/native-is-elevated/build/Release/iselevated.node",
+      "kind": "elf",
+      "bytes": 7656,
+      "sha256": "ad7190814fac94685bccd7f9f55e11e558baa419a9002b6a0ecfb27720c6f10a",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "iselevated.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.2.5"
+      },
+      "glibcMax": "2.2.5",
+      "requiredVersions": {
+        "libc.so.6": [
+          "GLIBC_2.2.5"
+        ]
+      },
+      "dynamicImports": 8,
+      "dynamicExports": 2,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 3,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "native-is-elevated",
+        "version": "0.7.0",
+        "license": "MIT",
+        "repository": "git+https://github.com/arkon/native-is-elevated.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/native-is-elevated"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/native-keymap/build/Release/keymapping.node",
+      "kind": "elf",
+      "bytes": 286480,
+      "sha256": "92d870c953da1a4dc1ea082271d035d9f665efddb6e47c1436c52831cf596829",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "keymapping.node",
+      "needed": [
+        "libX11.so.6",
+        "libxkbfile.so.1",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.16",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.16",
+      "requiredVersions": {
+        "libm.so.6": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.3"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.14",
+          "GLIBC_2.16"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 75,
+      "dynamicExports": 50,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 20,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "native-keymap",
+        "version": "3.3.5",
+        "license": "MIT",
+        "repository": "git+https://github.com/Microsoft/node-native-keymap.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/native-keymap"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/native-watchdog/build/Release/watchdog.node",
+      "kind": "elf",
+      "bytes": 10776,
+      "sha256": "ff9195e571ec0625d243733f8a27052f8960978ff22cd82f8bf8f5eb3e4f3180",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "watchdog.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.2.5"
+      },
+      "glibcMax": "2.2.5",
+      "requiredVersions": {
+        "libc.so.6": [
+          "GLIBC_2.2.5"
+        ]
+      },
+      "dynamicImports": 16,
+      "dynamicExports": 5,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 8,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "native-watchdog",
+        "version": "1.4.2",
+        "license": "MIT",
+        "repository": "git+https://github.com/Microsoft/node-native-watchdog.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/native-watchdog"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/node-pty/build/Release/pty.node",
+      "kind": "elf",
+      "bytes": 364864,
+      "sha256": "2451a5a2a1ba3c95071e7709afe27b429c7627dad3a451a1ac8e883c5a57ebc0",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "pty.node",
+      "needed": [
+        "libutil.so.1",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "GCC": "3.0"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "libutil.so.1": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.28"
+        ],
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.3"
+        ]
+      },
+      "dynamicImports": 104,
+      "dynamicExports": 39,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 38,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "node-pty",
+        "version": "1.1.0-beta42",
+        "license": "MIT",
+        "repository": "git://github.com/microsoft/node-pty.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/node-pty"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/windows-foreground-love/build/Release/foreground_love.node",
+      "kind": "elf",
+      "bytes": 8568,
+      "sha256": "422adf6df5e85256bcded8dc1a8cec7b0648a07c72231205cc723e0c423ba994",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "foreground_love.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.2.5"
+      },
+      "glibcMax": "2.2.5",
+      "requiredVersions": {
+        "libc.so.6": [
+          "GLIBC_2.2.5"
+        ]
+      },
+      "dynamicImports": 10,
+      "dynamicExports": 4,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 6,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "windows-foreground-love",
+        "version": "0.5.0",
+        "license": "MIT",
+        "repository": "git+https://github.com/the-ress/node-windows-foreground-love.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/windows-foreground-love"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/windows-foreground-love/build/Release/obj.target/foreground_love.node",
+      "kind": "elf",
+      "bytes": 8568,
+      "sha256": "422adf6df5e85256bcded8dc1a8cec7b0648a07c72231205cc723e0c423ba994",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "shared-object",
+      "interp": null,
+      "soname": "foreground_love.node",
+      "needed": [
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.2.5"
+      },
+      "glibcMax": "2.2.5",
+      "requiredVersions": {
+        "libc.so.6": [
+          "GLIBC_2.2.5"
+        ]
+      },
+      "dynamicImports": 10,
+      "dynamicExports": 4,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": {
+        "kind": "node-api",
+        "napiImports": 6,
+        "napiRegister": true,
+        "v8Imports": 0,
+        "nodeModuleVersions": [],
+        "declaresNapiVersion": true
+      },
+      "executable": true,
+      "package": {
+        "name": "windows-foreground-love",
+        "version": "0.5.0",
+        "license": "MIT",
+        "repository": "git+https://github.com/the-ress/node-windows-foreground-love.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/windows-foreground-love"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/resources/helpers/crepectl",
+      "kind": "elf",
+      "bytes": 23415152,
+      "sha256": "a145cdb8b2a0235123448a2c1150f5ebf40984729b5670bf711513db3c39d2ca",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "executable",
+      "interp": null,
+      "soname": null,
+      "needed": [],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": true,
+      "maxSymbolVersions": {},
+      "glibcMax": null,
+      "requiredVersions": {},
+      "dynamicImports": 0,
+      "dynamicExports": 0,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": {
+        "name": "Cursor",
+        "version": "3.21.13",
+        "license": null,
+        "repository": "https://github.com/microsoft/vscode.git",
+        "directory": "usr/share/cursor/resources/app"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/resources/helpers/cursorsandbox",
+      "kind": "elf",
+      "bytes": 4568632,
+      "sha256": "80fcddbf185f64445364251c7102d798a5b5a0f106a688b8b6275f6278d51b15",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "executable",
+      "interp": null,
+      "soname": null,
+      "needed": [],
+      "rpath": [],
+      "runpath": [],
+      "buildId": null,
+      "staticallyLinked": true,
+      "maxSymbolVersions": {},
+      "glibcMax": null,
+      "requiredVersions": {},
+      "dynamicImports": 0,
+      "dynamicExports": 0,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": {
+        "name": "Cursor",
+        "version": "3.21.13",
+        "license": null,
+        "repository": "https://github.com/microsoft/vscode.git",
+        "directory": "usr/share/cursor/resources/app"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/resources/helpers/node",
+      "kind": "elf",
+      "bytes": 123656816,
+      "sha256": "7a2a27967657ebbfc6967b7e6af5bb5186f103e05405cac0a46ae8198d5ad2ef",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "executable",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libdl.so.2",
+        "libstdc++.so.6",
+        "libm.so.6",
+        "libgcc_s.so.1",
+        "libpthread.so.0",
+        "libc.so.6",
+        "ld-linux-x86-64.so.2"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "2b4b8482cccada194dc991f2b088278437f71d7e",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.28",
+        "CXXABI": "1.3.11",
+        "GLIBCXX": "3.4.21",
+        "GCC": "3.4"
+      },
+      "glibcMax": "2.28",
+      "requiredVersions": {
+        "ld-linux-x86-64.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libstdc++.so.6": [
+          "CXXABI_1.3",
+          "CXXABI_1.3.5",
+          "CXXABI_1.3.7",
+          "CXXABI_1.3.8",
+          "CXXABI_1.3.9",
+          "CXXABI_1.3.11",
+          "GLIBCXX_3.4",
+          "GLIBCXX_3.4.9",
+          "GLIBCXX_3.4.11",
+          "GLIBCXX_3.4.14",
+          "GLIBCXX_3.4.15",
+          "GLIBCXX_3.4.17",
+          "GLIBCXX_3.4.18",
+          "GLIBCXX_3.4.19",
+          "GLIBCXX_3.4.20",
+          "GLIBCXX_3.4.21"
+        ],
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libgcc_s.so.1": [
+          "GCC_3.0",
+          "GCC_3.4"
+        ],
+        "libm.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.27"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.3",
+          "GLIBC_2.3.4",
+          "GLIBC_2.12"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.2",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.6",
+          "GLIBC_2.7",
+          "GLIBC_2.9",
+          "GLIBC_2.10",
+          "GLIBC_2.12",
+          "GLIBC_2.14",
+          "GLIBC_2.16",
+          "GLIBC_2.17",
+          "GLIBC_2.25",
+          "GLIBC_2.27",
+          "GLIBC_2.28"
+        ]
+      },
+      "dynamicImports": 588,
+      "dynamicExports": 38039,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": {
+        "name": "Cursor",
+        "version": "3.21.13",
+        "license": null,
+        "repository": "https://github.com/microsoft/vscode.git",
+        "directory": "usr/share/cursor/resources/app"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/appimageupdatetool.AppImage",
+      "kind": "elf",
+      "bytes": 40080576,
+      "sha256": "f1d187ac86ac3b890fa11f206ff1c4f64eb329e1eee6b0320fbe0e53b5bcbeb7",
+      "format": {
+        "platform": "linux",
+        "architectures": [
+          "x64"
+        ]
+      },
+      "elfType": "executable",
+      "interp": "/lib64/ld-linux-x86-64.so.2",
+      "soname": null,
+      "needed": [
+        "libdl.so.2",
+        "libpthread.so.0",
+        "libz.so.1",
+        "libc.so.6"
+      ],
+      "rpath": [],
+      "runpath": [],
+      "buildId": "30e06184968532b6a9aa36f44ada39e4af0bda56",
+      "staticallyLinked": false,
+      "maxSymbolVersions": {
+        "GLIBC": "2.14"
+      },
+      "glibcMax": "2.14",
+      "requiredVersions": {
+        "libdl.so.2": [
+          "GLIBC_2.2.5"
+        ],
+        "libpthread.so.0": [
+          "GLIBC_2.2.5"
+        ],
+        "libc.so.6": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3",
+          "GLIBC_2.3.3",
+          "GLIBC_2.14"
+        ]
+      },
+      "dynamicImports": 79,
+      "dynamicExports": 208,
+      "goBuildId": null,
+      "rustSections": [],
+      "addon": null,
+      "executable": true,
+      "package": null,
+      "nestedImage": "appimage-squashfs (contents not inventoried)"
+    }
+  ],
+  "wasm": [
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp/codec/dec/webp_dec.wasm",
+      "kind": "wasm",
+      "bytes": 137960,
+      "sha256": "30fb52fa2a80166d25ba7debf902218904ba1f05ccce9f959f722beff9e2f344",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 133
+        },
+        {
+          "kind": "import",
+          "size": 109
+        },
+        {
+          "kind": "function",
+          "size": 158
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 167
+        },
+        {
+          "kind": "code",
+          "size": 126928
+        },
+        {
+          "kind": "data",
+          "size": 10375
+        }
+      ],
+      "definedFunctions": 156,
+      "dataSegments": 7,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func"
+      ],
+      "exports": [
+        "s:memory",
+        "t:func",
+        "u:func",
+        "v:func",
+        "w:func",
+        "x:func",
+        "y:table",
+        "z:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp/codec/enc/webp_enc.wasm",
+      "kind": "wasm",
+      "bytes": 281261,
+      "sha256": "b6085bb6702f144e9dc6016d58d230b34a84976bf0d080b7390b4b4b137d6ab7",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 310
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 183
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 142
+        },
+        {
+          "kind": "code",
+          "size": 243888
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 181,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp/codec/enc/webp_enc_simd.wasm",
+      "kind": "wasm",
+      "bytes": 345584,
+      "sha256": "39c279269ec1163b987b6d69749458e3d5b03b9585f58b6ca5455b76b504a305",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 318
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 300
+        },
+        {
+          "kind": "table",
+          "size": 7
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 13
+        },
+        {
+          "kind": "export",
+          "size": 41
+        },
+        {
+          "kind": "element",
+          "size": 398
+        },
+        {
+          "kind": "code",
+          "size": 307818
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 298,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func",
+        "F:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-exec/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp/codec/dec/webp_dec.wasm",
+      "kind": "wasm",
+      "bytes": 137960,
+      "sha256": "30fb52fa2a80166d25ba7debf902218904ba1f05ccce9f959f722beff9e2f344",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 133
+        },
+        {
+          "kind": "import",
+          "size": 109
+        },
+        {
+          "kind": "function",
+          "size": 158
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 167
+        },
+        {
+          "kind": "code",
+          "size": 126928
+        },
+        {
+          "kind": "data",
+          "size": 10375
+        }
+      ],
+      "definedFunctions": 156,
+      "dataSegments": 7,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func"
+      ],
+      "exports": [
+        "s:memory",
+        "t:func",
+        "u:func",
+        "v:func",
+        "w:func",
+        "x:func",
+        "y:table",
+        "z:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp/codec/enc/webp_enc.wasm",
+      "kind": "wasm",
+      "bytes": 281261,
+      "sha256": "b6085bb6702f144e9dc6016d58d230b34a84976bf0d080b7390b4b4b137d6ab7",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 310
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 183
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 142
+        },
+        {
+          "kind": "code",
+          "size": 243888
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 181,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp/codec/enc/webp_enc_simd.wasm",
+      "kind": "wasm",
+      "bytes": 345584,
+      "sha256": "39c279269ec1163b987b6d69749458e3d5b03b9585f58b6ca5455b76b504a305",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 318
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 300
+        },
+        {
+          "kind": "table",
+          "size": 7
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 13
+        },
+        {
+          "kind": "export",
+          "size": 41
+        },
+        {
+          "kind": "element",
+          "size": 398
+        },
+        {
+          "kind": "code",
+          "size": 307818
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 298,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func",
+        "F:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-agent-host/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-computer-use/dist/webp_enc.wasm",
+      "kind": "wasm",
+      "bytes": 281261,
+      "sha256": "b6085bb6702f144e9dc6016d58d230b34a84976bf0d080b7390b4b4b137d6ab7",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 310
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 183
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 142
+        },
+        {
+          "kind": "code",
+          "size": 243888
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 181,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "cursor-computer-use",
+        "version": "1.0.0",
+        "license": null,
+        "repository": null,
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-computer-use"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp/codec/dec/webp_dec.wasm",
+      "kind": "wasm",
+      "bytes": 137960,
+      "sha256": "30fb52fa2a80166d25ba7debf902218904ba1f05ccce9f959f722beff9e2f344",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 133
+        },
+        {
+          "kind": "import",
+          "size": 109
+        },
+        {
+          "kind": "function",
+          "size": 158
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 167
+        },
+        {
+          "kind": "code",
+          "size": 126928
+        },
+        {
+          "kind": "data",
+          "size": 10375
+        }
+      ],
+      "definedFunctions": 156,
+      "dataSegments": 7,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func"
+      ],
+      "exports": [
+        "s:memory",
+        "t:func",
+        "u:func",
+        "v:func",
+        "w:func",
+        "x:func",
+        "y:table",
+        "z:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp/codec/enc/webp_enc.wasm",
+      "kind": "wasm",
+      "bytes": 281261,
+      "sha256": "b6085bb6702f144e9dc6016d58d230b34a84976bf0d080b7390b4b4b137d6ab7",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 310
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 183
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 36
+        },
+        {
+          "kind": "element",
+          "size": 142
+        },
+        {
+          "kind": "code",
+          "size": 243888
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 181,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp/codec/enc/webp_enc_simd.wasm",
+      "kind": "wasm",
+      "bytes": 345584,
+      "sha256": "39c279269ec1163b987b6d69749458e3d5b03b9585f58b6ca5455b76b504a305",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 318
+        },
+        {
+          "kind": "import",
+          "size": 139
+        },
+        {
+          "kind": "function",
+          "size": 300
+        },
+        {
+          "kind": "table",
+          "size": 7
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 13
+        },
+        {
+          "kind": "export",
+          "size": 41
+        },
+        {
+          "kind": "element",
+          "size": 398
+        },
+        {
+          "kind": "code",
+          "size": 307818
+        },
+        {
+          "kind": "data",
+          "size": 36507
+        }
+      ],
+      "definedFunctions": 298,
+      "dataSegments": 144,
+      "start": null,
+      "imports": [
+        "a.a:func",
+        "a.b:func",
+        "a.c:func",
+        "a.d:func",
+        "a.e:func",
+        "a.f:func",
+        "a.g:func",
+        "a.h:func",
+        "a.i:func",
+        "a.j:func",
+        "a.k:func",
+        "a.l:func",
+        "a.m:func",
+        "a.n:func",
+        "a.o:func",
+        "a.p:func",
+        "a.q:func",
+        "a.r:func",
+        "a.s:func",
+        "a.t:func",
+        "a.u:func",
+        "a.v:func",
+        "a.w:func"
+      ],
+      "exports": [
+        "x:memory",
+        "y:func",
+        "z:func",
+        "A:func",
+        "B:func",
+        "C:func",
+        "D:table",
+        "E:func",
+        "F:func"
+      ],
+      "importModules": [
+        "a"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "@jsquash/webp",
+        "version": "1.5.0",
+        "license": "Apache-2.0",
+        "repository": "jamsinclair/jSquash",
+        "directory": "usr/share/cursor/resources/app/extensions/cursor-local-agent-runtime/dist/node_modules/@jsquash/webp"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/ms-vscode.js-debug/src/chromehash_bg.wasm",
+      "kind": "wasm",
+      "bytes": 16908,
+      "sha256": "19154d9be73ea313f45f510a319b9401c1991728551102600161da5ee18526ad",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 59
+        },
+        {
+          "kind": "import",
+          "size": 45
+        },
+        {
+          "kind": "function",
+          "size": 74
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 3
+        },
+        {
+          "kind": "global",
+          "size": 9
+        },
+        {
+          "kind": "export",
+          "size": 113
+        },
+        {
+          "kind": "element",
+          "size": 23
+        },
+        {
+          "kind": "code",
+          "size": 15392
+        },
+        {
+          "kind": "data",
+          "size": 1030
+        },
+        {
+          "kind": "custom",
+          "name": "producers",
+          "size": 123
+        }
+      ],
+      "definedFunctions": 73,
+      "dataSegments": 2,
+      "start": null,
+      "imports": [
+        "__wbindgen_placeholder__.__wbindgen_throw:func"
+      ],
+      "exports": [
+        "memory:memory",
+        "__wbg_hasher_free:func",
+        "hasher_new:func",
+        "hasher_update:func",
+        "hasher_digest:func",
+        "__wbindgen_malloc:func",
+        "__wbindgen_free:func"
+      ],
+      "importModules": [
+        "__wbindgen_placeholder__"
+      ],
+      "producers": {
+        "language": [
+          {
+            "name": "Rust",
+            "version": ""
+          }
+        ],
+        "processed-by": [
+          {
+            "name": "rustc",
+            "version": "1.59.0 (9d1b2106e 2022-02-23)"
+          },
+          {
+            "name": "walrus",
+            "version": "0.19.0"
+          },
+          {
+            "name": "wasm-bindgen",
+            "version": "0.2.78 (7f820db4b)"
+          }
+        ]
+      },
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "js-debug",
+        "version": "1.93.0",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-pwa.git",
+        "directory": "usr/share/cursor/resources/app/extensions/ms-vscode.js-debug"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/ms-vscode.vscode-js-profile-table/out/a443ca1a33b96237dd48.module.wasm",
+      "kind": "wasm",
+      "bytes": 180756,
+      "sha256": "acf2b84255ecaef4bca6a17dea58fc72a59b91ffc3a89657e639b8c3b8ce9a10",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 153
+        },
+        {
+          "kind": "import",
+          "size": 483
+        },
+        {
+          "kind": "function",
+          "size": 292
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 3
+        },
+        {
+          "kind": "global",
+          "size": 9
+        },
+        {
+          "kind": "export",
+          "size": 1558
+        },
+        {
+          "kind": "element",
+          "size": 226
+        },
+        {
+          "kind": "code",
+          "size": 157002
+        },
+        {
+          "kind": "data",
+          "size": 20781
+        },
+        {
+          "kind": "custom",
+          "name": "producers",
+          "size": 158
+        },
+        {
+          "kind": "custom",
+          "name": "target_features",
+          "size": 44
+        }
+      ],
+      "definedFunctions": 290,
+      "dataSegments": 12,
+      "start": null,
+      "imports": [
+        "./v8_heap_parser_bg.js.__wbindgen_string_new:func",
+        "./v8_heap_parser_bg.js.__wbindgen_object_drop_ref:func",
+        "./v8_heap_parser_bg.js.__wbg_classgroup_new:func",
+        "./v8_heap_parser_bg.js.__wbg_node_new:func",
+        "./v8_heap_parser_bg.js.__wbg_retainernode_new:func",
+        "./v8_heap_parser_bg.js.__wbg_new_abda76e883ba8a5f:func",
+        "./v8_heap_parser_bg.js.__wbg_stack_658279fe44541cf6:func",
+        "./v8_heap_parser_bg.js.__wbg_error_f851667af71bcfc6:func",
+        "./v8_heap_parser_bg.js.__wbindgen_throw:func",
+        "./v8_heap_parser_bg.js.__wbindgen_string_get:func"
+      ],
+      "exports": [
+        "memory:memory",
+        "__wbg_graph_free:func",
+        "__wbg_get_graph_root_index:func",
+        "__wbg_set_graph_root_index:func",
+        "decode_bytes:func",
+        "__wbg_classgroup_free:func",
+        "__wbg_get_classgroup_self_size:func",
+        "__wbg_set_classgroup_self_size:func",
+        "__wbg_get_classgroup_retained_size:func",
+        "__wbg_set_classgroup_retained_size:func",
+        "__wbg_get_classgroup_children_len:func",
+        "__wbg_set_classgroup_children_len:func",
+        "classgroup_name:func",
+        "__wbg_node_free:func",
+        "__wbg_get_node_index:func",
+        "__wbg_set_node_index:func",
+        "__wbg_get_node_typ:func",
+        "__wbg_set_node_typ:func",
+        "__wbg_get_node_id:func",
+        "__wbg_set_node_id:func",
+        "node_name:func",
+        "__wbg_retainernode_free:func",
+        "__wbg_get_retainernode_retains_index:func",
+        "__wbg_set_retainernode_retains_index:func",
+        "__wbg_get_retainernode_typ:func",
+        "__wbg_set_retainernode_typ:func",
+        "__wbg_get_retainernode_edge_typ:func",
+        "__wbg_set_retainernode_edge_typ:func",
+        "retainernode_name:func",
+        "graph_get_class_groups:func",
+        "graph_get_class_counts:func",
+        "graph_class_children:func",
+        "graph_node_children:func",
+        "graph_get_all_retainers:func",
+        "__wbg_set_node_children_len:func",
+        "__wbg_set_node_self_size:func",
+        "__wbg_set_node_retained_size:func",
+        "__wbg_set_retainernode_children_len:func",
+        "__wbg_set_retainernode_self_size:func",
+        "__wbg_set_retainernode_retained_size:func",
+        "__wbg_set_retainernode_index:func",
+        "__wbg_set_retainernode_id:func",
+        "__wbg_get_node_children_len:func",
+        "__wbg_get_node_self_size:func",
+        "__wbg_get_node_retained_size:func",
+        "__wbg_get_retainernode_children_len:func",
+        "__wbg_get_retainernode_self_size:func",
+        "__wbg_get_retainernode_retained_size:func",
+        "__wbg_get_retainernode_index:func",
+        "__wbg_get_retainernode_id:func",
+        "init_panic_hook:func",
+        "__wbindgen_malloc:func",
+        "__wbindgen_realloc:func",
+        "__wbindgen_add_to_stack_pointer:func",
+        "__wbindgen_free:func"
+      ],
+      "importModules": [
+        "./v8_heap_parser_bg.js"
+      ],
+      "producers": {
+        "language": [
+          {
+            "name": "Rust",
+            "version": ""
+          }
+        ],
+        "processed-by": [
+          {
+            "name": "rustc",
+            "version": "1.73.0 (b00219924c 2023-10-05) (1.73.0-ms-20231012.1+b00219924c)"
+          },
+          {
+            "name": "walrus",
+            "version": "0.19.0"
+          },
+          {
+            "name": "wasm-bindgen",
+            "version": "0.2.88 (0b5f0eec2)"
+          }
+        ]
+      },
+      "targetFeatures": [
+        "+mutable-globals",
+        "+sign-ext"
+      ],
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "vscode-js-profile-table",
+        "version": "1.0.11",
+        "license": "MIT",
+        "repository": "https://github.com/microsoft/vscode-js-profile-visualizer.git",
+        "directory": "usr/share/cursor/resources/app/extensions/ms-vscode.vscode-js-profile-table"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/ms-vscode.vscode-js-profile-table/out/dbd61d846b1102299709.module.wasm",
+      "kind": "wasm",
+      "bytes": 180767,
+      "sha256": "b59a640a9416d53ad21f47e47c28264b2b1a691f6c2a1dec9b53b3270f5c67d4",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 156
+        },
+        {
+          "kind": "import",
+          "size": 483
+        },
+        {
+          "kind": "function",
+          "size": 293
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 3
+        },
+        {
+          "kind": "global",
+          "size": 9
+        },
+        {
+          "kind": "export",
+          "size": 1562
+        },
+        {
+          "kind": "element",
+          "size": 226
+        },
+        {
+          "kind": "code",
+          "size": 157005
+        },
+        {
+          "kind": "data",
+          "size": 20781
+        },
+        {
+          "kind": "custom",
+          "name": "producers",
+          "size": 158
+        },
+        {
+          "kind": "custom",
+          "name": "target_features",
+          "size": 44
+        }
+      ],
+      "definedFunctions": 291,
+      "dataSegments": 12,
+      "start": null,
+      "imports": [
+        "./v8_heap_parser_bg.js.__wbindgen_string_new:func",
+        "./v8_heap_parser_bg.js.__wbindgen_object_drop_ref:func",
+        "./v8_heap_parser_bg.js.__wbg_classgroup_new:func",
+        "./v8_heap_parser_bg.js.__wbg_node_new:func",
+        "./v8_heap_parser_bg.js.__wbg_retainernode_new:func",
+        "./v8_heap_parser_bg.js.__wbg_new_abda76e883ba8a5f:func",
+        "./v8_heap_parser_bg.js.__wbg_stack_658279fe44541cf6:func",
+        "./v8_heap_parser_bg.js.__wbg_error_f851667af71bcfc6:func",
+        "./v8_heap_parser_bg.js.__wbindgen_throw:func",
+        "./v8_heap_parser_bg.js.__wbindgen_string_get:func"
+      ],
+      "exports": [
+        "memory:memory",
+        "__wbg_graph_free:func",
+        "__wbg_get_graph_root_index:func",
+        "__wbg_set_graph_root_index:func",
+        "decode_bytes:func",
+        "__wbg_classgroup_free:func",
+        "__wbg_get_classgroup_self_size:func",
+        "__wbg_set_classgroup_self_size:func",
+        "__wbg_get_classgroup_retained_size:func",
+        "__wbg_set_classgroup_retained_size:func",
+        "__wbg_get_classgroup_children_len:func",
+        "__wbg_set_classgroup_children_len:func",
+        "classgroup_name:func",
+        "__wbg_node_free:func",
+        "__wbg_get_node_index:func",
+        "__wbg_set_node_index:func",
+        "__wbg_get_node_typ:func",
+        "__wbg_set_node_typ:func",
+        "__wbg_get_node_id:func",
+        "__wbg_set_node_id:func",
+        "node_name:func",
+        "__wbg_retainernode_free:func",
+        "__wbg_get_retainernode_retains_index:func",
+        "__wbg_set_retainernode_retains_index:func",
+        "__wbg_get_retainernode_typ:func",
+        "__wbg_set_retainernode_typ:func",
+        "__wbg_get_retainernode_edge_typ:func",
+        "__wbg_set_retainernode_edge_typ:func",
+        "retainernode_name:func",
+        "graph_get_class_groups:func",
+        "graph_get_class_counts:func",
+        "graph_class_children:func",
+        "graph_node_children:func",
+        "graph_get_all_retainers:func",
+        "__wbg_set_node_children_len:func",
+        "__wbg_set_node_self_size:func",
+        "__wbg_set_node_retained_size:func",
+        "__wbg_set_retainernode_children_len:func",
+        "__wbg_set_retainernode_self_size:func",
+        "__wbg_set_retainernode_retained_size:func",
+        "__wbg_set_retainernode_index:func",
+        "__wbg_set_retainernode_id:func",
+        "__wbg_get_node_children_len:func",
+        "__wbg_get_node_self_size:func",
+        "__wbg_get_node_retained_size:func",
+        "__wbg_get_retainernode_children_len:func",
+        "__wbg_get_retainernode_self_size:func",
+        "__wbg_get_retainernode_retained_size:func",
+        "__wbg_get_retainernode_index:func",
+        "__wbg_get_retainernode_id:func",
+        "init_panic_hook:func",
+        "__wbindgen_malloc:func",
+        "__wbindgen_realloc:func",
+        "__wbindgen_add_to_stack_pointer:func",
+        "__wbindgen_free:func",
+        ":func"
+      ],
+      "importModules": [
+        "./v8_heap_parser_bg.js"
+      ],
+      "producers": {
+        "language": [
+          {
+            "name": "Rust",
+            "version": ""
+          }
+        ],
+        "processed-by": [
+          {
+            "name": "rustc",
+            "version": "1.73.0 (b00219924c 2023-10-05) (1.73.0-ms-20231012.1+b00219924c)"
+          },
+          {
+            "name": "walrus",
+            "version": "0.19.0"
+          },
+          {
+            "name": "wasm-bindgen",
+            "version": "0.2.88 (0b5f0eec2)"
+          }
+        ]
+      },
+      "targetFeatures": [
+        "+mutable-globals",
+        "+sign-ext"
+      ],
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "vscode-js-profile-table",
+        "version": "1.0.11",
+        "license": "MIT",
+        "repository": "https://github.com/microsoft/vscode-js-profile-visualizer.git",
+        "directory": "usr/share/cursor/resources/app/extensions/ms-vscode.vscode-js-profile-table"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/extensions/node_modules/esbuild-wasm/esbuild.wasm",
+      "kind": "wasm",
+      "bytes": 12216279,
+      "sha256": "c4f8ab7b1cd318f6423b737c5da275c57c24489fe0ea926adc04d62e58394103",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "custom",
+          "name": "go:buildid",
+          "size": 114
+        },
+        {
+          "kind": "type",
+          "size": 64
+        },
+        {
+          "kind": "import",
+          "size": 625
+        },
+        {
+          "kind": "function",
+          "size": 4543
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 4
+        },
+        {
+          "kind": "global",
+          "size": 41
+        },
+        {
+          "kind": "export",
+          "size": 33
+        },
+        {
+          "kind": "element",
+          "size": 8983
+        },
+        {
+          "kind": "code",
+          "size": 8921439
+        },
+        {
+          "kind": "data",
+          "size": 3280275
+        },
+        {
+          "kind": "custom",
+          "name": "producers",
+          "size": 73
+        }
+      ],
+      "definedFunctions": 4541,
+      "dataSegments": 86295,
+      "start": null,
+      "imports": [
+        "gojs.runtime.scheduleTimeoutEvent:func",
+        "gojs.runtime.clearTimeoutEvent:func",
+        "gojs.runtime.resetMemoryDataView:func",
+        "gojs.runtime.wasmWrite:func",
+        "gojs.runtime.getRandomData:func",
+        "gojs.runtime.nanotime1:func",
+        "gojs.runtime.wasmExit:func",
+        "gojs.runtime.walltime:func",
+        "gojs.syscall/js.finalizeRef:func",
+        "gojs.syscall/js.stringVal:func",
+        "gojs.syscall/js.valueGet:func",
+        "gojs.syscall/js.valueSet:func",
+        "gojs.syscall/js.valueIndex:func",
+        "gojs.syscall/js.valueSetIndex:func",
+        "gojs.syscall/js.valueLength:func",
+        "gojs.syscall/js.valueCall:func",
+        "gojs.syscall/js.valueNew:func",
+        "gojs.syscall/js.valuePrepareString:func",
+        "gojs.syscall/js.valueLoadString:func",
+        "gojs.syscall/js.copyBytesToGo:func",
+        "gojs.syscall/js.copyBytesToJS:func"
+      ],
+      "exports": [
+        "run:func",
+        "resume:func",
+        "getsp:func",
+        "mem:memory"
+      ],
+      "importModules": [
+        "gojs"
+      ],
+      "producers": {
+        "language": [
+          {
+            "name": "Go",
+            "version": "go1.23.12"
+          }
+        ],
+        "processed-by": [
+          {
+            "name": "Go cmd/compile",
+            "version": "go1.23.12"
+          }
+        ]
+      },
+      "targetFeatures": null,
+      "goBuildId": "TZuqeiOIkl4iEWFiCnGe/XAQgHHSUKPRCFDDpumgs/DmzH1BUGRHQVBr5EFSB9/1NW0J9BK2WrEotKODkXq",
+      "goBuildInfo": {
+        "goVersion": "go1.23.12",
+        "path": "github.com/evanw/esbuild/cmd/esbuild",
+        "main": {
+          "path": "github.com/evanw/esbuild",
+          "version": "(devel)",
+          "sum": null
+        },
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "DefaultGODEBUG": "asynctimerchan=1,gotypesalias=0,httplaxcontentlength=1,httpmuxgo121=1,httpservecontentkeepheaders=1,netedns0=0,panicnil=1,tls10server=1,tls3des=1,tlskyber=0,tlsrsakex=1,tlsunsafeekm=1,winreadlinkvolume=0,winsymlink=0,x509keypairleaf=0,x509negativeserial=1",
+          "CGO_ENABLED": "0",
+          "GOARCH": "wasm",
+          "GOOS": "js",
+          "vcs": "git",
+          "vcs.revision": "195e05c16f03a341390feef38b8ebf17d3075e14",
+          "vcs.time": "2025-08-12T23:25:19Z",
+          "vcs.modified": "false"
+        },
+        "deps": 0
+      },
+      "executable": true,
+      "package": {
+        "name": "esbuild-wasm",
+        "version": "0.25.9",
+        "license": "MIT",
+        "repository": "git+https://github.com/evanw/esbuild.git",
+        "directory": "usr/share/cursor/resources/app/extensions/node_modules/esbuild-wasm"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@connectrpc/connect-node/node_modules/undici/lib/llhttp/llhttp.wasm",
+      "kind": "wasm",
+      "bytes": 55466,
+      "sha256": "ee82b848a5ca8e9f99fda109e59bbc20193d049a7f6bff93f4130cba5b68261c",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 48
+        },
+        {
+          "kind": "import",
+          "size": 203
+        },
+        {
+          "kind": "function",
+          "size": 70
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 3
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 721
+        },
+        {
+          "kind": "element",
+          "size": 23
+        },
+        {
+          "kind": "code",
+          "size": 45122
+        },
+        {
+          "kind": "data",
+          "size": 9230
+        }
+      ],
+      "definedFunctions": 69,
+      "dataSegments": 1,
+      "start": null,
+      "imports": [
+        "env.wasm_on_headers_complete:func",
+        "env.wasm_on_message_begin:func",
+        "env.wasm_on_url:func",
+        "env.wasm_on_status:func",
+        "env.wasm_on_header_field:func",
+        "env.wasm_on_header_value:func",
+        "env.wasm_on_body:func",
+        "env.wasm_on_message_complete:func"
+      ],
+      "exports": [
+        "memory:memory",
+        "_initialize:func",
+        "__indirect_function_table:table",
+        "llhttp_init:func",
+        "llhttp_should_keep_alive:func",
+        "llhttp_alloc:func",
+        "malloc:func",
+        "llhttp_free:func",
+        "free:func",
+        "llhttp_get_type:func",
+        "llhttp_get_http_major:func",
+        "llhttp_get_http_minor:func",
+        "llhttp_get_method:func",
+        "llhttp_get_status_code:func",
+        "llhttp_get_upgrade:func",
+        "llhttp_reset:func",
+        "llhttp_execute:func",
+        "llhttp_settings_init:func",
+        "llhttp_finish:func",
+        "llhttp_pause:func",
+        "llhttp_resume:func",
+        "llhttp_resume_after_upgrade:func",
+        "llhttp_get_errno:func",
+        "llhttp_get_error_reason:func",
+        "llhttp_set_error_reason:func",
+        "llhttp_get_error_pos:func",
+        "llhttp_errno_name:func",
+        "llhttp_method_name:func",
+        "llhttp_status_name:func",
+        "llhttp_set_lenient_headers:func",
+        "llhttp_set_lenient_chunked_length:func",
+        "llhttp_set_lenient_keep_alive:func",
+        "llhttp_set_lenient_transfer_encoding:func",
+        "llhttp_message_needs_eof:func"
+      ],
+      "importModules": [
+        "env"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "undici",
+        "version": "5.29.0",
+        "license": "MIT",
+        "repository": "git+https://github.com/nodejs/undici.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@connectrpc/connect-node/node_modules/undici"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@connectrpc/connect-node/node_modules/undici/lib/llhttp/llhttp_simd.wasm",
+      "kind": "wasm",
+      "bytes": 55450,
+      "sha256": "cd48aefa974e9fc21adec14ef0c73f0ad501b598078b12568ed129c320318154",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 48
+        },
+        {
+          "kind": "import",
+          "size": 203
+        },
+        {
+          "kind": "function",
+          "size": 70
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 3
+        },
+        {
+          "kind": "global",
+          "size": 8
+        },
+        {
+          "kind": "export",
+          "size": 721
+        },
+        {
+          "kind": "element",
+          "size": 23
+        },
+        {
+          "kind": "code",
+          "size": 45106
+        },
+        {
+          "kind": "data",
+          "size": 9230
+        }
+      ],
+      "definedFunctions": 69,
+      "dataSegments": 1,
+      "start": null,
+      "imports": [
+        "env.wasm_on_headers_complete:func",
+        "env.wasm_on_message_begin:func",
+        "env.wasm_on_url:func",
+        "env.wasm_on_status:func",
+        "env.wasm_on_header_field:func",
+        "env.wasm_on_header_value:func",
+        "env.wasm_on_body:func",
+        "env.wasm_on_message_complete:func"
+      ],
+      "exports": [
+        "memory:memory",
+        "_initialize:func",
+        "__indirect_function_table:table",
+        "llhttp_init:func",
+        "llhttp_should_keep_alive:func",
+        "llhttp_alloc:func",
+        "malloc:func",
+        "llhttp_free:func",
+        "free:func",
+        "llhttp_get_type:func",
+        "llhttp_get_http_major:func",
+        "llhttp_get_http_minor:func",
+        "llhttp_get_method:func",
+        "llhttp_get_status_code:func",
+        "llhttp_get_upgrade:func",
+        "llhttp_reset:func",
+        "llhttp_execute:func",
+        "llhttp_settings_init:func",
+        "llhttp_finish:func",
+        "llhttp_pause:func",
+        "llhttp_resume:func",
+        "llhttp_resume_after_upgrade:func",
+        "llhttp_get_errno:func",
+        "llhttp_get_error_reason:func",
+        "llhttp_set_error_reason:func",
+        "llhttp_get_error_pos:func",
+        "llhttp_errno_name:func",
+        "llhttp_method_name:func",
+        "llhttp_status_name:func",
+        "llhttp_set_lenient_headers:func",
+        "llhttp_set_lenient_chunked_length:func",
+        "llhttp_set_lenient_keep_alive:func",
+        "llhttp_set_lenient_transfer_encoding:func",
+        "llhttp_message_needs_eof:func"
+      ],
+      "importModules": [
+        "env"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "undici",
+        "version": "5.29.0",
+        "license": "MIT",
+        "repository": "git+https://github.com/nodejs/undici.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@connectrpc/connect-node/node_modules/undici"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-css.wasm",
+      "kind": "wasm",
+      "bytes": 99067,
+      "sha256": "3451e4e4bac92ba9a76998bc168f33d993cf87b947f7dd5509221a78fc2b93ca",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "custom",
+          "name": "dylink.0",
+          "size": 17
+        },
+        {
+          "kind": "type",
+          "size": 41
+        },
+        {
+          "kind": "import",
+          "size": 143
+        },
+        {
+          "kind": "function",
+          "size": 11
+        },
+        {
+          "kind": "export",
+          "size": 66
+        },
+        {
+          "kind": "element",
+          "size": 12
+        },
+        {
+          "kind": "code",
+          "size": 59684
+        },
+        {
+          "kind": "data",
+          "size": 39064
+        }
+      ],
+      "definedFunctions": 10,
+      "dataSegments": 1,
+      "start": null,
+      "imports": [
+        "env.iswspace:func",
+        "env.iswalnum:func",
+        "env.__stack_pointer:global",
+        "env.__memory_base:global",
+        "env.__table_base:global",
+        "env.memory:memory",
+        "env.__indirect_function_table:table"
+      ],
+      "exports": [
+        "__wasm_call_ctors:func",
+        "__wasm_apply_data_relocs:func",
+        "tree_sitter_css:func"
+      ],
+      "importModules": [
+        "env"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "@vscode/tree-sitter-wasm",
+        "version": "0.1.4",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-tree-sitter-wasm.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-ini.wasm",
+      "kind": "wasm",
+      "bytes": 4461,
+      "sha256": "d82edb24208ab7d0a6f2820270117a2a75d77e5ed413928359d09077b9c3b4a3",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "custom",
+          "name": "dylink.0",
+          "size": 16
+        },
+        {
+          "kind": "type",
+          "size": 28
+        },
+        {
+          "kind": "import",
+          "size": 90
+        },
+        {
+          "kind": "function",
+          "size": 5
+        },
+        {
+          "kind": "export",
+          "size": 66
+        },
+        {
+          "kind": "element",
+          "size": 7
+        },
+        {
+          "kind": "code",
+          "size": 1876
+        },
+        {
+          "kind": "data",
+          "size": 2347
+        }
+      ],
+      "definedFunctions": 4,
+      "dataSegments": 1,
+      "start": null,
+      "imports": [
+        "env.__memory_base:global",
+        "env.__table_base:global",
+        "env.memory:memory",
+        "env.__indirect_function_table:table"
+      ],
+      "exports": [
+        "__wasm_call_ctors:func",
+        "__wasm_apply_data_relocs:func",
+        "tree_sitter_ini:func"
+      ],
+      "importModules": [
+        "env"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "@vscode/tree-sitter-wasm",
+        "version": "0.1.4",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-tree-sitter-wasm.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-regex.wasm",
+      "kind": "wasm",
+      "bytes": 12592,
+      "sha256": "89641aa4900d4e1a015b5b124d0cae11a5d0e0281e8b8818f1c7bd57cdbc923f",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "custom",
+          "name": "dylink.0",
+          "size": 16
+        },
+        {
+          "kind": "type",
+          "size": 28
+        },
+        {
+          "kind": "import",
+          "size": 90
+        },
+        {
+          "kind": "function",
+          "size": 5
+        },
+        {
+          "kind": "export",
+          "size": 68
+        },
+        {
+          "kind": "element",
+          "size": 7
+        },
+        {
+          "kind": "code",
+          "size": 3637
+        },
+        {
+          "kind": "data",
+          "size": 8715
+        }
+      ],
+      "definedFunctions": 4,
+      "dataSegments": 1,
+      "start": null,
+      "imports": [
+        "env.__memory_base:global",
+        "env.__table_base:global",
+        "env.memory:memory",
+        "env.__indirect_function_table:table"
+      ],
+      "exports": [
+        "__wasm_call_ctors:func",
+        "__wasm_apply_data_relocs:func",
+        "tree_sitter_regex:func"
+      ],
+      "importModules": [
+        "env"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "@vscode/tree-sitter-wasm",
+        "version": "0.1.4",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-tree-sitter-wasm.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter-typescript.wasm",
+      "kind": "wasm",
+      "bytes": 1429463,
+      "sha256": "b92b8f1b09429b26953a73928a40c56496eedfb373dc19a84bde3e205de7f438",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "custom",
+          "name": "dylink.0",
+          "size": 17
+        },
+        {
+          "kind": "type",
+          "size": 41
+        },
+        {
+          "kind": "import",
+          "size": 120
+        },
+        {
+          "kind": "function",
+          "size": 12
+        },
+        {
+          "kind": "export",
+          "size": 73
+        },
+        {
+          "kind": "element",
+          "size": 13
+        },
+        {
+          "kind": "code",
+          "size": 33679
+        },
+        {
+          "kind": "data",
+          "size": 1395480
+        }
+      ],
+      "definedFunctions": 11,
+      "dataSegments": 1,
+      "start": null,
+      "imports": [
+        "env.iswspace:func",
+        "env.iswalpha:func",
+        "env.__memory_base:global",
+        "env.__table_base:global",
+        "env.memory:memory",
+        "env.__indirect_function_table:table"
+      ],
+      "exports": [
+        "__wasm_call_ctors:func",
+        "__wasm_apply_data_relocs:func",
+        "tree_sitter_typescript:func"
+      ],
+      "importModules": [
+        "env"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "@vscode/tree-sitter-wasm",
+        "version": "0.1.4",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-tree-sitter-wasm.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm/wasm/tree-sitter.wasm",
+      "kind": "wasm",
+      "bytes": 204548,
+      "sha256": "6bd21cdde74a9cf2e64534847d42d1b68d249f3622d36d3c66995909463b288f",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "custom",
+          "name": "dylink.0",
+          "size": 16
+        },
+        {
+          "kind": "type",
+          "size": 180
+        },
+        {
+          "kind": "import",
+          "size": 520
+        },
+        {
+          "kind": "function",
+          "size": 282
+        },
+        {
+          "kind": "global",
+          "size": 57
+        },
+        {
+          "kind": "export",
+          "size": 4343
+        },
+        {
+          "kind": "start",
+          "size": 1
+        },
+        {
+          "kind": "element",
+          "size": 53
+        },
+        {
+          "kind": "code",
+          "size": 179704
+        },
+        {
+          "kind": "data",
+          "size": 11607
+        },
+        {
+          "kind": "custom",
+          "name": "name",
+          "size": 7706
+        },
+        {
+          "kind": "custom",
+          "name": "sourceMappingURL",
+          "size": 39
+        }
+      ],
+      "definedFunctions": 280,
+      "dataSegments": 1,
+      "start": 14,
+      "imports": [
+        "env.tree_sitter_log_callback:func",
+        "env.tree_sitter_parse_callback:func",
+        "env.tree_sitter_progress_callback:func",
+        "env.tree_sitter_query_progress_callback:func",
+        "wasi_snapshot_preview1.fd_close:func",
+        "wasi_snapshot_preview1.fd_write:func",
+        "env._abort_js:func",
+        "env._emscripten_memcpy_js:func",
+        "env._emscripten_get_now_is_monotonic:func",
+        "env.emscripten_get_now:func",
+        "env.emscripten_resize_heap:func",
+        "wasi_snapshot_preview1.fd_seek:func",
+        "env.__stack_pointer:global",
+        "env.__memory_base:global",
+        "env.__table_base:global",
+        "GOT.mem.__heap_base:global",
+        "env.memory:memory",
+        "env.__indirect_function_table:table"
+      ],
+      "exports": [
+        "__wasm_call_ctors:func",
+        "__wasm_apply_data_relocs:func",
+        "malloc:func",
+        "calloc:func",
+        "realloc:func",
+        "free:func",
+        "ts_language_symbol_count:func",
+        "ts_language_state_count:func",
+        "ts_language_version:func",
+        "ts_language_abi_version:func",
+        "ts_language_metadata:func",
+        "ts_language_name:func",
+        "ts_language_field_count:func",
+        "ts_language_next_state:func",
+        "ts_language_symbol_name:func",
+        "ts_language_symbol_for_name:func",
+        "strncmp:func",
+        "ts_language_symbol_type:func",
+        "ts_language_field_name_for_id:func",
+        "ts_lookahead_iterator_new:func",
+        "ts_lookahead_iterator_delete:func",
+        "ts_lookahead_iterator_reset_state:func",
+        "ts_lookahead_iterator_reset:func",
+        "ts_lookahead_iterator_next:func",
+        "ts_lookahead_iterator_current_symbol:func",
+        "memset:func",
+        "memcpy:func",
+        "ts_parser_delete:func",
+        "ts_parser_reset:func",
+        "ts_parser_set_language:func",
+        "ts_parser_timeout_micros:func",
+        "ts_parser_set_timeout_micros:func",
+        "ts_parser_set_included_ranges:func",
+        "memmove:func",
+        "memcmp:func",
+        "ts_query_new:func",
+        "ts_query_delete:func",
+        "iswspace:func",
+        "iswalnum:func",
+        "ts_query_pattern_count:func",
+        "ts_query_capture_count:func",
+        "ts_query_string_count:func",
+        "ts_query_capture_name_for_id:func",
+        "ts_query_capture_quantifier_for_id:func",
+        "ts_query_string_value_for_id:func",
+        "ts_query_predicates_for_pattern:func",
+        "ts_query_start_byte_for_pattern:func",
+        "ts_query_end_byte_for_pattern:func",
+        "ts_query_is_pattern_rooted:func",
+        "ts_query_is_pattern_non_local:func",
+        "ts_query_is_pattern_guaranteed_at_step:func",
+        "ts_query_disable_capture:func",
+        "ts_query_disable_pattern:func",
+        "ts_tree_copy:func",
+        "ts_tree_delete:func",
+        "ts_init:func",
+        "ts_parser_new_wasm:func",
+        "ts_parser_enable_logger_wasm:func",
+        "ts_parser_parse_wasm:func",
+        "ts_parser_included_ranges_wasm:func",
+        "ts_language_type_is_named_wasm:func",
+        "ts_language_type_is_visible_wasm:func",
+        "ts_language_supertypes_wasm:func",
+        "ts_language_subtypes_wasm:func",
+        "ts_tree_root_node_wasm:func",
+        "ts_tree_root_node_with_offset_wasm:func",
+        "ts_tree_edit_wasm:func",
+        "ts_tree_included_ranges_wasm:func",
+        "ts_tree_get_changed_ranges_wasm:func",
+        "ts_tree_cursor_new_wasm:func",
+        "ts_tree_cursor_copy_wasm:func",
+        "ts_tree_cursor_delete_wasm:func",
+        "ts_tree_cursor_reset_wasm:func",
+        "ts_tree_cursor_reset_to_wasm:func",
+        "ts_tree_cursor_goto_first_child_wasm:func",
+        "ts_tree_cursor_goto_last_child_wasm:func",
+        "ts_tree_cursor_goto_first_child_for_index_wasm:func",
+        "ts_tree_cursor_goto_first_child_for_position_wasm:func",
+        "ts_tree_cursor_goto_next_sibling_wasm:func",
+        "ts_tree_cursor_goto_previous_sibling_wasm:func",
+        "ts_tree_cursor_goto_descendant_wasm:func",
+        "ts_tree_cursor_goto_parent_wasm:func",
+        "ts_tree_cursor_current_node_type_id_wasm:func",
+        "ts_tree_cursor_current_node_state_id_wasm:func",
+        "ts_tree_cursor_current_node_is_named_wasm:func",
+        "ts_tree_cursor_current_node_is_missing_wasm:func",
+        "ts_tree_cursor_current_node_id_wasm:func",
+        "ts_tree_cursor_start_position_wasm:func",
+        "ts_tree_cursor_end_position_wasm:func",
+        "ts_tree_cursor_start_index_wasm:func",
+        "ts_tree_cursor_end_index_wasm:func",
+        "ts_tree_cursor_current_field_id_wasm:func",
+        "ts_tree_cursor_current_depth_wasm:func",
+        "ts_tree_cursor_current_descendant_index_wasm:func",
+        "ts_tree_cursor_current_node_wasm:func",
+        "ts_node_symbol_wasm:func",
+        "ts_node_field_name_for_child_wasm:func",
+        "ts_node_field_name_for_named_child_wasm:func",
+        "ts_node_children_by_field_id_wasm:func",
+        "ts_node_first_child_for_byte_wasm:func",
+        "ts_node_first_named_child_for_byte_wasm:func",
+        "ts_node_grammar_symbol_wasm:func",
+        "ts_node_child_count_wasm:func",
+        "ts_node_named_child_count_wasm:func",
+        "ts_node_child_wasm:func",
+        "ts_node_named_child_wasm:func",
+        "ts_node_child_by_field_id_wasm:func",
+        "ts_node_next_sibling_wasm:func",
+        "ts_node_prev_sibling_wasm:func",
+        "ts_node_next_named_sibling_wasm:func",
+        "ts_node_prev_named_sibling_wasm:func",
+        "ts_node_descendant_count_wasm:func",
+        "ts_node_parent_wasm:func",
+        "ts_node_child_with_descendant_wasm:func",
+        "ts_node_descendant_for_index_wasm:func",
+        "ts_node_named_descendant_for_index_wasm:func",
+        "ts_node_descendant_for_position_wasm:func",
+        "ts_node_named_descendant_for_position_wasm:func",
+        "ts_node_start_point_wasm:func",
+        "ts_node_end_point_wasm:func",
+        "ts_node_start_index_wasm:func",
+        "ts_node_end_index_wasm:func",
+        "ts_node_to_string_wasm:func",
+        "ts_node_children_wasm:func",
+        "ts_node_named_children_wasm:func",
+        "ts_node_descendants_of_type_wasm:func",
+        "ts_node_is_named_wasm:func",
+        "ts_node_has_changes_wasm:func",
+        "ts_node_has_error_wasm:func",
+        "ts_node_is_error_wasm:func",
+        "ts_node_is_missing_wasm:func",
+        "ts_node_is_extra_wasm:func",
+        "ts_node_parse_state_wasm:func",
+        "ts_node_next_parse_state_wasm:func",
+        "ts_query_matches_wasm:func",
+        "ts_query_captures_wasm:func",
+        "iswalpha:func",
+        "iswblank:func",
+        "iswdigit:func",
+        "iswlower:func",
+        "iswupper:func",
+        "iswxdigit:func",
+        "memchr:func",
+        "strlen:func",
+        "strcmp:func",
+        "strncat:func",
+        "strncpy:func",
+        "towlower:func",
+        "towupper:func",
+        "setThrew:func",
+        "_emscripten_stack_restore:func",
+        "_emscripten_stack_alloc:func",
+        "emscripten_stack_get_current:func",
+        "dynCall_jiji:func",
+        "orig$ts_parser_timeout_micros:func",
+        "orig$ts_parser_set_timeout_micros:func"
+      ],
+      "importModules": [
+        "env",
+        "wasi_snapshot_preview1",
+        "GOT.mem"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": true,
+      "package": {
+        "name": "@vscode/tree-sitter-wasm",
+        "version": "0.1.4",
+        "license": "MIT",
+        "repository": "https://github.com/Microsoft/vscode-tree-sitter-wasm.git",
+        "directory": "usr/share/cursor/resources/app/node_modules/@vscode/tree-sitter-wasm"
+      }
+    },
+    {
+      "path": "usr/share/cursor/resources/app/node_modules/vscode-oniguruma/release/onig.wasm",
+      "kind": "wasm",
+      "bytes": 466610,
+      "sha256": "fd885c2d12e5951e59d761ebd4a006e06254b1491fd6f530c92b69fb4d8d77d9",
+      "wasmVersion": 1,
+      "validation": {
+        "engine": "V8 13.6.233.17-node.50 WebAssembly.validate",
+        "valid": true,
+        "parserMatchesEngine": true
+      },
+      "sections": [
+        {
+          "kind": "type",
+          "size": 161
+        },
+        {
+          "kind": "import",
+          "size": 117
+        },
+        {
+          "kind": "function",
+          "size": 211
+        },
+        {
+          "kind": "table",
+          "size": 5
+        },
+        {
+          "kind": "memory",
+          "size": 7
+        },
+        {
+          "kind": "global",
+          "size": 14
+        },
+        {
+          "kind": "export",
+          "size": 276
+        },
+        {
+          "kind": "element",
+          "size": 82
+        },
+        {
+          "kind": "code",
+          "size": 164961
+        },
+        {
+          "kind": "data",
+          "size": 300741
+        }
+      ],
+      "definedFunctions": 209,
+      "dataSegments": 167,
+      "start": null,
+      "imports": [
+        "env.emscripten_memcpy_big:func",
+        "env.emscripten_get_now:func",
+        "wasi_snapshot_preview1.fd_write:func",
+        "env.emscripten_resize_heap:func"
+      ],
+      "exports": [
+        "memory:memory",
+        "__wasm_call_ctors:func",
+        "__indirect_function_table:table",
+        "__errno_location:func",
+        "omalloc:func",
+        "ofree:func",
+        "getLastOnigError:func",
+        "createOnigScanner:func",
+        "freeOnigScanner:func",
+        "findNextOnigScannerMatch:func",
+        "findNextOnigScannerMatchDbg:func",
+        "stackSave:func",
+        "stackRestore:func",
+        "stackAlloc:func",
+        "dynCall_jiji:func"
+      ],
+      "importModules": [
+        "env",
+        "wasi_snapshot_preview1"
+      ],
+      "producers": null,
+      "targetFeatures": null,
+      "goBuildId": null,
+      "goBuildInfo": null,
+      "executable": false,
+      "package": {
+        "name": "vscode-oniguruma",
+        "version": "1.7.0",
+        "license": "MIT",
+        "repository": "https://github.com/microsoft/vscode-oniguruma",
+        "directory": "usr/share/cursor/resources/app/node_modules/vscode-oniguruma"
+      }
+    }
+  ],
+  "symlinks": [
+    {
+      "path": ".DirIcon",
+      "target": "co.anysphere.cursor.png"
+    },
+    {
+      "path": "usr/bin/cursor",
+      "target": "../share/cursor/cursor"
+    }
+  ]
+}
