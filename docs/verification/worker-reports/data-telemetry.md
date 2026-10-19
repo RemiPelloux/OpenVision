@@ -124,6 +124,16 @@ None is counted as a pass.
 - **OV-1005: promote to Verified on Linux x64 for the local profile.** The
   second required `--idle-seconds 600` run passed on the merged clean build
   (`OfXO1m`; see "Completion on the merged build").
+  - The workload covers Tab, Quick Edit, commit message, debug, a second window
+    and MCP.
+  - The name observer now also works without systemd-resolved.
+  - Gate drift is classified, and the cached bootstrap no longer reapplies
+    server values.
+  - Not Linux: macOS checks and the packaged release.
+  - Proposed local gate defaults await the owner.
+
+## Moved to platform/live stories
+
 - Windows and macOS captures of every workload above.
 - Workloads with a signed-in Cursor account, where hosted calls are
   user-configured.
