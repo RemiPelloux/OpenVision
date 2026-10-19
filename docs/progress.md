@@ -17,13 +17,13 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **7/44 · 15.91%** | **37/44** are not fully verified: 22 Partial, 14 Planned, 1 Unknown |
-| Recorded 80% verification milestone | Requires **36/44** Verified | **29** additional stories must pass |
-| All accepted features | Requires **44/44** Verified | **37** additional stories must pass |
+| Fully verified local-feature stories | **9/44 · 20.45%** | **35/44** are not fully verified: 20 Partial, 14 Planned, 1 Unknown |
+| Recorded 80% verification milestone | Requires **36/44** Verified | **27** additional stories must pass |
+| All accepted features | Requires **44/44** Verified | **35** additional stories must pass |
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
-Linux x64. OV-702 is the first story Verified under it. See
+Linux x64. OV-702, OV-401 and OV-403 are Verified under it. See
 [ETA §10](planning/eta-and-definition-of-done.md#10-re-scope--18-october-2026).
 
 Partial stories include working implementations with unfinished checks. This is
