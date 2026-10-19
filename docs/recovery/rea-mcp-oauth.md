@@ -128,6 +128,13 @@ Final build: MCP utility
 consecutive first-time passes: `mcp-auth-eSLKOA`, `mcp-auth-mpxBTy`,
 `mcp-auth-secrets-OqghaX` and `mcp-auth-secrets-1hNu0j`.
 
+The later customization fixes changed the workbench and main process but not
+the MCP utility. On that final build (workbench
+`8eb135c660873d56b4f9281d9282655fa5452df45234be82e652ee57cae80330`, main
+`8f48d3e9456918efd32952550c033781e964d62384b3668e41cbc836eeb6f06a`, same utility)
+the same verifier passed four more times: `mcp-auth-4fjMBW`, `mcp-auth-ideoqE`,
+`mcp-auth-secrets-1cnCpg` and `mcp-auth-secrets-olBQNh`.
+
 | Clause | Observation |
 | --- | --- |
 | Discovery | The unauthenticated server answers 401; the row shows **Needs authentication** and **Authenticate**. Nothing opens a page at startup |
@@ -152,12 +159,14 @@ OAuth path:
   starts OpenVision is persisted the same way. This is a terminal-persistence
   defect outside OV-304's MCP owner; it is reported, not fixed here.
 - **Legacy owner start-up race.** At start-up the legacy extension owner briefly
-  connects before routing moves to the utility. On restart in runs `siU5KR` and
-  `1hNu0j` it registered a client (`siU5KR` failed an earlier, stricter
-  registration-count assertion for this reason), and it keeps that attempt's PKCE
-  verifier as a plain `[identifier:v1:…] mcp_code_verifier` global value. That
-  attempt is never opened or exchanged, so the verifier is unusable without a
-  matching code, but it is plain text and the registration is a wasted request.
+  connects before routing moves to the utility. On restart it registered a
+  client in 3 of 9 recorded restarts (`siU5KR`, `1hNu0j`, `ideoqE`; `siU5KR`
+  failed an earlier, stricter registration-count assertion for this reason).
+  It keeps the PKCE verifier of its own start-up attempt as a plain
+  `[identifier:v1:…] mcp_code_verifier` global value; every `--secrets` run found
+  one such row. That attempt is never opened or exchanged, so the verifier is
+  unusable without a matching code, but it is plain text and the registration
+  is a wasted request.
 
 ## Limitations
 

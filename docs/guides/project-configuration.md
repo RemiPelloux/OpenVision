@@ -102,6 +102,45 @@ it, but commands run by the Agent may see it. OpenVision ignores `CURSOR_DATA_DI
 `CURSOR_CONFIG_DIR` and `$XDG_CONFIG_HOME/cursor`. Another product's settings
 therefore cannot redirect OpenVision's data.
 
+#### Signing in to MCP servers
+
+A remote MCP server that needs OAuth shows **Needs authentication** in
+Customize → MCPs. Choose **Authenticate**: OpenVision opens the server's sign-in
+page in your browser and finishes when the page returns to OpenVision. It
+supports OAuth 2.1 with PKCE and dynamic client registration, a pre-registered
+client (`"auth": { "CLIENT_ID": "…", "CLIENT_SECRET": "…" }`), and static headers
+such as `"headers": { "Authorization": "Bearer ${env:MY_TOKEN}" }`.
+
+- Tokens and client secrets are stored encrypted with your system keyring (the
+  Secret Service on Linux) in the OpenVision data folder, never in `mcp.json`.
+  They are per data folder and survive restarts.
+- If you deny access on the sign-in page, OpenVision says so and saves nothing;
+  choose **Authenticate** to try again.
+- Expired tokens are refreshed silently. If the server rejects the refresh, the
+  server returns to **Needs authentication**; the failed tool call is not
+  repeated.
+- `${env:NAME}` values are resolved in memory and never written back. Note that a
+  variable exported in the environment that starts OpenVision can still be
+  saved by the Agent's terminal session state; prefer the keyring for long-lived
+  secrets.
+
+See [MCP OAuth evidence](../recovery/rea-mcp-oauth.md).
+
+### Same names and invalid files
+
+Skills, subagents, commands and MCP servers can exist in the project, in your
+profile and in a plugin under the same name.
+
+- Customize lists skills and MCP servers from every scope, labelled **Project**,
+  **User** or with the plugin's name.
+- When the Agent uses one, the project item wins, then the profile item, then
+  the plugin's. Subagents and commands keep one item per name, the project one.
+- An invalid `mcp.json` entry, skill front matter, subagent file or plugin
+  manifest shows a warning naming the file and the reason. The other items still
+  load, and fixing the file takes effect without a restart.
+
+See [customization evidence](../recovery/rea-customization-lifecycle.md).
+
 ### Shell history
 
 Your integrated terminals run your own shell with your own settings. When a
