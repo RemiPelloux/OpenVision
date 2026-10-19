@@ -220,6 +220,10 @@ async function typeKeys(text, delay) { for (const key of text) { await page.keyb
 
 async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+  // The fixture project lives under logs/ inside the OpenVision checkout. Without a
+  // ceiling, the Agent's per-turn `git status` found that checkout and walked it
+  // (17,000+ files; most of the 6.5 s between submit and the model request here).
+  env.GIT_CEILING_DIRECTORIES = directory;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
