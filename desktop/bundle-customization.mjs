@@ -9,7 +9,7 @@ import { customizeStream } from './stream-customization.mjs';
 import { requestProviderRouting } from './provider-routing.mjs';
 import { providerSelectionErrors } from './model-selection-customization.mjs';
 import { localUserRules } from './rules-customization.mjs';
-import { subagentModelParameters } from './subagent-model-customization.mjs';
+import { subagentModelParameters, subagentStatusReasoning } from './subagent-model-customization.mjs';
 import { completionCancellation } from './completion-cancellation.mjs';
 import { providerManualRetry } from './provider-error-ui.mjs';
 import { persistProviderFailures } from './provider-failure-persistence.mjs';
@@ -33,7 +33,7 @@ async function customize(root, variant) {
   const cloud = disableCloudFeatures(local.text);
   const stream = customizeStream(customModels(cloud.text, variant));
   const providers = providerSelectionErrors(requestProviderRouting(stream.text, variant));
-  const welcome = customizeWelcome(persistProviderFailures(providerManualRetry(completionCancellation(localUserRules(subagentModelParameters(providers, variant), variant)))), variant);
+  const welcome = customizeWelcome(persistProviderFailures(providerManualRetry(completionCancellation(localUserRules(subagentStatusReasoning(subagentModelParameters(providers, variant), variant), variant)))), variant);
   const home = customizeProjectHome(customInlineEdit(fixSaveAllCommands(fixWorkspaceSaveAll(customizeLegacyMemories(customizeMemory(customizePaste(welcome, variant), variant), variant))), variant), variant);
   const after = customizeApplicationStorage(cancelClosedRunningChat(customizeThemes(home, variant)), variant);
   if (before === after) return;
