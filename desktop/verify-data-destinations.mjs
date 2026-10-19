@@ -296,8 +296,15 @@ async function inner(directory) {
     agentPlan = [{ id: 'ov_index_search', name: 'CodebaseSearch', args: { query: canary.content, target_directories: [] } }];
     agentReply = 'OpenVision indexing destination complete.';
     await page.getByRole('button', { name: 'New Agent', exact: true }).filter({ visible: true }).first().click().catch(() => {});
+    // The new chat's input replaces the previous one; type only once it is
+    // empty and confirm the prompt is in it before sending.
+    const indexPrompt = 'Search the codebase index for the canary. Do not modify files.';
     const indexInput = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
-    await indexInput.fill('Search the codebase index for the canary. Do not modify files.');
+    await page.waitForFunction(() => [...document.querySelectorAll('.aislash-editor-input[contenteditable=true]')]
+      .some(element => element.getClientRects().length && !element.textContent.trim()), null, { timeout: 15000 });
+    await indexInput.fill(indexPrompt);
+    await page.waitForFunction(text => [...document.querySelectorAll('.aislash-editor-input[contenteditable=true]')]
+      .some(element => element.getClientRects().length && element.textContent.includes(text)), indexPrompt, { timeout: 15000 });
     await indexInput.press('Enter');
     await page.getByText(agentReply, { exact: true }).first().waitFor({ timeout: 90000 });
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' }).catch(() => {});
