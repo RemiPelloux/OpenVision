@@ -9,6 +9,7 @@ Executed tests, platform coverage and explicit limits. Start with [release claim
 - [Linux verification](linux-verification.md)
 - [Linux reliability session — 16 October 2026](linux-session-2026-10-16.md)
 - [Verifier stability on Linux — 18 October 2026](verifier-stability-linux.md)
+- [Linux completion (OV-903) — 19 October 2026](worker-reports/linux-completion.md)
 - [Live provider runs on Linux — 16 October 2026](live-provider-linux.md)
 - [Provider import from pi and user-specified capabilities — 16 October 2026](provider-import-linux.md)
 - [Live provider compatibility — 14 October 2026](live-provider-compatibility.md)

@@ -10,7 +10,7 @@ Installed `node_modules/` stays ignored.
 | `package.json` and `package-lock.json` | Dependency declarations and exact dependency versions |
 | `dependencies.mjs` | Shared parser, HTML and image dependency exports |
 | `formatter.mjs` | Formatting helpers |
-| `browser.mjs` | Browser tooling used by verification |
+| `browser.mjs` | Browser tooling used by verification; `OPENVISION_OZONE_PLATFORM` pins the Linux display backend for every native launch |
 | `benchmark-mcp-*.mjs` | Local MCP response-resource measurements |
 
 Benchmark outputs are evidence for their declared workload. They do not replace
