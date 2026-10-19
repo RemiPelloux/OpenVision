@@ -17,10 +17,14 @@ export const agentEditInterruptionEntry = agentReviewEntry;
 export const interruptedEditMessage =
   'Edit interrupted before it completed. Check the file; any change that was written stays available in review.';
 
-const failInterruptedEdit = bubble => `${bubble}.toolCall?.tool?.case === "editToolCall" &&
-        ${bubble}.toolCall.tool.value?.result === void 0 && ${bubble}.error === void 0 &&
-        (${bubble}.error = new pce({ clientVisibleErrorMessage: ${JSON.stringify(interruptedEditMessage)},
-          modelVisibleErrorMessage: ${JSON.stringify(interruptedEditMessage)} }), (${bubble}.status = "error"))`;
+// The persisted bubble carries the tool type, streamed parameters and status; it
+// keeps no tool call. An edit without a result was never confirmed.
+const unconfirmedEdit = bubble => `(${bubble}.tool === Je.EDIT_FILE_V2 || ${bubble}.tool === Je.EDIT_FILE) &&
+        ${bubble}.result === void 0 && ${bubble}.error === void 0`;
+const interruptedError = `new pce({ clientVisibleErrorMessage: ${JSON.stringify(interruptedEditMessage)},
+          modelVisibleErrorMessage: ${JSON.stringify(interruptedEditMessage)} })`;
+const failInterruptedEdit = bubble => `${unconfirmedEdit(bubble)} &&
+        ((${bubble}.error = ${interruptedError}), (${bubble}.status = "error"))`;
 
 const load = `function I0u(e) {
   e.status === "loading" && (e.status = "cancelled");
@@ -48,10 +52,8 @@ const loadFixed = `function I0u(e) {
 }`;
 
 const live = 't.setBubbleData(i, { status: "cancelled", ...(o ? { additionalData: o } : {}) }),';
-const liveFixed = `(r.toolCall?.tool?.case === "editToolCall" && r.toolCall.tool.value?.result === void 0 && r.error === void 0
-                  ? t.setBubbleData(i, { status: "error", ...(o ? { additionalData: o } : {}),
-                      error: new pce({ clientVisibleErrorMessage: ${JSON.stringify(interruptedEditMessage)},
-                        modelVisibleErrorMessage: ${JSON.stringify(interruptedEditMessage)} }) })
+const liveFixed = `(${unconfirmedEdit('r')}
+                  ? t.setBubbleData(i, { status: "error", ...(o ? { additionalData: o } : {}), error: ${interruptedError} })
                   : t.setBubbleData(i, { status: "cancelled", ...(o ? { additionalData: o } : {}) })),`;
 
 const once = (text, value) => text.split(value).length === 2;

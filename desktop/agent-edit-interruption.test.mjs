@@ -19,16 +19,17 @@ function loadOwner(source) {
   const start = source.indexOf('function I0u(e) {');
   const node = parseExpressionAt(source, start, { ecmaVersion: 'latest' });
   return runInNewContext(`(${source.slice(node.start, node.end)})`, {
-    pce: Pce, D0u: bubble => ({ params: bubble.params, result: bubble.result, additionalData: bubble.additionalData, toolCall: bubble.toolCall }) });
+    pce: Pce, Je: { EDIT_FILE_V2: 38, EDIT_FILE: 7 }, D0u: bubble => ({ params: bubble.params, result: bubble.result, additionalData: bubble.additionalData, toolCall: bubble.toolCall }) });
 }
 function cancelOwner(source) {
   const index = source.indexOf('cancelUnfinishedToolCalls() {');
   const owner = parseExpressionAt(source, source.lastIndexOf('class ', index), { ecmaVersion: 'latest' });
   const method = owner.body.body.find(node => node.key?.name === 'cancelUnfinishedToolCalls');
-  return runInNewContext(`(class { ${source.slice(method.start, method.end)} })`, { pce: Pce, Je: { TASK_V2: 'task', RUN_TERMINAL_COMMAND_V2: 'terminal' } });
+  return runInNewContext(`(class { ${source.slice(method.start, method.end)} })`, { pce: Pce, Je: { TASK_V2: 'task', RUN_TERMINAL_COMMAND_V2: 'terminal', EDIT_FILE_V2: 38, EDIT_FILE: 7 } });
 }
-const edit = (status, result, extra = {}) => ({ tool: 'edit', status, ...extra,
-  toolCall: { tool: { case: 'editToolCall', value: { args: { path: '/p/a.js' }, ...(result ? { result } : {}) } } } });
+// As persisted: tool type, streamed parameters and status; no tool call.
+const edit = (status, result, extra = {}) => ({ tool: 38, status, params: { relativeWorkspacePath: '/p/a.js' },
+  ...(result ? { result } : {}), ...extra });
 
 test('recovered load shows an edit restored without a result as completed; patched load marks it interrupted', () => {
   const recovered = loadOwner(original)(edit('loading'));
@@ -51,14 +52,15 @@ test('patched load leaves edits with results, explicit errors, completed bubbles
   const existing = new Pce({ clientVisibleErrorMessage: 'Edit rejected: no' });
   assert.equal(load(edit('cancelled', undefined, { error: existing })).error, existing);
   assert.equal(load(edit('completed')).status, 'completed');
-  const terminal = load({ tool: 'terminal', status: 'loading', toolCall: { tool: { case: 'shellToolCall', value: {} } } });
+  const terminal = load({ tool: 'terminal', status: 'loading' });
+  assert.equal(load({ ...edit('loading'), tool: 7 }).status, 'error', 'The first edit tool version is covered too');
   assert.equal(terminal.status, 'cancelled'); assert.equal(terminal.error, undefined);
 });
 
 test('live cancellation marks an unfinished edit failed and keeps other tools cancelled', () => {
   for (const [source, expected] of [[original, 'cancelled'], [patched, 'error']]) {
-    const bubbles = { e: edit('loading'), s: { tool: 'terminal', status: 'loading', additionalData: { status: 'running' },
-      toolCall: { tool: { case: 'shellToolCall', value: {} } } }, d: edit('loading', { result: { case: 'success' } }) };
+    const bubbles = { e: edit('loading'), s: { tool: 'terminal', status: 'loading', additionalData: { status: 'running' } },
+      d: edit('loading', { result: { case: 'success' } }) };
     const writes = [];
     const Owner = cancelOwner(source), owner = Object.assign(new Owner(), {
       unfinishedToolCallIds: new Set(['e', 's', 'd']), composerDataHandle: { data: {} },
