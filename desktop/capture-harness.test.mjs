@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { captureEnvironment, parseMeminfo, parsePressure, parseSignalTrace, removedProxyVariables } from './capture-harness.mjs';
+import { captureEnvironment, parseMeminfo, parsePressure, parseSignalTrace, removedProxyVariables, summarizeSignals } from './capture-harness.mjs';
 
 test('the app environment drops inherited proxies and Electron-as-Node', () => {
   const base = { PATH: '/bin', HTTPS_PROXY: 'http://127.0.0.1:1', no_proxy: 'localhost', npm_config_https_proxy: 'x',
@@ -29,4 +29,20 @@ test('signal traces name the sender, kill calls and process exits', () => {
   assert.deepEqual(parsed.sends, [{ pid: 200, at: '1792411234.300000', call: 'kill', args: '201, SIGTERM', result: 0 }]);
   assert.deepEqual(parsed.exits, [{ pid: 201, at: '1792411234.400000', code: 0, signal: undefined },
     { pid: 202, at: '1792411234.500000', code: undefined, signal: 'SIGKILL' }]);
+});
+
+test('the summary names the main process, its sender and senders outside the family', () => {
+  const trace = [
+    '100 1.000000 execve("/opt/ov/openvision", ["openvision"], 0x1 /* 1 vars */) = 0',
+    '101 1.500000 execve("/opt/ov/openvision", ["openvision", "--type=gpu-process"], 0x1 /* 1 vars */) = 0',
+    '100 2.000000 --- SIGTERM {si_signo=SIGTERM, si_code=SI_USER, si_pid=999, si_uid=1000} ---',
+    '101 2.100000 --- SIGTERM {si_signo=SIGTERM, si_code=SI_USER, si_pid=100, si_uid=1000} ---',
+    '101 2.200000 +++ exited with 0 +++',
+    '100 3.000000 +++ exited with 0 +++',
+  ].join('\n');
+  const summary = summarizeSignals(trace, '/opt/ov/openvision');
+  assert.equal(summary.mainPid, 100);
+  assert.deepEqual(summary.mainSignals.map(item => [item.signal, item.sender, item.senderOutsideFamily]), [['SIGTERM', 999, true]]);
+  assert.deepEqual(summary.signalsFromOutside.map(item => item.pid), [100]);
+  assert.deepEqual(summary.mainExit, { pid: 100, at: '3.000000', code: 0, signal: undefined });
 });

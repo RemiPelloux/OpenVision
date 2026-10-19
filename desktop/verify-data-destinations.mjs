@@ -28,7 +28,7 @@ import { fileHash } from './import-files.mjs';
 import { startCapture } from './capture-network.mjs';
 import { canaryNeedles, findCanaries, payloadViews, summarizeRecords } from './data-destinations.mjs';
 import { inventoryAddons, threadGroups, tgidOf } from './addon-inventory.mjs';
-import { captureEnvironment, removedProxyVariables, startHeartbeat, startMapsSampler, parseSignalTrace } from './capture-harness.mjs';
+import { captureEnvironment, removedProxyVariables, startHeartbeat, startMapsSampler, summarizeSignals } from './capture-harness.mjs';
 import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
 import { vsix } from './extension-lifecycle.mjs';
 
@@ -375,8 +375,12 @@ async function inner(directory) {
     result.failure = error.stack; process.exitCode = 1;
     await page?.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
   } finally {
+    const lostIn = phase;
     enter('shutdown');
-    closing = true;
+    // A host that quit on its own closes its window before the main process
+    // exits; only a close of a still-open window is a requested exit.
+    closing = Boolean(page) && !page.isClosed();
+    if (page?.isClosed()) result.windowClosedBeforeRequest = { phase: lostIn };
     if (app) {
       const child = app.process();
       const exited = new Promise(done => child.exitCode !== null || child.signalCode !== null ? done() : child.once('exit', done));
@@ -444,7 +448,7 @@ async function inner(directory) {
     hostExits, unrequestedHostExits: hostExits.filter(item => !item.requested),
     heartbeat: { beats: heartbeat.samples.length, minMemAvailableKiB: Math.min(...heartbeat.samples.map(item => item.memAvailableKiB)),
       maxPressureSomeAvg10: Math.max(0, ...heartbeat.samples.map(item => item.pressureSomeAvg10 ?? 0)) },
-    signals: signalTrace ? summarizeSignals(parseSignalTrace(await readFile(traceFile, 'utf8').catch(() => '')), rootPid) : undefined,
+    signals: signalTrace ? summarizeSignals(await readFile(traceFile, 'utf8').catch(() => ''), layout.executable) : undefined,
     terminalProvider: provider.filter(item => item.phase === 'terminal').length,
   });
   result.checks.noCanaryOutsideProvider = result.canaryLeaks.length === 0 && nameHits.length === 0;
@@ -475,14 +479,6 @@ function summarizeNames(entries) {
     item.count += 1; item.phases.add(entry.phase); names.set(entry.name, item);
   }
   return [...names.values()].map(item => ({ ...item, phases: [...item.phases] })).sort((a, b) => b.count - a.count);
-}
-
-// Signals and exits around the host: who signalled the traced family, and
-// how each process ended. The launched process is strace; its child is main.
-function summarizeSignals({ deliveries, sends, exits }, tracer) {
-  const external = deliveries.filter(item => item.sender !== undefined && item.code === 'SI_USER');
-  return { deliveries: deliveries.slice(-40), sends: sends.slice(-40), externalSenders: [...new Set(external.map(item => item.sender))],
-    exitsWithSignal: exits.filter(item => item.signal), tracer };
 }
 
 // Attribute connect/sendto calls to processes from the strace log.

@@ -116,3 +116,16 @@ export function parseSignalTrace(text) {
   }
   return { deliveries, sends, exits };
 }
+
+// The launched process is strace; the Electron main process is the first exec
+// of the host executable. A sender that is not a traced process is outside the
+// owned family (the harness, an OOM handler, another tool).
+export function summarizeSignals(text, executable) {
+  const { deliveries, sends, exits } = parseSignalTrace(text);
+  const traced = new Set(String(text).split('\n').map(line => Number(/^(\d+)\s/.exec(line)?.[1])).filter(Boolean));
+  const main = Number(String(text).split('\n').find(line => line.includes(`execve("${executable}"`))?.match(/^(\d+)\s/)?.[1]) || undefined;
+  const mark = item => ({ ...item, senderOutsideFamily: item.sender !== undefined && !traced.has(item.sender) });
+  return { mainPid: main, mainSignals: deliveries.filter(item => item.pid === main).map(mark), mainExit: exits.find(item => item.pid === main),
+    signalsFromOutside: deliveries.map(mark).filter(item => item.senderOutsideFamily && item.code === 'SI_USER'),
+    deliveries: deliveries.slice(-40), sends: sends.slice(-40), exitsWithSignal: exits.filter(item => item.signal) };
+}
