@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { acknowledge, acknowledgementFile, inspectProfile, jsoncError } from './profile-recovery.mjs';
 import { addRecoveryMainImport, addRecoveryWorkbenchImport, recoveryMainImport, recoveryWorkbenchImport } from './profile-recovery-customization.mjs';
-import { renderRecoveryNotice } from './profile-recovery.js';
+import { renderRecoveryNotice, reportProfileFinding } from './profile-recovery.js';
 
 async function profile(run) {
   const directory = await mkdtemp(join(tmpdir(), 'openvision-profile-recovery-'));
@@ -99,3 +99,19 @@ test('the workbench notice lists every finding and acknowledges on Dismiss', asy
     assert.equal(dismissed, 1); assert.equal(panel.removed, true);
   } finally { delete globalThis.document; }
 });
+
+test('workbench owners report through a queue, deduplicated by id', () => {
+  const queue = globalThis.openvisionProfileRecoveryQueue;
+  assert.equal(typeof queue.push, 'function', 'the module replaces an early array with a live queue');
+  assert.doesNotThrow(() => queue.push({ id: 'unreadable-rules:x', title: 'T', detail: 'D', path: 'k' }));
+  assert.doesNotThrow(() => reportProfileFinding({ id: 'unreadable-rules:x', title: 'T', detail: 'D', path: 'k' }));
+  assert.doesNotThrow(() => reportProfileFinding({ title: 'no id is ignored' }));
+});
+
+test('project mcp.json of the window folder is inspected read-only; relative folders are ignored', () => profile(async directory => {
+  const project = join(directory, 'project');
+  await mkdir(join(project, '.openvision'), { recursive: true });
+  await writeFile(join(project, '.openvision/mcp.json'), '{ "mcpServers": [ ');
+  const findings = await inspectProfile({ userDataDir: directory, folders: [project, 'relative/path', 42] });
+  assert.deepEqual(findings.map(finding => finding.store), ['Project mcp.json (project)']);
+}));
