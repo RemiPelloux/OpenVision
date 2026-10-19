@@ -69,13 +69,15 @@ async function inner(directory) {
   await writeFile(join(project, 'README.md'), `# Project ${canary.dirName}\n`);
   // JS debug fixture: the debuggee writes the debug canary to a marker file.
   const debugMarker = join(directory, 'debug-marker.txt'), terminalMarker = join(directory, 'terminal-marker.txt');
-  await writeFile(join(project, 'debug-canary.js'), `const { writeFileSync } = require("node:fs");\n` +
+  await writeFile(join(project, 'debug-canary.cjs'), `const { writeFileSync } = require("node:fs");\n` +
     `const value = "${canary.debug}";\nconsole.log(value);\nwriteFileSync(process.argv[2], value);\n`);
   await mkdir(join(project, '.vscode'));
   await writeFile(join(project, '.vscode/launch.json'), JSON.stringify({ version: '0.2.0', configurations: [{ type: 'node', request: 'launch',
-    name: 'OV debug canary', program: '${workspaceFolder}/debug-canary.js', args: [debugMarker], console: 'internalConsole' }] }, null, 2));
+    name: 'OV debug canary', program: '${workspaceFolder}/debug-canary.cjs', args: [debugMarker], console: 'internalConsole' }] }, null, 2));
   const git = args => run('git', ['-c', 'user.name=OV', '-c', 'user.email=ov@example.invalid', '-c', 'init.defaultBranch=main', ...args], { cwd: project });
   await git(['init', '-q']); await git(['checkout', '-q', '-b', canary.branch]);
+  // The app's own commits need a repository identity (git runs with user.useConfigOnly).
+  await git(['config', 'user.name', 'OV']); await git(['config', 'user.email', 'ov@example.invalid']);
   await git(['add', '.']); await git(['commit', '-q', '-m', canary.commit]);
   await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
     'git.openRepositoryInParentFolders': 'never', 'editor.quickSuggestions': false, 'editor.formatOnSave': false,
@@ -114,9 +116,11 @@ async function inner(directory) {
   const server = createServer(async (request, response) => {
     const chunks = []; for await (const chunk of request) chunks.push(chunk);
     const body = Buffer.concat(chunks);
-    const record = { phase, method: request.method, path: request.url, bytes: body.length + JSON.stringify(request.headers).length,
+    const record = { phase, at: new Date().toISOString(), method: request.method, path: request.url, bytes: body.length + JSON.stringify(request.headers).length,
       canaries: findCanaries(payloadViews(body, request.headers), needles).map(hit => hit.canary) };
     provider.push(record);
+    // Bodies of single-shot requests (commit message, Tab, Quick Edit) for diagnosis; the run directory is never published.
+    if (!['agent', 'mcp', 'idle-indexing'].includes(phase) && request.url === '/v1/chat/completions') record.excerpt = body.subarray(0, 3000).toString('utf8');
     response.setHeader('content-type', 'application/json');
     if (request.url === '/v1/models') return response.end(JSON.stringify({ data: [{ id: 'fixture-model' }] }));
     if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end('{}'); }
@@ -167,7 +171,11 @@ async function inner(directory) {
     executable = join(directory, 'traced-host.sh');
     const calls = ['execve', 'connect', 'sendto', 'clone', 'clone3', 'fork', 'vfork', ...(signalTrace ? ['kill', 'tgkill', 'tkill'] : [])];
     const signals = signalTrace ? `-q -ttt -e signal=TERM,INT,HUP,QUIT,KILL,PIPE,ABRT,SEGV,BUS,USR1,USR2` : '-qq -e signal=none';
-    await writeFile(executable, `#!/bin/sh\nexec strace -f ${signals} -e trace=${calls.join(',')} -s 160 -o '${traceFile}' '${layout.executable}' "$@"\n`);
+    // --seccomp-bpf stops only the traced calls. Without it, ptrace stops on every
+    // syscall of the family and the Agent turn hung after "Using agent backend"
+    // in 4 of 5 runs on this host (logs/data-destinations-V57pK6: 300 s), while the
+    // same run without strace answered in 1.6 s (logs/data-destinations-kYpbAA).
+    await writeFile(executable, `#!/bin/sh\nexec strace -f --seccomp-bpf ${signals} -e trace=${calls.join(',')} -s 160 -o '${traceFile}' '${layout.executable}' "$@"\n`);
     await chmod(executable, 0o755);
   }
 
@@ -197,7 +205,9 @@ async function inner(directory) {
   };
   const runAgent = async (text, plan, reply) => {
     agentPlan = plan; agentReply = reply;
-    const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+    // The chat input; Quick Edit uses the same input class inside the editor.
+    await page.keyboard.press('Escape');
+    const input = page.locator('.aislash-editor-input[contenteditable=true]:not(.monaco-editor .aislash-editor-input)').filter({ visible: true }).first();
     await input.fill(text); await input.press('Enter');
   };
   try {
@@ -260,7 +270,9 @@ async function inner(directory) {
     const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
     await input.fill('Inspect the private canary module and search the project for it. Do not modify files.');
     await input.press('Enter');
-    await page.getByText(agentReply, { exact: true }).first().waitFor({ timeout: 90000 });
+    // OV501_AGENT_WAIT_MS (diagnostic): how long the first Agent turn may take.
+    await page.getByText(agentReply, { exact: true }).first().waitFor({ timeout: Number(process.env.OV501_AGENT_WAIT_MS ?? 90000) });
+    result.agentFirstRequestMs = Date.parse(provider.find(item => item.phase === 'agent')?.at ?? '') - Date.parse(phases.find(item => item.phase === 'agent').at);
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' }).catch(() => {});
     result.checks.agent = true;
 
@@ -297,19 +309,22 @@ async function inner(directory) {
     enter('commit-message');
     await writeFile(join(project, 'staged-note.md'), `Staged change ${canary.staged}\n`);
     await git(['add', 'staged-note.md']);
+    await page.waitForTimeout(4000); // Let the Git extension see the index change.
     // Source Control has no palette command to open its view; both commands act
     // on the repository's SCM input, and the commit proves which message it held.
     await command('Generate Commit Message');
     for (let i = 0; i < 120 && !provider.some(item => item.phase === 'commit-message' && item.path === '/v1/chat/completions'); i++) await page.waitForTimeout(250);
     await page.waitForTimeout(2000);
+    const notices = await page.locator('.notifications-toasts .notification-toast').filter({ visible: true }).allInnerTexts().catch(() => []);
     await command('Git: Commit Staged');
     const subject = async () => (await git(['log', '-1', '--format=%s'])).stdout.trim();
     for (let i = 0; i < 80 && await subject() !== generatedMessage; i++) await page.waitForTimeout(250);
     const generated = await subject() === generatedMessage;
-    result.commitMessage = { providerRequests: provider.filter(item => item.phase === 'commit-message').length,
+    result.commitMessage = { notices: notices.map(text => text.slice(0, 300)), providerRequests: provider.filter(item => item.phase === 'commit-message').length,
       stagedCanaryToProvider: provider.some(item => item.phase === 'commit-message' && item.canaries.includes('staged-change')),
       committedWithGeneratedMessage: generated };
     result.checks.commitMessage = generated && result.commitMessage.stagedCanaryToProvider;
+    await page.screenshot({ path: join(directory, 'commit-message.png') });
 
     enter('debug');
     await page.keyboard.press('Escape');
@@ -317,12 +332,12 @@ async function inner(directory) {
     for (let i = 0; i < 160 && !existsSync(debugMarker); i++) await page.waitForTimeout(250);
     await page.waitForTimeout(3000);
     result.checks.debug = (await readFile(debugMarker, 'utf8').catch(() => '')) === canary.debug;
+    await page.screenshot({ path: join(directory, 'debug.png') });
 
     enter('mcp');
     await writeFile(join(profile, 'User/mcp.json'), JSON.stringify({ mcpServers: { 'openvision-verify': mcp.configuration } }, null, 2));
     for (let i = 0; i < 180 && !mcp.requests.some(request => request.method === 'tools/list'); i++) await page.waitForTimeout(250);
     await page.waitForTimeout(3000);
-    await page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first().click().catch(() => {});
     await runAgent('Call memory_probe on user-openvision-verify once.', [{ id: 'ov_mcp_call', name: 'CallMcpTool',
       args: { server: 'user-openvision-verify', toolName: 'memory_probe', description: 'OpenVision destination MCP probe', arguments: {} } }],
     'OpenVision MCP destination workload complete.');
@@ -421,6 +436,7 @@ async function inner(directory) {
       ({ phase: when, transport, host, method, path, bodyBytes, bytes, canaries: hits })),
     canaryLeaks: outbound.canaryLeaks.map(({ host, path, canaries: hits, phase: when }) => ({ host, path, phase: when, canaries: hits })),
     canaryInNames: nameHits, provider: providerSummary,
+    providerExcerpts: provider.filter(item => item.excerpt).map(({ phase: when, excerpt }) => ({ phase: when, excerpt })),
     agentTools: provider.find(item => item.tools)?.tools, agentToolResults: provider.findLast(item => item.toolResults)?.toolResults,
     trace, localMode: logs,
     addons: { ...addons, knownList: existsSync(knownFile) ? 'desktop/fixtures/linux-x64-addons-3.21.13.json' : null, mapsSamples: maps.samples },

@@ -10,6 +10,8 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { chmod, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
+import { createSocket } from 'node:dgram';
+import { parseDnsQuery } from './data-destinations.mjs';
 import { captureEnvironment, removedProxyVariables } from './capture-harness.mjs';
 import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
 import { existsSync } from 'node:fs';
@@ -52,13 +54,14 @@ await writeFile(join(project, 'hello.js'), 'console.log("OpenVision extended tel
 await writeFile(join(project, 'notes.txt'), 'UniqueTelemetrySearchToken lives here.\n');
 // A Git repository (Source Control workload) and a JS debug fixture.
 const debugMarker = join(directory, 'debug-marker.txt');
-await writeFile(join(project, 'debug-me.js'), 'require("node:fs").writeFileSync(process.argv[2], "debugged");\n');
+await writeFile(join(project, 'debug-me.cjs'), 'require("node:fs").writeFileSync(process.argv[2], "debugged");\n');
 await mkdir(join(project, '.vscode'));
 await writeFile(join(project, '.vscode/launch.json'), JSON.stringify({ version: '0.2.0', configurations: [{ type: 'node', request: 'launch',
-  name: 'OV telemetry debug', program: '${workspaceFolder}/debug-me.js', args: [debugMarker], console: 'internalConsole' }] }, null, 2));
+  name: 'OV telemetry debug', program: '${workspaceFolder}/debug-me.cjs', args: [debugMarker], console: 'internalConsole' }] }, null, 2));
 const git = args => execFileSync('git', ['-c', 'user.name=OV', '-c', 'user.email=ov@example.invalid', '-c', 'init.defaultBranch=main', ...args],
   { cwd: project, encoding: 'utf8' });
-git(['init', '-q']); git(['add', '.']); git(['commit', '-qm', 'fixture']);
+git(['init', '-q']); git(['config', 'user.name', 'OV']); git(['config', 'user.email', 'ov@example.invalid']);
+git(['add', '.']); git(['commit', '-qm', 'fixture']);
 const generatedMessage = 'OV telemetry fixture commit message';
 const mcp = await createMcpStdioFixture();
 
@@ -102,6 +105,23 @@ const fixture = createServer(async (request, response) => {
 });
 await new Promise(done => fixture.listen(0, '127.0.0.1', done));
 const proxy = await createLoopbackProxy();
+// Inside the namespace (verify-telemetry-extended.sh), every name lookup reaches
+// this recording resolver and is answered NXDOMAIN, so nothing connects onward.
+const resolverLookups = [];
+let resolver;
+if (process.argv.includes('--netns')) {
+  resolver = createSocket('udp4');
+  resolver.on('message', (message, remote) => {
+    const query = parseDnsQuery(message);
+    if (!query) return;
+    resolverLookups.push({ at: Date.now(), name: query.name, type: query.type });
+    const header = Buffer.from(message.subarray(0, 12));
+    header.writeUInt16BE(0x8183 | (message.readUInt16BE(2) & 0x0100), 2); header.writeUInt16BE(0, 6);
+    header.writeUInt16BE(0, 8); header.writeUInt16BE(0, 10);
+    resolver.send(Buffer.concat([header.subarray(0, 12), message.subarray(12, query.questionEnd)]), remote.port, remote.address);
+  });
+  await new Promise((done, fail) => { resolver.once('error', fail); resolver.bind(53, '127.0.0.53', done); });
+}
 
 const netLog = join(directory, 'chromium-netlog.json');
 const trace = join(directory, 'syscalls.trace');
@@ -277,6 +297,7 @@ try {
   mark('scm');
   await writeFile(join(project, 'notes.txt'), 'UniqueTelemetrySearchToken lives here.\nA staged change.\n');
   git(['add', 'notes.txt']);
+  await page.waitForTimeout(4000); // Let the Git extension see the index change.
   // Source Control has no palette command to open its view; both commands act
   // on the repository's SCM input, and the commit proves which message it held.
   await command('Generate Commit Message');
@@ -311,7 +332,9 @@ try {
   agentPlan = [{ id: 'ov_mcp_call', name: 'CallMcpTool', args: { server: 'user-openvision-verify', toolName: 'memory_probe',
     description: 'OpenVision telemetry MCP probe', arguments: {} } }];
   agentReply = 'OpenVision telemetry MCP complete.';
-  const mcpInput = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  await page.keyboard.press('Escape');
+  // The chat input; Quick Edit uses the same input class inside the editor.
+  const mcpInput = page.locator('.aislash-editor-input[contenteditable=true]:not(.monaco-editor .aislash-editor-input)').filter({ visible: true }).first();
   if (!await mcpInput.count()) await page.keyboard.press('ControlOrMeta+Shift+l');
   await mcpInput.fill('Call memory_probe on user-openvision-verify once.');
   await mcpInput.press('Enter');
@@ -348,6 +371,7 @@ try {
   await proxy.close();
   await new Promise(done => fixture.close(done));
   await mcp.dispose().catch(error => { result.mcpCleanupFailure = error.message; });
+  resolver?.close();
 }
 
 // Collect observations.
@@ -361,6 +385,7 @@ for (const event of netlog.events ?? []) {
 }
 for (const { at, url } of rendererUrls) if (/^(https?|wss?):/.test(url) && !chromiumUrls.has(url)) chromiumUrls.set(url, phaseAt(at));
 const traced = useStrace ? parseSyscallTrace(await readFile(trace, 'utf8').catch(() => '')) : { connects: [], lookups: [], datagrams: [] };
+traced.lookups.push(...resolverLookups.map(lookup => ({ ...lookup, pid: 'resolver' })));
 const directInet = useStrace ? trafficConnects(traced) : [];
 const procRemote = remoteSockets([...sockets.values()]);
 
@@ -411,6 +436,7 @@ Object.assign(result, {
     chromiumNetlogUrls: chromiumUrls.size, rendererRequests: rendererUrls.length,
     procSockets: sockets.size, procRemoteSockets: procRemote.length,
     syscallConnects: traced.connects.length, inetConnects: directInet.length, dnsLookups: traced.lookups.length,
+    resolverLookups: resolverLookups.length,
     unixPaths: [...new Set(traced.connects.filter(entry => entry.family === 'unix').map(entry => entry.path))].sort(),
   },
   destinations: table, nonLoopbackDestinations: remote, telemetryMatches: telemetry,
