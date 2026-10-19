@@ -236,10 +236,19 @@ async function launch(record) {
   return child;
 }
 
+// The DOM renderer holds only the visible rows, so restored lines above the
+// viewport (window size and line wrapping vary by host) are read page by page.
 async function terminalText() {
   await page.keyboard.press('Escape').catch(() => {});
-  const wrappers = page.locator('.terminal-wrapper').filter({ visible: true });
-  return (await wrappers.allInnerTexts().catch(() => [])).join('\n');
+  const visible = async () => (await page.locator('.terminal-wrapper').filter({ visible: true }).allInnerTexts().catch(() => [])).join('\n');
+  await rpc('scroll', { to: 'top' }); await pause(200);
+  const pages = [await visible()];
+  for (let index = 0; index < 50; index++) {
+    await rpc('scroll', { to: 'pageDown' }); await pause(200);
+    const text = await visible(); if (text === pages.at(-1)) break; pages.push(text);
+  }
+  await rpc('scroll', { to: 'bottom' });
+  return pages.join('\n');
 }
 
 async function confirmShutdownPrompts(record) {
