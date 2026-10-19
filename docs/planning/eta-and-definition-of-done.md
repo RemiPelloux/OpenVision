@@ -368,7 +368,7 @@ and a first-time rerun, OV-401 and OV-403 are Verified. Ledger: **9/44 Verified 
 
 ## 11. Stop checkpoint — 19 October 2026, 16:00 UTC
 
-The owner asked to stop all workers. Each running worker finished its current step,
+The owner asked to stop all workers. All 7 running workers finished their current step,
 wrote a "Status at stop" section in its report, committed and pushed. No worker is
 running. The coordinator branch is `ccr-a39d6f13-jurmdv`. Merged branches were rebuilt
 from clean and rerun natively on Ubuntu 24.04/X11 before any promotion.
@@ -411,7 +411,7 @@ Pushed, not merged yet (each needs a coordinator merge plus clean rerun):
 | OV-904 | `ov/updates-rollback` `5b7cfe71` | Signed release, install/upgrade/rollback; `verify:upgrade:linux` passed once | Second native run |
 | OV-1002 | `ov/responsiveness` `57a7f892` | Stream delivery defect fixed (12.2 s → 0.65–0.85 s) | Incremental-edit and scroll budgets; frame budgets fail on a no-GPU host |
 | OV-502–504 | `ov/retrieval-index` `a87a7b4c` | Owned FTS5 index, quality corpus (recall@5 0.947), incremental indexer and worker lifecycle, unit-tested | Fix one customization anchor, rebuild with Node 24.18.0, then 3 native verifiers |
-| OV-1004 | `ov/release-safety` `faaf91c8` | Secret scanner; two corrupt-state defects fixed; 3 verifiers written | Native runs of the 3 verifiers |
+| OV-1004 | `ov/release-safety` `02fcc1dd` | Secret scanner, recovery guide; 6 product fixes with unit tests, including **security**: workspace tasks auto-ran on folder open without a prompt (`task.allowAutomaticTasks` now off by default), and a dropped shared-process crash listener (an OV-1003 owner) | Fix the corrupt-state baseline ("Provider Name" field not found); asserting runs of the 3 matrices ×2 on the final build; release-safety evidence doc (about 1 session) |
 
 Not started (paused at the usage limit, no commits): OV-704 and OV-604 preparation
 (`ov/modes-inventory`), OV-703 (`ov/remote-ssh`), OV-802 (`ov/upstream-host`) and
