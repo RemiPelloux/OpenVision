@@ -497,29 +497,41 @@ async function httpOwnership() {
   await probe(first.page, 'h-user', userId, owners.user, [owners.project, selected]);
   await probe(first.page, 'h-dedupe', selectedId, selected, [owners.user, owners.project]);
   result.checks.perServerHttpCallAttribution = true;
+  // Utility process keys: `<identifier>::mcpScope:profile:<base64 id>[:project:…]:cfg:…`.
+  const committed = async prefix => (await events()).filter(event => event.event === 'attempt-committed' &&
+    String(event.identifier).startsWith(`${prefix}::`)).map(event => String(event.identifier));
+  const retired = async key => (await events()).filter(event => event.event === 'transport-retirement' && event.identifier === key).length;
+  const defaultProfile = `profile:${Buffer.from('default').toString('base64').replace(/=+$/, '')}:`;
+  const [defaultUserKey] = (await committed(userId)).filter(key => key.includes(defaultProfile));
+  const [projectKey] = await committed(projectId);
+  assert.ok(defaultUserKey && projectKey, 'The utility owns both same-named HTTP servers under separate keys');
+  const callSession = owner => owner.requests.findLast(item => item.method === 'tools/call')?.session;
+  const userSession = callSession(owners.user);
   const second = await secondWindow(first.app, projects['project-b']); await selectModel(second);
-  const userSessions = owners.user.sessions.length, projectRetired = (await retirements(projectId)).length;
-  const userRetired = (await retirements(userId)).length;
   await closeWindow(first.app, first.page);
-  await until('project HTTP session retired after its only window closes', async () => (await retirements(projectId)).length > projectRetired, grace);
-  assert.equal((await retirements(userId)).length, userRetired, 'The sibling window keeps the profile HTTP session');
+  await until('project HTTP transport retired after its only window closes', async () => await retired(projectKey) > 0, grace);
+  assert.equal(await retired(defaultUserKey), 0, 'The sibling window keeps the profile HTTP transport');
   await probe(second, 'h-user-after-close', userId, owners.user, [owners.project]);
-  assert.equal(owners.user.sessions.length, userSessions, 'The profile call reuses its live session');
+  assert.equal(callSession(owners.user), userSession, 'The profile call reuses its live session');
   result.checks.windowCloseRetiresOnlyItsHttpSession = true;
-  // Named profile window: separate session, retired when that window closes.
+  // Named profile window: its own key and session, retired when that window closes.
   const named = await secondWindow(first.app, projects['project-c'], ['--profile', 'ov-named']);
-  await until('named profile HTTP session', () => owners.user.sessions.length > userSessions, 45000);
-  const namedRetired = (await retirements(userId)).length;
+  let namedKey;
+  await until('named profile HTTP transport', async () =>
+    Boolean(namedKey = (await committed(userId)).find(key => !key.includes(defaultProfile))), 45000);
   await closeWindow(first.app, named);
-  await until('named profile HTTP session retired', async () => (await retirements(userId)).length > namedRetired, grace);
-  // In-place profile switch retires the previous profile's session and opens a new one.
-  const beforeSwitch = { sessions: owners.user.sessions.length, retired: (await retirements(userId)).length };
+  await until('named profile HTTP transport retired', async () => await retired(namedKey) > 0, grace);
+  // In-place profile switch retires the previous profile's transport and commits the new profile's.
+  const beforeSwitch = { commits: (await committed(userId)).filter(key => key === namedKey).length, retired: await retired(namedKey) };
   await second.keyboard.press('F1');
   await second.keyboard.type('Profiles: Switch Profile'); await second.keyboard.press('Enter');
   await second.locator('.quick-input-widget .monaco-list-row').filter({ hasText: 'ov-named' }).first().click();
   await until('switched window title', async () => / - ov-named - /.test(await second.title()), 20000);
-  await until('new profile HTTP session', () => owners.user.sessions.length > beforeSwitch.sessions, 45000);
-  await until('previous profile HTTP session retired after switch', async () => (await retirements(userId)).length > beforeSwitch.retired, grace);
+  await until('switched profile HTTP transport', async () => (await committed(userId)).filter(key => key === namedKey).length > beforeSwitch.commits, 45000);
+  await until('previous profile HTTP transport retired after switch', async () => await retired(defaultUserKey) > 0, grace);
+  await probe(second, 'h-user-after-switch', userId, owners.user, [owners.project]);
+  assert.notEqual(callSession(owners.user), userSession, 'The switched profile uses its own HTTP session');
+  result.observations.httpKeys = { defaultUserKey, projectKey, namedKey };
   result.observations.httpRetirements = (await events()).filter(event => event.event === 'transport-retirement');
   result.checks.profileSwitchAndNamedWindowRetireTheirHttpSessions = true;
   const requests = h.requests.length;
