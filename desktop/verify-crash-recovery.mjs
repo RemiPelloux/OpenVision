@@ -256,7 +256,13 @@ async function runCell(scenario, role) {
     } else {
       record.replacement = await recovered(app, hostPid, role, record.killed, 20000);
       record.notifications = await notifications(page);
-      if (!record.replacement) {
+      if (!record.replacement && role === 'shared-process') {
+        // Upstream recovery is a full application restart, offered by a prompt.
+        // Its button relaunches the app outside the verifier's ownership, so the
+        // cell records the prompt and performs that restart itself below.
+        record.recovery = { mode: 'prompt: restart the application',
+          prompt: record.notifications.find(text => /shared background process terminated unexpectedly/i.test(text)) };
+      } else if (!record.replacement) {
         // The app's own recovery control, when it offers one.
         const restart = page.getByRole('button', { name: /^Restart( Extension Host)?$/ }).filter({ visible: true });
         if (await restart.count()) {
@@ -302,7 +308,8 @@ async function runCell(scenario, role) {
     record.closeExit = exits.at(-1);
     record.survivorsAfterClose = (await survivors(runId, [hostPid])).map(entry => entry.cmdline);
     ({ app, page, child } = await launch(profile, `${cell} restart`));
-    record.restart = { editorRestored: (await editorText(page)).includes(unsavedText(cell)) };
+    record.restart = { editorRestored: (await editorText(page)).includes(unsavedText(cell)),
+      roleRunning: (await roles(app, child.pid)).some(entry => entry.role === role) };
     if (scenario === 'agent') {
       await openChat(page).catch(() => {});
       record.restart.chatRestored = await page.getByText(prompt, { exact: false }).filter({ visible: true }).count() > 0;
@@ -324,7 +331,10 @@ async function runCell(scenario, role) {
 function judge(record) {
   const fail = message => record.violations.push(message);
   if (record.failure) fail(`failure: ${record.failure}`);
-  if (!record.replacement) fail(`${record.role} did not restart`);
+  if (record.role === 'shared-process') {
+    if (!record.recovery?.prompt) fail('no restart prompt after the shared process crashed');
+    if (!record.restart?.roleRunning) fail('shared process not running after the application restart');
+  } else if (!record.replacement) fail(`${record.role} did not restart`);
   if (record.editorRestored === false) fail('unsaved editor text not present after recovery');
   if (record.restart && !record.restart.editorRestored) fail('unsaved editor text not restored after restart');
   if (record.scenario === 'agent') {
