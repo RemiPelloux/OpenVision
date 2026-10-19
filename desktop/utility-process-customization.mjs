@@ -71,35 +71,55 @@ export function isolateUtilityProcessRuns(text) {
   return `${runMarker}\n${text.slice(0, field)}\nopenvisionRuns = 0;\n${text.slice(field)}`;
 }
 
-// OV-1004: Electron may emit a utility process's "exit" before the app-level
-// "child-process-gone" for the same kill. Releasing every listener on exit then
-// dropped the crash listener first, so onCrash never fired: a killed shared
-// process showed no "restart the application" prompt. The crash listener now
-// lives in its own store until the owner's next run starts (or the owner is
-// disposed): at most one per owner, and a later run never sees it because it is
-// released before that run registers its own listeners.
-const crashMarker = '/* OpenVision utility process crash listener v1 */';
-export function keepCrashListenerUntilNextRun(text) {
+// OV-1004: Electron reports a killed utility child's "exit" before the app-level
+// "child-process-gone" event. Exit releases every listener of the run, so the
+// crash was never reported: a SIGKILLed shared process showed no "restart the
+// application" prompt. On exit, the run's service name is now handed to one
+// shared app listener (installed once, not per owner) that forwards a gone
+// event for that name to the owner's onCrash. The hand-off ends when the event
+// arrives, after a short grace, or when the owner's next run starts, so a late
+// event never reaches a later run and no listener stays with the owner.
+const crashMarker = '/* OpenVision utility process late crash v1 */';
+const lateGrace = 5000;
+export function forwardLateCrash(text) {
   if (text.includes(crashMarker)) return text;
-  if (!text.includes(marker) || !text.includes(runMarker)) throw Error('Utility crash listener requires listener ownership and run identity');
+  if (!text.includes(marker) || !text.includes(runMarker)) throw Error('Utility late crash requires listener ownership and run identity');
   const { base, method } = utilityProcessContract(text);
   const listeners = method(base, 'registerListeners'), source = text.slice(listeners.start, listeners.end);
-  const gone = source.indexOf('"child-process-gone"');
-  const add = source.lastIndexOf(`${field}.add(`, gone);
-  if (gone < 0 || add < 0 || source.indexOf('"child-process-gone"', gone + 1) !== -1 ||
-      source.slice(add, gone).split(`${field}.add(`).length !== 2 || /;\s*$/.test(source.slice(add, gone)))
-    throw Error('Utility process crash listener changed');
+  const [, , service] = listeners.value.params.map(param => param.name);
+  const exit = /"exit",\s*\)\(\(([\w$]+)\) => \{[\s\S]*?this\._onExit\.fire\(\{ pid: this\.processPid, code: \1, signal: "unknown" \}\),\s*(?=this\.onDidExitOrCrashOrKill\(\))/g;
+  const matches = [...source.matchAll(exit)];
+  if (matches.length !== 1 || !service || !/\bHn = class extends z\b/.test(text) || !text.includes('MessageChannelMain as sUe, app as iUe'))
+    throw Error('Utility process exit contract changed');
+  // Before onExit fires: an exit listener may start the next run at once, and
+  // that run must find (and end) this hand-off.
+  const at = matches[0].index + matches[0][0].indexOf('this._onExit.fire(');
+  let edited = source.slice(0, at) + `this.openvisionAwaitLateGone(${service}),\n                    ` + source.slice(at);
   const body = listeners.value.body.start + 1 - listeners.start;
-  const edited = source.slice(0, body) + `\n${crashMarker}\nthis.openvisionCrashListeners.clear();` +
-    source.slice(body, add) + 'this.openvisionCrashListeners.add(' + source.slice(add + `${field}.add(`.length);
+  edited = edited.slice(0, body) + `\n${crashMarker}\nHn.openvisionLateGone?.delete(this.openvisionLateName);` + edited.slice(body);
   text = text.slice(0, listeners.start) + edited + text.slice(listeners.end);
+  const helper = `
+openvisionLateName = void 0;
+openvisionAwaitLateGone(name) {
+  const runs = Hn.openvisionLateGone ??= (iUe.on("child-process-gone", (event, details) => {
+    const forward = details?.type === "Utility" ? Hn.openvisionLateGone.get(details.name) : void 0;
+    if (forward) { Hn.openvisionLateGone.delete(details.name); forward(details); }
+  }), new Map());
+  const pid = this.processPid;
+  const forward = details => { clearTimeout(timer); this._onCrash.fire({ pid, code: details.exitCode, reason: details.reason }); };
+  const timer = setTimeout(() => { if (runs.get(name) === forward) runs.delete(name); }, ${lateGrace});
+  timer.unref?.();
+  this.openvisionLateName = name;
+  runs.set(name, forward);
+}
+`;
   const fieldAt = base.body.start + 1;
-  return text.slice(0, fieldAt) + '\nopenvisionCrashListeners = this._register(new Te());' + text.slice(fieldAt);
+  return text.slice(0, fieldAt) + helper + text.slice(fieldAt);
 }
 
 export async function installUtilityProcessOwnership(root) {
   const path = join(root, 'source/app/out/main.js'), before = await readFile(path, 'utf8');
-  const after = keepCrashListenerUntilNextRun(isolateUtilityProcessRuns(ownUtilityProcessListeners(before)));
+  const after = forwardLateCrash(isolateUtilityProcessRuns(ownUtilityProcessListeners(before)));
   if (before === after) return;
   const backup = join(root, 'backups/utility-process', `${digest(before)}.js`);
   await mkdir(dirname(backup), { recursive: true });
