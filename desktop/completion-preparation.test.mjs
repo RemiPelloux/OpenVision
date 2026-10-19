@@ -63,6 +63,24 @@ for (const variant of ['desktop', 'glass']) {
     assert.deepEqual(f.counts, { reads: 0, hooks: 0, runCppCalls: 0, debounces: 0 });
   });
 
+  test(`${variant}: no request is prepared for uncommitted input method composition`, async () => {
+    const composing = preparationFixture(method);
+    composing.editor.inComposition = true;
+    const controller = new AbortController();
+    await composing.run('id', controller);
+    assert.deepEqual(composing.counts, { reads: 0, hooks: 0, runCppCalls: 0, debounces: 0 });
+    assert.equal(controller.signal.aborted, true);
+    const waiting = Promise.withResolvers(), entered = Promise.withResolvers();
+    const started = preparationFixture(method, { debounce: () => { entered.resolve(); return waiting.promise; } });
+    const run = started.run('id');
+    await entered.promise; started.editor.inComposition = true; waiting.resolve(false); await run;
+    assert.equal(started.counts.reads, 0); assert.equal(started.counts.runCppCalls, 0);
+    const committed = preparationFixture(method);
+    committed.editor.inComposition = false;
+    await committed.run('id');
+    assert.equal(committed.counts.runCppCalls, 1, 'Committed text is requested normally');
+  });
+
   test(`${variant}: hook permission denial and dispatch debounce remain effective`, async () => {
     const denied = preparationFixture(method);
     denied.context.executeBeforeTabFileReadHook = async () => { throw new HookDenied(); };
