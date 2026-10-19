@@ -83,7 +83,7 @@ export async function inspectProfile({ userDataDir, profileHome = join(userDataD
     jsonFinding(join(profileHome, dataFolderName, 'argv.json'), 'argv.json', 'Runtime arguments fall back to their defaults.',
       'Fix it with "Preferences: Configure Runtime Arguments".'),
     jsonFinding(join(user, 'mcp.json'), 'User mcp.json', 'MCP servers configured in it are not started.',
-      'Fix it in Settings > Tools & MCP or edit the file.'),
+      'Fix the file; its servers are listed under Settings > Customize > MCPs.'),
   ])) if (finding) findings.push(finding);
   const acknowledged = await readAcknowledged(userDataDir);
   return findings.filter(finding => !acknowledged.has(finding.id));
