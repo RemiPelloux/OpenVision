@@ -171,7 +171,11 @@ export async function applyImport(plan) {
 }
 
 export async function restoreImport(root, input, selected) {
-  const { destinations, backup, manifest, pending } = await prepareImportRestore(root, input, selected);
+  const prepared = await prepareImportRestore(root, input, selected), { destinations, backup, manifest } = prepared;
+  // Undo newest first: imported extension directories go while the registry still
+  // names them, and the registry is reverted last, so a running app never sees an
+  // unregistered imported directory to adopt.
+  const pending = [...prepared.pending].reverse();
   if (manifest.status === 'restored') return { restored: 0, backup };
   const temporaries = [], created = [];
   try {
