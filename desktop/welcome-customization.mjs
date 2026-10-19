@@ -1,6 +1,7 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
+import { blockEnd } from './source-branding.mjs';
 
 const marker = '/* OpenVision local welcome screen v3 */';
 
@@ -55,14 +56,53 @@ export function customizeEarlyWelcome(text) {
   return text.slice(0, node.start) + `function showWelcomeSplashEarly() { ${marker} }` + text.slice(node.end);
 }
 
+const editorWindowMarker = '/* OpenVision opens the calling window\'s project */';
+
+// Project Home "Enter workspace" in the Agent (Glass) window asks the main process
+// for an editor window. Upstream focuses any editor window or opens an empty one;
+// open (or focus) an editor window on the caller's own folder or workspace instead.
+export function openCallerProject(text) {
+  const owners = [...text.matchAll(/async cursorFocusOrOpenEditorWindow\(([\w$]+)\) \{/g)];
+  if (owners.length !== 1) throw new Error('Editor window owner missing or ambiguous');
+  const [match, caller] = owners[0], open = owners[0].index + match.length - 1, end = blockEnd(text, open);
+  const body = text.slice(open, end);
+  if (body.includes(editorWindowMarker)) return text;
+  for (const evidence of ['this.windowsMainService.getWindows()', 'config?.glass !== !0', 'this.environmentMainService.args',
+    'context: 5', 'forceNewWindow: !0', 'forceEmpty: !0', 'classic: !0, glass: !1'])
+    if (!body.includes(evidence)) throw new Error(`Editor window owner changed: ${evidence}`);
+  const replacement = `{
+            ${editorWindowMarker}
+            const workspace = this.windowsMainService.getWindowById(${caller})?.openedWorkspace;
+            const target = workspace?.uri ? { folderUri: workspace.uri }
+              : workspace?.configPath ? { workspaceUri: workspace.configPath } : undefined;
+            const t = this.windowsMainService.getWindows().find((i) => i.config?.glass !== !0 &&
+              (!target || i.openedWorkspace?.id === workspace.id));
+            if (t) return (t.focus({ force: !0 }), !0);
+            const { glass: n, classic: r, ...s } = this.environmentMainService.args;
+            return (
+              await this.windowsMainService.open({
+                context: 5,
+                contextWindowId: ${caller},
+                cli: { ...s, classic: !0, glass: !1 },
+                forceNewWindow: !0,
+                ...(target ? { urisToOpen: [target] } : { forceEmpty: !0 }),
+              }),
+              !0
+            );
+          }`;
+  return text.slice(0, open) + replacement + text.slice(end);
+}
+
 export async function installWelcomeStartup(root) {
-  const relative = 'out/vs/code/electron-sandbox/workbench/workbench.js';
-  const path = join(root, 'source/app', relative);
-  const before = await readFile(path, 'utf8');
-  const after = customizeEarlyWelcome(before);
-  if (before === after) return;
-  const backup = join(root, 'backups/welcome', relative);
-  await mkdir(dirname(backup), { recursive: true });
-  await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
-  await writeFile(path, after);
+  for (const [relative, transform] of [['out/vs/code/electron-sandbox/workbench/workbench.js', customizeEarlyWelcome],
+    ['out/main.js', openCallerProject]]) {
+    const path = join(root, 'source/app', relative);
+    const before = await readFile(path, 'utf8');
+    const after = transform(before);
+    if (before === after) continue;
+    const backup = join(root, 'backups/welcome', relative);
+    await mkdir(dirname(backup), { recursive: true });
+    await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
+    await writeFile(path, after);
+  }
 }

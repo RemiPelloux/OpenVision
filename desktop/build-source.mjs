@@ -64,7 +64,7 @@ import { installPtyKillRelease } from './pty-kill-release-customization.mjs';
 import { installIsolatedNotifications } from './notification-customization.mjs';
 import { installLinuxKeyringSelection } from './linux-keyring-customization.mjs';
 import { installApprovalDefault } from './autorun-customization.mjs';
-import { installWindowTitles } from './source-branding.mjs';
+import { installWindowTitles, installEmptyScreenBranding } from './source-branding.mjs';
 import { validateGeneratedArtifacts } from './generated-artifact-integrity.mjs';
 import { installRenameVersionGuard } from './rename-version-customization.mjs';
 import { installNativeAddonGuard } from './native-addon-diagnostics.mjs';
@@ -176,6 +176,7 @@ await installProfileStorageDurability(root);
 await installProfileWritability(root);
 await installFileWriteRestore(root);
 await installWindowTitles(root);
+await installEmptyScreenBranding(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
