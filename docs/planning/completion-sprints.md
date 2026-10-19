@@ -531,7 +531,7 @@ Outcome: clean-checkout build ownership with replaceable native/service contract
 
 | ID / status | User story | Dependencies | Acceptance gates and required evidence |
 | --- | --- | --- | --- |
-| OV-801 / Partial | As a maintainer, I can account for every runtime dependency. | OV-501; native inventory | Map all 52 PE paths and 15 distinct WASM payloads to digests, loaded role, source/license/version, ABI and rebuild/replacement disposition. Complete the original five missing WASM REA records (four now evidenced; one remains). Keep pseudocode counts separate from source/build availability. |
+| OV-801 / Verified | As a maintainer, I can account for every runtime dependency. | OV-501; native inventory | Map all 52 PE paths and 15 distinct WASM payloads to digests, loaded role, source/license/version, ABI and rebuild/replacement disposition. Complete the original five missing WASM REA records (four now evidenced; one remains). Keep pseudocode counts separate from source/build availability. Verified on Linux x64 under baseline v3 (19 October): `ov/native-inventory` merged; coordinator clean rebuild, then `verify:native-inventory` (pinned AppImage digest matched; 39 native and 22 WASM paths, 49 dispositions, 0 failures) and `verify:native-loaded` run `4dVbAy` pass first time as a non-root user. Defaults recorded as reversible owner decisions ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)): the Linux AppImage is the denominator, non-REA `esbuild.wasm` evidence is accepted, and the 3.24.18 reference counts are informational. Windows PE paths moved to OV-901. |
 | OV-802 / Planned | As a maintainer, I can build the host and upstream dependencies. | OV-801 | Pin Electron/runtime/addon/toolchain sources and lockfiles; rebuild storage, watcher, terminal and OS bindings where required. Verify ABI and behavioral fixtures; record binary provenance and applicable distribution terms. |
 | OV-803 / Planned | As a maintainer, required proprietary helpers and hosted contracts are replaceable. | OV-501; OV-601; OV-801 | Prioritize loaded file-service, parsing and Agent/sandbox helpers by measured dependency. Recover interfaces or implement replacements; test authority, malformed input, process identity and cleanup. Pseudocode is analysis evidence, not buildable source. |
 | OV-804 / Planned | As a contributor, I can build OpenVision without the original installation. | OV-802; OV-803 | Clean machine/checkout with documented sources and pinned tools builds, launches and passes core acceptance. No ignored recovery tree, original install or undocumented local file needed; repeat build and explain non-deterministic outputs. |
@@ -572,6 +572,8 @@ gate is unknown, and performance budgets pass. Any narrowed scope requires an
 explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
+
+19 October 2026, OV-801: merged `ov/native-inventory`; clean rebuild; `verify:native-inventory` and `verify:native-loaded` (`4dVbAy`) pass first time. Verified on Linux x64: **19/44**.
 
 19 October 2026, OV-603/OV-602: merged `ov/autocomplete-safety` and `ov/autocomplete-quality`; clean rebuild; 3 suites and 9 native checks pass first time. Both are Verified on Linux x64: **18/44**.
 

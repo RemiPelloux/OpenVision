@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **18 (40.91%)** |
-| Partial / Planned / Unknown | 11 / 14 / 1 |
-| 80% target | 36 Verified: **18 more** |
+| Verified | **19 (43.18%)** |
+| Partial / Planned / Unknown | 10 / 14 / 1 |
+| 80% target | 36 Verified: **17 more** |
 | Code on `main` | All worker branches merged; clean build and 13 unit suites pass with 0 failures |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
 | X | External: a machine, balance or account |
 
-### Verified (18)
+### Verified (19)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602.
+- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -63,7 +63,6 @@ merged code. "Gate" is what blocks promotion:
 | OV-303 MCP safety | Merged | `--simultaneous` fails 5/5 on the merged clean build (re-approved child runs an old config) | L | Round 1 (running) |
 | OV-304 Authenticated MCP | Merged; the worker's modes pass ×2 | Coordinator rerun; security issue #9 and #10 follow-ups | L | Round 1 (running) |
 | OV-501 Data destinations, OV-1005 Telemetry | Merged; 14/14 destination runs pass | One 600 s `telemetry:extended` run on the merged build | L | Round 1 (running) |
-| OV-801 Native inventory | Merged | One `verify:native-inventory` rerun; defaults to accept | L, D | Round 1 (running) |
 | OV-1004 Release safety | Merged; 6 fixes, 3 verifiers written | Corrupt-state baseline fix; assertion runs ×2; evidence | L | Round 1 (running) |
 | OV-903 Linux completion | Merged; keyring hang (#6) fixed | Explorer budget and `mcp-session` on the merged code; branding #8 | L | Round 2 |
 | OV-1003 Idle resources | Merged | Startup traversal 1,394 > 1,300 listings; slope 15.7 > 15 MiB in 1 of 3 runs | L | Round 2 |
