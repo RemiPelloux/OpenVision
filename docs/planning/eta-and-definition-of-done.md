@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **25 (56.82%)** |
-| Partial / Planned / Unknown | 8 / 10 / 1 |
-| 80% target | 36 Verified: **11 more** |
+| Verified | **26 (59.09%)** |
+| Partial / Planned / Unknown | 7 / 10 / 1 |
+| 80% target | 36 Verified: **10 more** |
 | Code on `main` | All worker branches merged; clean build and 13 unit suites pass with 0 failures |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
 | X | External: a machine, balance or account |
 
-### Verified (25)
+### Verified (26)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504.
+- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -60,7 +60,6 @@ merged code. "Gate" is what blocks promotion:
 | OV-103 Agent editing | All native checks pass | Owner accepts the residuals: unproducible faults, review returning as pending, untracked early-exit command, restore-save failure, untested Stop cases | D | Decision only |
 | OV-402 Language tools | New checks pass | Large-file symbols 13.0 s > 10 s; renderer p95 259 > 250 ms on 4 CPUs; Python/Go/Rust syntax-only | D | Decision, or an optimization session |
 | OV-1001 Agent context | Budgets pass | Long closed chats keep about half their history (React/Solid retainers) | D | Decision, or work under OV-1003 |
-| OV-303 MCP safety | Merged | `--simultaneous` fails 5/5 on the merged clean build (re-approved child runs an old config) | L | Round 1 (running) |
 | OV-1004 Release safety | Merged; 6 fixes, 3 verifiers written | Corrupt-state baseline fix; assertion runs ×2; evidence | L | Round 1 (running) |
 | OV-903 Linux completion | Merged; keyring hang (#6) fixed | Explorer budget and `mcp-session` on the merged code; branding #8 | L | Round 2 |
 | OV-1003 Idle resources | Merged | Startup traversal 1,394 > 1,300 listings; slope 15.7 > 15 MiB in 1 of 3 runs | L | Round 2 |
@@ -88,7 +87,7 @@ merged code. "Gate" is what blocks promotion:
 
 | Round | Work | Effect if it passes |
 | --- | --- | --- |
-| 1 (running) | MCP regression; release safety (OV-304, 501, 1005, 801 done: +4) | Up to +2: OV-303, 1004 |
+| 1 (running) | Release safety (OV-303, 304, 501, 1005, 801 done: +5) | Up to +1: OV-1004 |
 | 2 (running) | Linux completion; idle resources; responsiveness; upgrade rerun (retrieval done: +3) | Up to +4: OV-903, 1003, 1002, 904 |
 | 3 | The four never-started groups (may need a second session each) | Up to +4: OV-704, 703, 802, 803 |
 | Owner decisions (#5) | OV-103, 402, 1001, 604 | Up to +4 |
