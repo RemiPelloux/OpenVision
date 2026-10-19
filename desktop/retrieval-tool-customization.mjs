@@ -18,6 +18,9 @@ export const retrievalModules = ['retrieval-index.mjs', 'retrieval-store.mjs', '
 export const retrievalCommands = [
   { command: 'openvision.retrieval.rebuild', title: 'Rebuild Codebase Index', category: 'OpenVision' },
   { command: 'openvision.retrieval.delete', title: 'Delete Codebase Index', category: 'OpenVision' },
+  { command: 'openvision.retrieval.pause', title: 'Pause Codebase Indexing', category: 'OpenVision' },
+  { command: 'openvision.retrieval.resume', title: 'Resume Codebase Indexing', category: 'OpenVision' },
+  { command: 'openvision.retrieval.cancel', title: 'Cancel Codebase Indexing', category: 'OpenVision' },
 ];
 const options = { ecmaVersion: 'latest', sourceType: 'script' };
 
@@ -85,11 +88,17 @@ export function installCodebaseSearch(text) {
     `searchImplementation: openvisionCodebaseSearch.searchFor((c ?? r.localProvider)?.openvisionProviders),${stub[2]}taskToolProps: ` +
     text.slice(stub.index + stub[0].length);
 
-  // Activation registers the watcher, commands and lazy index services.
-  const activation = single(text, /async function ([\w$]+)\(e\) \{(\s+)if \(G\.cursor\.cursorAgentHostEnabled\) \{/g, 'extension activation');
-  single(text, new RegExp(`activate: \\(\\) => ${activation[1].replace(/\$/g, '\\$')},`, 'g'), 'activation export');
-  const insert = activation.index + activation[0].indexOf('{') + 1;
-  text = text.slice(0, insert) + `${activation[2]}openvisionCodebaseSearch.activate(e);` + text.slice(insert);
+  // Activation registers the watcher, commands and lazy index services. The
+  // exported activate function is resolved by name; other customizations may
+  // insert their own statements at its start.
+  const exported = single(text, /\bactivate: \(\) => ([\w$]+),/g, 'activation export')[1];
+  const escaped = exported.replace(/\$/g, '\\$');
+  const activation = single(text, new RegExp(`async function ${escaped}\\(e\\) \\{`, 'g'), 'extension activation');
+  const node = parseExpressionAt(text, activation.index, options);
+  if (node.type !== 'FunctionExpression' || !text.slice(node.start, node.end).includes('G.cursor.cursorAgentHostEnabled'))
+    throw new Error('Codebase search contract changed: activation owner');
+  const insert = node.body.start + 1;
+  text = text.slice(0, insert) + '\n      openvisionCodebaseSearch.activate(e);' + text.slice(insert);
   return `${retrievalToolMarker}\nconst openvisionCodebaseSearch = require("./openvision-codebase-search.cjs");\n${text}`;
 }
 

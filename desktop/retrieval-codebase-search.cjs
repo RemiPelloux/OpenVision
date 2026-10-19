@@ -154,6 +154,12 @@ function activate(context) {
       const count = await each(entry => entry.deleteIndex(), 'index deleted');
       api.window.setStatusBarMessage(`OpenVision index deleted for ${count} folder(s)`, 10000);
     }),
+    api.commands.registerCommand('openvision.retrieval.pause', () => each(entry => entry.pause(), 'indexing paused')),
+    api.commands.registerCommand('openvision.retrieval.resume', () => each(entry => entry.resume(), 'indexing resumed')),
+    api.commands.registerCommand('openvision.retrieval.cancel', () => each(async entry => {
+      const result = await entry.cancel();
+      log(`cancel latency ${result.latencyMs ?? 'n/a'} ms`);
+    }, 'indexing canceled')),
     api.commands.registerCommand('openvision.retrieval.status', async () => {
       const statuses = [];
       for (const [root, entry] of state.services) statuses.push({ root, directory: await entry.directory(), activations: entry.activations,

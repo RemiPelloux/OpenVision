@@ -152,8 +152,7 @@ await installReviewDescriptors(root);
 await installAgentReviewRecovery(root);
 await installAgentWriteDurability(root);
 await installReviewSnapshotGuidance(root);
-// installRetrievalTool(root) stays unwired until its extension-activation anchor
-// is fixed: it refuses to patch the current build (ov/retrieval-index worker report).
+await installRetrievalTool(root);
 await installRenameVersionGuard(root);
 await installNativeAddonGuard(root);
 await installProtectedExtensions(root);

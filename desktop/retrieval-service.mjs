@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdir, readdir, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, realpath, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import { schemaVersion } from './retrieval-store.mjs';
@@ -73,6 +73,7 @@ export class RetrievalService {
     worker.on('error', error => this.workerFailed(worker, error));
     worker.on('exit', code => this.workerExited(worker, code));
     this.opened = await this.request('open');
+    await this.record();
     if (this.opened.quarantined) this.log(`Corrupt retrieval index moved to ${this.opened.quarantined}`);
     const first = this.activations === 1 || this.overflow;
     const needsSync = first || this.opened.rebuildReason || !this.opened.complete;
@@ -81,6 +82,16 @@ export class RetrievalService {
     this.track(needsSync ? this.request('sync') : this.request('changes', { paths }))
       .then(() => this.removeOlderVersions(), () => {});
     return this.opened;
+  }
+
+  // Lifecycle JSON beside the database: activations, releases, last cancel.
+  async record() {
+    if (!this.indexDirectory) return;
+    const path = join(this.indexDirectory, 'service.json'), temporary = `${path}.${process.pid}.tmp`;
+    const value = { at: new Date().toISOString(), running: Boolean(this.worker), activations: this.activations, releases: this.releases,
+      lastRelease: this.lastRelease, lastCancel: this.lastCancel, exits: this.exits, opened: this.opened, pending: this.pending.size };
+    await mkdir(this.indexDirectory, { recursive: true }).then(() => writeFile(temporary, JSON.stringify(value, null, 2) + '\n'))
+      .then(() => rename(temporary, path)).catch(() => {});
   }
 
   receive(worker, message) {
@@ -157,7 +168,9 @@ export class RetrievalService {
     const started = performance.now();
     const result = await this.request('cancel');
     await this.indexing?.catch(() => {});
-    return { ...result, latencyMs: Math.round((performance.now() - started) * 10) / 10 };
+    this.lastCancel = { ...result, latencyMs: Math.round((performance.now() - started) * 10) / 10, at: new Date().toISOString() };
+    await this.record();
+    return this.lastCancel;
   }
 
   status() {
@@ -185,6 +198,8 @@ export class RetrievalService {
     if (this.worker === worker) { await worker.terminate(); this.worker = undefined; }
     this.indexing = undefined;
     this.releases++;
+    this.lastRelease = { reason, at: new Date().toISOString() };
+    await this.record();
     this.log(`Retrieval worker released (${reason})`);
     return { released: true, reason };
   }
