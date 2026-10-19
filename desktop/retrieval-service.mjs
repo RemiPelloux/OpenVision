@@ -121,6 +121,8 @@ export class RetrievalService {
 
   async search(query, { k = 10, pathPrefix, waitMs = this.options.searchWaitMs } = {}) {
     await this.activate();
+    // A canceled or failed full reconcile resumes on the next search.
+    if (this.needsSync && !this.indexing) { this.needsSync = false; this.track(this.request('sync')); }
     let indexing = 'complete';
     if (this.indexing) {
       const timer = Promise.withResolvers();
@@ -156,7 +158,10 @@ export class RetrievalService {
   track(job) {
     const tracked = job.finally(() => { if (this.indexing === tracked) this.indexing = undefined; });
     this.indexing = tracked;
-    tracked.catch(error => { if (error.code !== 'ABORT_ERR') this.log(`Retrieval indexing failed: ${error.message}`); });
+    tracked.catch(error => {
+      this.needsSync = true;
+      if (error.code !== 'ABORT_ERR') this.log(`Retrieval indexing failed: ${error.message}`);
+    });
     return tracked;
   }
 
