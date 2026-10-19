@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { lazyMcpRouting, recreateUnownedConnectedServers } from './mcp-routing-customization.mjs';
+import { lazyMcpRouting, recreateUnownedConnectedServers, releaseInFlightLegacyClients } from './mcp-routing-customization.mjs';
 import { recoveredMcpRouting } from './mcp-routing-fixture.mjs';
 import { readableApp } from './recovered-source.mjs';
 
@@ -76,5 +76,34 @@ for (const variant of ['desktop', 'glass']) {
     assert.deepEqual(await run(true, false), ['s'], 'A stale connected status after a routing reset is recreated');
     assert.deepEqual(await run(false, false), ['s']);
     assert.throws(() => recreateUnownedConnectedServers('async createClientIfNotExists(e) {}'), /connected-server skip contract/);
+  });
+}
+
+for (const variant of ['desktop', 'glass']) {
+  test(`${variant}: a routing reset deletes a legacy client again once its in-flight creation settles`, async () => {
+    const text = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
+    const patched = releaseInFlightLegacyClients(text);
+    assert.equal(releaseInFlightLegacyClients(patched), patched);
+    const start = patched.indexOf('resetMcpProcessRouting(', patched.search(/\n\s+resetMcpProcessRouting\(\w\) \{/));
+    const method = patched.slice(start, patched.indexOf('\n          }\n', start) + 12);
+    const Service = new Function('lw', 'H0', `return class { ${method} }`)(() => {}, () => {});
+    const run = async processRouted => {
+      let settle; const deletes = [];
+      const pending = new Promise(resolve => { settle = resolve; });
+      const service = Object.assign(new Service(), {
+        mcpProcessRoutedServerIds: new Set(processRouted ? ['s'] : []), getMcpProcessRouteChangingServerIds: () => new Set(['s']),
+        mcpClientProviders: new Map([['s', { deleteClient: async reason => { deletes.push(reason); } }]]),
+        createClientPromises: new Map([['s', pending]]), successfullyInitializedServers: new Set(), _durableSnapshots: new Map(),
+        _cursorMcpDegradedServers: new Set(), statusEnteredAtMs: new Map(), lastDeleteReasons: new Map(),
+        _nextServerIncarnationId() {}, _clearSnapshotWatchdog() {}, clearServerStatus() {}, setToolsCache() {}, setPromptsCache() {},
+        setResourcesCache() {}, setInstructionsCache() {}, omitServerIds: value => value, _onDidChangeMcpSnapshots: { fire() {} }, _initialized: false });
+      service.resetMcpProcessRouting('routing');
+      await tick(); const before = deletes.length;
+      settle(true); await tick(); await tick();
+      return [before, deletes.length];
+    };
+    assert.deepEqual(await run(false), [1, 2], 'The in-flight legacy client is deleted again after it connects');
+    assert.deepEqual(await run(true), [1, 1], 'A process client is not deleted twice');
+    assert.throws(() => releaseInFlightLegacyClients('resetMcpProcessRouting(e) {}'), /reset owner missing|reset contract/);
   });
 }
