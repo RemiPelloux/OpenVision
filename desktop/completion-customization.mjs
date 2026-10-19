@@ -6,6 +6,7 @@ import { cachedFile } from './build-cache.mjs';
 import { digest, fileHash } from './import-files.mjs';
 import { cancelPendingCompletionOnEscape } from './completion-keyboard.mjs';
 import { isolatePartialCompletionUndo, isolateFullCompletionUndo } from './completion-undo.mjs';
+import { guardCompletionAcceptVersion } from './completion-accept.mjs';
 import { debounceCompletionPreparation } from './completion-preparation.mjs';
 
 const marker = '/* OpenVision custom autocomplete v1 */';
@@ -36,6 +37,7 @@ export function customCompletion(text, variant) {
   text = cancelPendingCompletionOnEscape(text, variant);
   text = isolatePartialCompletionUndo(text, variant);
   text = isolateFullCompletionUndo(text, variant);
+  text = guardCompletionAcceptVersion(text, variant);
   const anchor = text.indexOf('async getStream({');
   if (anchor < 0 || text.indexOf('async getStream({', anchor + 1) >= 0)
     throw new Error('Completion request owner missing or ambiguous.');
@@ -87,7 +89,7 @@ export async function installCompletion(root) {
   await writeFile(join(out, 'vs/code/electron-sandbox/workbench/openvision-completion-provider.js'),
     helper.replace("from './model-providers.js'", "from './openvision-model-providers.js'"));
   await copyFile(join(root, 'desktop/completion-ipc.mjs'), join(out, 'openvision-completion-ipc.js'));
-  const dependencies = ['desktop/completion-customization.mjs', 'desktop/completion-keyboard.mjs', 'desktop/completion-undo.mjs', 'desktop/completion-preparation.mjs', 'desktop/telemetry-settings.mjs',
+  const dependencies = ['desktop/completion-customization.mjs', 'desktop/completion-keyboard.mjs', 'desktop/completion-undo.mjs', 'desktop/completion-accept.mjs', 'desktop/completion-preparation.mjs', 'desktop/telemetry-settings.mjs',
     'desktop/build-cache.mjs', 'desktop/import-files.mjs', 'tooling/dependencies.mjs', 'tooling/package-lock.json'];
   const hashes = await Promise.all(dependencies.map(path => fileHash(join(root, path))));
   if (hashes.some(hash => !hash)) throw new Error('Completion customization dependency missing.');

@@ -164,10 +164,172 @@ tokens were not measured, and the fixture has no model latency.
 ## Open items
 
 - **Intermittent multiline Tab (resolved 18 October).** Tab accepted; the harness read the file before the asynchronous accept and the save landed, see [verifier stability](../verification/verifier-stability-linux.md#1-completion-acceptance).
-- These are Linux x64 source-build results. Windows was not rerun after the
-  undo fix. macOS and the packaged build were not run.
-- Line-wise accept, split editors showing the same document, and IME
-  composition remain unverified.
-- OV-603 stays **Partial**: the platform matrix and the open items above are
-  still required. OV-602 is unchanged: live quality and native live acceptance
-  remain open. No story is promoted.
+- Line-wise accept, split editors and IME composition: closed on Linux on
+  19 October, see below.
+- Windows was not rerun after the undo fix, the accept-race fix or the IME fix.
+  macOS and the packaged build were not run. These are platform stories.
+
+## 19 October: accept race, split editors, IME, line-wise accept, budgets
+
+Date: **19 October 2026**. **Linux x64 only**: a cloud container with 4 CPUs,
+15 GB RAM, Xvfb at 1920×1080, dbus and gnome-keyring, Node 24.18.0 tooling.
+Input: Cursor 3.21.13, prepared from the pinned AppImage and built from source
+on parent `b4f52a56` plus this change. Every response came from the controlled
+local HTTP fixture; no live inference. Windows and macOS were not run.
+
+### Defect: a keystroke during the asynchronous accept corrupted the line
+
+**Owner (observed in the recovered workbench).** `acceptSuggestion` saves the
+current range text into the suggestion, then `makeChangesOnAcceptCppSuggestion`
+awaits `this._diffingService.wordDiff(...)` (a round trip to the
+`cursor-always-local` extension host). After the await it checks only the abort
+flag, then applies edits whose positions were computed from the saved text. Word
+accept (`makeEditsForNextWordAccept`) takes the same path.
+
+**Reproduction.** The natural window is a few milliseconds. The harness widens it
+with a controlled fixture: a DevTools conditional breakpoint on the first
+statement of the accept owner wraps the registered word-diff provider so that
+each diff is held for 1,500 ms. The condition always returns false, so nothing
+pauses, and the wrapper records when each diff started and was released. Each
+case asserts that the keystroke landed inside that held window. Before the fix
+(`eNwtoO`, unmodified product):
+
+| Case | Keystroke | Saved | Verdict |
+| --- | --- | --- | --- |
+| Full Tab accept of `raceValue();` | Home, `y` | `yconst raced =raceValue(); ` | **Corrupted**: insertion placed inside the user's text |
+| Full Tab accept of `nearValue();` | `z` at the insertion point | `const nearby = nearValue();z` | Correct |
+| Word accept of `alpha + beta;` | Home, `q` | `qonst partly = alpha` | **Corrupted**: the user's `c` was deleted |
+
+**Fix.** `desktop/completion-accept.mjs` (`guardCompletionAcceptVersion`) records
+`model.getVersionId()` immediately before the word-diff declaration. Right after
+the existing abort check, it returns the same `NotAccepted` value when, in local
+mode, the model was disposed or its version changed. One owner covers full and
+word accept in both the desktop and Glass bundles. The owner is found by AST: an
+async class method `makeChangesOnAcceptCppSuggestion` with a `model` parameter,
+exactly one `await this._diffingService.wordDiff(...)` declaration, followed by
+an identifier-only abort check with a return. Any drift stops the build. The
+transform is idempotent (marker `OpenVision completion accept version guard v1`).
+Unit tests exercise full and word accept for both variants with the model
+unchanged, changed or disposed during the diff, unchanged nonlocal behaviour,
+drift failures, and a single application to the recovered bundles.
+
+**Result.** In `4l1I6L`, `Zbb2nT` and `Yp9RJX` every raced accept is dropped and
+the user's text is exact: `yconst raced = `, `const nearby = z`,
+`qconst partly =`. Undo never shows any part of the suggestion. Because a
+dropped accept adds no undo boundary, a `z` typed right after the trigger space
+joins that typing element, so one undo gives `const nearby =`.
+**Decision recorded:** a raced accept is dropped rather than recomputed; the
+suggestion stays available to the next Tab.
+
+### Defect: completions requested for uncommitted IME composition
+
+**Observed** (`9Rc3kk`). With a suggestion visible, `Input.imeSetComposition`
+(`に`, then `にほ`) followed by `Input.insertText` (`日本`) produced two fixture
+requests whose prefixes ended with the uncommitted `に` and `にほ`. Composition
+updates edit the model, and the local trigger treated them as typing.
+
+**Fix.** The local preparation guard (`desktop/completion-preparation.mjs`, marker
+now `v2`) also aborts while `editor.inComposition` is set, both before and after
+its debounce. Unit tests cover composition before the debounce, composition
+starting during it, and normal requests after a commit, for both variants.
+
+**Result** (`yjFLFB`, `Zbb2nT`, `Yp9RJX`). After composition started, the only
+request was for the committed `const ime = 日本`. The document was exact and the
+ghost text was hidden during composition. With a request pending (2 s fixture
+delay), composing `か` and committing `カ` aborted the pending upstream request.
+The late `lateValue` response never became visible, and the document was exactly
+`const imePending = カ`.
+
+### Split editors on one document
+
+`View: Split Editor Right` shows `completion.js` in two groups. The request was
+made from the right group, and both views rendered the ghost text. Tab inserted
+`both();` exactly once: the saved file and both views read `const split = both();`.
+One undo restored `const split = ` in the file and in both views. A suggestion
+shown in the right view, followed by Tab in the left view, accepted it once at
+the document position (`const cross = other();`), and both views stayed
+identical. The recovered model listener already ignores content events from a
+non-active editor when several editors share a model.
+
+### Line-wise accept
+
+Not supported for Cursor Tab, and recorded as such. The recovered runtime has
+`editor.action.inlineSuggest.acceptNextLine` only for VS Code inline suggestions
+(precondition `inlineSuggestionVisible`). The Cursor Tab accept owner has only
+full and next-word paths. Natively, with a two-line Cursor Tab suggestion
+visible, the command palette offered no "Accept Next Line" command, and the
+document was unchanged.
+
+### Long-line trigger: traced, harness fixed, budgeted
+
+**Traced.** The earlier long-line case typed the 20,030-character line with one
+`insertText`. Stack samples taken with `Debugger.pause` while the renderer was
+busy all began in the editor's `type` command. That command applies typed text
+one character at a time (for auto-closing interceptors), so the line became
+20,030 model edits. Each edit ran the Cursor Tab model listener:
+`isCppEnabledForEditor` reads the whole model (`getValue`), and
+`fireCppSuggestionDebouncedDiffHistory` awaits `formatDiffHistory`, a
+`runCommand` round trip to the extension host. The trigger for the final text
+queued behind all of them. That explains the 14.7 s request and the runs with no
+request. On this host the renderer grew past Chromium's 8 GiB renderer data
+limit and crashed (`WsP8Z2`, `2iGuCB`: `renderer process gone (reason: crashed,
+code: 5)`; dmesg `VmData … exceed data ulimit`). The harness then waited with no
+timeout.
+
+**Changed (harness).** `long.js` is written before launch with the 20,030-character
+line, and only the trigger space is typed. A suggestion this long is shown as a
+line diff (the old line on a red background plus an inline addition), not as
+`.cursor-ghost-text`, so the case waits for either form. Tab must clear it, the
+saved line must be exact, and one undo must be exact. A renderer crash now fails
+the running case instead of hanging the verifier.
+
+**Product observation, not changed.** Each model edit costs Cursor Tab a full
+document copy and an extension-host round trip, so an extension or command that
+types a very long string pays that cost per character. Pasting is one edit.
+
+**Result.** Trigger to request is 410–413 ms (the 400 ms debounce), with an
+8,000-unit prefix (8,411-byte body), the line accepted exactly and one exact undo.
+Peak renderer RSS across a full `--acceptance` run was 1.4 GB.
+
+### Declared workload budgets
+
+`desktop/completion-budgets.json` declares the workload and its budgets. The
+workload is the burst cases at 30, 150 and 600 ms intervals (8 keystrokes, 250 ms
+fixture reply) plus the long-line trigger. The baseline was measured on the
+unmodified product before either fix (`zF98Oa`, `DdBVaK`). Rule: latency budget
+= largest baseline value × 1.5, rounded up to 50 ms. Request counts and stale
+suggestions are exact. `--acceptance` fails when any budgeted metric is over
+budget or was not measured. A diagnostic `--cases` run checks only the cases it
+ran.
+
+| Metric | Baseline (`zF98Oa` / `DdBVaK`) | Budget | `Zbb2nT` | `Yp9RJX` |
+| --- | --- | ---: | ---: | ---: |
+| 30 ms: last key → request | 401 / 401 ms | 650 ms | 402 | 402 |
+| 30 ms: request → visible | 441 / 439 ms | 700 ms | 444 | 429 |
+| 150 ms: last key → request | 401 / 400 ms | 650 ms | 401 | 400 |
+| 150 ms: request → visible | 583 / 553 ms | 900 ms | 570 | 559 |
+| 600 ms: last key → request | 401 / 400 ms | 650 ms | 401 | 400 |
+| 600 ms: request → visible | 291 / 296 ms | 450 ms | 288 | 290 |
+| Requests per burst (30 / 150 / 600 ms) | 1 / 1 / 8 | 1 / 1 / 8 | 1 / 1 / 8 | 1 / 1 / 8 |
+| Stale suggestion visible | 0 | 0 | 0 | 0 |
+| Long line: trigger → request | 412 / 412 ms | 650 ms | 413 | 410 |
+
+Request → visible includes the fixture's 250 ms reply delay. These are fixture
+latencies with no model time; they bound client overhead, not live quality.
+
+### 19 October runs
+
+| Run | Mode | Result |
+| --- | --- | --- |
+| `WsP8Z2`, `2iGuCB` | `--acceptance`, main harness, unmodified product | Renderer crashed in the long-line case (8 GiB limit); verifier hung and was stopped |
+| `ek060O`, `ZU0KmN` | `--cases=longLine,bursts`, harness development | Fail: the long-line suggestion is a line diff, not ghost text |
+| `zF98Oa`, `DdBVaK` | `--cases=longLine,bursts`, unmodified product | Pass; budget baseline |
+| `pPpaaO`, `W30glh` | `--cases=accept-race`, unmodified product | Harness development: the delay wrapper was installed on the service proxy and never called |
+| `pv6QI1`, `eNwtoO` | `--cases=accept-race`, unmodified product | Fail: corruption reproduced (table above) |
+| `4l1I6L` | `--cases=accept-race`, accept guard | Raced accepts dropped; failed only on a wrong undo expectation, corrected in the harness |
+| `9Rc3kk` | `--cases=accept-race,split-editors,ime,line-accept`, accept guard | Race and split pass; IME fail: requests for uncommitted text |
+| `yjFLFB` | `--cases=ime,line-accept`, both fixes | Pass |
+| `Zbb2nT`, `Yp9RJX` | `--acceptance`, both fixes | Pass, first attempt each; host exit 0; no renderer errors; all budgets pass |
+| `F7g48c`, `1eHLi8` | default (13-case matrix), both fixes | Pass, first attempt each |
+| `Vwje5B`, `kIf8pP` | `--editing`, both fixes | Pass; partial undo 2 steps; cancellation typing/Escape/switch 412/3/73 and 409/4/51 ms |
+| `8hxSDa` | `verify:inline-edit`, both fixes | Pass; host exits 0, 0 |
