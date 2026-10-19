@@ -66,8 +66,8 @@ async function undoTo(page, file, expected, trace, limit = 4) {
   do {
     await page.keyboard.press('ControlOrMeta+z');
     current = await savedText(page, file); states.push(current);
-  } while (current !== expected && states.length < limit);
-  return { steps: states.length, exact: current === expected, states };
+  } while (![expected].flat().includes(current) && states.length < limit);
+  return { steps: states.length, exact: [expected].flat().includes(current), states };
 }
 
 // Full Tab acceptance: exact insertion, a single undo step back to the typed
@@ -383,14 +383,14 @@ async function acceptRace({ page, file, fixture, appRoot, trace }) {
     let timing = await racedAccept(page, file, fixture, { mode: 'race-inside', prefix, insertion, key: 'Tab', delayMs,
       edit: async () => { await page.keyboard.press('Home'); await page.keyboard.insertText('y'); } });
     outcomes.fullInside = { ...timing, ...classify(await savedText(page, file), 'y' + prefix + insertion, 'y' + prefix) };
-    let undo = await undoTo(page, file, prefix, trace);
+    let undo = await undoTo(page, file, [prefix, prefix.trimEnd()], trace);
     outcomes.fullInside.undo = undo;
     // Full accept, then a keystroke at the insertion point (next to the range).
     prefix = 'const nearby = '; insertion = 'nearValue();';
     timing = await racedAccept(page, file, fixture, { mode: 'race-near', prefix, insertion, key: 'Tab', delayMs,
       edit: () => page.keyboard.insertText('z') });
     outcomes.fullNear = { ...timing, ...classify(await savedText(page, file), prefix + insertion + 'z', prefix + 'z') };
-    undo = await undoTo(page, file, prefix, trace);
+    undo = await undoTo(page, file, [prefix, prefix.trimEnd()], trace);
     outcomes.fullNear.undo = undo;
     // Word (partial) accept, then a keystroke at the start of the line.
     prefix = 'const partly = '; insertion = 'alpha + beta;';
@@ -399,12 +399,16 @@ async function acceptRace({ page, file, fixture, appRoot, trace }) {
     const saved = await savedText(page, file);
     outcomes.wordInside = { ...timing, ...classify(saved.trimEnd(), 'q' + prefix + 'alpha', 'q' + prefix.trimEnd()) };
     if (saved === 'q' + prefix) outcomes.wordInside.outcome = 'accept-dropped';
-    undo = await undoTo(page, file, prefix, trace);
+    undo = await undoTo(page, file, [prefix, prefix.trimEnd()], trace);
     outcomes.wordInside.undo = undo;
   } finally { await hook.release(); trace?.push({ acceptRace: outcomes }); }
   for (const [name, item] of Object.entries(outcomes)) {
     assert.notEqual(item.outcome, 'corrupted', `${name}: raced accept corrupted the document: ${JSON.stringify(item.saved)}`);
+    // A dropped accept adds no undo boundary, so a keystroke typed right after the
+    // trigger joins its typing element; undo then lands before the trigger space.
     assert.ok(item.undo.exact, `${name}: undo must restore the exact pre-accept text`);
+    if (item.outcome === 'accept-dropped') assert.ok(item.undo.states.every(state => !/Value|alpha/.test(state)),
+      `${name}: undo exposed part of a dropped suggestion`);
   }
   return outcomes;
 }

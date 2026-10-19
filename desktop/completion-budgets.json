@@ -4,7 +4,33 @@
     "burstIntervalsMs": [30, 150, 600],
     "burstKeystrokes": 8,
     "burstResponseDelayMs": 250,
-    "longLineCharacters": 20030
+    "longLineCharacters": 20030,
+    "debounceMs": 400
   },
-  "budgets": {}
+  "baseline": {
+    "date": "2026-10-19",
+    "host": "Linux x64 container, 4 CPUs, Xvfb; unmodified product, completion-verification-zF98Oa and -DdBVaK",
+    "rule": "Latency budget = largest baseline value x 1.5, rounded up to 50 ms. Request counts and stale suggestions are exact.",
+    "observed": {
+      "burst30.lastKeyToRequestMs": [401, 401], "burst30.requestToVisibleMs": [441, 439],
+      "burst150.lastKeyToRequestMs": [401, 400], "burst150.requestToVisibleMs": [583, 553],
+      "burst600.lastKeyToRequestMs": [401, 400], "burst600.requestToVisibleMs": [291, 296],
+      "longLine.triggerToRequestMs": [412, 412]
+    }
+  },
+  "budgets": {
+    "burst30.lastKeyToRequestMs": 650,
+    "burst30.requestToVisibleMs": 700,
+    "burst30.requests": 1,
+    "burst30.staleVisible": 0,
+    "burst150.lastKeyToRequestMs": 650,
+    "burst150.requestToVisibleMs": 900,
+    "burst150.requests": 1,
+    "burst150.staleVisible": 0,
+    "burst600.lastKeyToRequestMs": 650,
+    "burst600.requestToVisibleMs": 450,
+    "burst600.requests": 8,
+    "burst600.staleVisible": 0,
+    "longLine.triggerToRequestMs": 650
+  }
 }
