@@ -94,3 +94,32 @@ test('local mode keeps the Agent host topology off unless its bundle carries the
     assert.ok(guarded || hostProtected, `${variant}: Agent host topology reachable without the provider error boundary`);
   }
 });
+
+for (const variant of ['desktop', 'glass']) {
+  test(`${variant} retry removes only the empty provider-failure placeholder, never content or other errors`, async () => {
+    const text = providerManualRetry(await readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8'));
+    assert.equal(providerManualRetry(text), text);
+    assert.match(text, /cause\?\.name === "LocalProviderError" \? \{ openvisionProviderFailurePlaceholder: true \} : \{\}/);
+    const start = text.search(/clearErrorDetailsAndServiceStatusUpdatesFromLatestAIMessages\([\w$]+\) \{/);
+    const source = 'function ' + text.slice(start, start + 4000);
+    const method = text.slice(start, start + parseExpressionAt(source, 0, { ecmaVersion: 'latest' }).end - 'function '.length);
+    const typeName = method.match(/r\.type === ([\w$]+)\.AI/)[1];
+    const run = conversation => {
+      const calls = [];
+      const owner = runInNewContext(`({ ${method} })`, { [typeName]: { AI: 2, HUMAN: 1 } });
+      owner._composerDataService = {
+        getComposerData: () => ({}), getLoadedConversation: () => conversation,
+        deleteComposerBubbles: (handle, ids) => calls.push(['delete', ...ids]),
+        updateComposerBubbleSetStore: (handle, id, update) => update((key, value) => calls.push(['set', id, key, value])),
+      };
+      owner.clearErrorDetailsAndServiceStatusUpdatesFromLatestAIMessages({ composerId: 'c' });
+      return calls;
+    };
+    const human = { type: 1, bubbleId: 'u', text: 'prompt' }, error = { title: 'Provider failure' };
+    assert.deepEqual(run([human, { type: 2, bubbleId: 'p', text: '', codeBlocks: [], errorDetails: error, openvisionProviderFailurePlaceholder: true }]),
+      [['delete', 'p']]);
+    for (const bubble of [{ text: 'partial', openvisionProviderFailurePlaceholder: true }, { text: '' }, { text: '', toolFormerData: {}, openvisionProviderFailurePlaceholder: true }])
+      assert.deepEqual(run([human, { type: 2, bubbleId: 'b', codeBlocks: [], errorDetails: error, ...bubble }]),
+        [['set', 'b', 'errorDetails', undefined], ['set', 'b', 'serviceStatusUpdate', undefined]]);
+  });
+}
