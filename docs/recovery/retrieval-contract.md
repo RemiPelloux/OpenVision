@@ -67,7 +67,8 @@ re-evaluate only the affected subtree.
 ## Enumeration and ignores
 
 - ripgrep (`@vscode/ripgrep` from the pinned application) lists files:
-  `--files --hidden --no-require-git --no-config --null --glob !.git`. It owns
+  `--files --hidden --no-require-git --no-ignore-parent --no-config --null --glob !.git`
+  (ignore files above the folder do not apply, as in editor search). It owns
   `.gitignore`, `.ignore`, `.rgignore`, `.git/info/exclude` and the global Git
   excludes. Symbolic links are **not** followed.
 - OpenVision applies, after ripgrep and for every single-path decision:

@@ -35,7 +35,7 @@ function run(command, args, { cwd, signal, maxBytes = 256 * 1024 * 1024 } = {}) 
 // ripgrep owns .gitignore/.ignore/.git/info/exclude/global excludes and hidden
 // file traversal; symbolic links are never followed (OV-401 cycle safety).
 export async function enumerate({ root, rgPath, scope = '', pruneGlobs = [], signal }) {
-  const args = ['--files', '--hidden', '--no-require-git', '--no-config', '--null', '--glob', '!.git',
+  const args = ['--files', '--hidden', '--no-require-git', '--no-ignore-parent', '--no-config', '--null', '--glob', '!.git',
     ...pruneGlobs.flatMap(glob => ['--glob', glob]), ...(scope ? ['--', scope] : [])];
   const result = await run(rgPath, args, { cwd: root, signal });
   // Exit 1 means "no files"; 2 reports per-path errors with partial output.
@@ -71,7 +71,8 @@ export class RetrievalIndex {
     this.rgPath = rgPath;
     this.grammarDirectory = grammarDirectory;
     this.filesExclude = filesExclude;
-    this.options = { ...indexDefaults, ...options, grammarDirectory };
+    const defined = Object.fromEntries(Object.entries(options).filter(([, value]) => value !== undefined));
+    this.options = { ...indexDefaults, ...defined, grammarDirectory };
     this.log = log;
     this.counters = newCounters();
     this.store = new RetrievalStore(directory, { log });
