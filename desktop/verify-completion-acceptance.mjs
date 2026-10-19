@@ -531,7 +531,8 @@ async function imeComposition({ page, file, fixture }) {
     const pendingSaved = await savedText(page, file);
     assert.equal(pendingSaved, pendingPrefix + 'カ', `IME composition with a pending request corrupted the document: ${JSON.stringify(pendingSaved)}`);
     assert.equal(lateVisible, 0, 'A response for text before the composition became visible');
-    return { visibleWhileComposing, requestsDuringComposition: during.length, uncommittedRequests: 0, exactCommit: true,
+    return { visibleWhileComposing, requestsAfterCompositionStart: during.map(item => item.prefixTail.slice(-4)),
+      uncommittedRequests: uncommitted.length, exactCommit: true,
       pendingAborted: pending.aborted === true, lateSuggestionVisible: false };
   } finally { await cdp.detach().catch(() => {}); }
 }
