@@ -213,6 +213,18 @@ async function runCell(scenario, role) {
       await startTerminal(page, cell);
       record.terminalChild = { ...terminals.get(cell), socket: undefined, closed: undefined };
     }
+    // Observation only: Electron's child-process-gone events and the number of
+    // app listeners for them, before and after the kill.
+    record.goneListenersBefore = await app.evaluate(({ app }) => {
+      globalThis.openvisionVerifierGone ??= [];
+      if (!globalThis.openvisionVerifierGoneListener) {
+        globalThis.openvisionVerifierGoneListener = (_event, details) => globalThis.openvisionVerifierGone.push({ at: Date.now(), ...details });
+        app.on('child-process-gone', globalThis.openvisionVerifierGoneListener);
+      }
+      return app.listenerCount('child-process-gone') - 1;
+    });
+    // Recorded: native crash prompts are sent to the focused window only.
+    record.focusedBeforeKill = await app.evaluate(({ BrowserWindow }) => !!BrowserWindow.getFocusedWindow());
     const windowsBefore = xWindows();
     record.killed = await killOwned(app, hostPid, role);
     record.killedAt = Date.now();
@@ -240,6 +252,9 @@ async function runCell(scenario, role) {
       } else record.recovery = { mode: 'automatic' };
     }
     record.recoveryMs = record.replacement ? Date.now() - record.killedAt : undefined;
+    const gone = await app.evaluate(({ app }) => ({ events: globalThis.openvisionVerifierGone ?? [],
+      listeners: app.listenerCount('child-process-gone') - (globalThis.openvisionVerifierGoneListener ? 1 : 0) })).catch(() => undefined);
+    record.goneEvents = gone?.events.filter(event => event.at >= record.killedAt - 1000); record.goneListenersAfter = gone?.listeners;
     record.notifications = [...new Set([...(record.notifications ?? []), ...(page ? await notifications(page) : [])])];
     if (page) {
       record.editorRestored = (await editorText(page)).includes(unsavedText(cell));
