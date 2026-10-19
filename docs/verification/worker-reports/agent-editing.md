@@ -1,0 +1,144 @@
+# Worker report: OV-103 Agent editing (branch `ov/agent-editing`)
+
+19 October 2026. Linux x64 only (cloud container, Xvfb, `dbus-run-session`,
+Node 24.18.0, prepared Cursor 3.21.13 runtime input). Controlled local model
+fixtures only; no live inference. Evidence:
+[Linux closure report](../../recovery/rea-agent-editing-linux-closure.md).
+
+## Summary
+
+All five in-scope OV-103 defects recorded in the evidence docs were reproduced or
+traced, fixed at their owners with idempotent, drift-guarded build
+customizations, covered by producer tests and asserted by the native verifiers.
+One further data-loss defect was found and fixed: the renderer's disk provider
+ignored short writes, so an Undo that grows a file on a full volume left a torn
+file with no error. A first fix for the stale review bar (priming every
+observable bridge) caused a chat-resend regression under `verify:profile-io-faults`;
+it was replaced by a registry-only fix before the final runs.
+
+Final state: every listed native verifier passes twice on the final source build
+(`--review-abrupt` after a verifier correction), unit suites pass, and the
+ledger is unchanged (**6/42 Verified, 14.29%**; no story promoted by this branch).
+
+## Tasks
+
+| # | Task | State | Notes |
+| --- | --- | --- | --- |
+| 1 | Stale single-file review bar after Undo+Confirm and after restart | **Done** | Cause: the diff registry's event-backed observable drops the first change after a bar subscribes. Fix: `review-descriptors-customization.mjs`. `verify:agent-interruption` asserts no Undo/Keep after Undo+Confirm and after a restart (write-stop, continuation-kill, continuation-late-kill). |
+| 2 | Interrupted write shown as "Edited" | **Done** | `agent-edit-interruption-customization.mjs` (load owner, live cancellation, transcript step). Asserted for write-stop (live after Stop), write-close and write-kill (after restart; the interrupted chat is opened from history when restart shows a new one). |
+| 3 | Undo All stops at first failure; silent post-commit cleanup | **Done** | Joined Undo All plus a Retry notification for both groups (`agent-review-customization.mjs`). New `groupedRejectRetry` scenario in `verify:review-deletion` (failing Retry reported again, then success; text edits, callback, event and history entries once). Producer tests in `test:agent-review`. |
+| 4 | Full-volume Reject/Undo; profile-on-full-volume review snapshots; ItemTable flush; stale selector | **Done** | Project volume: Undo shrinking (passes) and growing (**defect found and fixed**, `file-write-restore-customization.mjs`). Profile volume: Undo of a pending review while full; bytes restored, 0 review rows after freeing, no resurrection, integrity ok. ItemTable flush loss: already fixed by the profile storage durability owner (confirmed, no change). Selector corrected. |
+| 5 | Orphan temporaries of files never written again | **Done** | Bounded startup sweep in the Agent execution extension (`agent-write-durability-customization.mjs`). `verify:agent-interruption` asserts no aged temporary after restart and that a recent temporary of another file is kept. |
+| 6 | Final reruns with run IDs | **Done** | See Verification. |
+
+## Defects found and fixed
+
+| Defect | Owner | Commit(s) |
+| --- | --- | --- |
+| Undo All stops at first failed member; post-commit cleanup failures silent | workbench composer service `rejectAllDiffs`/`acceptAllDiffs` | `a8fb3d56`, `c0d8a5ef` |
+| Interrupted edit shown as "Edited" | workbench bubble load `I0u`, `cancelUnfinishedToolCalls`, transcript step `fh_` | `fa3b3e11`, `7282e863`, `d9460ec9` |
+| Orphan interrupted-write temporaries | Agent execution extension activation | `e6634598` |
+| Stale review bar after Undo/Confirm | diff change source registry `descriptorsObservable` | `ebab236c` (replaces `cd727c41`) |
+| Torn file from a growing save on a full volume (new) | main-process disk provider `doWriteFile` | `87646256` |
+| Stale status selector | `verify-profile-io-faults.mjs` | `1e264090` |
+| Abrupt-exit check rejected a signal exit (verifier) | `verify-agent.mjs` `restartReviewHost` | `118e88e4` |
+
+## Verification
+
+Host notes. The documented setup was followed, with these differences:
+
+- `nvm install` as root first (the `ov` user cannot write `/opt/nvm`); the proxy CA
+  bundle copied to a path `ov` can read (`NODE_EXTRA_CA_CERTS`).
+- `/home/user/OpenVision Projects` created for `ov` (the build creates it).
+- Packages installed: `sqlite3` (the profile verifier's CLI dependency) and
+  `gnome-keyring`. Without a Secret Service, Electron's `safeStorage` reports
+  encryption unavailable and every provider **Save** hangs. Each verifier's
+  private D-Bus session starts `gnome-keyring-daemon --unlock --components=secrets`
+  with a throwaway password; without `--unlock` a blocking `gcr-prompter` appears.
+- Native verifiers ran one at a time as `ov` under
+  `xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session`.
+
+Unit and static checks (final tree):
+
+| Command | Result |
+| --- | --- |
+| `npm run test:agent-review` | 112/112, 0 skipped |
+| `npm run test:provider-storage` | 72/72 |
+| `npm run check:desktop` | pass |
+| `npm run test:build-integrity` | 26/26 |
+| `npm run build:desktop` (clean) | pass: 239 scripts, 124 manifests, 32 local main-process modules |
+| `npm run docs:check` | no failures |
+| `npm run status:features` | 6/42 Verified, 14.29% (unchanged) |
+| `npm run test:shutdown` (not touched) | 33/34: `pty-exec.test.mjs` "reports a missing executable like the recovered fork path" fails in this container (null exit status); unrelated, not fixed |
+
+Final native runs (run IDs are `logs/<id>/`, kept locally):
+
+| Verifier | Runs | Result |
+| --- | --- | --- |
+| `verify:agent-interruption` (all 8 cases) | `agent-interruption-kDlGK6`, `agent-interruption-uyhFtv` | pass, first-time on the final build both times |
+| `verify:review-deletion` | `review-deletion-verification-ZVMov2`, `-AjBk43` | pass both |
+| `verify:agent-io-faults` | `agent-io-fault-verification-NVIpol`, `-FPIrb1` | pass both |
+| `verify:profile-io-faults` | `profile-io-fault-verification-zBhen6`, `-FC8IG1` | pass both |
+| `verify:agent` | `agent-verification-MPqv95` | pass |
+| `verify:agent -- --review-recovery` | `agent-verification-Em5nj1`, `-afYwQ7` | pass both |
+| `verify:agent -- --review-abrupt` | `agent-verification-IGL0so` (**fail**), then `-WzQKFu`, `-0lnUhE` | First run failed the verifier's own exit-code check (abrupt exit ended in SIGABRT). After the check was corrected to accept a signal, two passes. Not counted as a first-time pass. |
+
+Development runs, not credited: pre-fix reproduction of the torn growing Undo
+(`agent-io-fault-verification-MCbHJJ`); the global bridge fix passed
+`agent-interruption-rdLSl3` but regressed chat in `profile-io-fault-verification-76c8P7`
+and `-HqoNJW`, with control `-jLKHVz` passing without it; iteration runs of the new
+assertions (`review-deletion-verification-MZIUKH`, `-1bNxg7`, `-rfy6iY`, `-vM9a75`,
+`agent-io-fault-verification-AHjXrJ` aborted by the worker, and earlier
+interruption diagnostics).
+
+## Recommendation per story
+
+**OV-103: not yet promoted by this worker.** Every Linux-doable clause recorded
+in the OV-103 evidence docs that this branch was asked to close now passes
+natively. Remaining Linux gaps before promotion, in the coordinator's ledger:
+
+- Owner decisions listed below (residual exclusions) must be accepted.
+- Recorded residuals not fixed here: an accepted review whose record deletion
+  keeps failing through shutdown returns as pending after restart; a command whose
+  group leader exits early is untracked; an Undo whose restore save fails removes
+  the review while the restored text is only in the dirty editor (visible error,
+  Retry works).
+- Not covered: Stop/close during argument streaming, MCP tools, interruption
+  between files of a multi-file turn, glass workbench.
+
+## Moved to platform/live stories
+
+- `verify:review-storage` (Windows-only by assertion).
+- Windows and macOS reruns of every verifier above.
+- Live `--edit` runs per model (`verify:agent:live`).
+
+## Defaults pending owner decision
+
+- Power loss, kernel crash and device EIO: non-producible residual exclusions.
+- A deletion that keeps failing through shutdown restoring an accepted review as
+  pending, and a command whose group leader exits early being untracked: recorded
+  residuals (not trivially fixable here).
+- Stop/close during argument streaming, MCP tools and between files of a
+  multi-file turn: recorded, not added (not cheap with the current fixture).
+- Interrupted-edit wording: *Edit attempted* plus "Edit interrupted before it
+  completed. Check the file; any change that was written stays available in
+  review." Also applies when a held write completed after Stop (the change stays
+  in review).
+- Retry notification wording and severity (warning) for failed review cleanup.
+- Disk provider restore limit: previous bytes are kept for files up to 64 MiB.
+- Startup sweep bounds: 4,000 directories, 200,000 entries, depth 32; `.git` and
+  `node_modules` skipped; roots open at activation only.
+
+## Open risks
+
+- The disk-provider change affects every renderer save (one extra read of the
+  previous bytes, ≤ 64 MiB). Its cost was not measured.
+- The registry observer is permanent for the window's lifetime (one extra
+  descriptor computation per registry change).
+- The global bridge regression shows that other `Tge`/`Eke` consumers rely on the
+  lost-first-change behavior; one of them resends a chat turn after storage
+  recovers (not traced, not fixed here).
+- `--review-abrupt`: `process.exit(23)` once ended in SIGABRT during teardown;
+  the cause was not investigated.
+- Host setup differs from the documented proven setup: `sqlite3` and
+  `gnome-keyring` were installed (see Verification).

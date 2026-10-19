@@ -64,7 +64,50 @@ verifier's private D-Bus session starts it unlocked with a throwaway password
 (`gnome-keyring-daemon --unlock --components=secrets`). Without `--unlock` the
 D-Bus-activated daemon opens a blocking `gcr-prompter`.
 
-RESULTS_PLACEHOLDER
+Final source build: workbench SHA-256
+`5e4c7371a84281cc957e953b2a31cddd90fe96f32f8fefff067e623121c7a628`, main
+`f02dcb79e6e06ee4f299e8106624bb69766f8d02939b609b8bfb9dcd0ba7427f`, Agent exec
+`390ffa514c52b7136f18dc38cfa7f376cf202a48010212357ef78b1ace053e0c`. A clean build
+validates 239 scripts, 124 manifests and 32 local main-process modules. Runs are
+retained locally under `logs/`; they are not published.
+
+| Check | Result |
+| --- | --- |
+| `test:agent-review` | **112/112**, 0 skipped (new: joined Undo All and Retry, interrupted-edit load/live/step, startup sweep, review descriptors, real `RLIMIT_FSIZE` provider writes; each with a recovered-owner control) |
+| `test:provider-storage`, `test:build-integrity`, `check:desktop`, `docs:check` | 72/72, 26/26, pass, no failures |
+| `verify:agent-interruption` | **Pass** `kDlGK6` (commit `ebab236c`) and `uyhFtv` (`7718d100`): all 8 cases, 12 authenticated requests each, no renderer errors, 14 clean exits and 5 owned process-group SIGKILLs, no surviving owned process |
+| `verify:review-deletion` | **Pass** `ZVMov2` and `AjBk43`: 8 scenarios (new `groupedRejectRetry`), 18 authenticated requests, only the three injected deletion errors, no review rows at the end, normal runtime file unchanged |
+| `verify:agent-io-faults` | **Pass** `NVIpol` and `FPIrb1`; pre-fix reproduction `MCbHJJ` |
+| `verify:profile-io-faults` | **Pass** `zBhen6` and `FC8IG1`, 8 requests; regression and control `76c8P7`, `HqoNJW`, `jLKHVz` (above) |
+| `verify:agent` | **Pass** `MPqv95`: 20 requests, 2 clean exits |
+| `verify:agent -- --review-recovery` | **Pass** `Em5nj1` and `afYwQ7`: 29 requests, 5 clean exits |
+| `verify:agent -- --review-abrupt` | First run `IGL0so` **failed** its own check: the second abrupt `process.exit(23)` ended in SIGABRT, and the check accepted only a non-zero exit code. The check now accepts a signal too. **Pass** `WzQKFu` and `0lnUhE` (all three abrupt exits ended in SIGABRT; 29 requests) |
+
+Interruption cases (`kDlGK6`; `uyhFtv` identical):
+
+| Case | Bytes after exit / restart | Temporaries after exit / restart | Transcript after restart | Review bar after Undo+Confirm / after restart |
+| --- | --- | --- | --- | --- |
+| `write-stop` | changed / changed | 0 / 0 | *Edit attempted* (also live after Stop) | none / none; exact original bytes |
+| `write-close` | original / original | 1 / **0** (aged, swept) | *Edit attempted* (chat opened from history) | no review |
+| `write-kill` | original / original | 1 / **0** | *Edit attempted*; retry applies once with Keep | no review |
+| `continuation-kill`, `continuation-late-kill` | changed / changed | 0 / 0 | — | none / none; exact original bytes |
+| `approval-kill`, `shell-close`, `shell-kill` | unchanged behavior; the orphaned command is ended by the next start | — | — | — |
+
+In every edit case a recent temporary of another file was kept by the sweep.
+
+Full-volume Undo (`NVIpol`):
+
+| Stage | `notes.md` | Free bytes |
+| --- | --- | --- |
+| Undo that shrinks the file, volume full | exact original (25,490 B) | 0 before, 90,112 after (in-place save released blocks) |
+| Undo that grows the file, volume full | **saved bytes intact** (25,490 B); review removed; *Failed to save 'notes.md' … ENOSPC* with Retry | 0 / 0 |
+| Retry after freeing space | exact kept text (115,540 B) | — |
+| Pre-fix control `MCbHJJ`, same stage | **28,672-byte prefix**, no error | 0 / 0 |
+
+Profile volume full (`zBhen6`): provider save refused with the SQLITE_FULL
+message and saved on retry; Undo of a pending review with 0 bytes free restored
+the reviewed bytes; after freeing space and closing, **0** `inlineDiff:` rows;
+no review after restart; `PRAGMA integrity_check` ok.
 
 ## Residuals and limitations
 
