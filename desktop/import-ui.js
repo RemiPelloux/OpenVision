@@ -42,7 +42,7 @@ export async function importCursor() {
 }
 
 async function populate(view) {
-  const { options, profiles } = await invoke({ action: 'defaults' });
+  const { options, profiles, excluded } = await invoke({ action: 'defaults' });
   if (!view.dialog.open) return;
   const user = field(view.form, 'Cursor User directory', options.user);
   if (profiles.length > 1) {
@@ -65,6 +65,9 @@ async function populate(view) {
   group.className = 'openvision-import-categories';
   for (const name of options.categories) choices.set(name, checkbox(group, categoryLabels[name]));
   view.form.append(group);
+  const exclusions = element('p', `Never imported: ${excluded.join('; ')}.`);
+  exclusions.className = 'openvision-import-exclusions';
+  view.form.append(exclusions);
   const overwrite = checkbox(view.form, 'Use Cursor values for conflicts');
   const preview = element('button', 'Preview Import');
   const apply = element('button', 'Import');
@@ -104,6 +107,7 @@ async function populate(view) {
     view.status.textContent = `${result.files} files to import (${(result.bytes / 1024 / 1024).toFixed(1)} MiB)`;
     view.details.textContent = Object.entries(result.counts).map(([key, count]) => `${categoryLabels[key]}: ${count} files`).join('\n') +
       `\n\nFrom: ${result.source}\nTo: ${result.destination}` + (result.missing.length ? `\n\nNot found:\n${result.missing.join('\n')}` : '') +
+      `\n\nNever imported:\n${result.excluded.join('\n')}` +
       `\n\n${result.paths.slice(0, 100).join('\n')}` + (result.paths.length > 100 ? '\n...' : '');
   });
   apply.onclick = () => run(async () => {
