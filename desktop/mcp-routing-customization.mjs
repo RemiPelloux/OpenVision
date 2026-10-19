@@ -3,6 +3,7 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 const marker = '/* OpenVision defer unconfigured MCP routing v1 */';
 const wakeMarker = '/* OpenVision MCP server-status wake v1 */';
 const providerMarker = '/* OpenVision MCP connected-without-client recreate v1 */';
+const pendingMarker = '/* OpenVision MCP reset releases in-flight legacy client v1 */';
 
 export function mcpRoutingOwner(text) {
   const anchor = 'this.hasLoggedWaitingForExperimentService = !1';
@@ -16,7 +17,7 @@ export function mcpRoutingOwner(text) {
 }
 
 export function lazyMcpRouting(text) {
-  text = recreateUnownedConnectedServers(wakeMcpRouting(text));
+  text = releaseInFlightLegacyClients(recreateUnownedConnectedServers(wakeMcpRouting(text)));
   const owner = mcpRoutingOwner(text);
   const method = owner.body.body.find(entry => entry.key?.name === 'initializeAsync');
   if (!method || method.value.params[0]?.type !== 'Identifier') throw new Error('MCP routing initialization changed');
@@ -83,4 +84,30 @@ export function recreateUnownedConnectedServers(text) {
     throw new Error('MCP connected-server skip contract changed');
   const [match] = matches, [, server] = match, end = match.index + match[0].length;
   return text.slice(0, end) + ` && ${providerMarker} this.mcpClientProviders.has(${server}.identifier)` + text.slice(end);
+}
+
+// The same reset deletes the legacy (extension-host) client, but a legacy
+// connect still in flight finishes afterwards: the delete does not stop it,
+// and its STDIO child stayed alive beside the utility's child for the rest of
+// the session (trace run simultaneous-pNm0qf; coordinator run EPeEu8 timed out
+// waiting for one final child). When the reset drops a legacy client whose
+// creation is pending, delete it again once that creation settles. Process
+// clients are excluded: their delete resolves the active key by lookup and
+// could release the replacement's subscription.
+export function releaseInFlightLegacyClients(text) {
+  if (text.includes(pendingMarker)) return text;
+  const methods = [...text.matchAll(/\n\s+resetMcpProcessRouting\(([\w$]+)\) \{/g)];
+  if (methods.length !== 1) throw new Error('MCP routing reset owner missing or ambiguous');
+  const [, reason] = methods[0], start = methods[0].index;
+  const loop = /for \(const ([\w$]+) of ([\w$]+)\) \{\s*const ([\w$]+) = this\.mcpClientProviders\.get\(\1\);/g;
+  loop.lastIndex = start;
+  const match = loop.exec(text);
+  const end = text.indexOf('\n          }\n', start);
+  if (!match || match.index > end || !text.slice(match.index, end).includes(`this.createClientPromises.delete(${match[1]})`) ||
+      !text.slice(match.index, end).includes(`${match[3]}.deleteClient(${reason})`))
+    throw new Error('MCP routing reset contract changed');
+  const [, server, , provider] = match, at = match.index + match[0].length;
+  return text.slice(0, at) + ` ${pendingMarker}
+                const openvisionPendingLegacy = ${provider} && !this.mcpProcessRoutedServerIds.has(${server}) && this.createClientPromises.get(${server});
+                openvisionPendingLegacy && openvisionPendingLegacy.finally(() => ${provider}.deleteClient(${reason}).catch(() => {})).catch(() => {});` + text.slice(at);
 }
