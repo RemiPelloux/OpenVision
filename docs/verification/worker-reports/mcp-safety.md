@@ -182,3 +182,62 @@ Each of the five `--simultaneous` runs logs the extension handling
 Updated recommendation: **promote OV-303 to Verified on Linux x64**. The earlier
 caveat about the unexplained simultaneous failure is resolved by this root cause.
 
+
+## Status at stop (19 October 2026)
+
+Stopped on the owner's request while investigating the coordinator's report that
+`--simultaneous` fails deterministically on the integrated branch
+`ccr-a39d6f13-jurmdv` at `523ff1d6`. The failure is "Re-approved child runs
+the final project configuration 5 !== 8", 5 of 5 runs (`qAAPrr`, `gXdN6B`,
+`ix689u`, `zWzc6x`, `nq9ayd`, coordinator logs).
+
+**Done.** All six Linux tasks for OV-303 and five product fixes: experiments
+initialize locally (`2883160d`), project approvals are scoped to the workspace
+folder (`46a4a394`), stale connected status is recreated after a routing reset
+(`3a5e0597`), the anonymous team-settings read returns the empty answer
+(`2bfe8491`), and an in-flight legacy client is released after the reset
+(`e68c9258`). On base `5a7e579f` plus these fixes, 5 consecutive first-time
+`--simultaneous` passes plus all other modes passed (see the follow-up above).
+
+**Partly done: the integrated-branch regression.** On `523ff1d6` with an
+incremental rebuild here, `--simultaneous` passed twice first time: under
+trace (`simultaneous-JjaE4p`) and with the official verifier
+(`simultaneous-N6IXBT`). So the coordinator's 5/5 failure did not reproduce in
+this container. A clean rebuild, matching the coordinator's, was started to
+test that difference and was stopped by this request before it finished. No
+run on it exists. The local `source/` and `electron-host/` are therefore
+partial and must be rebuilt before any further native run.
+
+Current hypothesis: the failure depends on the clean build. Either a
+customization applies differently, or one merged after `5a7e579f`
+(import-restore, agent-context, language-tools, idle-resources,
+autocomplete-safety, autocomplete-quality) changes how project
+`.openvision/mcp.json` change events reach the window. In the failure, the
+re-approved project server uses the configuration of revision 5 of 8, so the
+window missed the last project file events or re-read a stale parse.
+
+Ruled out so far:
+- My own fixes on their own: 5/5 passes on `5a7e579f`, with the same verifier.
+- Incremental builds of `523ff1d6`: 2/2 passes.
+- From diff reading, idle-services (process sampling, nested-discovery
+  coalescing) and the import extension-folder watcher do not touch MCP config
+  parsing or watching. Not proven natively.
+
+Not started: bisecting the six merges on clean builds.
+
+Last verified runs on `523ff1d6`: `mcp-config-ownership-simultaneous-JjaE4p`
+(trace copy) and `-N6IXBT`. Uncommitted findings: none; everything is in this
+report.
+
+ETA for the remainder, as tasks:
+1. Clean rebuild of `523ff1d6` and reproduction of the 5 !== 8 failure: one
+   quota round (about 15 minutes of build plus 2–3 native runs).
+2. If it reproduces, bisect the six merges with clean builds (about 3 builds),
+   then fix at the owner: one to two worker sessions.
+3. Acceptance: 5 consecutive `--simultaneous` plus one run of each other mode,
+   about 1 hour of serialized native runs: one quota round.
+
+In total, one to two worker sessions. If the failure does not reproduce on a
+clean build here, it may be specific to the coordinator's host. That needs
+their run directories (the `observations.finalProfileChildTimeout` records
+and the project file watcher logs) to decide.
