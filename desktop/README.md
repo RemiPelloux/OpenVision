@@ -13,6 +13,9 @@ product changes.
 | Create a portable package | `package-portable.mjs` · `npm run package:windows` or `npm run package:linux`; Linux scripts in `linux-package-scripts.mjs` |
 | Verify the Linux package | `verify-package-linux.mjs` · `npm run verify:package:linux` |
 | Run the critical native suite | `critical-suite.json`, `verify-critical.mjs` · `npm run verify:critical` |
+| Create a portable package | `package-portable.mjs` · `npm run package:windows` or `npm run package:linux` |
+| Sign and verify a Linux release | `release-linux.mjs` · `npm run release:linux`; `release-verify.mjs` · `npm run release:verify` |
+| Install, upgrade, roll back or uninstall on Linux | `linux-install.mjs` · `npm run install:linux` (packaged as `openvision-install`) |
 | Check JavaScript syntax | `check.mjs` · `npm run check:desktop` |
 | Calculate feature acceptance | `feature-status.mjs` · `npm run status:features` |
 

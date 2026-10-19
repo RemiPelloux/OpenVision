@@ -82,11 +82,19 @@ repository; those development scripts require the pinned Node toolchain.
 
 ## Update and rollback
 
-Extract a new release into a **new** folder. Close the old app, back up its
-`electron-host/data/` and any application changes, then copy the data into the
-new package before launching. Keep the old folder until your settings, models
-and projects work in the new version. Portable updates are manual; there is
-no background updater. Secret-storage portability across machines is not
+**Windows (portable):** extract a new release into a **new** folder. Close the
+old app, back up its `electron-host/data/` and any application changes, then
+copy the data into the new package before launching. Keep the old folder until
+your settings, models and projects work in the new version.
+
+**Linux x64 (signed releases):** use the OpenVision installer, which keeps
+versions side by side, verifies the signed release before touching anything,
+copies and backs up your profile, and can roll back. See
+[Linux: install, upgrade and rollback](linux.md#install-upgrade-and-rollback).
+
+Updates are always manual: there is no background updater, the original
+editor's update endpoints are removed from the product and every launcher
+passes `--disable-updates`. Secret-storage portability across machines is not
 guaranteed: re-enter your keys on a new machine.
 
 ## Platform status and verification

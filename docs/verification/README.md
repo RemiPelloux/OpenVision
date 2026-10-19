@@ -7,6 +7,7 @@ Executed tests, platform coverage and explicit limits. Start with [release claim
 - [Windows portable verification - preview.7](portable-preview7.md)
 - [Import profile ownership and exact restore](import-profile-verification.md)
 - [Linux verification](linux-verification.md)
+- [Upgrade, interruption and rollback on Linux x64 (OV-904)](upgrade-rollback-linux.md)
 - [Linux reliability session — 16 October 2026](linux-session-2026-10-16.md)
 - [Verifier stability on Linux — 18 October 2026](verifier-stability-linux.md)
 - [Linux completion (OV-903) — 19 October 2026](worker-reports/linux-completion.md)

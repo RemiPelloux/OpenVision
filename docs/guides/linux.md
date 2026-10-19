@@ -75,7 +75,8 @@ add OpenVision to your application launcher
 folder. `./uninstall-desktop-entry.sh` removes only that entry and icon, and
 leaves an `openvision.desktop` that it did not install untouched. Editable
 application code is under `electron-host/resources/app/` and your profile
-under `electron-host/data/local/`. Keep `data/` when updating.
+under `electron-host/data/local/`. Keep `data/` when updating, or use the
+installer below, which does that for you.
 
 The launcher selects a UTF-8 character type (`LC_CTYPE=C.UTF-8`) only when
 the current locale is not UTF-8 (for example `LANG` unset or `C` in a minimal
@@ -127,6 +128,72 @@ verified on a real Ubuntu desktop with AppArmor enabled (the 19 October cell
 ran in a container without AppArmor); that check belongs to the Linux
 distribution and architecture matrix.
 
+## Install, upgrade and rollback
+
+Signed Linux x64 releases consist of three files:
+`OpenVision-<version>-linux-x64.tar.gz`, its `.manifest.json` (version, commit,
+SHA-256 of the archive and of every file) and `.manifest.json.sig`, an
+`ssh-keygen -Y` signature over the manifest. You also need the publisher's
+**allowed signers** file (one line: `openvision-release namespaces="openvision-release" ssh-ed25519 AAAA…`),
+obtained from the publisher separately from the release.
+
+Check a download without installing it (rejects any tampered, truncated,
+renamed or wrongly signed file; `--deep` also compares every extracted file):
+
+```sh
+npm run release:verify -- --archive OpenVision-<version>-linux-x64.tar.gz --allowed-signers allowed_signers --deep
+```
+
+Install (first time, from a source checkout with Node.js 24):
+
+```sh
+npm run install:linux -- install --archive OpenVision-<version>-linux-x64.tar.gz --allowed-signers allowed_signers
+```
+
+Later upgrades, rollback and uninstall run from the installed copy and need no
+Node.js (`openvision-install` uses OpenVision's own runtime):
+
+```sh
+~/.local/share/OpenVision/current/openvision-install upgrade --archive OpenVision-<new>-linux-x64.tar.gz --allowed-signers allowed_signers
+~/.local/share/OpenVision/current/openvision-install rollback
+~/.local/share/OpenVision/current/openvision-install status
+~/.local/share/OpenVision/current/openvision-install uninstall            # keeps your profiles and backups
+~/.local/share/OpenVision/current/openvision-install uninstall --purge    # removes everything under the install root
+```
+
+| What | Where (default root `${XDG_DATA_HOME:-~/.local/share}/OpenVision`, change with `--root`) |
+| --- | --- |
+| Launched version | `current` → `versions/<version>` (switched atomically) |
+| Your profile | `versions/<version>/electron-host/data/`, copied into each new version |
+| Backups | `backups/<time>-pre-upgrade-<from>-to-<to>/` and `…-pre-rollback-…/` |
+| After uninstall | `retained-data/<version>-<time>/`; a later install adopts the newest one |
+| Launcher entry | `~/.local/share/applications/openvision.desktop` (`Exec` points at `current`) |
+
+How it protects your work:
+
+- Nothing is extracted until the signature, manifest and archive digest are
+  valid; the extracted tree must then match the signed file list exactly.
+- The new version gets a **copy** of your profile; the installed version and
+  its profile are never modified, so an interrupted upgrade (crash, power loss,
+  `kill -9`) leaves the old version launching as before. The next installer run
+  discards the interrupted work.
+- The previous version stays installed for `rollback`, which carries your
+  current profile (including work the newer version wrote) back to it, after
+  backing up both. If a future profile format cannot be opened by the older
+  version, rollback refuses unless you pass `--keep-previous-data`, which returns
+  to that version's own older profile.
+- Quit OpenVision first: the installer refuses while the profile is in use.
+- Desktop sessions set `XDG_RUNTIME_DIR`, where the editor keeps its IPC
+  sockets. Without it the sockets live in the profile, whose path must then stay
+  under the 107-byte Unix socket limit; the installer refuses a `--root` that is
+  too long in that case (and warns when it is long but `XDG_RUNTIME_DIR` is set).
+- Only the current and previous versions are kept; backups are never pruned
+  automatically.
+
+Your profile stays inside each version folder (the same layout as a portable
+copy), moved forward by the installer. A user-wide alternative,
+`~/.local/share/openvision` independent of versions, is not used yet.
+
 ## API keys and the keyring
 
 Provider keys are encrypted with Electron `safeStorage`. Chromium only
@@ -169,7 +236,7 @@ moving to a new machine.
 | C/C++ (`npm run setup:cpp`) | Downloads the pinned official clangd 23.1.0 Linux x64 archive and the vscode-clangd 0.6.0 extension, as on Windows; needs `unzip`. Diagnostics, completion, definition, references, rename and formatting are verified with GCC and Clang projects (see [C and C++](cpp-support.md#linux-x64)). Linux arm64 has no pinned build |
 | Python, Go, Rust | Syntax highlighting only, as on Windows: no language server is bundled or set up |
 | Chromium sandbox | Uses the user-namespace sandbox. A copied `chrome-sandbox` cannot keep root setuid, so launchers pass `--disable-setuid-sandbox=true` (the explicit value stops the editor from reading a following folder path as the flag's value) |
-| Updates | Manual, as on Windows; the AppImage updater is not packaged |
+| Updates | Manual: the signed-release installer above, or a new portable folder. The AppImage updater is not packaged and the original update endpoints are removed |
 | Keyboard shortcuts | Follow your physical layout (for example AZERTY), as in VS Code on Linux |
 
 ## Troubleshooting

@@ -2,21 +2,23 @@ import { chmod, cp, mkdir, readdir, lstat, writeFile, readFile } from 'node:fs/p
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadRuntime } from './source-assembly.mjs';
-import { linuxLauncher, linuxDesktopEntry, linuxDesktopEntryRemoval } from './linux-package-scripts.mjs';
+import { profileFormat } from './profile-format.mjs';
+import { linuxDesktopEntry, linuxDesktopEntryRemoval, linuxInstaller, linuxLauncher, privateDirectories, privateResources } from './portable-layout.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { version } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+const args = process.argv.slice(2), versionIndex = args.indexOf('--version');
+// A release may carry an explicit version (for example a test N+1 built from the same commit).
+const version = versionIndex < 0 ? JSON.parse(await readFile(join(root, 'package.json'), 'utf8')).version : args[versionIndex + 1];
+if (!/^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/.test(version ?? '')) throw Error('Invalid package version.');
+if (versionIndex >= 0) args.splice(versionIndex, 2);
 const target = `${process.platform}-${process.arch}`;
 if (!['win32-x64', 'linux-x64', 'linux-arm64'].includes(target)) throw Error('Package on Windows x64 or Linux x64/arm64.');
 const windows = process.platform === 'win32';
-const destination = resolve(process.argv[2] ?? join(root, `build/packages/OpenVision-${target}`));
+const destination = resolve(args[0] ?? join(root, `build/packages/OpenVision-${target}`));
 try { await lstat(destination); throw Error('Package destination already exists; choose a new directory.'); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const { layout } = await loadRuntime(root);
 const host = join(destination, 'electron-host');
-// Cursor CLI wrappers, shell completions and the AppImage updater are not part of OpenVision.
-const privateDirectories = new Set(['data', 'backups', 'logs', 'desktop', 'tooling', 'bin']);
-const privateResources = new Set(['app', 'completions', 'appimageupdatetool.AppImage']);
 const copyOptions = { recursive: true, errorOnExist: true, filter: async path => {
   if ((await lstat(path)).isSymbolicLink()) throw Error(`Package input contains an external link: ${path}`);
   return true;
@@ -51,10 +53,12 @@ if (windows) {
   await writeFile(join(destination, 'OpenVision'), linuxLauncher, { mode: 0o755 });
   await writeFile(join(destination, 'install-desktop-entry.sh'), linuxDesktopEntry, { mode: 0o755 });
   await writeFile(join(destination, 'uninstall-desktop-entry.sh'), linuxDesktopEntryRemoval, { mode: 0o755 });
+  await writeFile(join(destination, 'openvision-install'), linuxInstaller, { mode: 0o755 });
   await cp(join(root, 'source/app/resources/linux/code.png'), join(destination, 'openvision.png'));
   // A copied chrome-sandbox cannot keep root ownership; drop the meaningless setuid bit.
   await chmod(join(host, 'chrome-sandbox'), 0o755).catch(error => { if (error.code !== 'ENOENT') throw error; });
   await writeFile(join(destination, 'README.txt'), `OpenVision Linux ${process.arch} portable\n\nRun ./OpenVision. No Node.js, npm or separate editor installation is required.\nOptional: ./install-desktop-entry.sh adds OpenVision to your application launcher; ./uninstall-desktop-entry.sh removes it.\nOpen a project with File > Open Folder. Add your own provider URL and key in Models settings.\nEditable application code: electron-host/resources/app.\nYour new local profile: electron-host/data/local. No author profile or keys are included.\nAPI keys use your desktop secret service (GNOME Keyring or KWallet) when available.\nPreserve the data directory when updating. Third-party license notices remain with the application.\n`);
 }
-await writeFile(join(destination, 'openvision-package.json'), JSON.stringify({ name: 'OpenVision', version, platform: process.platform, arch: process.arch, profileIncluded: false, credentialsIncluded: false }, null, 2));
+await writeFile(join(destination, 'openvision-package.json'), JSON.stringify({ name: 'OpenVision', version, platform: process.platform, arch: process.arch, profileIncluded: false, credentialsIncluded: false,
+  profileFormat, updates: 'manual' }, null, 2));
 console.log(JSON.stringify({ destination, executable }));
