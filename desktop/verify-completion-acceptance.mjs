@@ -300,8 +300,8 @@ async function burst({ page, file, fixture }, interval) {
 // recovered accept owner wraps the word-diff provider registered with that
 // instance's diffing service once (the service is a delayed-instantiation proxy
 // that caches its bound methods). The condition always evaluates to false, so
-// nothing pauses. The wrapper holds each
-// word diff for globalThis.__openvisionAcceptDelayMs and records its timing.
+// nothing pauses. The wrapper holds each word diff for
+// globalThis.__openvisionAcceptDelayMs and records its timing.
 async function installAcceptDelay(page, appRoot) {
   const workbench = await readFile(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js'), 'utf8');
   const anchor = workbench.indexOf('async makeChangesOnAcceptCppSuggestion(');
