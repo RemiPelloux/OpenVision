@@ -20,7 +20,7 @@ const synthetic = {
   'aws-access-key': 'AKI' + 'A' + repeat('ABCDEFGHIJKLMNOPQRSTUVWXYZ234567', 16),
   'google-api-key': 'AI' + 'za' + repeat(alnum, 35),
   'jwt': ['eyJ' + repeat(alnum, 20), 'eyJ' + repeat(alnum, 30), repeat(alnum, 43)].join('.'),
-  'private-key': '-----BEGIN ' + 'OPENSSH PRIVATE KEY-----',
+  'private-key': '-----BEGIN ' + 'OPENSSH PRIVATE KEY-----\n' + repeat(alnum, 70),
 };
 
 async function withDirectory(run) {
@@ -117,3 +117,20 @@ test('symbolic links, .git and node_modules are not followed; missing targets ar
   assert.deepEqual(report.findings, []);
   assert.deepEqual(report.missing, ['absent']);
 }));
+
+test('odd-length windows decode as UTF-16LE without aborting the process', () => {
+  for (const length of [1, 2, 3, 5866, 5867]) {
+    const buffer = Buffer.alloc(length, 0x41);
+    assert.ok(Array.isArray(matchBytes(buffer)), `length ${length}`);
+  }
+  const key = canaryKey(), odd = Buffer.concat([Buffer.from([0x20]), Buffer.from(key, 'utf16le'), Buffer.from([0x21, 0x22])]);
+  assert.ok(odd.length % 2 === 1 && matchBytes(odd).some(finding => finding.rule === 'canary' && finding.encoding === 'utf16le' && finding.offset === 1));
+});
+
+test('vendored identifiers, header constants and long binary runs are not provider keys', () => {
+  for (const text of ['var x = "../agent/dist/actions/async-ask-question-completion-action-handler.js";',
+    'pattern: /-----BEGIN ' + 'PGP PRIVATE KEY BLOCK-----[\\s\\S]*?-----END/', 'task-' + repeat(alnum, 64),
+    'sk-' + repeat(alnum, 400), 'sk-' + 'a'.repeat(40)]) assert.deepEqual(matchText(text, 'utf8'), [], text);
+  const armored = '-----BEGIN ' + 'PGP PRIVATE KEY BLOCK-----\nVersion: test\n\n' + repeat(alnum, 64);
+  assert.equal(matchText(armored, 'utf8')[0]?.rule, 'private-key');
+});
