@@ -17,7 +17,7 @@
     "test:build-integrity": "node --test desktop/generated-artifact-integrity.test.mjs desktop/notification-isolation.test.mjs desktop/telemetry-extensions.test.mjs",
     "test:rename-version": "node --test desktop/rename-version.test.mjs",
     "test:language-matrix": "node --test desktop/language-matrix.test.mjs",
-    "test:retrieval": "node --test --test-concurrency=1 desktop/retrieval-lifecycle.test.mjs desktop/retrieval-index.test.mjs desktop/retrieval-incremental.test.mjs desktop/retrieval-embeddings.test.mjs desktop/retrieval-service.test.mjs",
+    "test:retrieval": "node --test --test-concurrency=1 desktop/retrieval-lifecycle.test.mjs desktop/retrieval-index.test.mjs desktop/retrieval-incremental.test.mjs desktop/retrieval-embeddings.test.mjs desktop/retrieval-service.test.mjs desktop/retrieval-tool.test.mjs",
     "test:retrieval-quality": "node desktop/retrieval-quality.mjs",
     "benchmark:retrieval": "node desktop/benchmark-retrieval.mjs",
     "test:data-destinations": "node --test desktop/data-destinations.test.mjs desktop/project-data-customization.test.mjs",

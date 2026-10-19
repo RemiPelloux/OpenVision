@@ -73,6 +73,7 @@ import { installAgentReviewPersistence } from './agent-review-persist-customizat
 import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
 import { installReviewDescriptors } from './review-descriptors-customization.mjs';
 import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
+import { installRetrievalTool } from './retrieval-tool-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -137,6 +138,7 @@ await installInterruptedAgentEdits(root);
 await installReviewDescriptors(root);
 await installAgentReviewRecovery(root);
 await installAgentWriteDurability(root);
+await installRetrievalTool(root);
 await installRenameVersionGuard(root);
 await installNativeAddonGuard(root);
 await installProtectedExtensions(root);
