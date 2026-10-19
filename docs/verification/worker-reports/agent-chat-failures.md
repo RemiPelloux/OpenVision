@@ -103,7 +103,22 @@ rerun discarded.
 | `npm run verify:agent-history -- --chromium-proxy` and `--chromium-proxy-loopback` | `1XTqth`, `8yXj6v` | Pass; 0 proxied requests |
 | `node desktop/verify-telemetry-extended.mjs --proxy [--proxy-loopback] --no-strace --idle-seconds 10` | `telemetry-extended-JXZoyt`, `uRY9uZ` | Pass; Agent request reached the fixture |
 
-`npm run docs:check` and `npm run status:features` were run on the final tree.
+After the last verifier change (`f29b98ff`, which restricts the main-socket
+probe to owned sockets), the changed verifier's cells were run again on that
+commit. All six passed first-time:
+
+| Command | Run IDs |
+| --- | --- |
+| `npm run verify:agent-history` | `z4Yc8J` |
+| `npm run verify:agent-history -- --fork-status 503` | `YLobr4` |
+| `npm run verify:agent-timeout -- headers` | `S5gATk` (299,984 ms), `m3l7Zm` (299,989 ms) |
+| `npm run verify:agent-timeout -- body` | `9RoJeu` (600,017 ms), `4e39vc` (600,022 ms) |
+
+Every run restored the failure with 0 requests. Each history run kept the
+source at 5 bubbles and the fork at 7, and both owned launches exited 0.
+
+`npm run docs:check` (0 failures) and `npm run status:features` (6/42
+Verified, unchanged) were run on the final tree.
 
 ### Earlier failing or diagnostic runs (kept, not counted as passes)
 

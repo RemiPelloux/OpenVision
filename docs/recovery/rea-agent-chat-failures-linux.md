@@ -133,8 +133,9 @@ equal to the source's 5 bubbles plus exactly 2 (user and answer). Each run makes
 | --- | --- | --- |
 | `hXYCJ3`, `RRGV5Z`, `8wzzel` | 401 | Pass, consecutive |
 | `9UmR64`, `ZLiDZ4` | 503 | Pass, consecutive |
-| `GBeRi5`, `WM6exm` | 401 | Pass, consecutive (final verifier) |
-| `aCTjft`, `tnqwon` | 503 | Pass, consecutive (final verifier) |
+| `GBeRi5`, `WM6exm` | 401 | Pass, consecutive |
+| `aCTjft`, `tnqwon` | 503 | Pass, consecutive |
+| `z4Yc8J` / `YLobr4` | 401 / 503 (final verifier `f29b98ff`) | Pass |
 
 ### Provider matrix, default and custom header
 
@@ -190,6 +191,8 @@ extra inference is explained by a distinct tool call.
 | `0Kjmka` | headers | 300,000 ms | 300,213 ms | Pass, consecutive |
 | `rBoXGp` | body (HTTP 200 + SSE comment, then silence) | 600,000 ms | 600,021 ms | Pass |
 | `2hDiuw` | body | 600,000 ms | 600,013 ms | Pass, consecutive |
+| `S5gATk`, `m3l7Zm` | headers (final verifier `f29b98ff`) | 300,000 ms | 299,984 / 299,989 ms | Pass, consecutive |
+| `9RoJeu`, `4e39vc` | body (final verifier `f29b98ff`) | 600,000 ms | 600,017 / 600,022 ms | Pass, consecutive |
 
 Packaged Undici was 7.25.0. The exec deadline helper hash is
 `c744ad024583bb6b3b8d297d49307d5778f15372e1ddce4e90027012922bf96f`, and
