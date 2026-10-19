@@ -65,11 +65,36 @@ The following also live in the profile home, with their previous layout:
 - team hooks and debug-mode logs
 - the AI code-tracking database
 - `argv.json`
+- the developer-only file policy (`User/.openvision-local/policy.json`, read only
+  with `--__enable-file-policy`)
 
 For example: `User/.openvision/projects/<project>/`, `User/.openvision/plans/`,
 `User/.openvision/worktrees/` and `User/.openvision-local/argv.json`. Each
-installation (each `data/local`) and each named profile has its own copy.
-Two installations side by side do not see each other's data.
+installation (each `data/local`) and each separate data directory
+(`--user-data-dir`) has its own copy. Two installations side by side do not see
+each other's data.
+
+Named profiles that you create with **Profiles** inside one data directory share
+that directory's `User` folder. They therefore share these OpenVision
+customizations and data, including `User/mcp.json`. To keep two setups apart, use
+two data directories or two installations.
+
+### MCP servers
+
+Your MCP servers are in the profile's `User/mcp.json`, and a project's are in
+`<project>/.openvision/mcp.json`. OpenVision does not read MCP servers from your
+home directory. This covers `~/.openvision/mcp.json`, `~/.cursor/mcp.json`, the
+Claude desktop configuration and the Windsurf configuration.
+
+The editor setting `chat.mcp.discovery.enabled` does not change this. Its
+adapters look only under the profile home, for example
+`User/.config/Claude/claude_desktop_config.json`. The background agent host also
+uses `User/mcp.json` and keeps its approvals in the profile home. To use a server
+from another tool, copy its entry into `User/mcp.json`.
+
+Codebase snapshots and watchers of agent folders also use the profile home, for
+example `User/.openvision` and, when enabled, `User/.claude`. Other tools'
+`CLAUDE_CONFIG_DIR` and `CODEX_HOME` variables are ignored.
 
 OpenVision passes the profile home to its own processes in the internal
 `VSCODE_OPENVISION_PROFILE_HOME` variable. Integrated terminals do not receive
@@ -101,7 +126,8 @@ npm run migrate:profile-home                       # into data/local
 npm run migrate:profile-home -- --profile /path/to/user-data-dir
 ```
 
-The import copies skills, commands, `hooks.json`, plans, per-project agent
+The import copies skills, commands, user subagents (`~/.openvision/agents` into
+`User/agents`), `hooks.json`, plans, per-project agent
 data, plugins, recently viewed files, sandbox and permission files, team hooks,
 the AI tracking database, debug logs, `argv.json` and the repository blocklist.
 - It never moves, changes or deletes the originals, which remain your backup.

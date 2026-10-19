@@ -14,10 +14,10 @@ const profile = join(directory, 'profile'), project = join(directory, 'project')
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verificationSettings));
 const file = join(project, 'example.js'); await writeFile(file, '// Reasoning capability verification\n');
-let phase = 'ultra', levels = ['low', 'ultra'];
+let phase = 'ultra', levels = ['low', 'ultra'], failures = [];
 const result = { success: false, checkedAt: new Date().toISOString(), platform: process.platform,
-  scope: 'Native Windows capability discovery and reasoning UI with a simulated API; no live inference claim.',
-  errors: [], requests: [], hostExits: [], hashes: Object.fromEntries(await Promise.all(['desktop/model-catalog.js',
+  scope: 'Native capability discovery, reasoning UI and retry/resume with a simulated API; no live inference claim.',
+  errors: [], requests: [], hostExits: [], retries: {}, hashes: Object.fromEntries(await Promise.all(['desktop/model-catalog.js',
     'desktop/model-providers.js', 'desktop/model-reasoning.js', 'desktop/verify-reasoning-capabilities.mjs',
     'source/app/out/vs/workbench/workbench.desktop.main.js'].map(async path => [path, await fileHash(join(root, path))]))) };
 const server = createServer(async (request, response) => {
@@ -28,7 +28,18 @@ const server = createServer(async (request, response) => {
   }
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
   const body = JSON.parse(Buffer.concat(chunks));
-  result.requests.push({ phase, model: body.model, reasoning: body.reasoning_effort ?? body.reasoning?.effort });
+  const failure = failures.shift();
+  result.requests.push({ phase, model: body.model, reasoning: body.reasoning_effort ?? body.reasoning?.effort, ...(failure ? { failure } : {}) });
+  if (failure === '503') {
+    response.writeHead(503, { 'content-type': 'application/json' });
+    return response.end(JSON.stringify({ error: { message: `fixture 503 ${phase}`, type: 'fixture_error' } }));
+  }
+  if (failure === 'nofinish') {
+    // Partial output, then the stream ends without a finish reason or [DONE].
+    response.writeHead(200, { 'content-type': 'text/event-stream' });
+    response.write(`data: ${JSON.stringify({ id: 'capability', choices: [{ index: 0, delta: { role: 'assistant', content: `partial ${phase} ` }, finish_reason: null }] })}\n\n`);
+    await new Promise(resolveWait => setTimeout(resolveWait, 300)); return response.end();
+  }
   response.writeHead(200, { 'content-type': 'text/event-stream' });
   for (const [delta, finish_reason] of [[{ role: 'assistant', content: `Verified ${phase}.` }, null], [{}, 'stop']])
     response.write(`data: ${JSON.stringify({ id: 'capability', choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
@@ -80,6 +91,36 @@ async function blocked(label, effort = 'ultra') {
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
   assert.equal(result.requests.length, before, 'Invalid effort must not contact inference');
 }
+// A provider failure, then the explicit recovery action: the same effort, one request per attempt, no automatic retry.
+async function failThenRecover(label, failure, action, effort, { restart = false } = {}) {
+  phase = label; failures = [failure];
+  const before = result.requests.length;
+  const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  await input.fill(`Reply Verified ${label}. Do not use tools.`); await input.press('Enter');
+  let recovery = page.getByText(action, { exact: true }).filter({ visible: true }).last();
+  await recovery.waitFor({ timeout: 30000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  await page.waitForTimeout(2500); // no automatic retry within the former SDK delay
+  const failed = result.requests.slice(before);
+  assert.deepEqual(failed.map(request => [request.reasoning, request.failure]), [[effort, failure]], `${label}: one failed request with the selected effort`);
+  const record = result.retries[label] = { failure, action, effort, failedRequests: failed.length };
+  if (restart) {
+    await close(); const restored = result.requests.length; await launch(); await editor();
+    await page.getByText(`Reply Verified ${label}.`, { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
+    recovery = page.getByText(action, { exact: true }).filter({ visible: true }).last();
+    await recovery.waitFor({ timeout: 15000 }); await page.waitForTimeout(2500);
+    record.requestsOnRestore = result.requests.length - restored;
+    assert.equal(record.requestsOnRestore, 0, `${label}: restoring the failure sends nothing`);
+  }
+  const retryBefore = result.requests.length;
+  await recovery.click();
+  await page.getByText(`Verified ${label}.`, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 60000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  await page.waitForTimeout(2500);
+  const retried = result.requests.slice(retryBefore);
+  record.retryRequests = retried.map(request => request.reasoning);
+  assert.deepEqual(record.retryRequests, [effort], `${label}: ${action} sends exactly once with the same effort`);
+}
 async function choose(label) {
   await menu();
   await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
@@ -128,6 +169,8 @@ try {
   await page.getByText('Ultra', { exact: true }).filter({ visible: true }).last().click();
   await dismissMenu();
   await infer('ultra'); assert.equal(result.requests.at(-1).reasoning, 'ultra');
+  await failThenRecover('ultra-503', '503', 'Try again', 'ultra');
+  await failThenRecover('ultra-incomplete', 'nofinish', 'Resume', 'ultra');
   result.malformedDiscoveryErrors = [];
   for (const invalid of [['low', { id: 'ultra', value: 7 }], 'high', null]) {
     await discover(invalid);
@@ -140,8 +183,22 @@ try {
   await trigger().getByText('Custom Thinker · Ultra', { exact: true }).waitFor();
   await infer('malformed-retained'); assert.equal(result.requests.at(-1).reasoning, 'ultra');
   result.malformedDiscoveryRetainedAcrossRestart = true;
+  phase = 'removed-before-retry'; failures = ['503'];
+  const removedBefore = result.requests.length;
+  const retryInput = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  await retryInput.fill('Reply Verified removed-before-retry. Do not use tools.'); await retryInput.press('Enter');
+  await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().waitFor({ timeout: 30000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  assert.deepEqual(result.requests.slice(removedBefore).map(request => request.reasoning), ['ultra']);
   await discover(['low', 'high']);
   await editor();
+  const retryAfterRemoval = result.requests.length;
+  await page.getByText('Try again', { exact: true }).filter({ visible: true }).last().click();
+  await page.getByText('Reasoning level "ultra" is no longer available', { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
+  await page.waitForTimeout(2500);
+  result.retries['removed-before-retry'] = { requestsAfterRemoval: result.requests.length - retryAfterRemoval };
+  assert.equal(result.requests.length, retryAfterRemoval, 'A retry after the level was removed must not contact inference');
   await page.waitForFunction(() => [...document.querySelectorAll('.vscode-model-picker__trigger-markdown')]
     .some(node => node.textContent.includes('(unavailable)')));
   result.selectionAfterCapabilityChange = await trigger().innerText();
@@ -152,6 +209,10 @@ try {
   await blocked('restart'); result.invalidChoiceRetainedAfterRestart = true;
   await choose('High'); await infer('replacement');
   assert.equal(result.requests.at(-1).reasoning, 'high');
+  await failThenRecover('high-503', '503', 'Try again', 'high');
+  await failThenRecover('high-incomplete', 'nofinish', 'Resume', 'high');
+  await failThenRecover('high-restart', 'nofinish', 'Resume', 'high', { restart: true });
+  await failThenRecover('high-restart-503', '503', 'Try again', 'high', { restart: true });
   await discover([]); await editor();
   await blocked('empty', 'high'); result.emptyDeclarationBlocksSavedLevel = true;
   await choose('Provider default'); await infer('empty-default');

@@ -18,3 +18,57 @@ export async function openChat(page) {
   }
   return input;
 }
+
+// Hosts without a Secret Service (for example a bare Xvfb session) get the
+// upstream modal "OS keyring couldn't be identified" prompt, which takes keyboard
+// focus. Close it without choosing a store: "Use weaker encryption" would write
+// password-store=basic to the user's argv.json. Returns whether it was shown.
+export async function dismissKeyringPrompt(page) {
+  const dialog = page.locator('.monaco-dialog-box').filter({ visible: true, hasText: "An OS keyring couldn't be identified" });
+  if (!await dialog.count()) return false;
+  await dialog.locator('.dialog-close-action, [aria-label="Close Dialog"], .codicon-dialog-close').first().click();
+  await dialog.waitFor({ state: 'hidden' });
+  return true;
+}
+
+// Reopen a chat that is not on screen through the native Chat History list (by
+// its title) and confirm that the reopened chat shows every `expected` text.
+// Matching is case-sensitive and limited to that chat: titles repeat prompt
+// words in title case. Returns false when any step does not happen.
+export async function openChatFromHistory(page, { id, title, expected = [], timeout = 15000 }) {
+  await openChat(page);
+  await page.keyboard.press("Control+Alt+'"); // Show Chat History: its search box takes focus
+  const search = page.getByRole('textbox', { name: 'Search agents' }).filter({ visible: true });
+  if (!await search.first().waitFor({ timeout: 10000 }).then(() => true, () => false)) return false;
+  await search.first().fill(title);
+  const row = page.locator('[data-component="menu-row"]').filter({ visible: true })
+    .filter({ has: page.getByText(title, { exact: true }) });
+  if (!await row.first().waitFor({ timeout: 10000 }).then(() => true, () => false) || await row.count() !== 1) return false;
+  await row.first().click();
+  const opened = await page.waitForFunction(id => [...document.querySelectorAll('[data-composer-id]')]
+    .some(element => element.getAttribute('data-composer-id') === id && element.getClientRects().length), id, { timeout })
+    .then(() => true, () => false);
+  if (!opened) return false;
+  const chat = page.locator(`[data-composer-id="${id}"]`).filter({ visible: true });
+  // The transcript is virtualized: look at the bottom first, then scroll from the top down.
+  await chat.first().waitFor({ timeout });
+  for (const text of expected) {
+    const match = chat.getByText(new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).filter({ visible: true }).first();
+    if (await match.waitFor({ timeout: Math.min(timeout, 3000) }).then(() => true, () => false)) continue;
+    let found = false;
+    for (let step = 0; !found && step < 200; step++) {
+      const moved = await chat.first().evaluate((root, step) => {
+        const scroller = [...root.querySelectorAll('*')].find(element => element.scrollHeight > element.clientHeight + 20 &&
+          /(auto|scroll)/.test(getComputedStyle(element).overflowY));
+        if (!scroller) return false;
+        const before = scroller.scrollTop;
+        scroller.scrollTop = step === 0 ? 0 : before + scroller.clientHeight * 0.7;
+        return step === 0 || scroller.scrollTop !== before;
+      }, step);
+      found = await match.waitFor({ timeout: 400 }).then(() => true, () => false);
+      if (!moved && step > 0) break;
+    }
+    if (!found) return false;
+  }
+  return true;
+}

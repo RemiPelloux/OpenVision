@@ -372,3 +372,132 @@ All checks ran on this host against the rebuilt source.
 - Packaged verification: these are source-build results; preview.7 is unchanged.
 
 [Performance index](README.md) · [Roadmap](../planning/roadmap.md) · [Shutdown ownership](../recovery/rea-shutdown-ownership.md)
+
+## Budgets, process sampling and runtime timers (19 October 2026)
+
+**Linux x64 only.** Host: a 4-CPU container with 15.7 GiB RAM and no swap.
+Xvfb and a private D-Bus ran with a disposable gnome-keyring Secret Service.
+Tooling was Node 24.18.0 and the runtime a clean source build of 3.21.13. The
+host is quieter and has fewer CPUs than the 17 October host. Its absolute
+numbers are not comparable with the tables above beyond what the budgets
+state.
+
+### Numeric budgets
+
+`verify:idle-memory` now evaluates
+[`desktop/idle-memory-budgets.json`](../../desktop/idle-memory-budgets.json),
+which has two variants: `full`, and `quick` (idle marks at 1 and 2 minutes, 2
+iterations). The evaluator is
+[`desktop/idle-memory-budgets.mjs`](../../desktop/idle-memory-budgets.mjs).
+
+- Any measure a budget names that the run does not produce fails as
+  **unmeasured**.
+- Idle CPU is scaled to 10 minutes and counts only processes alive at both
+  idle marks.
+- `--budgets=none` turns the evaluation off for diagnostic runs.
+
+The JSON records how each limit was derived from `oMVPIO`, `9nrfCt` and a fresh
+pre-change baseline on this branch (`idle-memory-baseline-Lv23NI`). The
+measures are:
+
+- cold and warm time to Explorer;
+- startup peak family PSS;
+- idle private growth per role (5 → 15 min);
+- idle CPU seconds per role per 10 min;
+- process-count growth over iterations;
+- private slope per iteration;
+- killed-terminal shells and pty masters.
+
+### Process sampling (`CursorProclistService` and "Cursor Proclist Polling")
+
+**Observed in a fresh profile.** The OV-1005 defaults already leave
+`extension_monitor_control` at its bundled fallback (`local_enabled: false`).
+The polling owner logs "Local collection disabled by config" and starts
+nothing. The 10 s scan in the earlier tables came from the hosted config
+delivered by the anonymous Statsig bootstrap. A profile that still holds that
+cached bootstrap may still enable it; that case was not measured.
+
+**Controlled condition.** [`verify:process-sampling`](../../desktop/verify-process-sampling.mjs)
+enables the hosted config through the workbench's own test override:
+`--test-dynamic-configs` with `--enable-smoke-test-driver`, 10 s subsamples and
+a sample every minute.
+
+| Run | Build | Scan / polling | Sample shard | Upload attempts | Main CPU s per 10 min |
+| --- | --- | --- | --- | --- | ---: |
+| `process-sampling-control-2lp99o` (`--control`) | Before the change | "Config enabled feature (subsample every 10s)", "Started polling (every 1 min)" | `process-monitor/<bucket>.log` written | 2 × "Failed to send V2 metrics" (refused by the OV-1005 transport guard) | 1.20 |
+| `process-sampling-fixed-iY077x` | Fixed | None; "Local collection disabled by config" | None | None | 1.04 |
+| `process-sampling-fixed-EaESSc` | Fixed | None | None | None | 0.96 |
+
+**Change.** [`desktop/idle-services-customization.mjs`](../../desktop/idle-services-customization.mjs)
+changes two owners:
+
+- **Renderer polling owner** (desktop and glass workbench).
+  `loadStatsigConfig` returns the owner's own disabled fallback. Every path
+  that would start sampling, apply it to main, or upload or replay stashed
+  samples reads that config, so none of them runs.
+- **Main `CursorProclistService.applyConfig`.** It records the config as
+  disabled and stops any interval, even when another caller sends an enabled
+  config.
+
+Memory-pressure evaluation runs only inside that scan. Its own default
+(`agent_memory_pressure_monitor.monitor_enabled = false`) already keeps it
+off, so no lazy replacement was needed. On-demand process trees and
+`killAgentProcessTree` are unchanged.
+
+Each transform is drift-guarded and marker-idempotent and keeps first backups
+under `backups/idle-services/`.
+
+The CPU saving is small on this host: about 0.2 s per 10 minutes of main CPU,
+with 17 processes on the system. The scan covers every process on the system,
+so the cost grows with the host's process count. The main gain is no hosted
+sample path and no shard files.
+
+`verify:idle-memory` now fails if any profile log shows the scan, polling,
+stash, upload or replay, or if a shard or `pending-uploads.json` exists. The
+final runs below found none.
+
+### Final runs (fixed build, full variant)
+
+| Run (`logs/idle-memory-*`) | Explorer cold / warm ms | Peak PSS cold / warm MiB | Idle growth max role MiB | Idle CPU s per 10 min (renderer / ext hosts / main) | Count growth | Slope MiB/iter | Shells | Result |
+| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- |
+| `baseline-Lv23NI` (before the change) | 10,376 / 8,645 | 1,698.2 / 1,626.5 | 2.7 (renderer) | 9.86 / 14.99 / 0.56 | 0 | 6.2 | 0 | Pass (evaluated afterwards) |
+| `final1-9C9sf9` | 11,066 / 9,295 | 1,706.4 / 1,638.6 | 2.4 (renderer) | 10.47 / 16.68 / 0.59 | 0 | 13.8 | 0 | **Pass** |
+| `final2-ySWwRq` | 11,332 / 8,959 | 1,693.3 / 1,632.6 | 3.0 (renderer) | 10.61 / 16.84 / 0.59 | 0 | 14.2 | 0 | **Pass** |
+| `final3-VUvCE1` | 11,414 / 9,033 | 1,669.3 / 1,643.7 | 2.9 (renderer) | 10.32 / 16.07 / 0.60 | 0 | **15.7** | 0 | **Fail**: slope over the 15 MiB budget |
+
+Host load (1-minute average) was below 0.4 at every idle mark, with no swap.
+
+**Slope (observed, then inferred).**
+- All three final series zigzag: 1,174 → 1,218 → 1,179 → 1,242 → 1,196 →
+  1,272 MiB in `final1`, and the same odd/even shape in the other two. Three
+  of five steps go up.
+- The baseline also zigzagged, but ended low (6.2). No forced GC is applied,
+  so the least-squares slope over six points depends on where the last
+  collection fell.
+- Inferred: the higher slope is not attributed to these changes. Process
+  sampling was already off in the baseline's fresh profile. Rule coalescing
+  holds one walk's file list for 2 s at startup only.
+- The failure is recorded as is. The budget was not raised after the fact.
+  A longer series with forced GC remains the way to tell retention from
+  garbage.
+
+### Runtime timer inventory (replaces static `setInterval` counts)
+
+`--timer-inventory` starts extension hosts with `--inspect-extensions`. It finds
+each host's inspector from that host's own listening sockets in `/proc` and
+reads `process.getActiveResourcesInfo()` over the DevTools protocol
+([`desktop/extension-host-timers.mjs`](../../desktop/extension-host-timers.mjs)).
+Run `idle-memory-timers-3hzUc8` (quick variant, inspector on) passed:
+
+| Process | Active timeouts | Pipes | File watchers | Child processes |
+| --- | ---: | ---: | ---: | ---: |
+| Extension host 2 (default) | 6 | 3 | 0 | 0 |
+| Extension host 3 | 4 | 2 | 1 | 0 |
+| Extension host 4 | 6 | 6 | 0 | 1 |
+| Extension host 5 | 7 | 2 | 1 | 0 |
+| Main | 1 | 15 | 13 | — |
+
+The counts were identical at the 1 and 2 minute marks. The static bundle
+counts (agent-exec 17, agent-host 9, …) are occurrences in source, not live
+timers. The extension-host numbering differs between launches; the placement
+lines in each run's renderer log name the extensions per host.

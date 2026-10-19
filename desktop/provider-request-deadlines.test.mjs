@@ -220,3 +220,43 @@ test('canceling a pending body read clears its watchdog and releases upstream ow
     assert.equal(requests.length, 1);
   });
 });
+
+test('an unfinished SSE event over the event budget fails once, keeps earlier bytes and closes the socket', { timeout: 5000 }, async () => {
+  const closed = Promise.withResolvers();
+  const server = createServer((_request, response) => {
+    response.writeHead(200, { 'content-type': 'text/event-stream' });
+    response.on('close', closed.resolve);
+    response.write('data: {"partial":true}\n\n');
+    response.write('data: ' + 'x'.repeat(1024)); // never finished; the socket stays open
+  });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  try {
+    const response = await fetchProviderWithDeadlines(fetch, `http://127.0.0.1:${server.address().port}`, {},
+      { ...inferenceLimits, maxEventBytes: 512 });
+    const reader = response.body.getReader(), decoder = new TextDecoder(); let text = '';
+    await assert.rejects(async () => { for (;;) { const { done, value } = await reader.read(); if (done) break; text += decoder.decode(value); } },
+      { code: 'OPENVISION_PROVIDER_STREAM_LIMIT' });
+    assert.match(text, /"partial":true/);
+    await closed.promise;
+    assert.match(policy.providerFailureDetail(Object.assign(new Error('wrapper'), { cause: { code: 'OPENVISION_PROVIDER_STREAM_LIMIT' } }), 'detail'),
+      /larger than the 4 MiB safety limit[\s\S]*Resume or Try again[\s\S]*\n\ndetail$/);
+  } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+});
+
+test('event budget resets on LF and split CRLF blank lines and ignores non-SSE bodies', { timeout: 5000 }, async () => {
+  const serve = async (type, chunks) => {
+    const server = createServer((_request, response) => {
+      response.writeHead(200, { 'content-type': type });
+      (async () => { for (const chunk of chunks) { response.write(chunk); await new Promise(resolve => setTimeout(resolve, 5)); } response.end(); })();
+    });
+    server.listen(0, '127.0.0.1'); await once(server, 'listening');
+    try {
+      const response = await fetchProviderWithDeadlines(fetch, `http://127.0.0.1:${server.address().port}`, {}, { ...inferenceLimits, maxEventBytes: 64 });
+      return await response.text();
+    } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+  };
+  const events = [':' + 'x'.repeat(40) + '\r', '\n\r', '\n', ':' + 'y'.repeat(40) + '\n\n', ':' + 'z'.repeat(40) + '\n\n'];
+  assert.equal(await serve('text/event-stream', events), events.join(''));
+  assert.equal(await serve('application/json', ['{"a":"' + 'x'.repeat(200) + '"}']), '{"a":"' + 'x'.repeat(200) + '"}');
+  await assert.rejects(serve('text/event-stream', [':' + 'x'.repeat(40) + '\n', ':' + 'y'.repeat(40) + '\n\n']), { code: 'OPENVISION_PROVIDER_STREAM_LIMIT' });
+});

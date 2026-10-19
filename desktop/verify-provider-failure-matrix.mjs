@@ -15,7 +15,11 @@ import { enterWorkspace } from './verification-workspace.mjs';
 
 // Native Agent failure-to-history matrix against a controlled loopback provider.
 // Every response is a fixture; this is not live inference or provider support.
-const secret = 'secret-matrix-fixture-key';
+// --custom-header saves no API key and authenticates with a custom header instead
+// of Authorization; the fixture then reflects that header value everywhere.
+const customHeader = process.argv.includes('--custom-header');
+const headerName = 'X-OpenVision-Auth';
+const secret = customHeader ? 'secret-matrix-custom-header-value' : 'secret-matrix-fixture-key';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout } = await loadRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
@@ -39,7 +43,9 @@ const guidance = {
   interrupted: /The API connection was interrupted/,
   malformed: /not valid OpenAI-compatible streaming data/,
   incomplete: /The provider stream ended before the response finished/,
+  streamLimit: /The provider sent a streaming event larger than the 4 MiB safety limit/,
 };
+const streamLimitBytes = 4 * 1024 * 1024;
 // name → expected visible error and transport-level detail where applicable.
 const scenarios = {
   'certificate-expired': { error: guidance.certificate, detail: /CERT_HAS_EXPIRED|certificate has expired/i },
@@ -48,6 +54,10 @@ const scenarios = {
   'partial-malformed': { partial: true, error: guidance.malformed },
   'partial-stream-error': { partial: true, error: /fixture partial-stream-error \[redacted\]/ },
   'truncated-eof': { partial: true, error: guidance.incomplete },
+  // Successful-stream shapes: one unfinished event over the 4 MiB event budget on an
+  // open socket, and a stream that ends cleanly in the middle of an event.
+  'oversized-event': { partial: true, error: guidance.streamLimit, socketClosed: true },
+  'truncated-event': { partial: true, error: guidance.malformed },
   'tools-rejected': { error: guidance.tools },
   'image-rejected': { image: true, error: guidance.image },
 };
@@ -82,7 +92,9 @@ const server = createServer(async (request, response) => {
   for await (const chunk of request) chunks.push(chunk);
   const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   const name = scenario.replace(/^(recovery|after-restart):/, '');
-  const record = { scenario, authorized: request.headers.authorization === `Bearer ${secret}`, model: body.model, ...inspect(body, name) };
+  const record = { scenario, authorized: customHeader
+    ? request.headers[headerName.toLowerCase()] === secret && request.headers.authorization?.includes(secret) !== true
+    : request.headers.authorization === `Bearer ${secret}`, model: body.model, ...inspect(body, name) };
   if (scenario.startsWith('after-restart:')) record.restartPrompts = Object.fromEntries(['stop-partial', 'restart-pending', 'restart-partial']
     .map(prompt => [prompt, inspect(body, prompt).promptOccurrences]));
   requests.push(record);
@@ -104,12 +116,22 @@ const server = createServer(async (request, response) => {
         param: 'messages.[1].content.[1].type', code: null } }));
   }
   response.writeHead(200, { 'content-type': 'text/event-stream' });
-  if (['partial-disconnect', 'partial-malformed', 'partial-stream-error', 'truncated-eof', 'stop-partial', 'restart-partial'].includes(scenario)) {
+  if (['partial-disconnect', 'partial-malformed', 'partial-stream-error', 'truncated-eof', 'stop-partial', 'restart-partial',
+    'oversized-event', 'truncated-event'].includes(scenario)) {
     sse(response, { role: 'assistant', content: `partial ${scenario} ` });
     if (scenario === 'stop-partial') return;
+    if (scenario === 'oversized-event') {
+      // One unfinished event just over the budget; keep the socket open so only
+      // the client cancelling its reader can close it.
+      record.oversizedEventBytes = streamLimitBytes + 64 * 1024;
+      const line = `data: {"choices":[{"index":0,"delta":{"content":"${secret} ${'x'.repeat(record.oversizedEventBytes)}`;
+      response.write(line);
+      return;
+    }
     await new Promise(resolveWait => setTimeout(resolveWait, 300));
     if (scenario === 'partial-disconnect' || scenario === 'restart-partial') return response.destroy();
     if (scenario === 'partial-malformed') return response.end(`data: {"choices":[{"index":0,"delta":{"content":"${secret}\n\n`);
+    if (scenario === 'truncated-event') return response.end(`data: {"id":"fixture-matrix","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"${secret} trunc`);
     if (scenario === 'partial-stream-error') return response.end(`data: ${JSON.stringify({ error: {
       message: `fixture partial-stream-error ${secret}`, type: 'fixture_error' } })}\n\n`);
     return response.end();
@@ -125,6 +147,7 @@ const port = server.address().port;
 const result = { checkedAt: new Date().toISOString(), commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   platform: process.platform, arch: process.arch,
   scope: 'Native Agent with a controlled loopback provider and disposable certificates; fixture responses, not live inference.',
+  credential: customHeader ? `No API key; custom ${headerName} header reflected by the fixture` : 'Bearer API key reflected by the fixture',
   hashes: Object.fromEntries(await Promise.all([
     ['host', layout.executable], ['agent', join(root, 'source/app/extensions/cursor-agent-exec/dist/main.js')],
     ['agentHost', join(root, 'source/app/extensions/cursor-agent-host/dist/main.js')],
@@ -137,6 +160,25 @@ const result = { checkedAt: new Date().toISOString(), commit: execFileSync('git'
   scenarios: {}, requests, success: false };
 let app, page;
 
+// Raw bytes, UTF-8 and UTF-16LE, every file under the run directory (profile, logs,
+// extensions and project), before result.json is written.
+const needles = [Buffer.from(secret, 'utf8'), Buffer.from(secret, 'utf16le')];
+async function scanAll(path, found = { files: 0, bytes: 0, matches: [] }) {
+  for (const entry of await readdir(path, { withFileTypes: true }).catch(error => {
+    if (error.code === 'ENOENT') return []; throw error;
+  })) {
+    const child = join(path, entry.name);
+    if (entry.isDirectory()) await scanAll(child, found);
+    else if (entry.isFile()) {
+      const bytes = await readFile(child).catch(error => { if (error.code === 'ENOENT') return undefined; throw error; });
+      if (!bytes) continue;
+      found.files++; found.bytes += bytes.length;
+      const encodings = needles.map((needle, index) => bytes.includes(needle) ? ['utf8', 'utf16le'][index] : undefined).filter(Boolean);
+      if (encodings.length) found.matches.push({ path: child.slice(directory.length + 1), encodings });
+    }
+  }
+  return found;
+}
 async function scan(directory, test) {
   const found = { files: 0, matches: [] };
   for (const entry of await readdir(directory, { withFileTypes: true }).catch(error => {
@@ -200,7 +242,8 @@ function persistedTranscript(composer) {
     return data.fullConversationHeadersOnly.map(header => {
       const bubble = read(`bubbleId:${composer}:${header.bubbleId}`) ?? {};
       return { type: header.type ?? bubble.type, text: bubble.text ?? '',
-        hasError: Boolean(bubble.errorDetails ?? bubble.error ?? bubble.isError ?? bubble.errorMessage) };
+        hasError: Boolean(bubble.errorDetails ?? bubble.error ?? bubble.isError ?? bubble.errorMessage),
+        emptyAssistant: (header.type ?? bubble.type) === 2 && !bubble.text && !bubble.toolFormerData && !bubble.codeBlocks?.length };
     });
   } finally { db.close(); }
 }
@@ -212,7 +255,8 @@ try {
   await page.locator('.openvision-model-settings').getByRole('button', { name: 'Add Provider', exact: true }).click();
   await page.getByLabel('Provider Name', { exact: true }).fill('Provider failure matrix fixture');
   await page.getByLabel('API Base URL', { exact: true }).fill(`http://127.0.0.1:${port}/v1`);
-  await page.getByLabel('API Key', { exact: true }).fill(secret);
+  if (customHeader) await page.getByLabel('Additional Headers (JSON)', { exact: true }).fill(JSON.stringify({ [headerName]: secret }));
+  else await page.getByLabel('API Key', { exact: true }).fill(secret);
   await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   await page.locator('dialog').waitFor({ state: 'detached' });
   await page.locator('.tabs-container .tab').filter({ hasText: 'hello.js' }).first().click();
@@ -247,6 +291,13 @@ try {
     record.errorMatched = expected.error.test(body);
     if (expected.detail) record.detailMatched = expected.detail.test(body);
     if (expected.partial) record.partialVisible = body.includes(`partial ${name}`);
+    if (expected.socketClosed) {
+      const closeBy = Date.now() + 10000;
+      while (!requests[before]?.socketClosed && Date.now() < closeBy) await page.waitForTimeout(100);
+      record.upstreamSocketClosed = requests[before]?.socketClosed === true;
+      assert.equal(record.upstreamSocketClosed, true, `${name}: the client must cancel its reader and close the open socket`);
+    }
+    if (expected.partial) assert.equal(record.partialVisible, true, `${name}: received partial output is kept`);
     record.errorOccurrences = (body.match(new RegExp(expected.error.source, `g${expected.error.flags}`)) ?? []).length;
     assert.equal(record.secretInUi, false, `${name}: credential leaked into UI`);
     assert.equal(record.requests.length, 1, `${name}: exactly one request before explicit retry`);
@@ -302,6 +353,10 @@ try {
   for (const name of selected.filter(value => scenarios[value].partial))
     assert.ok(persisted.some(entry => entry.type === 2 && entry.text.includes(`partial ${name}`)), `${name}: partial output persisted`);
   assert.ok(persisted.some(entry => entry.type === 2 && entry.text.includes('partial stop-partial')), 'Stopped partial output persisted');
+  // Each explicit retry removes its failure placeholder; only the unresolved failure keeps one.
+  result.emptyAssistantsBeforeRestart = persisted.filter(entry => entry.emptyAssistant).length;
+  assert.equal(result.emptyAssistantsBeforeRestart, 1, 'Only the unresolved failure keeps an empty assistant placeholder');
+  assert.equal(persisted.at(-1).emptyAssistant && persisted.at(-1).hasError, true, 'The placeholder belongs to the unresolved failure');
   // Restart cell 1: the unresolved pre-content failure must be saved with the chat.
   result.persistedFailure = result.persistedChatState;
   assert.equal(result.persistedFailure.secretInRecord, false, 'Saved chat record must not contain the credential');
@@ -358,6 +413,9 @@ try {
   assert.equal(result.persistedPartialFailure.submitErrorDetails?.openvisionProviderFailure, true, 'Partial failure saved');
   assert.deepEqual(result.persistedPartialFailure.submitErrorDetails.buttons.map(button => button.label), ['Resume']);
   assert.ok(partialTranscript.some(entry => entry.type === 2 && entry.text.includes('partial restart-partial')), 'Partial output saved');
+  const pendingTurn = partialTranscript.findIndex(entry => entry.type === 1 && entry.text.startsWith('Trigger restart-pending.'));
+  result.afterRestart.persistedReplyAfterRetry = partialTranscript[pendingTurn + 1]?.text;
+  assert.equal(result.afterRestart.persistedReplyAfterRetry, 'fixture after restart', 'Retry after restart removes the restored placeholder');
   const partialRelaunch = requests.length;
   await launch();
   await page.getByText('Trigger restart-partial.', { exact: false }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
@@ -414,9 +472,10 @@ try {
   } catch { cleanupErrors.push('Owned host cleanup failed'); }
   const logs = await scan(join(profile, 'logs'), name => name.endsWith('.log'));
   const storage = await scan(join(profile, 'User'), name => /\.(vscdb|vscdb-wal|json)$/.test(name));
+  const full = result.rawByteScan = await scanAll(directory);
   result.secretLogMatches = logs.matches; result.scannedLogFiles = logs.files;
   result.secretStorageMatches = storage.matches; result.scannedStorageFiles = storage.files;
-  if (cleanupErrors.length || logs.matches.length || storage.matches.length || !logs.files ||
+  if (cleanupErrors.length || logs.matches.length || storage.matches.length || full.matches.length || !logs.files ||
     result.ownedHostExits?.some(value => value.exitCode !== 0)) result.success = false;
   result.cleanupErrors = cleanupErrors;
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2) + '\n');
@@ -424,6 +483,7 @@ try {
     passed: Object.entries(result.scenarios).filter(([, value]) => value.passed).map(([name]) => name),
     requests: requests.length, stopPartial: result.stopPartial, afterRestart: result.afterRestart,
     scannedLogFiles: logs.files, secretLogMatches: logs.matches, scannedStorageFiles: storage.files,
-    secretStorageMatches: storage.matches, ownedHostExits: result.ownedHostExits, error: result.error, cleanupErrors }, null, 2));
+    secretStorageMatches: storage.matches, rawByteScan: { files: full.files, bytes: full.bytes, matches: full.matches },
+    customHeader, ownedHostExits: result.ownedHostExits, error: result.error, cleanupErrors }, null, 2));
 }
 if (!result.success) process.exitCode = 1;

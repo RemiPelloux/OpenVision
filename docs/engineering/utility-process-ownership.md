@@ -104,3 +104,66 @@ Long sessions, actual repeated reloads of application services, extension-host
 and language-server retention, named profiles, large projects and native
 macOS/Linux remain outside this result. The fixed acceptance ledger remains
 **6/42 Verified (14.29%)**. All checks run locally; GitHub Actions stays disabled.
+
+## Linux x64 (19 October 2026): stale "gone" events and the timeout
+
+Story OV-1003, Linux x64 only (4-CPU container, Xvfb, Node 24.18.0, clean
+source build of the 3.21.13 runtime). Windows rows above are unchanged.
+
+**Reported failure.** On the owner's Linux host, `verify:utility-listeners`
+timed out after 10 s while waiting for the first Base-owner child's "ready".
+That run was **not reproduced** here. The first run on this host passed
+(`utility-listeners-ssPOl9`). Entry-point resolution was checked:
+`bootstrap-fork.js` and the probe resolve inside the overlay's own `out/`
+(hard links plus a real directory). This host's evidence does not identify
+the owner host's cause.
+
+**Defect found (observed).** Two of three later runs failed on the build that
+had only the listener-ownership fix (`TkjTlZ`, `zN42v8`). The failure was
+`Utility crash before ready` in the window-bound phase:
+- The crash reported `code 15, reason "killed"`, carrying the pid of the
+  *previous* child, the one the kill test had just ended.
+- Electron's `child-process-gone` details carry no pid. The owner matches its
+  child by service name, and that name is `${type}-${id}` for every run of one
+  owner.
+- The late "gone" event of the killed child therefore reached the next run's
+  listener. That listener fired `onCrash` and released the live replacement:
+  it cleared the process reference and the run's listeners while the child kept
+  running.
+- With the original probe, which waited only for "ready", the same race
+  leaves the replacement unowned, so its exit is never reported (an event
+  timeout). Inferred: this is one way to get the reported timeout; it is not
+  shown to be the owner host's cause.
+
+**Fix.** `isolateUtilityProcessRuns` in
+[`utility-process-customization.mjs`](../../desktop/utility-process-customization.mjs):
+- The first run of an owner keeps the upstream service name. Each later run is
+  named `${type}-${id}-run<N>`, so a late event can only match the run it
+  belongs to.
+- Process-role names used by the samplers (`extensionHost…`, `…watcher…`)
+  keep their prefixes.
+- The transform has its own marker, requires the listener-ownership transform,
+  and checks the `doStart` name, `serviceName: t` and the listener's
+  `.name === n` match. On drift it fails the build.
+
+**Harness changes.**
+- The probe now races "ready" against the run's exit and crash. A child that
+  dies before "ready" fails at once, with the owner's own log (through a
+  recording logger) and the child's stdout/stderr (through the owner's
+  emitters, not extra stream listeners).
+- After the kill test, the probe starts a replacement and waits 2 s. It then
+  asserts `replacementSurvivesLateGone`.
+- The verifier passes the Linux sandbox arguments like the other Linux
+  verifiers. It records the Node version, display type and whether
+  `NODE_OPTIONS` was inherited (values are not recorded). It accepts
+  `--input-main <main.js>` to run the fixed-build assertions against another
+  `main.js`.
+
+| Run (`logs/utility-listeners-*`) | Input | Result |
+| --- | --- | --- |
+| `t3jWrE` | `--baseline-main` (pre-ownership main) | Control reproduced: 16 completed-run listeners for each owner |
+| `vWeniQ`, `mij8JR`, `02r0kc` | Fixed build, before the late-gone assertion | 3/3 pass, consecutive |
+| `7CAQ7k` | `--input-main` with the listener-only fix (no run identity) | **Fail**: the stale `killed` event reached the replacement |
+| `Idg3CK`, `nrjvZE`, `MkprFo` | Fixed build with the late-gone assertion | 3/3 pass, consecutive: 0 listeners after each natural exit, replacement survives |
+
+Windows and macOS runs of this verifier move to the platform stories.

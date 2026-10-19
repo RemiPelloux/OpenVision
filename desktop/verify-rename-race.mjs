@@ -8,8 +8,10 @@ import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
+await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/rename-race-'));
 const project = join(directory, 'project'), profile = join(directory, 'profile'), driver = join(directory, 'driver');
 for (const folder of [project, join(profile, 'User'), driver]) await mkdir(folder, { recursive: true });
@@ -20,12 +22,12 @@ for (const [name, content] of Object.entries({ source: 'alpha source\n', depende
 await writeFile(join(driver, 'package.json'), JSON.stringify({ name: 'openvision-rename-race', version: '0.0.0',
   publisher: 'openvision-verification', engines: { vscode: '^1.90.0' }, main: './extension.cjs', activationEvents: ['onStartupFinished'] }));
 await copyFile(join(root, 'desktop/verify-rename-race-extension.cjs'), join(driver, 'extension.cjs'));
-const result = { directory, success: false, platform: process.platform, node: process.version,
+const result = { directory, success: false, platform: process.platform, arch: process.arch, node: process.version,
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), errors: [],
   hashes: Object.fromEntries(await Promise.all(['out/vs/workbench/api/node/extensionHostProcess.js',
     'out/vs/workbench/workbench.desktop.main.js'].map(async name => [name, await fileHash(join(appRoot, name))]))),
   driverHash: await fileHash(join(driver, 'extension.cjs')),
-  scope: 'Actual Windows workbench with a deliberately delayed extension rename provider; no AI or real language-server claim.' };
+  scope: `Actual ${process.platform}-${process.arch} workbench with a deliberately delayed extension rename provider; no AI or real language-server claim.` };
 let app, page;
 async function optional(name) {
   try { return JSON.parse(await readFile(join(directory, `${name}.json`), 'utf8')); }
@@ -35,7 +37,8 @@ try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--extensionDevelopmentPath', driver,
-      '--new-window', '--disable-updates', '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes', project] });
+      '--new-window', '--disable-updates', '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
   page = await app.firstWindow(); page.on('pageerror', error => result.errors.push(error.message));
   await enterWorkspace(page);
   const deadline = Date.now() + 90000, submitted = new Set();

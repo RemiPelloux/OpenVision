@@ -14,6 +14,9 @@ export const profileItems = Object.freeze({
     'sandbox-policies', 'managed', 'ai-tracking', 'debug-logs', 'feature-gates', 'notepads'],
   '.openvision-local': ['argv.json', 'permissions.json', 'sandbox.json', 'blocklist', 'unified_repo_list.json'],
 });
+// Items whose profile location differs from the home layout: user subagents
+// are read from <profile home>/agents, not <profile home>/.openvision/agents.
+export const relocatedItems = Object.freeze({ '.openvision/agents': 'agents' });
 // Not imported: worktrees are linked to their repositories by absolute path, and
 // .gitignore is regenerated. Third-party folders stay an explicit user choice.
 export const excludedItems = Object.freeze(['.openvision/worktrees', '.openvision/.gitignore']);
@@ -41,6 +44,16 @@ export async function migrateProfileHome({ home = homedir(), profile }) {
       await additiveImport(path.join(source, name), path.join(profileHome, folder, name), result);
       result.items.push({ item: `${folder}/${name}`, copied: result.copied - before });
     }
+  }
+  for (const [item, target] of Object.entries(relocatedItems)) {
+    const source = path.join(home, item);
+    const stat = await exists(source);
+    if (!stat) continue;
+    if (stat.isSymbolicLink()) { result.skippedLinks.push(source); continue; }
+    const before = result.copied;
+    await mkdir(profileHome, { recursive: true });
+    await additiveImport(source, path.join(profileHome, target), result);
+    result.items.push({ item, target, copied: result.copied - before });
   }
   // Record each run that copied something; an unchanged repeat leaves no trace.
   if (result.copied) {

@@ -64,3 +64,13 @@ An actual recovered catalog regression reproduces its original Bearer override
 and verifies custom-header precedence after the correction, using real local
 HTTP sockets. [Portable preview.7 verification](../verification/portable-preview7.md)
 records the final packaged native scope separately from these producer tests.
+
+## Native Linux custom-header matrix
+
+`npm run verify:provider-matrix -- --custom-header` saves a provider with no API
+key and an `X-OpenVision-Auth` header. The loopback fixture reflects that value
+into error bodies, stream events and malformed chunks. On Linux x64, runs
+`3KD9NH` and `xMexap` found it in none of 360 run files (raw bytes, UTF-8 and
+UTF-16LE) and nowhere in the visible UI. See the
+[Linux chat-failure report](../recovery/rea-agent-chat-failures-linux.md).
+This is fixture evidence for the Agent path, not process-wide log redaction.

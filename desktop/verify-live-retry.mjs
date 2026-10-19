@@ -21,7 +21,7 @@ function composerId(page) {
 
 // Restart between the real failure and the retry: the unresolved error and Try again
 // must be restored from the saved chat without sending any request.
-export async function restoreFailureAfterRestart({ page, relay, restart, result }) {
+export async function restoreFailureAfterRestart({ page, relay, restart, result, failureText = unauthorizedText }) {
   const source = await composerId(page), before = relay.requests.length;
   page = await restart();
   await page.getByText(liveReadPrompt, { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 30000 });
@@ -29,7 +29,7 @@ export async function restoreFailureAfterRestart({ page, relay, restart, result 
   await retry.last().waitFor({ timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(2500);
   const body = await page.locator('body').innerText();
-  result.afterRestart = { sameChat: await composerId(page) === source, failureVisible: unauthorizedText.test(body),
+  result.afterRestart = { sameChat: await composerId(page) === source, failureVisible: failureText.test(body),
     tryAgainVisible: await retry.count() > 0, requestsOnRestore: relay.requests.length - before };
   assert.deepEqual(result.afterRestart, { sameChat: true, failureVisible: true, tryAgainVisible: true, requestsOnRestore: 0 },
     'Restart must restore the same chat, the real provider failure and Try again without sending a request');

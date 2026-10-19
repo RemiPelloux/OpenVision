@@ -1,5 +1,5 @@
 {
-  "description": "OV-1001 numeric budgets, set from the Linux x64 pre-change baseline logs/agent-context-5IGIXx (commit 935771e4) before the fixes were accepted. Byte and token budgets are the larger cold/warm baseline value plus 5% for run-specific environment text (git warm-up state, MCP catalog timing); request, duplicate and tool-history budgets are exact. Token counts are estimates. Applies to every pass (cold and warm). See docs/performance/agent-context-linux.md.",
+  "description": "OV-1001 numeric budgets, set from the Linux x64 pre-change baseline logs/agent-context-5IGIXx (commit 935771e4) before the fixes were accepted. Byte and token budgets are the larger cold/warm baseline value plus 5% for run-specific environment text (git warm-up state, MCP catalog timing); request, duplicate and tool-history budgets are exact. Token counts are estimates. Applies to every pass (cold and warm). Fork budgets (19 October 2026) were set the same way from the pre-change baseline logs/agent-context-238ldi (build of commit b4f52a56, before the closed-chat release; verifier with the fork workload as committed in 4bab83cc); reasoningReplayed 0 with 4 reasoning deltas sent pins the documented current behaviour. Closed-chat release (19 October 2026): 75 s after closing, at most 5 reply-text strings (the chat history; measured 0 in logs/agent-context-DO8srr, 2-27 before) and at most 14 marker occurrences in all (measured 12, all owned by the bounded prompt-input history, its persisted copy, the chat title, subtitle and Chat History header; 45 before), and reopening the chat restores every prompt and reply. heapMarkerStringsAfterClose stays a non-regression budget (3 s after close, before the release window). See docs/performance/agent-context-linux.md.",
   "workloads": {
     "single": {
       "requests": 1, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
@@ -13,7 +13,14 @@
     "edit": {
       "requests": 5, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
       "inputBytes": 418999, "estimatedInputTokens": 114544, "maxRequestBytes": 86611,
-      "min:toolCallsReplayed": 4
+      "min:toolCallsReplayed": 4, "reasoningReplayed": 0, "min:reasoningDeltasSent": 4
+    },
+    "fork": {
+      "requests": 1, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 86128, "estimatedInputTokens": 23792, "maxRequestBytes": 86128,
+      "sourceHistoryCopies": 1, "min:minSourceHistoryCopies": 1, "min:toolCallsReplayed": 4, "reasoningReplayed": 0,
+      "min:sourceUnchangedOnDisk": 1, "min:forkKeepsSourceHistory": 1, "forkAddedEntries": 2, "min:forkAddedEntries": 2,
+      "min:forkSurvivesRestart": 1
     },
     "long": {
       "requests": 22, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
@@ -31,7 +38,9 @@
     "min:chatCloseCancelsInFlight": 1,
     "chatCloseToTransportCloseMs": 250,
     "heapMarkerStringsAfterClose": 46,
-    "heapMarkerStringsAfterRelease": 46,
+    "heapMarkerStringsAfterRelease": 14,
+    "heapReplyStringsAfterRelease": 5,
+    "min:disposeReopenRestoresTranscript": 1,
     "min:windowCloseCancelsInFlight": 1,
     "windowCloseToTransportCloseMs": 900,
     "min:ownedHostExitedCleanly": 1

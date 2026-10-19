@@ -20,13 +20,16 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
 import { electronNames, growth, hostLoad, mib, processFamily, stillAlive, summarize } from './process-family-linux.mjs';
+import { evaluate as evaluateBudgets, loadBudgets, measure } from './idle-memory-budgets.mjs';
+import { extensionHostResources } from './extension-host-timers.mjs';
 
 assert.equal(process.platform, 'linux', 'verify:idle-memory reads Linux /proc private memory');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout, appRoot, portable } = await verificationRuntime(root);
 const argument = (name, fallback) => process.argv.find(item => item.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback;
 const quick = process.argv.includes('--quick');
-const idleMarks = argument('idle-minutes', quick ? '1' : '5,15').split(',').map(Number).filter(value => value > 0);
+// Two idle marks in both variants, so idle growth and idle CPU are always measured.
+const idleMarks = argument('idle-minutes', quick ? '1,2' : '5,15').split(',').map(Number).filter(value => value > 0);
 const iterations = Number(argument('iterations', quick ? '2' : '6'));
 const settleSeconds = Number(argument('settle-seconds', quick ? '20' : '45'));
 const iterationSettleSeconds = Number(argument('iteration-settle-seconds', '20'));
@@ -34,6 +37,11 @@ const label = argument('label', 'run');
 // Optional: run the owned host under strace (signals of the main process only) so an
 // unrequested exit can be attributed to its sender. Adds ptrace overhead to the host.
 const signalTrace = process.argv.includes('--signal-trace');
+// Optional: start extension hosts with an inspector and read each host's active
+// handles (timers, sockets, watchers) at every idle mark. Off for budgeted runs.
+const timerInventory = process.argv.includes('--timer-inventory');
+const budgetVariant = argument('budgets', quick ? 'quick' : 'full');
+const budgets = budgetVariant === 'none' ? undefined : await loadBudgets(join(dirname(fileURLToPath(import.meta.url))), budgetVariant);
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, `logs/idle-memory-${label}-`));
 const profile = join(directory, 'profile'), project = join(directory, 'project');
@@ -106,7 +114,7 @@ await new Promise(done => server.listen(0, '127.0.0.1', done));
 
 const result = { checkedAt: new Date().toISOString(), identity, directory,
   scope: 'Linux x64 native source build; fresh-profile start is not a cold OS page cache; controlled loopback model; one run per configuration.',
-  options: { idleMarks, iterations, settleSeconds, iterationSettleSeconds, quick, signalTrace },
+  options: { idleMarks, iterations, settleSeconds, iterationSettleSeconds, quick, signalTrace, timerInventory, budgetVariant }, budgets,
   launches: [], idle: [], iterations: [], errors: [], hostExits: [], success: false };
 const pause = ms => new Promise(done => setTimeout(done, ms));
 let app, page, rootPid, names = new Map(), closing = false;
@@ -152,7 +160,7 @@ async function launch(kind) {
   app = await _electron.launch({ executablePath, env, timeout: 90000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window', '--disable-updates',
       '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
-      ...await linuxSandboxArguments(layout.host), project] });
+      ...timerInventory ? ['--inspect-extensions=19229'] : [], ...await linuxSandboxArguments(layout.host), project] });
   rootPid = app.process().pid;
   // Record every owned host exit, including one this verifier did not request.
   app.process().once('exit', (code, signal) => result.hostExits.push({ kind, code, signal, at: new Date().toISOString(), requested: closing }));
@@ -250,6 +258,24 @@ async function workload(index) {
   return timing;
 }
 
+async function processSamplingEvidence() {
+  const pattern = /\[CursorProclistService\] Config enabled feature|\[Cursor Proclist Polling\] (Started polling|Transport down|Failed to send V2 metrics|Replaying)|Samples written:/;
+  const logLines = [], files = [];
+  async function walk(path, visit) {
+    for (const entry of await readdir(path, { withFileTypes: true }).catch(() => [])) {
+      const next = join(path, entry.name);
+      if (entry.isDirectory()) await walk(next, visit); else await visit(next, entry.name);
+    }
+  }
+  await walk(join(profile, 'logs'), async (path, name) => {
+    if (name.endsWith('.log')) for (const line of (await readFile(path, 'utf8')).split('\n')) if (pattern.test(line)) logLines.push(line.slice(0, 300));
+  });
+  await walk(join(profile, 'process-monitor'), async (path, name) => {
+    if (name.endsWith('.log') || name === 'pending-uploads.json') files.push(path.replace(`${profile}/`, ''));
+  });
+  return { logLines, files };
+}
+
 // Extension-host placement from the renderer log (observed lines; host order inferred).
 async function extensionHosts() {
   const lines = [];
@@ -295,6 +321,8 @@ try {
     await pause(Math.max(0, idleStart + minutes * 60000 - Date.now()));
     assert.equal(app.process().exitCode ?? app.process().signalCode ?? null, null, `Owned host exited unexpectedly: ${JSON.stringify(result.hostExits)}`);
     const sample = await snapshot(`idle-${minutes}min`);
+    if (timerInventory) sample.extensionHostResources = await extensionHostResources(sample.processes
+      .filter(item => item.role === 'extension-host').map(item => ({ pid: item.pid, name: names.get(item.pid)?.name })));
     result.idle.push({ minutes, ...sample });
     console.log(`[idle ${minutes} min] USS ${sample.ussMiB} MiB, PSS ${sample.pssMiB} MiB, swap ${sample.swapMiB} MiB, ${sample.count} processes`);
   }
@@ -343,6 +371,16 @@ try {
   if (result.errors.length) failures.push(`${result.errors.length} renderer errors`);
   if (result.terminalRelease.remainingShells || result.terminalRelease.ptyHostMasters)
     failures.push(`Killed terminals left ${result.terminalRelease.remainingShells} shells and ${result.terminalRelease.ptyHostMasters} pty masters`);
+  // OV-1003: process sampling stays inert: no whole-system scan, no sample build,
+  // stash or upload attempt in any log, and no shard or pending-upload file.
+  result.processSampling = await processSamplingEvidence();
+  if (result.processSampling.logLines.length) failures.push(`Process sampling ran: ${result.processSampling.logLines.slice(0, 3).join(' | ')}`);
+  if (result.processSampling.files.length) failures.push(`Process samples were written: ${result.processSampling.files.join(', ')}`);
+  if (budgets) {
+    result.measured = measure(result);
+    result.budgetOutcome = evaluateBudgets(budgets, result.measured);
+    for (const item of result.budgetOutcome.failures) failures.push(`Budget ${item.name}: ${item.reason} (${item.value} > ${item.limit})`);
+  }
   result.failures = failures;
   result.success = failures.length === 0;
 } catch (error) {
@@ -360,6 +398,8 @@ try {
     idle: result.idle.map(item => ({ minutes: item.minutes, ...brief(item), host: item.host })),
     iterations: result.iterations.map(item => ({ index: item.index, timing: item.timing, activePeakPssMiB: item.active.peakPssMiB, settled: brief(item.settled) })),
     growth: result.growth && { ussMiB: result.growth.ussMiB, pssMiB: result.growth.pssMiB, count: result.growth.count },
-    terminalRelease: result.terminalRelease, idleCpuSeconds: result.idleCpuSeconds, hostExits: result.hostExits, hostSignals: result.hostSignals }, null, 2));
+    terminalRelease: result.terminalRelease, idleCpuSeconds: result.idleCpuSeconds, measured: result.measured,
+    budgetFailures: result.budgetOutcome?.failures, processSampling: result.processSampling,
+    extensionHostResources: result.idle.map(item => ({ minutes: item.minutes, hosts: item.extensionHostResources })).filter(item => item.hosts), hostExits: result.hostExits, hostSignals: result.hostSignals }, null, 2));
   if (!result.success) process.exitCode = 1;
 }

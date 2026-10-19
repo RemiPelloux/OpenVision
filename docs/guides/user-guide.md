@@ -272,8 +272,8 @@ supports editor preferences, keyboard shortcuts, snippets, tasks, and registered
 extensions. Source files are read without modification.
 
 Imports target the running instance's default profile
-and selected extension directory, including custom launch paths. Named profiles
-are currently rejected. Native-dialog backups live under that user-data folder's
+and selected extension directory, including custom launch paths. Named
+OpenVision profiles are not import destinations and are rejected. Native-dialog backups live under that user-data folder's
 `Backups/openvision-import`. The dialog can restore its latest import. After a
 restart, use the CLI with both `--target-user-data` and `--target-extensions` to
 select that same instance's destinations. `--list-backups` discovers backups;
@@ -307,8 +307,34 @@ after importing extensions. **Restore Last Import** is also available in the
 dialog. Restore refuses to overwrite newer edits. Repeating an identical import
 does not create another backup.
 
-Accounts, cookies, chat history, databases, and extension secret storage are
-excluded. Existing OpenVision provider keys remain in their own storage.
+**Never imported**, whatever categories you select (the dialog and every
+preview list these too):
+
+- extension enablement state (which extensions are enabled or disabled);
+- profile registries (`globalStorage/storage.json`, `userDataProfiles`);
+- named profiles as destinations, and Cursor's per-profile extension lists;
+- accounts and sign-in state;
+- secrets and extension secret storage;
+- chat, composer and other databases (`state.vscdb`), workspace storage and
+  local history.
+
+A named Cursor profile can be selected as the **source** of settings,
+keyboard shortcuts, tasks and snippets; it is imported into OpenVision's
+default profile. Its name is read from Cursor's registry only to label the
+choice. Installed extensions always come from the Cursor extensions directory.
+An extension built for another platform (for example `win32-x64` on Linux)
+stops the extension import with a clear message and writes nothing; reinstall
+the matching build in Cursor first, or import without extensions. Source files
+are never modified. Existing OpenVision provider keys remain in their own storage.
+
+Imports and restores are staged: every new file is written beside its
+destination first, so a full or read-only disk stops the operation before any
+destination file changes and reports the error; the backup is kept. If
+OpenVision or the CLI is interrupted while replacing files, the next start of
+OpenVision (or the next CLI import, restore or `--recover`) returns those files
+to their state before the interrupted operation. `--list-backups` marks such a
+backup as `interrupted` until then.
+
 Source-profile paths, backup layouts, and remaining global-service isolation
 limits are described in [Import Details](../verification/import-profile-verification.md).
 
@@ -364,6 +390,8 @@ npm run test:portable
 npm run test:desktop
 npm start -- --inspect-preview
 node desktop/verify-import.mjs
+npm run verify:import -- --realistic-profile   # Linux: generated Cursor layout
+npm run verify:import-faults                   # Linux: interruption, ENOSPC, EROFS
 node desktop/verify-models.mjs
 ```
 

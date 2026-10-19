@@ -161,7 +161,9 @@ async function restartReviewHost(stage) {
   const [code, signal] = await exited;
   ownedHostExits.push({ pid: child.pid, exitCode: code, signalCode: signal, abrupt: true, stage });
   app = undefined;
-  assert.ok(Number.isInteger(code) && code !== 0, 'Interrupted host must exit abnormally');
+  // process.exit(23) can end in a native abort during teardown (observed SIGABRT on
+  // Linux x64); either outcome bypasses the normal quit path.
+  assert.ok((Number.isInteger(code) && code !== 0) || signal !== null, 'Interrupted host must exit abnormally');
 }
 async function launch() {
   const started = performance.now();

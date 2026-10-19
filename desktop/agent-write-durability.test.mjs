@@ -8,7 +8,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readableApp } from './recovered-source.mjs';
 import { agentWriteHelper, agentWriteMarker, agentWriteTargets, durableAgentWriteHelper, durableHelper,
-  preserveAgentWrites, previousAgentWriteMarker, staleTemporaryMs } from './agent-write-durability-customization.mjs';
+  preserveAgentWrites, previousAgentWriteMarker, staleTemporaryMs, agentTemporarySweep, agentTemporarySweepMarker,
+  sweepAgentTemporariesOnStartup } from './agent-write-durability-customization.mjs';
 
 const require = createRequire(import.meta.url);
 const runner = fileURLToPath(new URL('./agent-write-faults.cjs', import.meta.url));
@@ -230,4 +231,55 @@ test('later writes remove stale temporaries left by an interrupted writer', { sk
     assert.equal(fs.existsSync(otherTarget), true, `${target.id}: other targets are not swept`);
     assert.equal(fs.existsSync(foreignName), true, `${target.id}: only the exact generated pattern is swept`);
   }
+});
+
+// Startup sweep for orphans of files that are never written again.
+function sweeper(limits) {
+  const file = join(modules, `sweep-${limits ? 'limited' : 'default'}.cjs`);
+  fs.writeFileSync(file, `'use strict';\n${agentTemporarySweep(limits)}\nmodule.exports = openvisionSweepAgentTemporaries;\n`);
+  return require(file);
+}
+
+test('startup sweep removes only aged exact temporaries inside open roots', { skip: !posix && 'POSIX atomic path' }, async () => {
+  const root = workspace(), outside = workspace(), uuid = '0123abcd-0123-4567-89ab-0123456789ab';
+  const aged = new Date(Date.now() - 2 * staleTemporaryMs);
+  const make = (path, time = aged) => { fs.mkdirSync(join(path, '..'), { recursive: true }); fs.writeFileSync(path, 'partial'); fs.utimesSync(path, time, time); return path; };
+  const stale = [make(join(root, `.a.js.openvision-${uuid}.tmp`)), make(join(root, 'src/deep', `.b.md.openvision-${uuid}.tmp`))];
+  const kept = [
+    make(join(root, `.c.js.openvision-${uuid}.tmp`), new Date()), // a live writer may own it
+    make(join(root, `.c.js.openvision-not-a-uuid.tmp`)), make(join(root, `c.js.openvision-${uuid}.tmp`)),
+    make(join(root, `.c.js.openvision-${uuid.toUpperCase()}.tmp`)), make(join(root, 'node_modules', `.d.openvision-${uuid}.tmp`)),
+    make(join(root, '.git', `.e.openvision-${uuid}.tmp`)), make(join(outside, `.f.openvision-${uuid}.tmp`)),
+  ];
+  fs.mkdirSync(join(root, `.g.openvision-${uuid}.tmp`)); // directories are never removed
+  fs.symlinkSync(outside, join(root, 'linked')); // symlinked directories are not followed
+  const sweep = sweeper();
+  const result = await sweep([root, 'relative/path', undefined]);
+  assert.deepEqual(result.removed.sort(), stale.sort());
+  assert.equal(result.truncated, false);
+  for (const path of stale) assert.equal(fs.existsSync(path), false);
+  for (const path of kept) assert.equal(fs.existsSync(path), true, path);
+  assert.equal(fs.statSync(join(root, `.g.openvision-${uuid}.tmp`)).isDirectory(), true);
+  assert.deepEqual((await sweep([join(root, 'missing')])).removed, []);
+});
+
+test('startup sweep is bounded by directories and entries', { skip: !posix && 'POSIX atomic path' }, async () => {
+  const root = workspace(), uuid = '0123abcd-0123-4567-89ab-0123456789ab', aged = new Date(Date.now() - 2 * staleTemporaryMs);
+  for (let index = 0; index < 5; index++) {
+    const path = join(root, `d${index}`, `.x.openvision-${uuid}.tmp`);
+    fs.mkdirSync(join(root, `d${index}`)); fs.writeFileSync(path, ''); fs.utimesSync(path, aged, aged);
+  }
+  const limited = await sweeper({ directories: 3, entries: 1000, depth: 32 })([root]);
+  assert.equal(limited.truncated, true); assert.equal(limited.directories, 3); assert.equal(limited.removed.length, 2);
+  const entries = await sweeper({ directories: 1000, entries: 4, depth: 32 })([root]);
+  assert.equal(entries.truncated, true); assert.ok(entries.entries <= 5);
+});
+
+test('startup sweep is installed once into Agent execution activation and fails closed on drift', () => {
+  const text = patched['agent-exec'], swept = sweepAgentTemporariesOnStartup(text);
+  assert.equal(swept.split(agentTemporarySweepMarker).length, 2);
+  assert.equal(sweepAgentTemporariesOnStartup(swept), swept);
+  assert.match(swept, /async function \$l\(e\) \{\n      setTimeout\(\(\) => openvisionSweepAgentTemporaries\(\(G\.workspace\.workspaceFolders/);
+  assert.throws(() => sweepAgentTemporariesOnStartup(recovered['agent-exec']), /activation contract/);
+  assert.throws(() => sweepAgentTemporariesOnStartup(text.replace('async function $l(e) {', 'async function $m(e) {')), /activation contract/);
 });

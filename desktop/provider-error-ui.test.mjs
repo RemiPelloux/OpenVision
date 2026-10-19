@@ -94,3 +94,39 @@ test('local mode keeps the Agent host topology off unless its bundle carries the
     assert.ok(guarded || hostProtected, `${variant}: Agent host topology reachable without the provider error boundary`);
   }
 });
+
+for (const variant of ['desktop', 'glass']) {
+  test(`${variant} retry removes the empty provider-failure placeholder named by the chat failure record`, async () => {
+    const built = await readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8');
+    const text = providerManualRetry(built);
+    assert.equal(providerManualRetry(text), text);
+    assert.ok(!text.includes('openvisionProviderFailurePlaceholder'), 'earlier in-place patches are removed');
+    const [handle, bubble] = variant === 'desktop' ? ['cn', 'tp'] : ['Et', 'ec'];
+    const expression = anchor => {
+      const start = text.indexOf(anchor);
+      assert.ok(start > 0 && text.indexOf(anchor, start + 1) < 0, `unique ${anchor}`);
+      return text.slice(start, parseExpressionAt(text, start, { ecmaVersion: 'latest', preserveParens: true }).end);
+    };
+    const record = expression(`${handle}.data.submitErrorDetails?.openvisionProviderFailure === true &&\n                    this.`);
+    const clear = expression(`(${handle}.data.submitErrorDetails?.openvisionProviderFailure === true &&\n                        typeof`);
+    const run = (source, data, extra = {}) => {
+      const calls = [], store = { data };
+      const owner = {
+        _composerDataService: {
+          deleteComposerBubbles: (target, ids) => { assert.equal(target, store); calls.push(['delete', ...ids]); },
+          updateComposerDataSetStore: (target, update) => update((key, value) => { store.data = { ...store.data, [key]: value }; calls.push(['set', key]); }),
+        },
+        _composerUtilsService: { clearErrorDetailsAndServiceStatusUpdatesFromLatestAIMessages: () => calls.push(['clear']) },
+      };
+      runInNewContext(`(function (${handle}, ${bubble}) { ${source}; })`, {}).call(owner, store, extra.bubble);
+      return { calls, data: store.data };
+    };
+    const failure = { openvisionProviderFailure: true, title: 'Provider failure' };
+    const created = run(record, { submitErrorDetails: failure }, { bubble: { bubbleId: 'placeholder-1' } });
+    assert.equal(created.data.submitErrorDetails.openvisionPlaceholderBubbleId, 'placeholder-1');
+    assert.deepEqual(run(record, { submitErrorDetails: { title: 'Other failure' } }, { bubble: { bubbleId: 'x' } }).calls, [], 'other failures are not marked');
+    assert.deepEqual(run(clear, created.data).calls, [['delete', 'placeholder-1'], ['clear'], ['set', 'submitErrorDetails']]);
+    for (const data of [{ submitErrorDetails: failure }, { submitErrorDetails: { title: 'Other', openvisionPlaceholderBubbleId: 'x' } }, {}])
+      assert.deepEqual(run(clear, data).calls, [['clear'], ['set', 'submitErrorDetails']], 'without a named provider placeholder only the recovered clearing runs');
+  });
+}

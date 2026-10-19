@@ -34,5 +34,7 @@ if command -v tcpdump >/dev/null 2>&1; then
 fi
 status=0
 unshare --user --map-user="$uid" --map-group="$gid" "$@" || status=$?
-if [ -n "$capture" ]; then kill "$capture"; wait "$capture" || true; fi
+# tcpdump exits early when it cannot capture (for example as an unprivileged user);
+# a capture that already ended must not turn a passing run into a failure.
+if [ -n "$capture" ]; then kill "$capture" 2>/dev/null || true; wait "$capture" || true; fi
 exit "$status"

@@ -246,3 +246,15 @@ The [packaged Quick Edit check](../verification/portable-preview7.md) also
 confirms that reflected API-key/header fixture values are absent from its
 displayed error. These results do not establish process-wide log redaction or
 repeat the full native Agent failure matrix with custom headers. OV-204 remains Partial.
+
+## Linux follow-up, 19 October
+
+The [Linux chat-failure report](../recovery/rea-agent-chat-failures-linux.md)
+covers several items from the list above with controlled fixtures:
+
+- the oversized and truncated successful-stream shapes, including the
+  exec-transport event-budget fix;
+- the native custom-header secret matrix;
+- full-duration timeouts with a fixture retry.
+
+Live-provider evidence and Windows or macOS evidence remain open.

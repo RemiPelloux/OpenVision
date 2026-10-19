@@ -17,6 +17,8 @@ function streamEvidence(record, marker, redact) {
       if (!line.startsWith('data:') || line.slice(5).trim() === '[DONE]') continue;
       const event = JSON.parse(line.slice(5));
       observeTools(event);
+      const usage = providerUsage(event);
+      if (usage) record.usage = usage;
       if (event.model) record.responseModel = redact(event.model);
       const content = event.type === 'response.output_text.delta' ? event.delta : event.choices?.[0]?.delta?.content;
       if (typeof content === 'string') {
@@ -26,6 +28,23 @@ function streamEvidence(record, marker, redact) {
         output = output.slice(-marker.length);
       }
     }
+  };
+}
+
+// Provider-reported token usage: the final Chat Completions chunk (`usage`,
+// when the provider sends it) or the Responses `response.completed` event.
+// Values are copied as reported; absent fields stay undefined, never estimated.
+export function providerUsage(event) {
+  const usage = event.type === 'response.completed' ? event.response?.usage : event.usage;
+  if (!usage || typeof usage !== 'object') return undefined;
+  const number = value => Number.isFinite(value) ? value : undefined;
+  return {
+    promptTokens: number(usage.prompt_tokens ?? usage.input_tokens),
+    completionTokens: number(usage.completion_tokens ?? usage.output_tokens),
+    cachedTokens: number(usage.prompt_tokens_details?.cached_tokens ?? usage.input_tokens_details?.cached_tokens ??
+      usage.prompt_cache_hit_tokens),
+    reasoningTokens: number(usage.completion_tokens_details?.reasoning_tokens ?? usage.output_tokens_details?.reasoning_tokens),
+    totalTokens: number(usage.total_tokens),
   };
 }
 
@@ -82,7 +101,8 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
   }
   const requests = [], controllers = new Set(), pending = new Set();
   const failed = Promise.withResolvers();
-  let key, unauthorizedIndex = expectInitialUnauthorized ? 0 : undefined;
+  // One armed upstream failure that is forwarded to the app instead of failing the probe.
+  let key, expectedFailure = expectInitialUnauthorized ? { index: 0, status: 401 } : undefined;
   const saved = provider.models?.find(entry => entry.id === model);
   const efforts = saved?.capabilities?.reasoningEffortValues ?? fallbackReasoningValues(provider.url, model);
   const redact = value => key ? String(value).replaceAll(key, '[redacted]') : String(value);
@@ -138,8 +158,9 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       record.requestId = redact(upstream.headers.get('x-request-id') ?? '');
       if (!upstream.ok) {
         const failureBody = await providerFailureBody(upstream, record, redact);
-        if (record === requests[unauthorizedIndex] && upstream.status === 401 && !record.errorTruncated) {
-          record.expectedAuthenticationFailure = true;
+        if (record === requests[expectedFailure?.index] && upstream.status === expectedFailure.status && !record.errorTruncated) {
+          record.expectedProviderFailure = true;
+          if (upstream.status === 401) record.expectedAuthenticationFailure = true;
           response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'text/plain',
             'x-request-id': record.requestId });
           response.end(failureBody); return;
@@ -154,9 +175,10 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
         }
         throw new Error(`Live provider returned HTTP ${upstream.status}`);
       }
-      if (record === requests[unauthorizedIndex]) {
+      if (record === requests[expectedFailure?.index]) {
         await upstream.body?.cancel();
-        throw new Error('Live provider did not reject the deliberately invalid credential');
+        throw new Error(expectedFailure.status === 401 ? 'Live provider did not reject the deliberately invalid credential'
+          : `Provider did not return the armed HTTP ${expectedFailure.status}`);
       }
       response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/octet-stream' });
       const observe = streamEvidence(record, marker, redact);
@@ -187,10 +209,11 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   return { requests, catalogEfforts: efforts, failure: failed.promise, setKey(value) { key = value; },
-    expectUnauthorizedOnNextRequest() {
-      if (unauthorizedIndex !== undefined || initialStall || pending.size)
-        throw new Error('A single authentication failure may be armed only between completed requests');
-      unauthorizedIndex = requests.length;
+    expectUnauthorizedOnNextRequest() { this.expectFailureOnNextRequest(401); },
+    expectFailureOnNextRequest(status) {
+      if (expectedFailure !== undefined || initialStall || pending.size)
+        throw new Error('A single provider failure may be armed only between completed requests');
+      expectedFailure = { index: requests.length, status };
     },
     url: `http://127.0.0.1:${server.address().port}/v1`,
     async close() {

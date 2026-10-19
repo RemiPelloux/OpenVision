@@ -203,6 +203,63 @@ evidence screenshot timed out. The immediate rerun `y6U7VK` passed.
 Run directories are private (`logs/` is ignored) and hold `result.json`,
 `strace.log`, screenshots and the permission-mode backup.
 
+## Ubuntu/X11 cell (19 October 2026)
+
+Host: cloud container, Ubuntu 24.04, Xvfb X11 (`1920x1080x24`), `dbus-run-session`
+without a Secret Service, non-root user `ov`, Node 24.18.0, ext4-backed overlay,
+4 CPUs. Branch `ov/ubuntu-rerun-fixes`. The coordinator's rerun on merged main
+`b4f52a56` failed `verify:explorer` with "externalEdit.probesPerRootPerSecond 4.33
+exceeds budget 4" and `verify:project:lifecycle` at "hot exit". Both were
+harness defects; the product behaved correctly.
+
+**Probe rate (measurement-window artifact).** Observed in the
+`explorer-verification-TUKVBF` trace: the probes are `fs.watchFile` polls of absent
+per-root paths. The upstream interval is `BaseWatcher.suspendedWatchRequestPollingInterval
+= 5007` ms (recovered `main.js`, shared process and watcher bundles). Each period
+has one cluster of 3 + 15 + 16 + 6 = 40 calls for the three roots, about 2.8 s wide.
+The budgeted windows are 3–4 s. A window that starts just before a cluster holds
+all 40, and dividing by the window alone gives 40 / 3 / 3.08 s = **4.33**: the
+reported failure. The steady rate is 40 / 3 / 5.007 = 2.66 per root·s. No extra probe
+source was found on this host: the paths and cluster sizes match the Arch
+description above.
+
+Fix (harness, [`explorer-probe-rate.mjs`](../../desktop/explorer-probe-rate.mjs)):
+a periodic poll can land in a window of W seconds at most ⌊W/P⌋ + 1 times. The rate
+is now probes / roots / ((⌊W/P⌋ + 1) · P), with P = 5.007 s. The budget (≤ 4 per root·s) is
+unchanged. Extra probes caused by an edit still raise the count. The window-only
+figure is still recorded as `probesPerRootPerWindowSecond`.
+`explorer-probe-rate.test.mjs` (in `test:desktop`) sweeps window phases and lengths
+of 3–11 s over the recorded cluster shape. It shows the new rate never exceeds
+the steady 2.66, the window-only control reaches 4.33, and an extra 25 probes in a
+window still fail.
+
+**Hot exit (keyring prompt took focus).** In `project-lifecycle-verification-DhpSFc`
+and `…-5Oq96k`, the relaunched window restored the unsaved edit (dirty tab, marker
+visible). Then the upstream modal "An OS keyring couldn't be identified" prompt
+(no Secret Service on this host) took keyboard focus, so Ctrl+S never reached the
+editor. Clicking "Use weaker encryption" would write `password-store=basic` to the user's
+`argv.json`. The verifier instead closes the prompt through its Close action,
+focuses the editor before saving, and records `keyringPromptsDismissed`. The shared
+helper is `dismissKeyringPrompt` in
+[`verification-workspace.mjs`](../../desktop/verification-workspace.mjs). The
+profile's `argv.json` kept no `password-store` entry.
+
+| Run | Result | Probes per root·s (whole periods / window-only), idle · small edit · external |
+| --- | --- | --- |
+| `explorer-verification-TUKVBF` | Pass, before the fix (phase did not catch a full cluster) | — / 2.08 · 3.57 · 2.44 |
+| `explorer-verification-LxGJOq` | Pass, 36/36 checks | 1.46 / 1.83 · 2.66 / 3.84 · 1.46 / 2.44 |
+| `explorer-verification-LQVKme` | Pass, 36/36 checks | 2.66 / 3.33 · 1.66 / 2.46 · 1.07 / 1.78 |
+| `project-lifecycle-verification-DhpSFc`, `…-5Oq96k` | Fail before the fix (keyring prompt) | |
+| `project-lifecycle-verification-S5Jao7`, `…-8Unr9h`, `…-ql2wEC` | Pass, 11 checks each, one prompt dismissed each | |
+| `project-verification-0g7yL2` | Pass | |
+| `project-scale-verification-w3b73r` | Pass | |
+
+Both `LxGJOq` and `LQVKme` measured 9 project syscalls and 1 distinct path for the small edit, and 1 for
+the external append. There were 0 directory listings and 0 new watches in every window. Owned
+watches were 167 (137 fixture). Host exits were 0, SIGKILL (16 owned, 0 survivors), 0, 0. The
+Ubuntu/X11 cell passes every Linux clause. Windows and macOS cells are moved to
+platform stories.
+
 ## Limitations and remaining gates
 
 - **Linux x64 only.** Windows cells still lacking evidence: file symlinks

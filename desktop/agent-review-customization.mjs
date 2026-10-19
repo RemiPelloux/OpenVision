@@ -71,9 +71,99 @@ export function joinAgentReviewAcceptance(text) {
   return text;
 }
 
+// Undo All recovered as a sequential loop: a member that throws (for example a
+// committed rejection whose handler cleanup fails) stops the loop, so later
+// members stay pending, and neither group action told the user. Rejection is
+// joined like acceptance, and a failed member of either group is reported with
+// a Retry action. Retry first resumes committed decisions at the inline-diff
+// owner, then repeats the group for anything still pending; failures are
+// reported again.
+const rejectionMarker = '/* OpenVision joined Agent review rejection v1 */';
+const originalRejection = `rejectAllDiffs(e, t) {
+  const n = this.composerDataService.getHandleIfLoaded(e);
+  if (!n || !this.composerDataService.getComposerData(n)) return;
+  const r = this.composerDataService.getLoadedSubComposerHandles(n),
+    s = [n, ...r], o = new Set(),
+    a = { rejectSilently: t?.rejectSilently, sourceContext: "composer" };
+  for (const c of s) {
+    const l = this.composerCodeBlockService.getAllPendingDiffDescriptors(c);
+    for (const u of l)
+      o.has(u.id) || (o.add(u.id), this.diffChangeSourceRegistry.reject(u.id, a));
+  }
+}`;
+const joinedRejection = `openvisionReportReviewCleanup(kind, e, t, errors) {
+  ${rejectionMarker}
+  for (const error of errors) console.error("[composer] Could not finish review " + kind + ":", error);
+  const count = errors.length, files = count === 1 ? "1 file" : count + " files";
+  try {
+    this._notificationService.prompt(2,
+      "OpenVision could not finish " + (kind === "accept" ? "keeping" : "undoing") + " the review of " + files +
+        ". The decision is kept; retry to finish it.",
+      [{ label: "Retry", run: async () => {
+        // Committed decisions no longer have a pending descriptor; resume them here
+        // so a retry that fails again is reported again.
+        const failed = [], service = this.inlineDiffService;
+        for (const [id, handler] of [...(service.diffHandlers ?? [])])
+          if (handler.openvisionFate)
+            try { handler.openvisionFate.kind === "accept" ? service.acceptDiff(id) : service.rejectDiff(id); }
+            catch (error) { failed.push(error); }
+        // The group reports its own failures for members still pending.
+        await (kind === "accept" ? this.acceptAllDiffs(e, t) : this.rejectAllDiffs(e, t)).catch(() => {});
+        failed.length && this.openvisionReportReviewCleanup(kind, e, t, failed);
+      } }]);
+  } catch (error) { console.error("[composer] Could not report review cleanup failure:", error); }
+}
+async rejectAllDiffs(e, t) {
+  const handle = this.composerDataService.getHandleIfLoaded(e);
+  if (!handle || !this.composerDataService.getComposerData(handle)) return;
+  const handles = [handle, ...this.composerDataService.getLoadedSubComposerHandles(handle)];
+  const ids = new Set();
+  for (const current of handles)
+    for (const descriptor of this.composerCodeBlockService.getAllPendingDiffDescriptors(current))
+      ids.add(descriptor.id);
+  const options = { rejectSilently: t?.rejectSilently, sourceContext: "composer" };
+  // Every member is attempted; one failure no longer leaves later members pending.
+  const results = await Promise.allSettled([...ids].map(id =>
+    Promise.resolve().then(() => this.diffChangeSourceRegistry.reject(id, options))));
+  const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
+  errors.length && this.openvisionReportReviewCleanup("reject", e, t, errors);
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) throw new AggregateError(errors, "Could not reject " + errors.length + " file changes");
+}`;
+const acceptanceErrors = `const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
+  if (errors.length === 1) throw errors[0];`;
+
+export function joinAgentReviewRejection(text) {
+  const owner = agentReviewOwner(text), source = text.slice(owner.start, owner.end);
+  if (source.includes(rejectionMarker)) return text;
+  if (!source.includes(marker)) throw new Error('Agent review rejection requires joined acceptance');
+  const methods = name => owner.body.body.filter(node => node.key?.name === name);
+  const [rejection, ...others] = methods('rejectAllDiffs'), [rejectAll] = methods('rejectAll');
+  if (!rejection || others.length || compact(text.slice(rejection.start, rejection.end)) !== compact(originalRejection))
+    throw new Error('Agent review rejection contract changed');
+  const call = 'this.rejectAllDiffs(e, t));';
+  const rejectSource = rejectAll && text.slice(rejectAll.start, rejectAll.end);
+  if (!rejectSource || rejectSource.split(call).length !== 2 || [...source.matchAll(/this\.rejectAllDiffs\(/g)].length !== 1 ||
+      source.split(acceptanceErrors).length !== 2)
+    throw new Error('Agent review rejection caller contract changed');
+  const [acceptance] = methods('acceptAllDiffs');
+  const edits = [
+    { start: rejection.start, end: rejection.end, text: joinedRejection },
+    // The caller returns the joined rejection so its outcome is observable.
+    { start: rejectAll.start, end: rejectAll.end, text: rejectSource.replace('(this.analyticsService.trackEvent("composer.reject_all"',
+      'return (this.analyticsService.trackEvent("composer.reject_all"') },
+    { start: acceptance.start, end: acceptance.end, text: text.slice(acceptance.start, acceptance.end).replace(acceptanceErrors,
+      acceptanceErrors.replace('\n', '\n  errors.length && this.openvisionReportReviewCleanup("accept", e, t, errors);\n')) },
+  ];
+  if (edits[1].text === rejectSource) throw new Error('Agent review rejection caller contract changed');
+  for (const edit of edits.sort((left, right) => right.start - left.start))
+    text = text.slice(0, edit.start) + edit.text + text.slice(edit.end);
+  return text;
+}
+
 export async function installAgentReviewAcceptance(root) {
   const path = join(root, 'source/app', agentReviewEntry);
-  const before = await readFile(path, 'utf8'), after = joinAgentReviewAcceptance(before);
+  const before = await readFile(path, 'utf8'), after = joinAgentReviewRejection(joinAgentReviewAcceptance(before));
   if (before === after) return;
   const backup = join(root, 'backups/agent-review', agentReviewEntry);
   await mkdir(dirname(backup), { recursive: true });

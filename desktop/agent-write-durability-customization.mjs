@@ -310,10 +310,71 @@ export function preserveAgentWrites(text, target = agentWriteTargets[0]) {
   return text.slice(0, node.start) + durableHelper(names) + text.slice(node.end);
 }
 
+// The helper's own sweep only runs when the same file is written again, so an
+// orphan of a file that is never edited again stays visible in the explorer and
+// Git status. On activation (startup), the Agent execution extension sweeps its
+// open workspace roots once for the exact generated name, with the same 60 s age
+// rule. The walk is bounded, skips symlinks, .git and node_modules, and runs off
+// the activation path.
+export const agentTemporarySweepMarker = '/* OpenVision Agent temporary startup sweep v1 */';
+export const temporarySweepLimits = { directories: 4000, entries: 200000, depth: 32 };
+const activation = 'async function $l(e) {\n      if (G.cursor.cursorAgentHostEnabled) {';
+
+export function agentTemporarySweep(limits = temporarySweepLimits) {
+  return `${agentTemporarySweepMarker}
+async function openvisionSweepAgentTemporaries(roots, now = Date.now()) {
+  const fsp = require("node:fs/promises"), path = require("node:path");
+  const pattern = /^\\..+\\.openvision-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\\.tmp$/;
+  const result = { directories: 0, entries: 0, removed: [], truncated: false };
+  const queue = roots.filter(root => "string" == typeof root && path.isAbsolute(root)).map(root => ({ directory: root, depth: 0 }));
+  while (queue.length) {
+    if (result.directories >= ${limits.directories} || result.entries >= ${limits.entries}) { result.truncated = true; break; }
+    const { directory, depth } = queue.shift();
+    let entries;
+    try { entries = await fsp.readdir(directory, { withFileTypes: true }); } catch { continue; }
+    result.directories++;
+    for (const entry of entries) {
+      if (++result.entries > ${limits.entries}) { result.truncated = true; break; }
+      const full = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== ".git" && entry.name !== "node_modules" && depth + 1 < ${limits.depth}) queue.push({ directory: full, depth: depth + 1 });
+      } else if (entry.isFile() && pattern.test(entry.name)) {
+        // Same rule as the writer's sweep: a recent temporary may belong to a live writer.
+        try {
+          const stats = await fsp.lstat(full);
+          if (stats.isFile() && now - stats.mtimeMs > ${staleTemporaryMs}) { await fsp.unlink(full); result.removed.push(full); }
+        } catch {}
+      }
+    }
+  }
+  return result;
+}
+`;
+}
+
+export function sweepAgentTemporariesOnStartup(text) {
+  if (text.includes(agentTemporarySweepMarker)) {
+    if (text.split(agentTemporarySweepMarker).length !== 2) throw new Error('Agent temporary sweep marker is ambiguous');
+    return text;
+  }
+  if (text.split(activation).length !== 2 || text.split('const G = require("vscode"),').length !== 2 ||
+      !text.includes(agentWriteMarker))
+    throw new Error('Agent execution activation contract changed');
+  const index = text.indexOf(activation);
+  return text.slice(0, index) + agentTemporarySweep() + '    ' + activation.replace('{\n', `{
+      setTimeout(() => openvisionSweepAgentTemporaries((G.workspace.workspaceFolders ?? [])
+        .filter((folder) => folder.uri.scheme === "file").map((folder) => folder.uri.fsPath))
+        .then((swept) => swept.removed.length && console.log("[OpenVision] Removed " + swept.removed.length + " interrupted Agent write temporaries"),
+          () => {}), 2000).unref?.();
+`) + text.slice(index + activation.length);
+}
+
 export async function installAgentWriteDurability(root) {
   for (const target of agentWriteTargets) {
     const path = join(root, 'source/app', target.entry);
-    const before = await readFile(path, 'utf8'), after = preserveAgentWrites(before, target);
+    const before = await readFile(path, 'utf8');
+    let after = preserveAgentWrites(before, target);
+    if (target.entry === agentWriteEntry) after = sweepAgentTemporariesOnStartup(after);
     if (before === after) continue;
     const backup = join(root, 'backups/agent-write', target.entry);
     await mkdir(dirname(backup), { recursive: true });

@@ -106,7 +106,9 @@ const server = createServer(async (request, response) => {
     event({ role: 'assistant', content: 'OpenVision fault fixture ready.' }); event({}, 'stop');
   } else if (!result) {
     event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function', function: { name: 'StrReplace',
-      arguments: JSON.stringify({ path: notes, old_string: marker, new_string: insertion.trimEnd() }) } }] });
+      // The shrink phase removes the inserted block again, so its Undo must grow the file.
+      arguments: JSON.stringify(phase === 'shrink' ? { path: notes, old_string: insertion.trimEnd(), new_string: marker }
+        : { path: notes, old_string: marker, new_string: insertion.trimEnd() }) } }] });
     event({}, 'tool_calls');
   } else {
     toolResults.push({ phase, content: typeof result.content === 'string' ? result.content : JSON.stringify(result.content) });
@@ -119,7 +121,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 let app, page;
 const hostExits = [];
 const result = { checkedAt: new Date().toISOString(), identity, requests, errors, toolResults, stages: [], success: false,
-  scope: 'Linux x64 native Agent StrReplace on a genuinely full tmpfs project volume, freeing space, retry, Keep and restart. Controlled local model fixture; profile storage stays on the ordinary disk. Does not cover EIO, power loss, other platforms or live providers.' };
+  scope: 'Linux x64 native Agent StrReplace on a genuinely full tmpfs project volume, freeing space, retry, Undo with the volume full again, a repeated edit, Keep, an Undo that grows the file on a full volume and restart. Controlled local model fixture; profile storage stays on the ordinary disk. Does not cover EIO, power loss, other platforms or live providers.' };
 async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.OPENVISION_IO_FAULT_DIRECTORY;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
@@ -149,6 +151,14 @@ async function submit(text, expected) {
   const input = await openChat(page);
   await input.fill(text); await input.press('Enter');
   await page.getByText(expected, { exact: true }).first().waitFor({ timeout: 45000 });
+}
+// Focus notes.md in an editor (Quick Open), so a save retry targets it.
+async function openNotes() {
+  await page.keyboard.press('ControlOrMeta+p');
+  const quick = page.locator('.quick-input-widget');
+  await quick.getByRole('textbox').fill('notes.md'); await quick.getByRole('textbox').press('Enter');
+  await quick.waitFor({ state: 'hidden' });
+  await page.locator('.editor-instance .monaco-editor .inputarea').filter({ visible: true }).first().focus();
 }
 async function stage(name, extra = {}) {
   const record = { name, notes: await describe(notes), unrelated: (await readFile(unrelated, 'utf8')) === preserved,
@@ -196,13 +206,66 @@ try {
   await submit('Space is available again. Insert the generated block into notes.md.', 'OpenVision retry edit turn finished.');
   await page.waitForTimeout(2000);
   const retried = await stage('after-retry');
+
+  // Reject/Undo with the project volume full: restoring the saved bytes must never
+  // leave a torn file, and a failed restore must stay recoverable after freeing space.
+  const undoFree = await fillVolume();
+  await stage('volume-full-before-undo', { fillerFreeBytes: undoFree });
+  await page.getByText(/^Undo( All)?$/).filter({ visible: true }).first().click();
+  await page.getByText('Confirm', { exact: true }).filter({ visible: true }).click({ timeout: 3000 }).catch(() => {});
+  await page.waitForTimeout(3000);
+  const undoText = await page.locator('body').innerText();
+  await writeFile(join(directory, 'after-undo-full-volume.txt'), undoText);
+  const undone = await stage('after-undo-full-volume', { visibleErrors: undoText.split('\n')
+    .filter(line => /no space|ENOSPC|could not|failed to save|unable/i.test(line)).slice(0, 10) });
+  await unlink(filler);
+  let undoFreed = await stage('after-undo-freed');
+  if (!undoFreed.notes.original) {
+    // The restore did not reach disk while full: save the restored editor text again.
+    await openNotes(); await page.keyboard.press('ControlOrMeta+s');
+    for (let attempt = 0; attempt < 50 && !(await describe(notes)).original; attempt++) await page.waitForTimeout(100);
+    undoFreed = await stage('after-undo-freed-save-retry', { saveRetried: true });
+  }
+  // A new pending review for the Keep and restart stages.
+  phase = 'again';
+  await submit('Insert the generated block into notes.md once more.', 'OpenVision again edit turn finished.');
+  await page.waitForTimeout(2000);
+  const again = await stage('after-repeat-edit');
   await page.getByText(keepLabel).filter({ visible: true }).first().click();
   await page.waitForTimeout(2000);
   const kept = await stage('after-keep-all');
+
+  // Undo that must grow the file on a full volume: the Agent removes the block,
+  // the volume fills, and Undo restores the larger kept text.
+  phase = 'shrink';
+  await submit('Remove the generated block from notes.md.', 'OpenVision shrink edit turn finished.');
+  await page.waitForTimeout(2000);
+  const shrunk = await stage('after-shrink-edit');
+  const growFree = await fillVolume();
+  await stage('volume-full-before-growing-undo', { fillerFreeBytes: growFree });
+  await page.getByText(/^Undo( All)?$/).filter({ visible: true }).first().click();
+  await page.getByText('Confirm', { exact: true }).filter({ visible: true }).click({ timeout: 3000 }).catch(() => {});
+  await page.waitForTimeout(3000);
+  const growText = await page.locator('body').innerText();
+  await writeFile(join(directory, 'after-growing-undo-full-volume.txt'), growText);
+  const grown = await stage('after-growing-undo-full-volume', { visibleErrors: growText.split('\n')
+    .filter(line => /no space|ENOSPC|could not|failed to save|unable|error/i.test(line)).slice(0, 10) });
+  await unlink(filler);
+  let grownFreed = await stage('after-growing-undo-freed');
+  if (!grownFreed.notes.changed) {
+    // The restore could not be saved while full: the save error offers Retry and the
+    // restored text stays unsaved in its editor.
+    const toast = page.locator('.notification-toast').filter({ hasText: /Failed to save 'notes\.md'/ }).filter({ visible: true }).first();
+    await toast.waitFor({ timeout: 10000 });
+    const saveError = (await toast.innerText()).replace(/\s+/g, ' ');
+    await toast.getByRole('button', { name: 'Retry', exact: true }).click();
+    for (let attempt = 0; attempt < 50 && !(await describe(notes)).changed; attempt++) await page.waitForTimeout(100);
+    grownFreed = await stage('after-growing-undo-save-retry', { saveRetried: true, saveError });
+  }
   await closeOwnedApp();
   await launch();
   await openChat(page);
-  await page.getByText('OpenVision retry edit turn finished.', { exact: true }).first().waitFor({ timeout: 30000 });
+  await page.getByText('OpenVision again edit turn finished.', { exact: true }).first().waitFor({ timeout: 30000 });
   const restarted = await stage('after-restart');
 
   result.observations = {
@@ -211,6 +274,11 @@ try {
     savedBytesSurviveFullVolume: fault.notes.original, partialFileAfterFault: fault.notes.partialChanged,
     savedBytesAfterFreeing: freed.notes.original, retryWritesCompleteBytes: retried.notes.changed,
     keptBytes: kept.notes.changed, keptBytesAfterRestart: restarted.notes.changed,
+    undoWhileFull: { notes: undone.notes, freeBytesBeforeUndo: undoFree, freeBytesAfterUndo: undone.freeBytes, pendingReview: undone.pendingReviewVisible,
+      visibleErrors: undone.visibleErrors }, undoAfterFreeing: { notes: undoFreed.notes, saveRetried: !!undoFreed.saveRetried },
+    growingUndoWhileFull: { notes: grown.notes, freeBytesBeforeUndo: growFree, freeBytesAfterUndo: grown.freeBytes,
+      pendingReview: grown.pendingReviewVisible, visibleErrors: grown.visibleErrors },
+    growingUndoAfterFreeing: { notes: grownFreed.notes, saveRetried: !!grownFreed.saveRetried, saveError: grownFreed.saveError },
   };
   assert.equal(fault.freeBytes, 0, 'The volume must still be full after the failed edit');
   assert.match(result.observations.faultToolResult ?? '', /no space/i, 'The Agent must report the full volume');
@@ -221,14 +289,26 @@ try {
   assert.equal(retried.notes.changed, true, 'The retried edit must write the complete replacement');
   assert.deepEqual(retried.temporaries, [], 'The retried write must remove the stale interrupted-writer sibling');
   assert.equal(retried.pendingReviewVisible, true, 'The successful retry must create a pending review');
+  // Restoring the smaller saved text releases blocks, so only the start of Undo is full.
+  assert.equal(undoFree, 0, 'The volume must be full when Undo starts');
+  assert.ok(undone.notes.original || undone.notes.changed, 'Undo on a full volume leaves the original or the complete edited bytes, never a torn file');
+  assert.equal(undoFreed.notes.original, true, 'After freeing space the undone file holds the exact original bytes');
+  assert.equal(undoFreed.pendingReviewVisible, false, 'The undone review is gone');
+  assert.equal(again.notes.changed, true); assert.equal(again.pendingReviewVisible, true);
   assert.equal(kept.notes.changed, true);
+  assert.equal(shrunk.notes.original, true, 'The shrink edit removed the block'); assert.equal(shrunk.pendingReviewVisible, true);
+  assert.equal(growFree, 0, 'The volume must be full when the growing Undo starts');
+  assert.ok(grown.notes.original || grown.notes.changed, 'A growing Undo on a full volume never leaves a torn file');
+  assert.equal(grownFreed.notes.changed, true, 'After freeing space the undone file holds the exact kept bytes');
   assert.equal(restarted.notes.changed, true, 'Accepted bytes must survive restart');
-  for (const record of [fault, freed, retried, kept, restarted]) {
+  for (const record of [fault, freed, retried, undone, undoFreed, again, kept, shrunk, grown, grownFreed, restarted]) {
     assert.equal(record.unrelated, true); assert.deepEqual(record.temporaries, []);
   }
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
   assert.equal(requests.filter(request => request.phase === 'full').length, 2);
   assert.equal(requests.filter(request => request.phase === 'retry').length, 2);
+  assert.equal(requests.filter(request => request.phase === 'again').length, 2);
+  assert.equal(requests.filter(request => request.phase === 'shrink').length, 2);
   assert.deepEqual(errors, []);
   result.success = true;
 } catch (error) {
