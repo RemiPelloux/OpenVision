@@ -63,6 +63,12 @@ Retry, resume and restart:
   choice, while the parent keeps High.
   - The earlier static concern was that `IEe.getTaskToolConfig` drops parameters.
     That code is not on this path: local children do not call it.
+  - Issue #10 (fixed the same day): the subagent's Markdown body
+    (`OV-SUBAGENT-BODY-MARK`) never reached the child request, because the
+    renderer's client-side Task path did not look up the custom definition. The
+    verifier now requires the body in the custom child request only; it passed
+    in runs `WKsTUY` and `NxAo8O` after the fix
+    ([worker report](worker-reports/mcp-auth.md#follow-up-issues-9-and-10)).
 
 The pre-existing cases (unavailable level, explicit recovery, disabled model,
 Explore set to None) still pass unchanged. Across all cases no explicit child

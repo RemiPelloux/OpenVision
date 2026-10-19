@@ -63,8 +63,10 @@ Observed in the recovered bundles (minified identifiers, 3.21.13):
   for example `user-ov-oauth`.
 - **Legacy extension owner** (`cursor-mcp` class `Uw`, `context.secrets`) only
   runs when the shared-process route is off (remote windows, or a failed
-  migration latch). It keeps the PKCE verifier in plain extension `globalState`
-  and attempt files. OV-304 did not exercise it; see Limitations.
+  migration latch). It kept the PKCE verifier in plain extension `globalState`
+  and attempt files; since the issue #9 follow-up both stay in its secret
+  storage ([secret-persistence-customization.mjs](../../desktop/secret-persistence-customization.mjs)).
+  OV-304 did not exercise its full flow; see Limitations.
 
 ## Refresh, failure and cancellation
 
@@ -147,26 +149,33 @@ the same verifier passed four more times: `mcp-auth-4fjMBW`, `mcp-auth-ideoqE`,
 | Restart | The stored token is reused: no consent, code exchange or new token. One unauthenticated `initialize` precedes the authorized one |
 | Secret Service | Electron `safeStorage` uses `gnome_libsecret`. `mcp_tokens`, `mcp_client_information` and `mcp_code_verifier` are `mcpOAuth.secret.*` rows starting with `v11`; the token row decrypts in the app to the live token (compared by digest) |
 | Disk and argv | 271–273 files (30 MB) under the profile and project, the profile `argv.json`, and the argv of 17 host processes contain no access token, refresh token, authorization code or exchanged PKCE verifier, in UTF-8, UTF-16 or base64 |
-| `${env:}` header | mcp.json keeps `Bearer ${env:OV_MCP_STATIC_TOKEN}`; the expanded header (`Bearer <token>`) is not on disk. See the terminal-environment finding below |
+| `${env:}` header | mcp.json keeps `Bearer ${env:OV_MCP_STATIC_TOKEN}`; the expanded header (`Bearer <token>`) is not on disk. See the terminal-environment finding below (now fixed) |
 
-Two further observations, recorded by the verifier and not caused by the MCP
-OAuth path:
+Two further observations, not caused by the MCP OAuth path, were first
+reported and are now fixed (issue #9 follow-up, owner
+[secret-persistence-customization.mjs](../../desktop/secret-persistence-customization.mjs)):
 
-- **Persisted terminal environment.** The variable itself
-  (`"OV_MCP_STATIC_TOKEN":"<token>"`) is in workspace `state.vscdb`: the Agent's
-  hidden terminal saves its full launch environment in
-  `terminal.integrated.bufferState`. Any secret exported in the environment that
-  starts OpenVision is persisted the same way. This is a terminal-persistence
-  defect outside OV-304's MCP owner; it is reported, not fixed here.
-- **Legacy owner start-up race.** At start-up the legacy extension owner briefly
-  connects before routing moves to the utility. On restart it registered a
-  client in 3 of 9 recorded restarts (`siU5KR`, `1hNu0j`, `ideoqE`; `siU5KR`
-  failed an earlier, stricter registration-count assertion for this reason).
-  It keeps the PKCE verifier of its own start-up attempt as a plain
-  `[identifier:v1:…] mcp_code_verifier` global value; every `--secrets` run found
-  one such row. That attempt is never opened or exchanged, so the verifier is
-  unusable without a matching code, but it is plain text and the registration
-  is a wasted request.
+- **Persisted terminal environment (fixed).** The variable itself
+  (`"OV_MCP_STATIC_TOKEN":"<token>"`) was in workspace `state.vscdb`: the
+  Agent's hidden terminal saved its full launch environment in
+  `terminal.integrated.bufferState`, so any secret exported in the environment
+  that starts OpenVision was persisted. Terminal state now persists no
+  environment. `--secrets` exports a random `OV_ENV_CANARY` and requires it in
+  no scanned file (runs `mcp-auth-secrets-B0aOC0`, `mcp-auth-secrets-LHEGnE`).
+- **Legacy owner start-up race (verifier fixed).** At start-up the legacy
+  extension owner briefly connects before routing moves to the utility. On
+  restart it registered a client in 3 of 9 recorded restarts (`siU5KR`,
+  `1hNu0j`, `ideoqE`). It kept the PKCE verifier of that start-up attempt as a
+  plain `[identifier:v1:…] mcp_code_verifier` global value (reproduced again in
+  `mcp-auth-secrets-uLrl8e`). The verifier now stays in secret storage and
+  `--secrets` requires no plain verifier row and no attempt file with a
+  `codeVerifier`. The wasted registration request is not fixed.
+
+On the follow-up build (workbench `ab81fe7a…`, pty host `9c216224…`, cursor-mcp
+`f5bb4d87…`, same MCP utility code) all four modes passed first time:
+`mcp-auth-QsAdvq`, `mcp-auth-FPKbEi`, `mcp-auth-secrets-B0aOC0`,
+`mcp-auth-secrets-LHEGnE`. Details in the
+[worker report](../verification/worker-reports/mcp-auth.md#follow-up-issues-9-and-10).
 
 ## Limitations
 

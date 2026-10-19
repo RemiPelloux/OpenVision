@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { deflateRawSync, gzipSync } from 'node:zlib';
 import { execFileSync } from 'node:child_process';
+import { DatabaseSync } from 'node:sqlite';
 import { canaryKey, scanPaths, validateAllowlist } from './secret-scan.mjs';
 import { storedZip } from './secret-scan-fixtures.mjs';
 
@@ -39,6 +40,10 @@ async function selfTest() {
       'store.zip': canaryKey(),
       'deflate.vsix': canaryKey(),
       'record.gz': canaryKey(),
+      // Issue #9: a persisted terminal environment in workspace storage, live and
+      // after its row was deleted (SQLite free pages keep the bytes).
+      'state.vscdb': canaryKey(),
+      'deleted-row.vscdb': canaryKey(),
     };
     await writeFile(join(directory, 'utf8.log'), `request ok key=${planted['utf8.log']}\n`);
     await writeFile(join(directory, 'utf16le.log'), Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(`key ${planted['utf16le.log']}`, 'utf16le')]));
@@ -50,6 +55,14 @@ async function selfTest() {
     await writeFile(join(directory, 'store.zip'), storedZip('a.txt', Buffer.from(planted['store.zip']), 0));
     await writeFile(join(directory, 'deflate.vsix'), storedZip('extension/b.js', deflateRawSync(Buffer.from(`x=${planted['deflate.vsix']}`)), 8));
     await writeFile(join(directory, 'record.gz'), gzipSync(Buffer.from(planted['record.gz'])));
+    for (const [name, remove] of [['state.vscdb', false], ['deleted-row.vscdb', true]]) {
+      const db = new DatabaseSync(join(directory, name));
+      db.exec('PRAGMA secure_delete = OFF; CREATE TABLE ItemTable (key TEXT UNIQUE ON CONFLICT REPLACE, value BLOB)');
+      db.prepare('INSERT INTO ItemTable VALUES (?, ?)').run('terminal.integrated.bufferState',
+        JSON.stringify({ version: 1, state: [{ processLaunchConfig: { env: { OPENAI_API_KEY: planted[name], PATH: '/usr/bin' } } }] }));
+      if (remove) db.exec("DELETE FROM ItemTable WHERE key = 'terminal.integrated.bufferState'");
+      db.close();
+    }
     await writeFile(join(directory, 'clean.log'), 'Authorization: Bearer [redacted]\napi-key: <your-key>\n');
     const report = await scanPaths([directory], { root: directory });
     const found = name => report.findings.some(finding => finding.path === name && finding.rule === 'canary');
