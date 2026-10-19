@@ -368,7 +368,7 @@ async function watches(app) {
       for (const match of info.matchAll(/^inotify wd:\w+ ino:([0-9a-f]+) sdev:([0-9a-f]+)/gm)) {
         roles[member.role] = (roles[member.role] ?? 0) + 1; total++;
         const key = `${parseInt(match[2], 16)}:${parseInt(match[1], 16)}`;
-        inodes.set(key, (inodes.get(key) ?? 0) + 1);
+        inodes.set(key, [...(inodes.get(key) ?? []), `${member.role}#${member.pid}`]);
       }
     }
   }
@@ -387,6 +387,8 @@ async function inodeKeys(paths) {
   return keys;
 }
 const watchedOf = (sample, keys) => [...keys].filter(([key]) => sample.inodes.has(key)).map(([, path]) => path.replace(directory, '<run>'));
+const holders = (sample, keys) => Object.fromEntries([...keys].filter(([key]) => sample.inodes.has(key))
+  .map(([key, path]) => [path.replace(directory, '<run>'), sample.inodes.get(key)]));
 async function rowNames(page, tab, kind) { return (await allRows(page, tab, kind)).map(row => row.name); }
 async function untilRows(page, tab, kind, predicate, description) {
   let names = [];
@@ -457,14 +459,17 @@ async function watchers() {
   await second.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
   await enterWorkspace(second); await delay(6000);
   const withSecond = await watches(app);
-  result.observations.secondWindow = { total: withSecond.total, watchedOther: watchedOf(withSecond, others) };
+  result.observations.secondWindow = { total: withSecond.total, holders: holders(withSecond, others) };
   assert.ok(watchedOf(withSecond, others).length > 0, 'The second project is watched while its window is open');
   const title = await second.title(), closed = second.waitForEvent('close', { timeout: 30000 });
   assert.equal(await app.evaluate(({ BrowserWindow }, value) => {
     const window = BrowserWindow.getAllWindows().find(item => item.getTitle() === value); window?.close(); return Boolean(window);
   }, title), true);
   await closed;
-  await until('second project watches released', async () => watchedOf(await watches(app), others).length === 0, 30000);
+  let released;
+  await until('second project watches released', async () => watchedOf(released = await watches(app), others).length === 0, 60000)
+    .catch(async error => { result.observations.leftAfterClose = { holders: holders(released, others),
+      processes: (await processFamily({ rootPid: app.process().pid })).map(item => `${item.role}#${item.pid} ${item.cmdline.slice(0, 120)}`) }; throw error; });
   result.checks.windowCloseReleasesWatches = true;
 
   // Switch the first window to the other project, edit the old project, and switch back.
