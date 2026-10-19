@@ -192,7 +192,10 @@ try {
     assert.equal(await exists(join(staged, folder)), false, `${folder} must not be packaged`);
   result.checks.noExternalLinksProfileOrCredentials = true;
   const manifest = JSON.parse(await readFile(join(staged, 'openvision-package.json'), 'utf8'));
-  assert.deepEqual(manifest, { name: 'OpenVision', version, platform: 'linux', arch: process.arch, profileIncluded: false, credentialsIncluded: false });
+  // profileFormat and updates belong to the update/rollback contract (see package-portable.mjs).
+  assert.deepEqual(manifest, { name: 'OpenVision', version, platform: 'linux', arch: process.arch, profileIncluded: false,
+    credentialsIncluded: false, profileFormat: manifest.profileFormat, updates: 'manual' });
+  assert.ok(Number.isInteger(manifest.profileFormat) && manifest.profileFormat > 0, 'The package must declare its profile format');
   result.manifest = manifest; result.checks.packageManifest = true;
   for (const script of ['OpenVision', 'install-desktop-entry.sh', 'uninstall-desktop-entry.sh'])
     assert.ok(((await stat(join(staged, script))).mode & 0o111) === 0o111, `${script} must be executable`);
