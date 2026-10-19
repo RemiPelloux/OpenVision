@@ -11,6 +11,10 @@ IDs. A retry is recorded as a retry, not as a first-time pass. An unavailable ma
 is a blocker, not a pass. Linux-only verifiers marked **port** need a platform
 version before they can run.
 
+## Tracking tickets
+
+GitHub issues: [#1 OV-901 Windows](https://github.com/RemiPelloux/OpenVision/issues/1), [#2 OV-902 macOS](https://github.com/RemiPelloux/OpenVision/issues/2), [#3 OV-905 Linux matrix](https://github.com/RemiPelloux/OpenVision/issues/3), [#4 OV-205 live providers](https://github.com/RemiPelloux/OpenVision/issues/4), [#5 owner decisions](https://github.com/RemiPelloux/OpenVision/issues/5), plus defects [#6 keyring-less provider save hang](https://github.com/RemiPelloux/OpenVision/issues/6) and [#7 Quick Edit Ctrl+A](https://github.com/RemiPelloux/OpenVision/issues/7).
+
 ## OV-205 — live providers and official accounts
 
 Prerequisite: Codex Easy balance (all three keys currently return HTTP 403
