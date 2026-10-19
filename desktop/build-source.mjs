@@ -66,6 +66,7 @@ import { installAgentReviewAcceptance } from './agent-review-customization.mjs';
 import { installUnopenedAgentUndo } from './agent-closed-file-undo-customization.mjs';
 import { installAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
 import { installAgentReviewPersistence } from './agent-review-persist-customization.mjs';
+import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
 import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -125,6 +126,7 @@ await installProjectDataBoundaries(root);
 await installAgentReviewAcceptance(root);
 await installUnopenedAgentUndo(root);
 await installAgentReviewPersistence(root);
+await installInterruptedAgentEdits(root);
 await installAgentReviewRecovery(root);
 await installAgentWriteDurability(root);
 await installRenameVersionGuard(root);
