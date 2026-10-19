@@ -6,7 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { disableSpellcheckDownloads, removeControlUrl, controlManifestGuard, setContributedDefaults, extensionDefaults,
   disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile,
-  localGateDefaults, setLocalGateDefaults } from './network-defaults.mjs';
+  localGateDefaults, setLocalGateDefaults, emptyAnonymousTeamSettings } from './network-defaults.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'source/app');
@@ -138,6 +138,50 @@ test('machine-wide device id file is replaced by the owner fallback', async () =
   assert.throws(() => disableDeviceIdFile('return 1;'), /Device id owner/);
 });
 
+test('anonymous refusals of the team-settings bridges return the not-in-team empty answer', async () => {
+  const text = `const Methods = {
+      getTeamReposOrEmptyIfNotInTeam: {
+        name: "GetTeamReposOrEmptyIfNotInTeam",
+        I: Rq,
+        O: Rs,
+        kind: 1,
+      },
+      getTeamAdminSettingsOrEmptyIfNotInTeam: {
+        name: "GetTeamAdminSettingsOrEmptyIfNotInTeam",
+        I: Aq,
+        O: As,
+        kind: 1,
+      } };
+const Bridge = class {
+  async $getTeamAdminSettings() {
+    return await (
+      await this.cursorAuthenticationService.dashboardClient()
+    ).getTeamAdminSettingsOrEmptyIfNotInTeam(new Aq({}));
+  }
+  async $getTeamRepos() {
+    return await (
+      await this.cursorAuthenticationService.dashboardClient()
+    ).getTeamReposOrEmptyIfNotInTeam(new Rq({}));
+  }
+};
+return Bridge;`;
+  const patched = emptyAnonymousTeamSettings(text);
+  assert.equal(emptyAnonymousTeamSettings(patched), patched);
+  class Aq {} class Rq {} class As { constructor() { this.kind = 'empty-admin'; } } class Rs { constructor() { this.kind = 'empty-repos'; } }
+  const Bridge = new Function('Aq', 'Rq', 'As', 'Rs', patched)(Aq, Rq, As, Rs);
+  const bridge = client => Object.assign(new Bridge(), { cursorAuthenticationService: { dashboardClient: async () => client } });
+  const refused = Object.assign(Error('[unknown] OpenVision: Cursor service calls require a signed-in Cursor account'),
+    { rawMessage: 'OpenVision: Cursor service calls require a signed-in Cursor account' });
+  const refusing = { getTeamAdminSettingsOrEmptyIfNotInTeam: async () => { throw refused; }, getTeamReposOrEmptyIfNotInTeam: async () => { throw refused; } };
+  assert.equal((await bridge(refusing).$getTeamAdminSettings()).kind, 'empty-admin');
+  assert.equal((await bridge(refusing).$getTeamRepos()).kind, 'empty-repos');
+  const answered = { getTeamAdminSettingsOrEmptyIfNotInTeam: async request => ({ request }) };
+  assert.ok((await bridge(answered).$getTeamAdminSettings()).request instanceof Aq, 'signed-in calls are unchanged');
+  const failing = { getTeamAdminSettingsOrEmptyIfNotInTeam: async () => { throw Error('unavailable'); } };
+  await assert.rejects(bridge(failing).$getTeamAdminSettings(), /unavailable/, 'other errors still fail closed');
+  assert.throws(() => emptyAnonymousTeamSettings(text.replace('new Aq({})', 'new Rq({})')), /bridge contract changed/);
+});
+
 const built = existsSync(join(app, 'out/main.js'));
 test('built source carries every network-default owner change', { skip: !built && 'source/app is not built' }, async () => {
   const read = relative => readFile(join(app, relative), 'utf8');
@@ -149,6 +193,7 @@ test('built source carries every network-default owner change', { skip: !built &
     const text = await read(relative);
     assert.ok(disableWorkbenchHostedReports(text) === text, relative);
     assert.ok(setLocalGateDefaults(text) === text, `${relative} local gate defaults`);
+    assert.ok(emptyAnonymousTeamSettings(text) === text, `${relative} anonymous team settings`);
   }
   for (const relative of transportTargets) {
     const text = await read(relative);

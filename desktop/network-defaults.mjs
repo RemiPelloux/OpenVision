@@ -155,6 +155,36 @@ export function refuseAnonymousHostedCalls(text) {
     'throw Object.assign(new Error("OpenVision: Cursor service calls require a signed-in Cursor account"), { code: "unauthenticated" });';
   return text.slice(0, at) + guard + text.slice(at);
 }
+// The workbench answers extension `cursor.getTeamAdminSettings()` and
+// `cursor.getTeamRepos()` with the dashboard's ...OrEmptyIfNotInTeam RPCs,
+// which the server answers with an empty message for anyone outside a team.
+// The anonymous guard above refuses them before sending, and the refusal then
+// broke local features that only read team policy. Legacy-route STDIO MCP
+// connections failed with "require a signed-in Cursor account" (OV-303,
+// run CZr5WO). For that refusal only, the bridge returns the same empty
+// message, still without a request; signed-in calls and other errors are unchanged.
+const teamMarker = '/* OpenVision anonymous team settings empty v1 */';
+const anonymousRefusal = 'OpenVision: Cursor service calls require a signed-in Cursor account';
+export function emptyAnonymousTeamSettings(text) {
+  if (text.includes(teamMarker)) return text;
+  for (const [bridge, rpc] of [['$getTeamAdminSettings', 'getTeamAdminSettingsOrEmptyIfNotInTeam'], ['$getTeamRepos', 'getTeamReposOrEmptyIfNotInTeam']]) {
+    const descriptors = [...text.matchAll(new RegExp(`\\b${rpc}: \\{\\s*name: "\\w+",\\s*I: ([\\w$]+),\\s*O: ([\\w$]+),`, 'g'))];
+    const methods = [...text.matchAll(new RegExp(`\\n(\\s*)async \\${bridge}\\(\\) \\{\\s*return await \\(\\s*await this\\.cursorAuthenticationService\\.dashboardClient\\(\\)\\s*\\)\\.${rpc}\\(new ([\\w$]+)\\(\\{\\}\\)\\);\\s*\\}`, 'g'))];
+    if (descriptors.length !== 1 || methods.length !== 1 || descriptors[0][1] !== methods[0][2])
+      throw new Error(`Team settings bridge contract changed: ${bridge}`);
+    const [method] = methods, [, indent, request] = method, response = descriptors[0][2];
+    const replacement = `\n${indent}async ${bridge}() { ${teamMarker}
+${indent}  try {
+${indent}    return await (await this.cursorAuthenticationService.dashboardClient()).${rpc}(new ${request}({}));
+${indent}  } catch (openvisionError) {
+${indent}    if (String(openvisionError?.rawMessage ?? openvisionError?.message ?? "").includes(${JSON.stringify(anonymousRefusal)})) return new ${response}();
+${indent}    throw openvisionError;
+${indent}  }
+${indent}}`;
+    text = text.slice(0, method.index) + replacement + text.slice(method.index + method[0].length);
+  }
+  return text;
+}
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
   'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs'];
 
@@ -178,7 +208,7 @@ export async function installNetworkDefaults(root) {
 
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
-    await backedWrite(root, `${app}/${relative}`, text, setLocalGateDefaults(disableWorkbenchHostedReports(text)));
+    await backedWrite(root, `${app}/${relative}`, text, emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text))));
   }
   for (const relative of transportTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
