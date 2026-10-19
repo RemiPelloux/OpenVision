@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **21 (47.73%)** |
-| Partial / Planned / Unknown | 8 / 14 / 1 |
-| 80% target | 36 Verified: **15 more** |
+| Verified | **22 (50.00%)** |
+| Partial / Planned / Unknown | 8 / 13 / 1 |
+| 80% target | 36 Verified: **14 more** |
 | Code on `main` | All worker branches merged; clean build and 13 unit suites pass with 0 failures |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
 | X | External: a machine, balance or account |
 
-### Verified (21)
+### Verified (22)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005.
+- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -61,7 +61,6 @@ merged code. "Gate" is what blocks promotion:
 | OV-402 Language tools | New checks pass | Large-file symbols 13.0 s > 10 s; renderer p95 259 > 250 ms on 4 CPUs; Python/Go/Rust syntax-only | D | Decision, or an optimization session |
 | OV-1001 Agent context | Budgets pass | Long closed chats keep about half their history (React/Solid retainers) | D | Decision, or work under OV-1003 |
 | OV-303 MCP safety | Merged | `--simultaneous` fails 5/5 on the merged clean build (re-approved child runs an old config) | L | Round 1 (running) |
-| OV-304 Authenticated MCP | Merged; the worker's modes pass ×2 | Coordinator rerun; security issue #9 and #10 follow-ups | L | Round 1 (running) |
 | OV-1004 Release safety | Merged; 6 fixes, 3 verifiers written | Corrupt-state baseline fix; assertion runs ×2; evidence | L | Round 1 (running) |
 | OV-903 Linux completion | Merged; keyring hang (#6) fixed | Explorer budget and `mcp-session` on the merged code; branding #8 | L | Round 2 |
 | OV-1003 Idle resources | Merged | Startup traversal 1,394 > 1,300 listings; slope 15.7 > 15 MiB in 1 of 3 runs | L | Round 2 |
@@ -81,8 +80,8 @@ merged code. "Gate" is what blocks promotion:
 
 ### Open defects
 
-- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security):** the Agent terminal persists its launch environment, including secrets, in plaintext.
-- [#10](https://github.com/RemiPelloux/OpenVision/issues/10): a custom subagent's body is not sent to the child.
+- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)** and [#10](https://github.com/RemiPelloux/OpenVision/issues/10): fixed on `main` (19 October, OV-304 reruns); issues can be closed.
+- `npm run check:secrets` aborts under Node 24.18.0 with "double free or corruption" (exit 134), reproducible on one Markdown file; Node 22.22.0 scans cleanly. Details in the [mcp-auth report](../verification/worker-reports/mcp-auth.md).
 - [#8](https://github.com/RemiPelloux/OpenVision/issues/8): Cursor branding after a `--glass` start.
 - [#7](https://github.com/RemiPelloux/OpenVision/issues/7): Quick Edit Ctrl+A.
 
@@ -90,7 +89,7 @@ merged code. "Gate" is what blocks promotion:
 
 | Round | Work | Effect if it passes |
 | --- | --- | --- |
-| 1 (running) | MCP regression; release safety; #9/#10; one telemetry run; one inventory rerun | Up to +6: OV-303, 304, 501, 1005, 801, 1004 |
+| 1 (running) | MCP regression; release safety (OV-304, 501, 1005, 801 done: +4) | Up to +2: OV-303, 1004 |
 | 2 | Linux completion; idle resources; responsiveness; upgrade rerun; retrieval | Up to +7: OV-903, 1003, 1002, 904, 502, 503, 504 |
 | 3 | The four never-started groups (may need a second session each) | Up to +4: OV-704, 703, 802, 803 |
 | Owner decisions (#5) | OV-103, 402, 1001, 604 | Up to +4 |
