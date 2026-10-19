@@ -2,6 +2,7 @@ import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
 const marker = '/* OpenVision defer unconfigured MCP routing v1 */';
 const wakeMarker = '/* OpenVision MCP server-status wake v1 */';
+const providerMarker = '/* OpenVision MCP connected-without-client recreate v1 */';
 
 export function mcpRoutingOwner(text) {
   const anchor = 'this.hasLoggedWaitingForExperimentService = !1';
@@ -15,7 +16,7 @@ export function mcpRoutingOwner(text) {
 }
 
 export function lazyMcpRouting(text) {
-  text = wakeMcpRouting(text);
+  text = recreateUnownedConnectedServers(wakeMcpRouting(text));
   const owner = mcpRoutingOwner(text);
   const method = owner.body.body.find(entry => entry.key?.name === 'initializeAsync');
   if (!method || method.value.params[0]?.type !== 'Identifier') throw new Error('MCP routing initialization changed');
@@ -65,4 +66,21 @@ function wakeMcpRouting(text) {
 `;
   const end = constructor.value.body.end - 1;
   return text.slice(0, end) + addition + text.slice(end);
+}
+
+// A routing reset (legacy -> shared process) deletes each server's client
+// provider, then re-initializes. When a legacy client had just reported
+// "connected", that status outlives the reset and createClientIfNotExists
+// skipped the server: the window never subscribed to the MCP utility, tools
+// failed with "Cannot call tool before MCP process client is registered" and
+// the utility never owned the server. Treat "connected" as current only while
+// a client provider for the server exists.
+export function recreateUnownedConnectedServers(text) {
+  if (text.includes(providerMarker)) return text;
+  const matches = [...text.matchAll(/\n\s+async createClientIfNotExists\(([\w$]+)\) \{\s*const ([\w$]+) = this\.statusCache\(\)\[\1\.identifier\];\s*return \2\?\.type === "connected"/g)];
+  if (matches.length !== 1 || !text.includes('Skipping createClient for already-connected server') ||
+      !/this\.mcpClientProviders\.delete\([\w$]+\)/.test(text))
+    throw new Error('MCP connected-server skip contract changed');
+  const [match] = matches, [, server] = match, end = match.index + match[0].length;
+  return text.slice(0, end) + ` && ${providerMarker} this.mcpClientProviders.has(${server}.identifier)` + text.slice(end);
 }

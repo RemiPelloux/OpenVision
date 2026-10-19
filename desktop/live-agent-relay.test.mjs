@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { createLiveAgentRelay } from './live-agent-relay.mjs';
+import { createLiveAgentRelay, providerUsage } from './live-agent-relay.mjs';
 
 const model = 'fixture-model', marker = 'OPENVISION_READ_fixture', key = 'fixture-transport-secret';
 const headers = { Authorization: 'Bearer native-probe-key', 'Content-Type': 'application/json' };
@@ -260,11 +260,29 @@ test('a fork probe can arm exactly one real unauthorized response after successf
   relay.expectUnauthorizedOnNextRequest(); relay.setKey('invalid-fork');
   const failed = await submit(); assert.equal(failed.status, 401); await failed.text();
   assert.equal(relay.requests[1].expectedAuthenticationFailure, true);
-  assert.throws(() => relay.expectUnauthorizedOnNextRequest(), /single authentication failure/);
+  assert.throws(() => relay.expectUnauthorizedOnNextRequest(), /single provider failure/);
   relay.setKey(key);
   const recovered = await submit(); assert.equal(recovered.status, 200); await recovered.text();
   assert.equal(relay.requests.length, 3);
   assert.equal(relay.requests[2].assistantReturnedMarker, true);
+});
+
+test('a fork probe can arm one non-authentication provider failure; an unarmed one still fails the probe', async t => {
+  let fail = false;
+  const relay = await fixture(t, (_request, response) => {
+    if (fail) { fail = false; response.writeHead(503, { 'content-type': 'application/json' }); response.end('{"error":{"message":"unavailable"}}'); return; }
+    sse(response, [{ choices: [{ delta: { content: marker } }] }]);
+  });
+  const submit = () => fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body: JSON.stringify({ model }) });
+  relay.expectFailureOnNextRequest(503); fail = true;
+  const failed = await submit(); assert.equal(failed.status, 503); await failed.text();
+  assert.equal(relay.requests[0].expectedProviderFailure, true);
+  assert.equal(relay.requests[0].expectedAuthenticationFailure, undefined);
+  assert.throws(() => relay.expectFailureOnNextRequest(503), /single provider failure/);
+  const recovered = await submit(); assert.equal(recovered.status, 200); await recovered.text();
+  fail = true;
+  const unarmed = await submit(); assert.equal(unarmed.status, 502, 'An unarmed failure is not shown as provider output'); await unarmed.text();
+  assert.match(await relay.failure, /HTTP 503/);
 });
 
 test('unexpected acceptance of the invalid credential stops the probe before forwarding model output', async t => {
@@ -296,3 +314,17 @@ for (const action of ['downstream cancellation', 'relay cleanup']) {
     assert.equal(relay.requests.length, 1);
   });
 }
+
+test('relay records provider-reported usage, including cached tokens, without estimating absent fields', async t => {
+  const relay = await fixture(t, (_request, response) => sse(response, [
+    { model, choices: [{ delta: { content: marker } }] },
+    { model, choices: [], usage: { prompt_tokens: 1200, completion_tokens: 30, total_tokens: 1230,
+      prompt_tokens_details: { cached_tokens: 1024 }, completion_tokens_details: { reasoning_tokens: 12 } } }]));
+  const body = JSON.stringify({ model, stream: true, messages: [{ role: 'user', content: 'Read probe.txt' }] });
+  await (await fetch(`${relay.url}/chat/completions`, { method: 'POST', headers, body })).text();
+  assert.deepEqual(relay.requests[0].usage, { promptTokens: 1200, completionTokens: 30, cachedTokens: 1024, reasoningTokens: 12, totalTokens: 1230 });
+  assert.deepEqual(providerUsage({ type: 'response.completed', response: { usage: { input_tokens: 9, output_tokens: 2,
+    input_tokens_details: { cached_tokens: 4 } } } }), { promptTokens: 9, completionTokens: 2, cachedTokens: 4, reasoningTokens: undefined, totalTokens: undefined });
+  assert.equal(providerUsage({ choices: [{ delta: { content: 'x' } }] }), undefined);
+  assert.equal(providerUsage({ usage: { prompt_tokens: 5, prompt_cache_hit_tokens: 3 } }).cachedTokens, 3);
+});

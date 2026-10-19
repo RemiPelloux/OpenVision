@@ -157,7 +157,8 @@ moving to a new machine.
 | --- | --- |
 | Agent commands | Wait for your **Run** approval, as on Windows. Upstream would auto-run them inside its Linux command sandbox; OpenVision reports that sandbox as unavailable so approval stays explicit. You can still choose an auto-run mode in Agent settings |
 | Agent shell processes | Uses the editor's native process handling; the Windows job-object ownership layer is Windows-only |
-| C/C++ (`npm run setup:cpp`) | Downloads the Windows clangd build; on Linux install `clangd` and the clangd extension from your distribution or Open VSX |
+| C/C++ (`npm run setup:cpp`) | Downloads the pinned official clangd 23.1.0 Linux x64 archive and the vscode-clangd 0.6.0 extension, as on Windows; needs `unzip`. Diagnostics, completion, definition, references, rename and formatting are verified with GCC and Clang projects (see [C and C++](cpp-support.md#linux-x64)). Linux arm64 has no pinned build |
+| Python, Go, Rust | Syntax highlighting only, as on Windows: no language server is bundled or set up |
 | Chromium sandbox | Uses the user-namespace sandbox. A copied `chrome-sandbox` cannot keep root setuid, so launchers pass `--disable-setuid-sandbox=true` (the explicit value stops the editor from reading a following folder path as the flag's value) |
 | Updates | Manual: the signed-release installer above, or a new portable folder. The AppImage updater is not packaged and the original update endpoints are removed |
 | Keyboard shortcuts | Follow your physical layout (for example AZERTY), as in VS Code on Linux |

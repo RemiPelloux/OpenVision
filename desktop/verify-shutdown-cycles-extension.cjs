@@ -52,6 +52,13 @@ const actions = {
     terminal.show(false);
     return terminal.name;
   },
+  // xterm renders only the viewport; the runner pages through the scrollback.
+  async scroll({ to }) {
+    const command = { top: 'scrollToTop', pageDown: 'scrollDownPage', bottom: 'scrollToBottom' }[to];
+    if (!command) throw new Error(`Unknown scroll target ${to}`);
+    await vscode.commands.executeCommand(`workbench.action.terminal.${command}`);
+    return true;
+  },
   async focus() {
     await vscode.commands.executeCommand('workbench.action.terminal.focus');
     return true;

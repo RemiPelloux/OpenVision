@@ -175,6 +175,8 @@ retainers seen include a 256-entry bounded module cache and the storage item
 cache (inferred from retainer paths); others were not identified. This is
 recorded for OV-1003. One diagnostic run (`Cn0owg`) lost its window during the
 75 s wait while the host exited 0; it was not reproduced in four later runs.
+The owners were identified and released on 19 October; see
+[Closed-chat release](#closed-chat-release-19-october-2026).
 
 ## Budgets
 
@@ -210,6 +212,10 @@ npm run build:desktop
 npm run verify:agent-context-budget            # logs/agent-context-9xRAhN: all budgets pass
 node desktop/verify-agent-context-budget.mjs --no-budgets   # record a baseline without checking
 # diagnostics: --probe-tools, --skip-loop, --workloads=single,reads, --heap-strings
+# 19 October: fork workload and closed-chat release budgets are part of the default run
+npm run verify:agent-context-usage:dry-run     # relay usage capture against the fixture (synthetic usage)
+node desktop/verify-agent-context-budget.mjs --live --model SAVED_ID   # real quota: single and reads
+node desktop/heap-retainers.mjs logs/agent-context-<id>/heap-after-release.heapsnapshot <marker> out.json [--depth=60]
 npm run test:agent-context      # 19/19
 npm run test:agent-retry        # 35/35
 npm run test:agent-review       # 95/95
@@ -225,14 +231,160 @@ npm run build:desktop           # clean rebuild before the result run
 The baseline was rebuilt from a clean `source/` without the two build hooks;
 its Agent and workbench hashes equal the original baseline's.
 
+## Forks (19 October 2026)
+
+The verifier now forks the finished `edit` chat with the native **Fork Chat**
+command and sends one more turn in the fork (`fork` workload, cold and warm).
+It records, for the fork request, how many user messages carry the source
+chat's prompt, the tool calls replayed and reasoning replayed; after the
+application closes it compares the source transcript on disk (SQLite
+`composerData` headers and bubble text) with a copy taken before the fork, and
+checks that the fork starts with the source transcript plus one exchange. The
+application is then relaunched and each fork is reopened from **Chat History**
+(its persisted title in the history search box) with its reply and the source
+prompt visible.
+
+Fresh baseline before any change in this work: `logs/agent-context-238ldi`
+(build of `b4f52a56`). Observed, cold and warm identical:
+
+| Fork measurement | Value |
+| --- | --- |
+| Requests for the fork turn | 1 (0 duplicate, 0 near duplicate, 0 auxiliary) |
+| Fork request | 82,026 bytes, ~22,659 estimated tokens (the last `edit` request: 81,239 bytes) |
+| History in the fork request | 15,383 bytes: the whole source turn, including both Read results |
+| Source prompt copies in the fork request | 1 |
+| Tool calls replayed | 4 (2 Read, 2 StrReplace) |
+| Reasoning replayed | 0 (see [Reasoning replay](#reasoning-replay-19-october-2026)) |
+| Source transcript on disk | 6 entries before the fork and after the application closed; unchanged; no fork text |
+| Fork transcript on disk | 8 entries: the 6 source entries, then the fork prompt and reply |
+| Fork after restart | reopened from Chat History with the source prompt and its reply (`agent-context-O1NbdE`, `-DO8srr`) |
+
+The baseline's restart check reported 0 because its history helper looked for
+a sidebar cell instead of the history menu; the same baseline profile reopened
+both forks with the corrected helper in a separate launch, and every later run
+reports 1. Fork budgets (`desktop/agent-context-budgets.json`): 1 request;
+bytes and tokens the baseline plus 5% (86,128 / 23,792); source history
+exactly once; ≥ 4 tool calls replayed; 0 reasoning replayed; source unchanged;
+fork keeps the source and adds exactly 2 entries; reopens after restart.
+
+## Closed-chat release (19 October 2026)
+
+**Owners (observed in heap snapshots, inferred roles).** A new diagnostic,
+`node desktop/heap-retainers.mjs SNAPSHOT MARKER`, prints the shortest strong
+retaining path of every string containing a marker; WeakMap entries are
+followed only when both the table and the key are reachable. On the unchanged
+build (`agent-context-sDtPqn`, `responsiveness-N68nJK`):
+
+- No chat handle opened in the session was ever collected. The recovered
+  handle manager unloads a chat only after its handle is garbage-collected
+  (60 s LRU, then a sweep), but handles stay reachable from per-view state
+  stores and from the bundled tiptap core: `extend()` stores every configured
+  copy on the shared, module-level base extension (`this.child = copy`), and
+  the Placeholder copy closes over the last chat input (handle, headers,
+  editor document). So closed chats were never finalized, and their messages
+  stayed in the loaded-composer store and `_loadedConversationCacheByComposerId`.
+- The 256-entry plain-text preview cache (`stripMarkdownToPlainText`) held one
+  entry per streamed reply prefix (60 of 93 retained reply strings in the
+  smoke responsiveness chat).
+- A disposed transcript row model kept `lastMarkdownRowById` and
+  `contentCacheByRowId` (24 strings).
+- Bounded owners that are not chat history: the prompt-input history (10
+  prompts, also persisted in workspace storage), the chat title, subtitle and
+  Chat History header row, and the markdown lexer's last input.
+
+**Change** (`desktop/closed-chat-release.mjs`, both workbench variants, three
+marker-guarded idempotent steps): after `closeComposer`, a release is
+scheduled for the recovered 60 s idle window. If the chat is still closed,
+idle and none of its sub-chats is open, it is unloaded through the recovered
+`unloadComposer` path (pending messages persisted, store entry and per-chat
+caches dropped) and the preview cache is cleared; a running chat is checked
+again later, and a chat reopened within the window is left loaded. Disposing a
+transcript row model clears its two content caches. The tiptap base class no
+longer stores the write-only `child` back reference (`parent` is unchanged;
+no reader of `child` exists in the bundle). Reopening loads the chat from
+SQLite as for any chat that is not loaded.
+
+**Result (observed).** Marker strings in the renderer for the closed chat
+(three turns, then an in-flight request cancelled by closing):
+
+| Run | Build | Before close | 3 s after | 75 s after | Reply strings 75 s after | Reopen |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| `agent-context-238ldi` | unchanged | 55 | 45 | 45 | 2 | not measured |
+| `agent-context-sDtPqn` | unchanged | 56 | 45 | 45 | 27 (from the saved strings) | not measured |
+| `agent-context-O1NbdE` | release without the tiptap step | 55 | 45 | 24 | 6 | full transcript |
+| `agent-context-DO8srr` | release | 55 | 41 | 12 | 0 | full transcript |
+
+The 12 occurrences left in `DO8srr` are 8 strings: four prompts in the
+prompt-input history, the persisted prompt-history JSON, the chat title, its
+subtitle (the in-flight partial) and the Chat History header. Reply-string
+retention before the change varied between runs (2–27), consistent with
+handles that are only sometimes still referenced; with the release it is 0.
+
+In the long chat of `verify:responsiveness -- --phases=closedChat` the release
+is partial: smoke `N68nJK` → `E8Ehcc` 203 → 126 marker and 93 → 40 reply
+strings; full `responsiveness-Av9fiJ` 364 of 670 marker and 118 of 309 reply
+strings (previous evidence: 642–647 marker strings retained). The remainder is
+held by React DOM's nested-update root reference (`rootWithNestedUpdates`,
+which keeps the last root with nested updates and its container, the closed
+transcript) and by a Solid computation still observing a module-level
+settings signal. Both are framework internals and were not changed; whether
+the Solid observer accumulates per closed chat was not measured.
+
+Budgets: `verify:agent-context-budget` ≤ 5 reply strings and ≤ 14 marker
+occurrences 75 s after close, and the reopened chat must show every prompt and
+reply (absolute); `verify:responsiveness` closed chat ≤ 400 marker and ≤ 130
+reply strings (full run +10%) and the chat must reopen with its last reply.
+
+## Reasoning replay (19 October 2026)
+
+The `edit` workload's fixture sends one `reasoning_content` delta before each
+of its four tool calls. Observed in every run: none of the four is present in
+any later request of the same turn (tool-call sub-turns), in the fork turn
+(a later turn), or in the persisted chat (`allThinkingBlocks` empty; no
+reasoning text anywhere in `cursorDiskKV` or `ItemTable`). The Agent exec
+bundle has no reader for `reasoning_content` on the OpenAI-compatible stream
+path (it reads Bedrock's `reasoningContent` only), so these deltas are dropped
+on receipt (inferred from the bundle; whether they are displayed was not
+checked). Budgets pin this: `edit` 4 reasoning deltas sent and 0 replayed;
+`fork` 0 replayed. Whether a reasoning provider needs its reasoning replayed
+across tool calls is not established; that is a live check.
+
+## Provider usage capture (19 October 2026)
+
+`node desktop/verify-agent-context-budget.mjs --live --model SAVED_ID` runs
+the `single` and `reads` workloads (cold pass only, no session checks or
+budgets) through the live relay to the saved provider, using real quota, and
+records the provider-reported prompt, completion, cached and reasoning tokens
+for every request next to the tokenx estimate (`result.usage`). The relay
+copies the usage block exactly as reported (final Chat Completions chunk or
+Responses `response.completed`; DeepSeek's `prompt_cache_hit_tokens` is read
+as cached tokens) and never estimates missing fields.
+
+`npm run verify:agent-context-usage:dry-run` runs the same relay path against
+this controlled fixture, which appends a usage chunk with **synthetic values**
+(prompt and completion tokens are tokenx estimates; cached tokens are the
+estimate of the byte prefix shared with the previous request). It proves
+capture, not provider numbers: `logs/agent-context-BPYUaS` recorded usage,
+including cached tokens, for 13 of 13 requests.
+
+Observed: Agent requests set `stream: true` but no
+`stream_options.include_usage`. OpenAI-compatible providers that report
+streamed usage only when asked will therefore report none, and a live run
+records that as missing usage. Changing the request is an owner decision.
+
 ## Status
 
-OV-1001 stays **Partial**. Passed here: fixed-workload measurement of input
-bytes/estimated tokens, duplicate requests, retained history and Stop latency;
-numeric budgets with a native verifier; upstream cancellation on Stop, chat
-close and window close; retry and tool-call history preserved. Open: live
-provider token and request measurements (tokenizer and prompt caching), branch
-conversations, reasoning replay for reasoning providers, renderer release of
-closed-chat history, the unreachable Agent host path, and Windows/macOS runs.
+OV-1001 stays **Partial** in this document. Passed here: fixed-workload
+measurement of input bytes/estimated tokens, duplicate requests, retained
+history and Stop latency; numeric budgets with a native verifier; upstream
+cancellation on Stop, chat close and window close; retry and tool-call history
+preserved; fork requests carry the source history once with tool calls and
+leave the source unchanged across restart (19 October); closed-chat history is
+released from the renderer for the verifier's chat (19 October); reasoning
+replay behaviour pinned; usage capture proven on a labelled dry run. Open:
+live provider token and request measurements (tokenizer and prompt caching),
+live fork/history and reasoning-provider checks, the long-chat retention held
+by framework internals (OV-1003), the unreachable Agent host path, and
+Windows/macOS runs.
 This is **source-build evidence**; the preview.7 portable package does not
 contain these changes.

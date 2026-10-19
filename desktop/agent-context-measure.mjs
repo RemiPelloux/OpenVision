@@ -104,6 +104,40 @@ export function summarizeWorkload(entries) {
   };
 }
 
+/** Messages of `role` whose text contains `needle` (e.g. a source chat's prompt inside a fork request). */
+export function messagesContaining(raw, needle, role = 'user') {
+  const body = typeof raw === 'string' || Buffer.isBuffer(raw) ? JSON.parse(String(raw)) : raw;
+  return (body.messages ?? []).filter(message => message.role === role && text(message.content).includes(needle)).length;
+}
+
+/**
+ * Dry-run usage for the controlled fixture only: prompt and completion tokens
+ * are tokenx estimates, and cached tokens are the estimate of the byte prefix
+ * shared with the previous request (a stand-in for provider prefix caching).
+ * These are synthetic numbers that exercise the capture path; they are never
+ * provider-reported usage.
+ */
+export function fixtureUsage(raw, previousRaw, completion) {
+  const current = String(raw), previous = previousRaw === undefined ? '' : String(previousRaw);
+  let shared = 0; const limit = Math.min(current.length, previous.length);
+  while (shared < limit && current.charCodeAt(shared) === previous.charCodeAt(shared)) shared++;
+  const prompt_tokens = estimateTokens(current), completion_tokens = estimateTokens(completion ?? '');
+  return { prompt_tokens, completion_tokens, total_tokens: prompt_tokens + completion_tokens,
+    prompt_tokens_details: { cached_tokens: Math.min(prompt_tokens, shared ? estimateTokens(current.slice(0, shared)) : 0) } };
+}
+
+/** Provider-reported usage next to the local estimate, per request and in total. */
+export function usageComparison(entries) {
+  const rows = entries.map(entry => ({ index: entry.index, estimatedPromptTokens: entry.analysis.estimatedTokens,
+    promptTokens: entry.usage?.promptTokens, completionTokens: entry.usage?.completionTokens,
+    cachedTokens: entry.usage?.cachedTokens, reasoningTokens: entry.usage?.reasoningTokens }));
+  const total = key => rows.every(row => Number.isFinite(row[key])) ? rows.reduce((sum, row) => sum + row[key], 0) : null;
+  return { requests: rows.length, requestsWithUsage: rows.filter(row => Number.isFinite(row.promptTokens)).length,
+    requestsWithCachedTokens: rows.filter(row => Number.isFinite(row.cachedTokens)).length,
+    estimatedPromptTokens: total('estimatedPromptTokens'), promptTokens: total('promptTokens'),
+    completionTokens: total('completionTokens'), cachedTokens: total('cachedTokens'), rows };
+}
+
 /** Compare a measured result with numeric budgets; returns failed checks. */
 export function checkBudgets(result, budgets) {
   const failures = [];

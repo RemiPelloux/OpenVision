@@ -2,12 +2,27 @@ import { ipcMain } from 'electron';
 import { fileURLToPath } from 'node:url';
 import { assertWorkbenchSender } from '../../../desktop/workbench-sender.mjs';
 import { ImportPreview } from '../../../desktop/import-preview.mjs';
-import { nativeImportDestinations, sameImportDestinations } from '../../../desktop/import-destinations.mjs';
+import { nativeImportDestinations, sameImportDestinations, selectedImportDestinations } from '../../../desktop/import-destinations.mjs';
 
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const expected = new URL('./vs/code/electron-sandbox/workbench/workbench.html', import.meta.url);
 const preview = new ImportPreview();
 let busy = false;
+let recovery = Promise.resolve([]);
+
+// The native host owner exists before the first window. An import or restore that
+// stopped while committing (crash, forced exit) is returned to its original state
+// for the default profile; import requests wait for that recovery.
+globalThis.openvisionImportOwnerReady = owner => {
+  recovery = (async () => {
+    const environment = owner.environmentMainService;
+    const { recoverInterruptedImports } = await import('../../../desktop/import-transaction.mjs');
+    const recovered = await recoverInterruptedImports(root, selectedImportDestinations(environment.userDataPath, environment.extensionsPath));
+    for (const entry of recovered) (entry.error ? console.error : console.log)('[OpenVision import recovery]', JSON.stringify(entry));
+    return recovered;
+  })().catch(error => { console.error('[OpenVision import recovery]', error); return [{ error: error.message }]; });
+  globalThis.openvisionImportRecovery = recovery;
+};
 
 ipcMain.handle('vscode:openvision-cursor-import', async (event, request) => {
   assertWorkbenchSender(event, expected);
@@ -18,11 +33,12 @@ ipcMain.handle('vscode:openvision-cursor-import', async (event, request) => {
   if (busy) return { ok: false, error: 'Another import operation is running.' };
   busy = true;
   try {
+    await recovery;
     const destinations = nativeImportDestinations(globalThis.openvisionImportOwner, event.sender);
     if (request?.action === 'defaults') {
-      const { defaults, cursorProfiles } = await import('../../../desktop/cursor-import.mjs');
+      const { defaults, cursorProfiles, excludedData } = await import('../../../desktop/cursor-import.mjs');
       const options = defaults(root);
-      return { ok: true, options, profiles: await cursorProfiles(options.user) };
+      return { ok: true, options, profiles: await cursorProfiles(options.user), excluded: excludedData };
     }
     if (request?.action === 'preview') {
       const token = preview.begin(event.sender);

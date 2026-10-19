@@ -36,19 +36,24 @@ export async function createUntrustedProvider(directory) {
 
 // Disposable CA with an expired leaf and a hostname-mismatched leaf. Only the
 // owned test process trusts this CA, through its launch environment; no system
-// trust store or certificate-verification setting changes. The explicit validity
-// window requires OpenSSL 3.4 or newer (-not_before/-not_after).
+// trust store or certificate-verification setting changes. OpenSSL 3.4 or newer
+// sets the explicit validity window with x509 -not_before/-not_after; older
+// releases (for example 3.0 on Ubuntu 24.04) sign through openssl ca with
+// -startdate/-enddate. Both produce the same expired, CA-issued leaf.
 export async function createCertificateFailureProviders(directory) {
   const executable = process.env.OPENVISION_TEST_OPENSSL ??
     (process.platform === 'win32' ? 'C:/Program Files/Git/usr/bin/openssl.exe' : 'openssl');
   const run = args => promisify(execFile)(executable, args, { windowsHide: true, timeout: 30000 });
   const path = name => join(directory, name);
+  const [, major, minor] = (await run(['version'])).stdout.match(/OpenSSL (\d+)\.(\d+)/) ?? [];
+  const explicitValidity = Number(major) > 3 || (Number(major) === 3 && Number(minor) >= 4);
   await run(['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '2', '-subj', '/CN=OpenVision disposable fixture CA',
     '-addext', 'basicConstraints=critical,CA:TRUE', '-addext', 'keyUsage=critical,keyCertSign,cRLSign',
     '-keyout', path('fixture-ca-key.pem'), '-out', path('fixture-ca.pem')]);
   const leaves = {
     expired: { host: 'localhost', alt: 'DNS:localhost,IP:127.0.0.1', serial: '2',
-      validity: ['-not_before', '20200101000000Z', '-not_after', '20200102000000Z'] },
+      validity: ['-not_before', '20200101000000Z', '-not_after', '20200102000000Z'],
+      caValidity: ['-startdate', '200101000000Z', '-enddate', '200102000000Z'] },
     hostname: { host: 'wrong-host.openvision.invalid', alt: 'DNS:wrong-host.openvision.invalid', serial: '3', validity: ['-days', '1'] },
   };
   const providers = {}, sockets = new Set(), servers = [];
@@ -56,7 +61,16 @@ export async function createCertificateFailureProviders(directory) {
     await writeFile(path(`${kind}-ext.cnf`), `basicConstraints=CA:FALSE\nextendedKeyUsage=serverAuth\nsubjectAltName=${leaf.alt}\n`);
     await run(['req', '-new', '-newkey', 'rsa:2048', '-nodes', '-subj', `/CN=${leaf.host}`,
       '-keyout', path(`${kind}-key.pem`), '-out', path(`${kind}.csr`)]);
-    await run(['x509', '-req', '-in', path(`${kind}.csr`), '-CA', path('fixture-ca.pem'), '-CAkey', path('fixture-ca-key.pem'),
+    if (leaf.caValidity && !explicitValidity) {
+      const database = path(`${kind}-ca-index.txt`);
+      await writeFile(database, '');
+      await writeFile(path(`${kind}-ca.cnf`), `[ca]\ndefault_ca=fixture\n[fixture]\ndatabase=${database}\nnew_certs_dir=${directory}\n` +
+        `serial=${path(`${kind}-ca-serial`)}\ndefault_md=sha256\npolicy=policy_any\nunique_subject=no\n[policy_any]\ncommonName=supplied\n`);
+      await writeFile(path(`${kind}-ca-serial`), `0${leaf.serial}\n`);
+      await run(['ca', '-batch', '-notext', '-config', path(`${kind}-ca.cnf`), '-cert', path('fixture-ca.pem'),
+        '-keyfile', path('fixture-ca-key.pem'), '-in', path(`${kind}.csr`), ...leaf.caValidity,
+        '-extfile', path(`${kind}-ext.cnf`), '-out', path(`${kind}.pem`)]);
+    } else await run(['x509', '-req', '-in', path(`${kind}.csr`), '-CA', path('fixture-ca.pem'), '-CAkey', path('fixture-ca-key.pem'),
       '-set_serial', leaf.serial, ...leaf.validity, '-extfile', path(`${kind}-ext.cnf`), '-out', path(`${kind}.pem`)]);
     const certificate = await readFile(path(`${kind}.pem`)), events = [];
     const server = createServer({ key: await readFile(path(`${kind}-key.pem`)), cert: certificate }, (request, response) => {

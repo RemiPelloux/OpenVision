@@ -9,25 +9,47 @@ import { fileHash } from './import-files.mjs';
 import { exists } from './source-assembly.mjs';
 import { parseConfiguration, setSetting } from './import-json.mjs';
 
-export const cppPackages = Object.freeze({
-  server: { version: '23.1.0', sha256: '23412a240756a162e7b98a282f36aa2a23a88db5ce16a0cbc4fef7253768c810',
-    url: 'https://github.com/clangd/clangd/releases/download/23.1.0/clangd-windows-23.1.0.zip' },
-  extension: { version: '0.6.0', sha256: '32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751',
-    url: 'https://open-vsx.org/api/llvm-vs-code-extensions/vscode-clangd/0.6.0/file/llvm-vs-code-extensions.vscode-clangd-0.6.0.vsix' },
+// Official clangd release archives per platform. The Linux archive hash was
+// computed from the official GitHub release download on 18 October 2026; its
+// binary reports the same llvm-project commit as the pinned Windows build.
+export const cppServers = Object.freeze({
+  'win32-x64': { version: '23.1.0', sha256: '23412a240756a162e7b98a282f36aa2a23a88db5ce16a0cbc4fef7253768c810',
+    url: 'https://github.com/clangd/clangd/releases/download/23.1.0/clangd-windows-23.1.0.zip', executable: 'clangd.exe' },
+  'linux-x64': { version: '23.1.0', sha256: 'e53b1a96196095faedb7642cf64964f7fb9ad4a0c1f00dd2c172a3d9dcbafdfd',
+    url: 'https://github.com/clangd/clangd/releases/download/23.1.0/clangd-linux-23.1.0.zip', executable: 'clangd' },
 });
+export const cppExtension = Object.freeze({ version: '0.6.0', sha256: '32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751',
+  url: 'https://open-vsx.org/api/llvm-vs-code-extensions/vscode-clangd/0.6.0/file/llvm-vs-code-extensions.vscode-clangd-0.6.0.vsix' });
 
-export function cppPaths(root) {
-  const base = join(root, 'data/tools/cpp');
-  return { base, executable: join(base, 'server/clangd_23.1.0/bin/clangd.exe'),
+export function cppPackages(platform = process.platform, arch = process.arch) {
+  const server = cppServers[`${platform}-${arch}`];
+  if (!server) throw new Error('Pinned C/C++ setup supports Windows x64 and Linux x64 only');
+  return { server, extension: cppExtension };
+}
+
+export function cppPaths(root, platform = process.platform, arch = process.arch) {
+  const base = join(root, 'data/tools/cpp'), { server } = cppPackages(platform, arch);
+  return { base, executable: join(base, `server/clangd_${server.version}/bin/${server.executable}`),
     extension: join(base, 'extension/extension') };
 }
 
-export function cppArguments() {
+export function cppArguments(platform = process.platform) {
+  const common = ['--background-index', '--pch-storage=disk', '-j=2'];
+  if (platform !== 'win32') return common;
   // VS Code emits lowercase drive letters; Windows compilation databases often
   // use uppercase. Normalize inside clangd before its index combines file identities.
   const drives = Array.from({ length: 26 }, (_, index) => String.fromCharCode(65 + index));
-  return ['--background-index', '--pch-storage=disk', '-j=2',
-    `--path-mappings=${drives.map(drive => `/${drive.toLowerCase()}:=/${drive}:`).join(',')}`];
+  return [...common, `--path-mappings=${drives.map(drive => `/${drive.toLowerCase()}:=/${drive}:`).join(',')}`];
+}
+
+function extractArchive(archive, extracted) {
+  const run = process.platform === 'win32'
+    ? spawnSync('powershell.exe', ['-NoProfile', '-Command',
+      '$ErrorActionPreference="Stop"; Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory($env:OPENVISION_CPP_ARCHIVE, $env:OPENVISION_CPP_EXTRACT)'],
+    { encoding: 'utf8', windowsHide: true, env: { ...process.env, OPENVISION_CPP_ARCHIVE: archive, OPENVISION_CPP_EXTRACT: extracted } })
+    // Info-ZIP keeps the archive's Unix modes (the clangd binary is 0755).
+    : spawnSync('unzip', ['-q', archive, '-d', extracted], { encoding: 'utf8' });
+  if (run.error || run.status !== 0) throw new Error(run.error?.message ?? run.stderr);
 }
 
 async function packageInstall(base, name, spec) {
@@ -45,24 +67,22 @@ async function packageInstall(base, name, spec) {
   if (await exists(target)) return;
   const temporary = await mkdtemp(join(base, `${name}-extract-`));
   const extracted = join(temporary, 'content');
-  const run = spawnSync('powershell.exe', ['-NoProfile', '-Command',
-    '$ErrorActionPreference="Stop"; Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory($env:OPENVISION_CPP_ARCHIVE, $env:OPENVISION_CPP_EXTRACT)'],
-  { encoding: 'utf8', windowsHide: true, env: { ...process.env, OPENVISION_CPP_ARCHIVE: archive, OPENVISION_CPP_EXTRACT: extracted } });
-  if (run.error || run.status !== 0) throw new Error(run.error?.message ?? run.stderr);
+  extractArchive(archive, extracted);
   await rename(extracted, target);
 }
 
 export async function prepareCpp(root) {
-  if (process.platform !== 'win32' || process.arch !== 'x64') throw new Error('Pinned C/C++ setup currently supports Windows x64 only');
-  const paths = cppPaths(root);
+  const packages = cppPackages(), paths = cppPaths(root);
   await mkdir(paths.base, { recursive: true });
-  for (const [name, spec] of Object.entries(cppPackages)) await packageInstall(paths.base, name, spec);
+  for (const [name, spec] of Object.entries(packages)) await packageInstall(paths.base, name, spec);
   const version = spawnSync(paths.executable, ['--version'], { encoding: 'utf8', windowsHide: true });
   if (version.status !== 0 || !version.stdout.startsWith('clangd version 23.1.0 ')) throw new Error('Unexpected clangd version');
   const manifest = JSON.parse(await readFile(join(paths.extension, 'package.json'), 'utf8'));
   if (manifest.publisher !== 'llvm-vs-code-extensions' || manifest.name !== 'vscode-clangd' || manifest.version !== '0.6.0')
     throw new Error('Unexpected clangd extension identity');
-  const identity = { packages: cppPackages, executable: await fileHash(paths.executable),
+  // Same record shape as the Windows-only setup, so existing installs stay valid.
+  const { executable: _, ...server } = packages.server;
+  const identity = { packages: { server, extension: packages.extension }, executable: await fileHash(paths.executable),
     extension: await fileHash(join(paths.extension, 'out/bundle.js')) };
   const record = join(paths.base, 'identity.json');
   if (await exists(record)) {

@@ -93,7 +93,10 @@ for (const [variant, [serializerName, convertName, loaderName, errorType]] of Ob
       title: 'Local Provider Error', message: 'HTTP 503', isRetryable: true,
       extraButtons: [{ id: 'resume', label: 'Try again', variant: 'secondary' }] });
     assert.deepEqual(Object.keys(restored).sort(), ['connectCode', 'error', 'extraButtons', 'isRetryable', 'message',
-      'openvisionProviderFailure', 'requestId', 'resumeOnRetry', 'title'], 'only allowlisted fields are revived');
+      'openvisionPlaceholderBubbleId', 'openvisionProviderFailure', 'requestId', 'resumeOnRetry', 'title'], 'only allowlisted fields are revived');
+    for (const [value, expected] of [['bubble-1234', 'bubble-1234'], [`../${secret}`, undefined], [42, undefined]])
+      assert.equal(context.load({ codeBlockData: {}, composerId: 'p', modelConfig: { modelName: 'fixture', maxMode: false },
+        submitErrorDetails: { openvisionProviderFailure: true, openvisionPlaceholderBubbleId: value } }).submitErrorDetails.openvisionPlaceholderBubbleId, expected);
     assert.ok(!JSON.stringify(restored).includes(secret), 'unknown stored fields are not revived');
     const old = context.load({ codeBlockData: {}, composerId: 'old', status: 'completed', modelConfig: { modelName: 'fixture', maxMode: false } });
     assert.equal(old.submitErrorDetails, undefined, 'records without the field load as before');

@@ -1,0 +1,32 @@
+{
+  "derivation": [
+    "Recorded baselines: logs/idle-memory-before-oMVPIO and logs/idle-memory-after-9nrfCt (17 Oct 2026, owner's Linux x64 host, 16 logical CPUs, loaded, swap in use) and logs/idle-memory-baseline-Lv23NI (19 Oct 2026, this branch before the process-sampling and traversal changes, 4 CPUs, Xvfb, no swap).",
+    "Time to Explorer and startup peak family PSS: the largest of the three baselines plus about 25%, rounded up (cold 10,503 ms / 1,947.0 MiB; warm 8,645 ms / 1,851.0 MiB).",
+    "Idle private growth (USS + swap) per role between the idle marks: Lv23NI at most 2.7 MiB per role; the always-local host was flat (112.9 -> 112.5 MiB) in the 18 Oct telemetry probe after the OV-1005 transport guard. The 9nrfCt +155 MiB host growth came from the hosted-call loop that guard removed and is not a valid baseline. Limits allow scheduler and GC noise, not the old loop.",
+    "Idle CPU seconds per role per 10 minutes: 9nrfCt renderer 7.51, main 1.74 (process scan active), three quiet extension hosts 2.6 each; Lv23NI renderer 9.86, all four extension hosts 14.99, main 0.56. The main limit is below the 9nrfCt value, which included the 10 s whole-system scan.",
+    "Long session: process count flat (9nrfCt and Lv23NI 16 -> 16), private slope 6.7 and 6.2 MiB per iteration after the terminal release (29.8 before it), 0 killed-terminal shells and 0 pty masters.",
+    "Quick variant: 1 and 2 minute idle marks, 2 iterations. Its two-point slope and one-minute CPU window are noisy (wpzbLK: 77.8 MiB slope), so those two limits are wider. It is a smoke check, not a substitute for the full run."
+  ],
+  "variants": {
+    "full": {
+      "workspaceMs": { "cold": 13000, "warm": 11000 },
+      "startupPeakPssMiB": { "cold": 2450, "warm": 2350 },
+      "idleGrowthMiB": { "required": ["main", "renderer", "extension-host", "shared-process", "file-watcher", "gpu"], "default": 16, "renderer": 32, "extension-host": 32 },
+      "idleCpuSecondsPer10Min": { "required": ["main", "renderer", "extension-host", "shared-process", "file-watcher", "gpu"], "default": 1, "main": 1.5, "renderer": 15, "extension-host": 20 },
+      "processCountGrowth": 0,
+      "iterationPrivateSlopeMiB": 15,
+      "killedTerminalShells": 0,
+      "ptyHostMasters": 0
+    },
+    "quick": {
+      "workspaceMs": { "cold": 13000, "warm": 11000 },
+      "startupPeakPssMiB": { "cold": 2450, "warm": 2350 },
+      "idleGrowthMiB": { "required": ["main", "renderer", "extension-host", "shared-process", "file-watcher", "gpu"], "default": 16, "renderer": 32, "extension-host": 32 },
+      "idleCpuSecondsPer10Min": { "required": ["main", "renderer", "extension-host", "shared-process", "file-watcher", "gpu"], "default": 2, "main": 3, "renderer": 25, "extension-host": 40 },
+      "processCountGrowth": 0,
+      "iterationPrivateSlopeMiB": 120,
+      "killedTerminalShells": 0,
+      "ptyHostMasters": 0
+    }
+  }
+}

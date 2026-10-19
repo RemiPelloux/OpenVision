@@ -1,6 +1,7 @@
 import { normalizeBaseUrl, parseModels } from './model-providers.js';
 import { probeLiveChat, probeLiveReply } from './live-chat-probe.mjs';
 import { probeLiveCompletion } from './live-completion-probe.mjs';
+import { probeCompletionQuality } from './live-completion-quality-probe.mjs';
 
 const discoveryBytes = 4 * 1024 * 1024;
 const timeoutMs = 20000;
@@ -45,8 +46,8 @@ export async function probeProvider(provider, transport) {
       configuredMissing: provider.models.filter(id => !discoveredIds.has(id)) };
     const model = (provider.probeModel ? [provider.probeModel] : ['gpt-6.1-sol', 'deepseek-v4-flash', 'grok-4.7']).find(id =>
       provider.models.includes(id) && discoveredIds.has(id));
-    const probe = provider.probeMode === 'completion' ? probeLiveCompletion : provider.probeMode === 'chat' ? probeLiveReply : probeLiveChat;
-    const resultKey = provider.probeMode === 'completion' ? 'completion' : 'chat';
+    const probe = { completion: probeLiveCompletion, 'completion-quality': probeCompletionQuality, chat: probeLiveReply }[provider.probeMode] ?? probeLiveChat;
+    const resultKey = { completion: 'completion', 'completion-quality': 'completionQuality' }[provider.probeMode] ?? 'chat';
     return redactCredential({ discovery, [resultKey]: model ? await probe({ ...provider, url }, model, transport)
       : { ok: false, error: 'No configured GPT, DeepSeek or Grok probe model was discovered' } }, provider.key);
   } catch (error) {

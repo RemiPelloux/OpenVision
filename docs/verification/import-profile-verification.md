@@ -128,12 +128,20 @@ dialog session; persistent recovery is available through the CLI commands above.
 There is no persistent in-app backup browser yet. CLI recovery assumes the app
 using those paths is closed; it does not forcibly close another instance.
 
-The restore is guarded and resumable after already-restored files, but it is not
-a single filesystem transaction covering all files. Physical full-disk/I/O
-failure, forced process interruption and concurrent hostile filesystem changes
-are not established by this run. Byte-exact restore concerns changed files;
-empty created directories may remain. macOS and Linux native behavior remains
-unverified. No completion percentage is increased by this report alone.
+Update, 19 October 2026 (Linux x64): import and restore are now staged and
+recover after interruption. Every new byte is written to a sibling temporary
+first, so a full or read-only volume fails before any destination changes; the
+manifest is recorded before the commit renames, and the next app start or CLI
+import/restore/`--recover` rolls back an interrupted import or finishes an
+interrupted restore. Restore also removes directories the import created. A
+running app's extensions-folder watcher no longer replaces imported registry
+entries. Preview and the dialog declare never-imported data, and planning
+enforces a destination allow-list. Evidence, commands, run IDs and retained
+failures: [Linux import and restore report](import-linux-2026-10-19.md).
+
+Still not established: power loss, EIO, hostile concurrent edits during the
+commit, Windows reruns of the new checks and macOS source discovery. No
+completion percentage is increased by this report alone.
 
 Retained failed attempts: `n0A0fA` clicked settings before the native panel was
 ready; the harness now retries that navigation. `JkJe6Z` and `UBFQEp` exposed

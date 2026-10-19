@@ -1,5 +1,99 @@
 # Subagent model and reasoning verification
 
+## Linux x64 update, 19 October 2026
+
+Native checks on Linux x64 (container, Xvfb, private D-Bus, disposable
+gnome-keyring Secret Service), built from source on `main` `b4f52a56` plus this
+branch. Every request went to a **loopback fixture**; no live inference. The
+worker report [subagent-reasoning](worker-reports/subagent-reasoning.md) lists every
+command and run ID.
+
+### Defect fixed: the child status said Provider default while High was sent
+
+Reproduced with the new label assertion and the fix neutralized (run `teXGow`):
+the inherited general-purpose row read **"Parent Thinker · Provider default"**
+while the child request carried `reasoning_effort: high`.
+
+Observed cause: a Task child runs as its own local chat whose saved selection
+has no parameters (the persisted child chats in baseline run `lNAHwI` all hold
+`parameters: []`). Its request therefore uses
+`resolveModelParametersForSubmission`, which falls back to the saved per-model
+choice: High for the inherited parent model, the Task Models choice for Explore.
+The row label (`taskSubagentModelDisplay`) instead resolved the model through the
+catalog with no parameters and showed the default variant. A temporary probe of
+the agent-host parameter lookup confirmed that host path is not used for these
+children: it recorded no calls during a full run.
+
+Fix: `desktop/subagent-model-customization.mjs` (`subagentStatusReasoning`) makes
+the label call the same submission resolver, in both workbench variants, so it
+names exactly what the child request sends. It changes only local mode; without
+services or outside local mode the recovered behavior is unchanged.
+
+### What `verify:subagent-reasoning` now proves (run `gTyHaw`, then two final runs)
+
+Each Task row label is compared with the observed child request:
+
+| Case | Request (model, effort) | Visible status |
+| --- | --- | --- |
+| Inherited general-purpose | parent-thinker, high | row: Parent Thinker · High |
+| Explicit Explore | child-thinker, ultra | hover: Child Thinker · Ultra |
+| Profile-defined subagent | agent-thinker, medium | hover: Agent Thinker · Medium |
+| After restart | child-thinker, ultra | hover: Child Thinker · Ultra |
+| Recovery to Low | child-thinker, low | hover: Child Thinker · Low |
+
+Retry, resume and restart:
+
+- **Child failure.** A child 503, and a child stream that ends without a finish
+  reason, each produce exactly one child request (child-thinker, ultra). There is
+  no automatic child retry and no parent-model fallback. The parent (High)
+  receives the failure as the Task result and continues.
+- **Parent Try again / Resume after a Task.** The parent continuation fails (503 →
+  Try again; partial stream → Resume). The recovery sends exactly one parent
+  request (parent-thinker, high) that replays the existing child result. No
+  duplicate child request is made.
+- **Restart with a failed Task turn.** Restoring sends 0 requests. Try again then
+  sends one parent High request and does not re-run the child.
+- **Restart while a child is running.** The child socket closes. Restoring sends
+  0 requests. The next Task again uses child-thinker / ultra.
+- **Native Task `resume`.** Resuming the earlier Explore child, before and after a
+  restart, keeps child-thinker / ultra and continues its saved conversation (3 → 5
+  → 7 messages).
+- **Profile-defined subagent.** `<profile>/User/agents/fixture-reviewer.md` declares
+  `model: agent-thinker`. Its child uses that model with the model's saved Medium
+  choice, while the parent keeps High.
+  - The earlier static concern was that `IEe.getTaskToolConfig` drops parameters.
+    That code is not on this path: local children do not call it.
+
+The pre-existing cases (unavailable level, explicit recovery, disabled model,
+Explore set to None) still pass unchanged. Across all cases no explicit child
+used the parent model.
+
+### Observations, not fixed here
+
+- **"Stopped" for a failed child.** A failed child's Task row says "Stopped", and
+  opening the child chat shows only its prompt. It offers no error and no Try
+  again. Recovery is through the parent, or through the Task `resume` parameter.
+- **Settings after an interrupted Task.** Runs `JpMjRo` and `SrclIo`:
+  1. Restart while a Task child is outstanding.
+  2. The restored chat shows the unanswered message in edit state.
+  3. The titlebar Settings button then did not open Settings within 15 seconds,
+     even after three clicks.
+
+  After one follow-up message, Settings opened normally. The verifier opens
+  Settings only after that follow-up. The cause was not established.
+- **Child chat header.** It shows the provider and model name ("<provider> ·
+  Child Thinker") without a reasoning level.
+- **`modelSelectionError` is a plain `Error`.** Statically, it is not an instance
+  of the native error hierarchy, so the exec retry classifier would treat it as
+  retryable. On the measured local paths it is not reached:
+  - the parent's selection errors are wrapped by the workbench;
+  - unavailable child choices fail with a Task error and zero child requests,
+    promptly.
+
+  No retry loop was observed.
+
+## Windows checks, 13 October 2026
+
 Windows native checks, 13 October 2026. OV-104 and OV-203 remain Partial; these
 results advance their local gates without claiming complete provider acceptance.
 

@@ -192,3 +192,54 @@ Linux defects 1–3 are fixed and verified (section 6). Still open: the Windows 
 134 must be diagnosed with captured stderr, and the `0xC0000005` worker crash
 explained; both need Windows. Windows and macOS shutdown matrices are also open.
 OV-403 stays **Partial**: those clauses are not Linux-verifiable.
+
+## 7. Ubuntu/X11 rerun and Linux clause table (19 October 2026)
+
+Host: cloud container, Ubuntu 24.04 (`/bin/sh` is dash), Xvfb X11
+(`-screen 0 1920x1080x24`), `dbus-run-session` without a Secret Service,
+non-root user `ov`, Node 24.18.0, 4 CPUs / 15 GB. Source build from the pinned
+Cursor 3.21.13 AppImage on branch `ov/ubuntu-rerun-fixes`. The coordinator's rerun on
+merged main `b4f52a56` found two OV-403 failures here; both are fixed.
+
+| Failure | Root cause (observed) | Owner and fix |
+| --- | --- | --- |
+| `test:shutdown`: `pty-exec.test.mjs` "missing executable" got status `null` | Node 24.18 treats a failed `process.execve` as fatal: it prints `process.execve failed with error code ENOENT` and aborts (SIGABRT). The wrapper's `catch` never ran. The cause is not dash, bash or Ubuntu. Product effect: a terminal whose shell is missing ended by signal 6 instead of node-pty's `execvp(3) failed.` and exit 1. | [`pty-exec.cjs`](../../desktop/pty-exec.cjs) now resolves the executable like `execvp(3)` (`PATH` search, `X_OK`, regular file) and reports `ENOENT`/`EACCES` as `execvp(3) failed.: <strerror>` with exit 1 before calling `execve`. Tests assert no signal, the exact message, and a new permission-denied case. |
+| `verify:shutdown-cycles`: "terminal history not restored" in varying cycles (PYZ4Nx 3 and 7; reproduced `anu3lK` 2 and 3) | Restore works. The restored buffers held `term-cN running` and "History restored", but xterm's DOM renderer holds only visible rows. Here the long run-directory paths wrap, so the `OV-RESTORE-MARKER-cN` line sat just above the viewport. Which cycles failed depended on wrapping. | Harness: the driver exposes the public `workbench.action.terminal.scrollToTop/scrollDownPage/scrollToBottom` commands and the runner reads the buffer page by page ([`verify-shutdown-cycles.mjs`](../../desktop/verify-shutdown-cycles.mjs)). The assertion is unchanged. |
+
+Remaining limit: if the shell exists and is executable but `execve` still fails
+(for example, a `#!` line naming a missing interpreter), Node still aborts.
+node-pty's own fork path would report `execvp(3) failed.` instead.
+
+### Linux x64 clause table (OV-403)
+
+Observed on Ubuntu/X11 in `development-verification-wlROYz` (pass, launcher exit
+0, native `process.exit` 0) and the three consecutive `shutdown-cycles` passes below.
+Earlier Arch/Hyprland passes are in section 6.
+
+| Clause | Evidence | Result |
+| --- | --- | --- |
+| Resize (bash) | Real PTY 74×13 → 52×13 after a window resize to 1100 px | Pass |
+| Resize (sh = dash) | Real PTY 53×13 → 94×13 after a resize to 1450 px | Pass |
+| Unicode | `OpenVision café 日本語` written by the fixture and rendered in both terminals (`*_unicode_rendered`) | Pass |
+| Environment | The terminal-only variable reaches the fixture (`fixtureEnv: terminal-only`); cwd is the project | Pass |
+| Exit / cancel | Ctrl+C in each shell cancels the foreground fixture (`cancelled`); the disposed terminal is gone; the reopened shell exits 0 | Pass |
+| Restart | Terminal restart gives a new shell PID (bash 22654 → 22682, sh 22710 → 22726) with the size kept | Pass |
+| Task problem matcher | The `openvision-fixture` matcher produces the diagnostic (`task_problem_matcher`); shutdown cycles: the background `ov-watch` matcher in every cycle | Pass |
+| Task cancel / restart | The cancelled task's parent and child are released; the restarted task's parent and child are released (`bothReleased`) | Pass |
+| Debugger break/step/stop | `pwa-node`: `stopped` (breakpoint) → `stopped` (step) → `terminated`; value 3 → 9; debuggee and child released | Pass |
+| Released PIDs on window close | Terminal tree parent 22925 and child 22932 and their shell are absent within 15 s; shutdown state persisted | Pass |
+| Shutdown cycles (graceful) | 6 graceful closes per run: exit 0, no owned survivor, no lingering process, history restored after each | Pass ×3 |
+| Shutdown cycles (abrupt) | kill-main: the debuggee and its child are reclaimed at the next start; kill-group: no survivors; user-detached fixtures and the external sentinel survive; no run-nonce survivors after cleanup | Pass ×3 |
+
+| Run | Result | Peak family PSS, cold / warm (MiB) |
+| --- | --- | --- |
+| `shutdown-cycles-anu3lK` | Fail before the harness fix (cycles 2, 3: marker above the viewport) | — |
+| `shutdown-cycles-XtnQt3` | Pass (first after the fix) | 3,830 / 1,837–4,132 |
+| `shutdown-cycles-7zIjAX` | Pass | 4,348 / 1,866–4,114 |
+| `shutdown-cycles-pPoZI9` | Pass | 3,926 / 1,742–4,105 |
+
+Cycle 2 (the first warm start of a fresh profile) peaks with cycle 1 at about 4.1 GiB PSS;
+cycles 3–9 stay at 1.7–2.0 GiB. One run each, with the sampler as in section 5.
+
+Moved to platform/live stories: the Windows exit 134 and `0xC0000005` worker
+crash (section 1), and the Windows/macOS shutdown and development matrices.

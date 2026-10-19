@@ -1,6 +1,6 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
-const marker = '/* OpenVision autocomplete preparation debounce v1 */';
+const marker = '/* OpenVision autocomplete preparation debounce v2 */';
 
 export function debounceCompletionPreparation(text, variant) {
   const local = { desktop: 'zc.localMode', glass: 'Rl.localMode' }[variant];
@@ -17,13 +17,15 @@ export function debounceCompletionPreparation(text, variant) {
       !source.includes('.getValue()') || !source.includes('await this.executeBeforeTabFileReadHook(') ||
       !source.includes('await this.runCpp(')) throw new Error('Autocomplete preparation contract changed');
   // Keep the later dispatch debounce: a slow hook can be superseded after this check.
+  // An input method composition changes the model before its text is committed;
+  // no request is prepared for that uncommitted text.
   const guard = `\n${marker}
     if (${local}) {
       const openvisionModel = ${editor.name}.getModel();
       const openvisionVersion = openvisionModel?.getVersionId();
-      if (${controller.name}.signal.aborted || !openvisionModel ||
+      if (${controller.name}.signal.aborted || !openvisionModel || ${editor.name}.inComposition ||
           await this.debouncer.shouldDebounce(${generation.name}) ||
-          ${controller.name}.signal.aborted || openvisionModel.isDisposed() ||
+          ${controller.name}.signal.aborted || openvisionModel.isDisposed() || ${editor.name}.inComposition ||
           ${editor.name}.getModel() !== openvisionModel ||
           openvisionModel.getVersionId() !== openvisionVersion) {
         ${controller.name}.abort();

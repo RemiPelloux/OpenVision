@@ -80,7 +80,17 @@ export function setContributedDefaults(manifest, defaults) {
 
 // Workbench experiment refresh (aiserver.v1.AnalyticsService/BootstrapStatsig
 // polling) and Cursor Tab fate reports (aiserver.v1.CppService/RecordCppFate).
-const workbenchMarker = '/* OpenVision hosted experiment and fate reporting disabled v1 */';
+// With no hosted bootstrap, the experiment service would never report itself
+// initialized, and consumers that wait for it (shared-process MCP routing
+// waits 30 s per decision, then stays on the legacy route) never decide. The
+// refused refresh therefore reports the service initialized with its bundled
+// and local gate defaults, as Cursor's own test mode does. A persisted
+// bootstrap still hydrates first; the `{}` event matches upstream hydration.
+const workbenchMarker = '/* OpenVision hosted experiment and fate reporting disabled v2 */';
+const workbenchMarkerV1 = '/* OpenVision hosted experiment and fate reporting disabled v1 */';
+const localInitialization = 'const openvisionExperiments = this.experimentService; ' +
+  'if (openvisionExperiments && "_initialized" in openvisionExperiments && !openvisionExperiments.isInitialized()) ' +
+  '{ openvisionExperiments._initialized = !0; openvisionExperiments._onDidChangeGates?.fire({}); } return;';
 function uniqueMatch(text, pattern, name) {
   const matches = [...text.matchAll(pattern)];
   if (matches.length !== 1) throw new Error(`${name} owner missing or ambiguous`);
@@ -88,11 +98,18 @@ function uniqueMatch(text, pattern, name) {
 }
 export function disableWorkbenchHostedReports(text) {
   if (text.includes(workbenchMarker)) return text;
+  if (!/isInitialized\(\) \{\s*return this\._initialized;\s*\}/.test(text)) throw new Error('Experiment initialization contract changed');
+  if (text.includes(workbenchMarkerV1)) {
+    const v1 = `${workbenchMarkerV1} return;`;
+    if (text.split(v1).length !== 2) throw new Error('Experiment refresh v1 patch missing or ambiguous');
+    return text.replace(v1, `${workbenchMarker} ${localInitialization}`);
+  }
   if ([...text.matchAll(/\.bootstrapStatsig\(/g)].length !== 1) throw new Error('Experiment bootstrap caller contract changed');
   const refresh = classAt(text, uniqueMatch(text, /async _doRefreshBootstrapFromServer\([\w$]+\) \{/g, 'Experiment refresh'));
+  if (!text.slice(refresh.start, refresh.end).includes('(this.experimentService = ')) throw new Error('Experiment refresh service contract changed');
   const fate = classAt(text, uniqueMatch(text, /\n\s+recordCppFate\([\w$]+, [\w$]+, [\w$]+, [\w$]+\) \{/g, 'Cursor Tab fate'));
   return applyTelemetryPatches(text, [
-    ...replaceMethods(refresh, { _refreshBootstrapFromServer: `${workbenchMarker} return;`, _startPolling: '' }),
+    ...replaceMethods(refresh, { _refreshBootstrapFromServer: `${workbenchMarker} ${localInitialization}`, _startPolling: '' }),
     ...replaceMethods(fate, { recordCppFate: '' }),
   ]);
 }
@@ -101,8 +118,10 @@ export function disableWorkbenchHostedReports(text) {
 // every client gate at its bundled default. Local features that the anonymous
 // bootstrap used to switch on keep their previous value here. The Customize
 // manage scope selector is single-scope ("User") when this gate is off, which
-// hides project skills, commands and rules.
-export const localGateDefaults = { customize_manage_scope_multiselect: true };
+// hides project skills, commands and rules. Shared-process MCP transports
+// (one utility owns each configured server; the OV-303 lifecycle, cleanup and
+// window-release fixes live there) were likewise on through that bootstrap.
+export const localGateDefaults = { customize_manage_scope_multiselect: true, mcp_shared_process_transports: true };
 export function setLocalGateDefaults(text) {
   let result = text;
   for (const [gate, value] of Object.entries(localGateDefaults)) {
@@ -136,6 +155,36 @@ export function refuseAnonymousHostedCalls(text) {
     'throw Object.assign(new Error("OpenVision: Cursor service calls require a signed-in Cursor account"), { code: "unauthenticated" });';
   return text.slice(0, at) + guard + text.slice(at);
 }
+// The workbench answers extension `cursor.getTeamAdminSettings()` and
+// `cursor.getTeamRepos()` with the dashboard's ...OrEmptyIfNotInTeam RPCs,
+// which the server answers with an empty message for anyone outside a team.
+// The anonymous guard above refuses them before sending, and the refusal then
+// broke local features that only read team policy. Legacy-route STDIO MCP
+// connections failed with "require a signed-in Cursor account" (OV-303,
+// run CZr5WO). For that refusal only, the bridge returns the same empty
+// message, still without a request; signed-in calls and other errors are unchanged.
+const teamMarker = '/* OpenVision anonymous team settings empty v1 */';
+const anonymousRefusal = 'OpenVision: Cursor service calls require a signed-in Cursor account';
+export function emptyAnonymousTeamSettings(text) {
+  if (text.includes(teamMarker)) return text;
+  for (const [bridge, rpc] of [['$getTeamAdminSettings', 'getTeamAdminSettingsOrEmptyIfNotInTeam'], ['$getTeamRepos', 'getTeamReposOrEmptyIfNotInTeam']]) {
+    const descriptors = [...text.matchAll(new RegExp(`\\b${rpc}: \\{\\s*name: "\\w+",\\s*I: ([\\w$]+),\\s*O: ([\\w$]+),`, 'g'))];
+    const methods = [...text.matchAll(new RegExp(`\\n(\\s*)async \\${bridge}\\(\\) \\{\\s*return await \\(\\s*await this\\.cursorAuthenticationService\\.dashboardClient\\(\\)\\s*\\)\\.${rpc}\\(new ([\\w$]+)\\(\\{\\}\\)\\);\\s*\\}`, 'g'))];
+    if (descriptors.length !== 1 || methods.length !== 1 || descriptors[0][1] !== methods[0][2])
+      throw new Error(`Team settings bridge contract changed: ${bridge}`);
+    const [method] = methods, [, indent, request] = method, response = descriptors[0][2];
+    const replacement = `\n${indent}async ${bridge}() { ${teamMarker}
+${indent}  try {
+${indent}    return await (await this.cursorAuthenticationService.dashboardClient()).${rpc}(new ${request}({}));
+${indent}  } catch (openvisionError) {
+${indent}    if (String(openvisionError?.rawMessage ?? openvisionError?.message ?? "").includes(${JSON.stringify(anonymousRefusal)})) return new ${response}();
+${indent}    throw openvisionError;
+${indent}  }
+${indent}}`;
+    text = text.slice(0, method.index) + replacement + text.slice(method.index + method[0].length);
+  }
+  return text;
+}
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
   'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs'];
 
@@ -159,7 +208,7 @@ export async function installNetworkDefaults(root) {
 
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
-    await backedWrite(root, `${app}/${relative}`, text, setLocalGateDefaults(disableWorkbenchHostedReports(text)));
+    await backedWrite(root, `${app}/${relative}`, text, emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text))));
   }
   for (const relative of transportTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
@@ -179,5 +228,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate default`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally`);
 }

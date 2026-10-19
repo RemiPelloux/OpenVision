@@ -4,6 +4,10 @@ Checkpoint: **17 October 2026**, after the 16–17 October Linux sessions
 ([session report](../verification/linux-session-2026-10-16.md)). Ledger owner:
 [completion sprints](completion-sprints.md); order owner: [roadmap](roadmap.md).
 
+**18 October re-scope:** the current counts (18/44 Verified, baseline v3) and the
+running Linux work are in [§10](#10-re-scope--18-october-2026); §1–§9 keep the
+17–18 October record as written.
+
 Per [`objective.md`](../../objective.md), the ETA is expressed as **acceptance
 stories, provisional complexity points and blocking gates**, never calendar or
 engineer time. Points are provisional sizes of whole stories: they only "burn
@@ -265,3 +269,98 @@ a keystroke during the async Tab accept could be misplaced (untested).
 
 The ledger is unchanged: **6/42 Verified, 36 stories and 322 points remaining.**
 Work is paused here.
+
+## 10. Re-scope — 18 October 2026
+
+**Why the percentage barely moved before this checkpoint.** A story counted only when
+every clause passed on every platform it claimed. Almost every Partial story had at
+least one Windows, macOS or live-provider clause, and none of those could be run from
+the Linux host. So the 16–18 October sessions fixed more than 25 defects and promoted
+nothing. That was the rule working as written, not a lack of progress.
+
+**Owner decision (baseline v3, `feature-acceptance.json` version 3).** Platform and
+live clauses move out of every story into four dedicated stories:
+
+| Story | Owns |
+| --- | --- |
+| OV-901 Windows (repurposed) | Install plus every Windows clause of every story; exit 134 and worker `0xC0000005`; Windows ports of Linux-only verifiers (`verify:explorer`, `verify:shutdown-cycles`, `verify:global-paths`, `verify:mcp-config-ownership`, `verify:data-destinations`, `verify:telemetry:extended`, `verify:idle-memory`, `verify:responsiveness` filesystem probe) |
+| OV-902 macOS (repurposed) | Every macOS clause; removed entirely if the owner decides not to claim macOS |
+| OV-905 Linux matrix (new) | Other distributions, real GNOME/KDE/KWallet sessions, Ubuntu desktop AppArmor policy, ARM64 |
+| OV-205 Live providers and accounts (new) | Every live GPT/DeepSeek/Grok clause and optional signed-in account workloads; needs Codex Easy balance |
+
+Other stories are promoted when all remaining clauses pass on Linux x64. The
+denominator grows from 42 to **44**; 80% needs **36**. The exact commands for the
+four platform/live stories are in the [platform and live test plan](platform-and-live-test-plan.md).
+
+**Result so far:** OV-702 is Verified (Ubuntu/X11 runs `qQAjRu` and `zdi9V9` on merged
+`main`, after Arch/Wayland `B5m8yT`). Ledger: **7/44 Verified (15.91%)**.
+
+**The audit after the re-scope.** Eight read-only agents audited all 36 unfinished
+stories clause by clause. Only OV-401, OV-403 and OV-702 were Linux-complete. Every
+other story still has real Linux work or an owner decision, not just platform gates.
+The rerun of OV-401 and OV-403 in an Ubuntu 24.04/X11 container then found four new
+failures, so those two stay Partial until fixed:
+
+- `test:shutdown`: `pty-exec.test.mjs` "missing executable" returns status `null`, not 1 (Ubuntu's `/bin/sh` is dash).
+- `verify:explorer`: `externalEdit.probesPerRootPerSecond` 4.33 exceeds the budget of 4.
+- `verify:project:lifecycle`: hot-exit restore of unsaved editors timed out.
+- `verify:shutdown-cycles` (`PYZ4Nx`): terminal history not restored in cycles 3 and 7.
+
+Passed first time in the same rerun: `test:desktop`, `test:extensions`,
+`verify:extensions`, `verify:project`, `verify:project:scale`, `verify:development`.
+
+**Linux implementation sessions (started 18 October).** One isolated cloud session per
+story cluster, each on its own branch. Each builds from the pinned input, verifies
+natively under Xvfb as a non-root user, and writes a report under
+`docs/verification/worker-reports/`. Branches are merged one at a time, each followed
+by a clean rebuild and a native run.
+
+| Branch | Stories | Main Linux work |
+| --- | --- | --- |
+| `ov/agent-chat-failures` | OV-102, OV-204 | Fixture Fork/history verifier, full-duration fixture timeouts, custom-header secret matrix, oversized stream cell |
+| `ov/agent-editing` | OV-103 | Stale review bar, "Edited" on unapplied write, Undo All resume, full-volume Reject/Undo, orphan temp sweep |
+| `ov/subagent-reasoning` | OV-104, OV-203 | Child status label, child and parent retry/resume, profile subagents |
+| `ov/rules-memories` | OV-301 | Read-only profile dialog, Linux memory-filesystem verifier, first-request rule fixture, two-window runs |
+| `ov/config-isolation` | OV-302 | Editor/daemon MCP discovery from HOME, plugin ownership, gated roots, migration check, second packaged installation |
+| `ov/mcp-safety` | OV-303 | Agent MCP failure modes on Linux, HTTP cleanup port, simultaneous edits, HTTP same-name, same basename |
+| `ov/mcp-auth` | OV-304 | OAuth trace, OAuth fixture verifier, secret storage, precedence, invalid config, watcher disposal |
+| `ov/language-tools` | OV-402 | In-flight edits, rename race on Linux, large-project budgets, Linux clangd |
+| `ov/import-restore` | OV-701 | Stronger native import checks, realistic profile, interrupted/ENOSPC/EROFS rollback, exclusions |
+| `ov/autocomplete-safety` | OV-603 | Keystroke during async accept, split editors, IME, latency budgets |
+| `ov/autocomplete-quality` | OV-602 | Multi-language quality corpus and scorer, live-mode editor acceptance (fixture dry run) |
+| `ov/agent-context` | OV-1001 | Fork workload, closed-chat renderer release, live usage capture, reasoning replay pinning |
+| `ov/idle-resources` | OV-1003 | `verify:utility-listeners` on Linux, inert proclist scan, numeric idle budgets, startup traversal dedup |
+| `ov/responsiveness` | OV-1002 | `lastChunkToPaintMs` cause, incremental-edit proof, scroll p95 |
+| `ov/data-telemetry` | OV-501, OV-1005 | Extra capture workloads, loaded-addon inventory, clean-quit flake, 206 drifted gates |
+| `ov/linux-completion` | OV-903 | Package verifier, X11 cell, headless Wayland, never-run verifiers, critical-suite runner |
+| `ov/release-safety` | OV-1004 | Secret scanner, corrupt-state, crash-recovery and authority matrices, recovery guide |
+| `ov/updates-rollback` | OV-904 | Signed release pipeline, side-by-side install/upgrade/rollback, native upgrade verifier |
+| `ov/native-inventory` | OV-801 | Linux native/WASM inventory, loaded roles, dispositions, esbuild.wasm evidence |
+| `ov/upstream-host` | OV-802 | Upstream Electron 42.10.0 host option, rebuilt storage/terminal/watcher addons, provenance |
+| `ov/helper-replacement` | OV-803 | Measured helper ranking, crepectl/cursorsandbox contracts, tree-chunk and file_service harnesses |
+| `ov/retrieval-index` | OV-502, OV-503, OV-504 | Owned FTS5 retrieval, quality corpus, incremental indexer, durable storage, native verifiers |
+| `ov/modes-inventory` | OV-704, OV-604 prep | Specialized-mode inventory and probe, image input matrix, next-edit decision paper |
+| `ov/remote-ssh` | OV-703 | Pinned and branded remote server, SSH verifier against a local sshd |
+| `ov/ubuntu-rerun-fixes` | OV-401, OV-403 | The four Ubuntu/X11 failures above, plus the OV-403 Linux clause table |
+
+Each session applies conservative defaults where an owner decision is needed and
+lists them in its report. None of those defaults is final until the owner accepts it.
+
+**Owner decisions still needed** (none blocks the Linux sessions):
+
+1. macOS: claim it (needs a Mac) or drop it (removes OV-902).
+2. OV-804: where the application JavaScript comes from. Publishing the recovered
+   3.21.13 source as an OpenVision-owned input is a distribution-rights question;
+   without it, "independent build" cannot pass on Linux even after every native is rebuilt.
+3. OV-604 next-edit prediction: support it through the configured provider, or record an exclusion.
+4. OV-502: whether lexical (FTS5) retrieval is enough for the release, or semantic embeddings are required.
+5. Python/Go/Rust: ship language servers or declare them syntax-only.
+6. Whether a story may be promoted while a story it depends on is still Partial (for example OV-702 depends on OV-402).
+7. Update strategy and signing-key custody for OV-904.
+8. Which drifted server-controlled features (from the 206) ship on by default.
+
+**Update, 19 October.** All 25 sessions stopped within an hour on the shared account
+usage limit, and only 3 pushed partial work. They now run 5 at a time, pushing after
+each task. `ov/ubuntu-rerun-fixes` fixed the four Ubuntu/X11 failures above (one
+product defect in the pty wrapper, three harness defects). After a coordinator rebuild
+and a first-time rerun, OV-401 and OV-403 are Verified. Ledger: **9/44 Verified (20.45%)**. Then `ov/subagent-reasoning` (OV-104, OV-203) merged and reran first-time: **11/44 (25.00%)**. Then `ov/rules-memories` (OV-301): **12/44 (27.27%)**. Then `ov/config-isolation` (OV-302): **13/44 (29.55%)**. Then `ov/agent-chat-failures` (OV-102, OV-204): **15/44 (34.09%)**. Then `ov/import-restore` (OV-701): **16/44 (36.36%)**. Then `ov/autocomplete-safety` and `ov/autocomplete-quality` (OV-603, OV-602): **18/44 (40.91%)**.

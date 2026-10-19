@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
-import { subagentModelParameters } from './subagent-model-customization.mjs';
+import { subagentModelParameters, subagentStatusReasoning } from './subagent-model-customization.mjs';
 import { scopedAgentProviders } from './agent-provider-customization.mjs';
 import { readableApp } from './recovered-source.mjs';
 
@@ -67,5 +67,46 @@ for (const variant of ['desktop', 'glass']) {
     assert.equal(build('inherit').parameters.length, 0);
     assert.equal(build('disabled').parameters.length, 0);
     assert.deepEqual(calls, ['gpt','gpt','deepseek','unknown']);
+  });
+}
+
+for (const variant of ['desktop', 'glass']) {
+  test(`${variant} Task status label names the reasoning the child request sends`, async t => {
+    let source;
+    try { source = await readFile(new URL(`../source/app/out/vs/workbench/workbench.${variant}.main.js`, import.meta.url), 'utf8'); }
+    catch (error) { if (error.code === 'ENOENT') return t.skip('Prepared workbench required'); throw error; }
+    const patched = subagentStatusReasoning(source, variant);
+    assert.equal(subagentStatusReasoning(patched, variant), patched);
+    const helperStart = patched.indexOf('function openvisionEffectiveTaskModel(');
+    const helper = parseExpressionAt(patched, helperStart, { ecmaVersion: 'latest' });
+    const owner = parseExpressionAt(patched, helper.end + 1, { ecmaVersion: 'latest' });
+    const label = patched.slice(owner.start, owner.end);
+    const name = label.match(/^function ([\w$]+)\(/)[1];
+    // Both row renderers pass their services; the reference resolver is never reached without them.
+    assert.equal(patched.split(new RegExp(`[^\\w$.]${name.replace('$', '\\$')}\\([^;]*\\.modelConfigService\\)`)).length, 3);
+    const [, lookup, format, slug, hidden] = label.match(/const [\w$]+ = ([\w$]+)\([\s\S]*?return ([\w$]+)\([\s\S]*?const [\w$]+ = ([\w$]+)\([\s\S]*?=== ([\w$]+)\)/);
+    const flag = { localMode: true };
+    const preferences = { 'openvision-model:p:parent': [{ id: 'reasoning', value: 'high' }] };
+    const service = { resolveModelParametersForSubmission: (id, saved) => saved.length ? saved : preferences[id] ?? [] };
+    const run = runInNewContext(`${patched.slice(helper.start, helper.end)}\n(${label})`, {
+      [variant === 'desktop' ? 'zc' : 'Rl']: flag, [hidden]: 'hidden', [slug]: value => value,
+      [lookup]: (models, value) => models.includes(value) ? { modelId: value, parameters: [] } : undefined,
+      [format]: (model) => `${model.modelId} · ${model.parameters[0]?.value ?? 'Provider default'}`,
+    });
+    const models = ['openvision-model:p:parent', 'openvision-model:p:child'];
+    const config = (modelId, parameters = []) => ({ modelName: modelId, selectedModels: [{ modelId, parameters }] });
+    // Inherited: the child chat stores no parameters; the request uses the saved High preference.
+    assert.equal(run('openvision-model:p:parent', models, config('openvision-model:p:parent'), service), 'openvision-model:p:parent · high');
+    // Explicit: parameters saved on the child selection win, as they do for the request.
+    assert.equal(run('openvision-model:p:child', models, config('openvision-model:p:child', [{ id: 'reasoning', value: 'ultra' }]), service),
+      'openvision-model:p:child · ultra');
+    // Default: nothing saved anywhere, so the provider default really is sent.
+    assert.equal(run('openvision-model:p:child', models, config('openvision-model:p:child'), service), 'openvision-model:p:child · Provider default');
+    // A selection-only label (no Task model name) resolves the same way.
+    assert.equal(run(undefined, models, config('openvision-model:p:parent'), service), 'openvision-model:p:parent · high');
+    // Outside local mode, or without services, the recovered behavior is unchanged.
+    assert.equal(run('openvision-model:p:parent', models, config('openvision-model:p:parent')), 'openvision-model:p:parent · Provider default');
+    flag.localMode = false;
+    assert.equal(run('openvision-model:p:parent', models, config('openvision-model:p:parent'), service), 'openvision-model:p:parent · Provider default');
   });
 }

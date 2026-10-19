@@ -15,8 +15,12 @@ export async function readImportBackup(root, input, selected) {
   await safeDestination(destinations.backupsRoot, backup);
   await safeDestination(destinations.backupsRoot, join(backup, 'manifest.json'));
   const manifest = JSON.parse(await readFile(join(backup, 'manifest.json'), 'utf8'));
-  if (![1, 2].includes(manifest.version) || typeof manifest.root !== 'string' || !samePath(resolve(manifest.root), resolve(root)) || !Array.isArray(manifest.records) ||
-      !['complete', 'partial', 'prepared', 'restored'].includes(manifest.status)) throw new Error('Invalid import backup.');
+  // Version 2 ownership is its recorded destinations (compared below), so another copy
+  // of OpenVision, or the verifier's overlay, can recover the same selected profile.
+  if (![1, 2].includes(manifest.version) || typeof manifest.root !== 'string' ||
+      (manifest.version === 1 && !samePath(resolve(manifest.root), resolve(root))) || !Array.isArray(manifest.records) ||
+      !['complete', 'partial', 'prepared', 'restoring', 'restored'].includes(manifest.status) ||
+      (manifest.directories !== undefined && !Array.isArray(manifest.directories))) throw new Error('Invalid import backup.');
   const expected = manifest.version === 1 ? legacy : importDestinations(root, manifest.destinations);
   if (!sameImportDestinations(expected, destinations)) throw Error('Import backup belongs to a different profile or extensions directory.');
   const changes = [];
@@ -37,6 +41,11 @@ export async function readImportBackup(root, input, selected) {
     if (source) await safeDestination(backup, source);
     if ((record.before === null) !== (record.original === null)) throw Error('Invalid import backup original.');
     changes.push({ ...record, path, source });
+  }
+  for (const entry of manifest.directories ?? []) {
+    const base = destinations[entry?.owner];
+    if (!['user', 'extensions'].includes(entry?.owner) || typeof entry.path !== 'string' || !inside(base, resolve(base, entry.path)) ||
+        resolve(base, entry.path) === base) throw new Error('Invalid import backup directory record.');
   }
   return { destinations, backup, manifest, changes };
 }
@@ -74,7 +83,9 @@ export async function listImportBackups(root, selected) {
     const backup = join(destinations.backups, entry.name);
     try {
       const { manifest, changes } = await readImportBackup(root, backup, destinations);
-      backups.push({ backup, status: manifest.status, files: changes.length, verifiedContents: false });
+      // prepared/restoring: stopped while committing, or still running in another process.
+      backups.push({ backup, status: manifest.status, files: changes.length, verifiedContents: false,
+        interrupted: ['prepared', 'restoring'].includes(manifest.status) });
     } catch (error) { backups.push({ backup, status: 'invalid', error: error.message }); }
   }
   return { directory: destinations.backups, destination: destinations.user, extensionsDestination: destinations.extensions,

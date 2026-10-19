@@ -87,3 +87,11 @@ OV-302 is **partial**, not verified in full:
 
 The global MCP producer fix reduces cross-application configuration sharing. It
 must not be described as full application isolation or credited as all of OV-302.
+
+**19 October 2026 follow-up.** The editor's cross-editor MCP discovery adapters
+(Claude desktop, Windsurf, global `mcp.json`) now resolve only under the profile
+home. In 3.21.13 they are also never instantiated. The agent-host daemon reads its
+user servers from the same `User/mcp.json`. See
+[global path isolation](rea-global-path-isolation.md#19-october-2026-mcp-discovery-plugins-gated-roots-migration-and-a-packaged-second-installation-linux-x64-only).
+Named UI profiles within one data directory still share `User/mcp.json`. This is a
+documented default pending an owner decision.

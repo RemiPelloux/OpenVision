@@ -5,9 +5,26 @@ Date: **18 October 2026**. Scope: **Linux x64 only.** Omarchy (Arch-based), kern
 API 1.128.0. Build: editable source build from the 3.21.13 runtime input, not a
 packaged release. No marketplace request, paid inference or AI request was made.
 
-OV-702 stays **Partial**: every clause passes on Linux x64, but the story covers the
-supported platforms, and Windows and macOS have no lifecycle evidence yet (see
-[remaining gates](#remaining-gates)).
+OV-702 is **Verified on Linux x64** under the 18 October baseline v3 re-scope: every
+clause passes on Linux x64, and the Windows and macOS runs moved to OV-901 and OV-902
+(see [remaining gates](#remaining-gates) and the [Ubuntu rerun](#ubuntu-2404--x11-rerun-on-merged-main)).
+
+## Ubuntu 24.04 / X11 rerun on merged main
+
+18 October 2026, merged `main` `b4f52a56`, clean source build in a cloud container:
+Ubuntu 24.04.5 LTS, kernel 6.18.44, Xvfb (X11) through `xvfb-run`, `dbus-run-session`,
+non-root user, Node 24.18.0 launcher, host executable SHA-256 prefix `0636c96f07de2c74`.
+This is a second distribution and display server for the same clauses.
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `npm run test:extensions` | — | 16/16 pass |
+| `npm run verify:extensions` | `qQAjRu` | 16/16 cases, 5 launches, all host exits 0, no page errors; first attempt |
+| `npm run verify:extensions` | `zdi9V9` | Same result on an independent second run; first attempt |
+
+Observation: no case differed from the Arch/Wayland run `B5m8yT`. Inference: the
+lifecycle owners do not depend on the display server or on the distribution's
+compiler toolchain beyond a working `cc`/`c++`.
 
 ## Commands
 
@@ -208,10 +225,13 @@ Inferences, not verified:
 
 ## Remaining gates
 
-- Windows x64 and macOS native runs of `verify:extensions`, which needs a compiler
-  for the native fixtures and the platform-specific addon header checks.
-- Representative third-party extensions with real webviews, prebuilt native modules
-  and extension packs or dependencies.
-- Gallery install and update behavior, and signature verification. These were not
-  exercised, and network access to the marketplace is user-initiated.
+- Moved to OV-901/OV-902 (baseline v3): Windows x64 and macOS native runs of
+  `verify:extensions`, which needs a compiler for the native fixtures and the
+  platform-specific addon header checks.
+- Accepted residuals under baseline v3, outside the story's local-VSIX clauses
+  (the owner can reopen them): representative third-party extensions with real
+  webviews, prebuilt native modules and extension packs or dependencies; gallery
+  install and update behavior and signature verification, which were not exercised
+  because marketplace access is user-initiated; the CLI `--install-extension` guard,
+  which is unit-tested but was never launched.
 - A source build only: preview.7 does not contain these fixes.

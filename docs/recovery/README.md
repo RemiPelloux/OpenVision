@@ -25,6 +25,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [REA sprint follow-up: autocomplete contracts and cancellation](rea-autocomplete-contract.md)
 - [Windows Agent command ownership and cancellation](rea-command-cancellation.md)
 - [Custom-provider Tab autocomplete](rea-custom-autocomplete.md)
+- [Autocomplete quality harness and live editor acceptance](rea-autocomplete-quality.md)
 - [OpenVision Quick Edit](rea-inline-edit.md)
 - [Native language workflow evidence](rea-language-workflows.md)
 - [Large clipboard pastes](rea-large-paste.md)

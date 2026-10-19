@@ -40,8 +40,19 @@ test('restores the shell environment the wrapper borrowed', linux, () => {
 
 test('reports a missing executable like the recovered fork path', linux, () => {
   const result = spawnSync(process.execPath, [wrapper, '--', 'openvision-no-such-shell'], { env: { PATH: '/nonexistent' }, encoding: 'utf8' });
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /execvp\(3\) failed/);
+  // Node aborts (SIGABRT) when execve(2) itself fails; the wrapper must not reach it.
+  assert.equal(result.signal, null, result.stderr);
+  assert.equal(result.status, 1, result.stderr);
+  assert.equal(result.stderr, 'execvp(3) failed.: No such file or directory\n');
+});
+
+test('reports a non-executable shell as permission denied without aborting', linux, () => {
+  for (const file of [fileURLToPath(import.meta.url), '/proc']) {
+    const result = spawnSync(process.execPath, [wrapper, '--', file], { env: { PATH: '/nonexistent' }, encoding: 'utf8' });
+    assert.equal(result.signal, null, result.stderr);
+    assert.equal(result.status, 1, result.stderr);
+    assert.equal(result.stderr, 'execvp(3) failed.: Permission denied\n');
+  }
 });
 
 test('control: without the wrapper the shell inherits the descriptors', linux, () => {

@@ -180,3 +180,5 @@ Linux x64 acceptance-safety cases and the full-accept undo fix: [Linux acceptanc
 
 Verified Windows workbench SHA-256:
 `7616cbe676459332496caae085d0cfc7120777ab9ec11dfa60ce03293a35632a`.
+
+Multi-language quality corpus, live-run commands, adapter context and a cross-file proposal: [quality harness report](rea-autocomplete-quality.md).

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, open, readFile, readdir, stat, statfs, unlink, writeFile } from 'node:fs/promises';
 import { release } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -104,10 +104,12 @@ async function database(label) {
     const rules = query(file, "SELECT value FROM ItemTable WHERE key LIKE 'openvision.user-rule.v1.%'");
     const secrets = query(file, "SELECT count(*) AS count FROM ItemTable WHERE key LIKE 'secret://%openvision.provider.%'");
     const chat = query(file, `SELECT count(*) AS count FROM cursorDiskKV WHERE CAST(value AS TEXT) LIKE '%${fullReply}%'`);
+    const reviewRows = query(file, "SELECT count(*) AS count FROM cursorDiskKV WHERE key LIKE 'inlineDiff:%'");
     return { integrity: Array.isArray(integrity) ? integrity.map(row => row.integrity_check).join(';') : integrity,
       providers: names, providerKeys: keyed, rules: Array.isArray(rules) ? rules.map(row => row.value) : rules,
       providerSecrets: Array.isArray(secrets) ? secrets[0]?.count : secrets,
-      fullReplyRecords: Array.isArray(chat) ? chat[0]?.count : chat };
+      fullReplyRecords: Array.isArray(chat) ? chat[0]?.count : chat,
+      reviewRows: Array.isArray(reviewRows) ? reviewRows[0]?.count : reviewRows };
   };
   const files = await readdir(copy);
   return { files: await globalFiles(), state: files.includes('state.vscdb') ? summary('state.vscdb') : undefined,
@@ -161,7 +163,8 @@ const server = createServer(async (request, response) => {
     // the Agent edit and its review snapshot meet the full volume.
     if (phase === 'edit' && faultPoints.editFree === undefined) faultPoints.editFree = await fillVolume('profile');
     event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function', function: { name: 'StrReplace',
-      arguments: JSON.stringify({ path: notes, old_string: 'answer = 41', new_string: 'answer = 42' }) } }] });
+      arguments: JSON.stringify(phase === 'review' ? { path: notes, old_string: 'answer = 42', new_string: 'answer = 43' }
+        : { path: notes, old_string: 'answer = 41', new_string: 'answer = 42' }) } }] });
     event({}, 'tool_calls');
   } else {
     toolResults.push({ phase, content: typeof result.content === 'string' ? result.content : JSON.stringify(result.content) });
@@ -189,30 +192,42 @@ async function launch() {
   await enterWorkspace(page);
   await page.waitForTimeout(8000);
 }
+// The read-only launch is spawned directly: the expected outcome is a native
+// error dialog that blocks the main process before any window, which a
+// debugger-attached launch cannot observe. The dialog is found through X11 by
+// the owned child's _NET_WM_PID, captured, and dismissed with Return.
+const x11 = (...args) => spawnSync('xdotool', args, { encoding: 'utf8' });
 async function readOnlyLaunch(readOnlyProfile) {
   const probe = await writeFile(join(readOnlyProfile, 'probe'), '').then(() => 'writable', error => error.code);
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE; delete env.OPENVISION_IO_FAULT_DIRECTORY;
-  const outcome = { probe };
-  let owned, child;
-  try {
-    owned = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
-      args: ['--user-data-dir', readOnlyProfile, '--extensions-dir', join(directory, 'extensions'),
-        '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
-        '--disable-telemetry', '--disable-crash-reporter', ...await linuxSandboxArguments(layout.host), project] });
-    child = owned.process();
-    const window = await owned.firstWindow({ timeout: 60000 });
-    await window.waitForTimeout(15000);
-    outcome.started = true;
-    outcome.text = (await window.locator('body').innerText().catch(() => '')).split('\n')
-      .filter(line => /storage|read-only|readonly|could not|failed|error/i.test(line)).slice(0, 20);
-    await window.screenshot({ path: join(directory, 'read-only-launch.png') }).catch(() => {});
-  } catch (error) { outcome.started = false; outcome.launchError = error.message.split('\n')[0]; }
-  if (child) {
-    const exited = child.exitCode !== null || child.signalCode !== null ? Promise.resolve() : new Promise(resolve => child.once('exit', resolve));
-    await owned.close().catch(() => {});
-    await exited;
-    outcome.exit = { exitCode: child.exitCode, signalCode: child.signalCode };
+  const outcome = { probe, dialog: undefined, stderr: '' };
+  const child = spawn(layout.executable, ['--user-data-dir', readOnlyProfile, '--extensions-dir', join(directory, 'extensions'),
+    '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
+    '--disable-telemetry', '--disable-crash-reporter', ...await linuxSandboxArguments(layout.host), project],
+  { env, stdio: ['ignore', 'ignore', 'pipe'] });
+  child.stderr.setEncoding('utf8').on('data', chunk => { outcome.stderr += chunk; });
+  const exited = new Promise(done => child.once('exit', (exitCode, signalCode) => done({ exitCode, signalCode })));
+  let exit;
+  exited.then(value => { exit = value; });
+  const deadline = Date.now() + 60000;
+  while (!exit && !outcome.dialog && Date.now() < deadline) {
+    const found = x11('search', '--onlyvisible', '--pid', String(child.pid)).stdout.trim().split('\n').filter(Boolean);
+    if (found.length) {
+      await new Promise(done => setTimeout(done, 1500)); // let GTK paint before capture
+      outcome.dialog = { windows: found.length, title: x11('getwindowname', found[0]).stdout.trim() };
+      spawnSync('import', ['-window', 'root', join(directory, 'read-only-dialog.png')]);
+      outcome.dialog.mainBlockedWhileShown = exit === undefined;
+      x11('windowfocus', '--sync', found[0]); x11('key', '--clearmodifiers', 'Return');
+      outcome.dialog.dismissedWith = 'Return';
+    } else await new Promise(done => setTimeout(done, 250));
   }
+  const settled = await Promise.race([exited, new Promise(done => setTimeout(done, 30000))]);
+  if (!settled) {
+    // Only this verifier's own spawned child is stopped, through its handle.
+    outcome.forcedStop = true; child.kill('SIGTERM'); await exited;
+  }
+  outcome.exit = exit ?? await exited;
+  outcome.explanation = outcome.stderr.split('\n').filter(line => /\[openvision\]|profile folder|read-only|--user-data-dir|Nothing in the profile/.test(line)).slice(0, 12);
   return outcome;
 }
 async function closeOwnedApp() {
@@ -256,7 +271,7 @@ async function addProvider(name) {
   await page.locator('dialog').getByRole('button', { name: 'Save', exact: true }).click();
   const closed = await page.locator('dialog').waitFor({ state: 'detached', timeout: 10000 }).then(() => true, () => false);
   const status = closed ? '' : await page.locator('dialog .openvision-model-status').innerText().catch(() => '');
-  return { closed, status, settingsStatus: await page.locator('.openvision-model-settings > .openvision-model-status').first().innerText().catch(() => '') };
+  return { closed, status, settingsStatus: await page.locator('.openvision-model-settings .openvision-api-settings > .openvision-model-status').first().innerText().catch(() => '') };
 }
 const providerVisible = name => page.locator('.openvision-model-settings').getByText(name, { exact: true }).count().then(count => count > 0);
 async function openRules() {
@@ -366,6 +381,32 @@ try {
   const chatAfterRestart = await page.getByText(fullReply, { exact: true }).count() > 0;
   await stage('after-restart', { providerAfterRestart, ruleAfterRestart, chatAfterRestart, reviewVisible: await reviewVisible() });
 
+  // Review snapshots and record deletion with the profile full: a pending review is
+  // undone while SQLite cannot write (snapshot for Redo, record deletion). The bytes
+  // must be restored, and once space is freed the record must not resurrect the review.
+  await chooseModel();
+  phase = 'review';
+  await submit('Change answer to 43 in notes.md.', 'OpenVision review edit turn finished.');
+  await page.getByText(keepLabel).filter({ visible: true }).first().waitFor({ timeout: 15000 });
+  const reviewPending = await stage('review-pending', { notesText: await readFile(notes, 'utf8') });
+  const reviewFree = await fillVolume('profile');
+  await page.getByText(/^Undo( All)?$/).filter({ visible: true }).first().click();
+  await page.getByText('Confirm', { exact: true }).filter({ visible: true }).click({ timeout: 3000 }).catch(() => {});
+  await page.waitForTimeout(5000);
+  const reviewUndone = await stage('review-undo-while-profile-full', { freeBeforeUndo: reviewFree,
+    reviewVisible: await reviewVisible(), lines: await visibleLines() });
+  await freeVolume('profile');
+  await page.waitForTimeout(3000);
+  const reviewFreed = await stage('review-undo-after-freeing', { reviewVisible: await reviewVisible() });
+  await closeOwnedApp();
+  result.databases.afterReviewUndo = await database('after-review-undo');
+  await launch(); await openChat(page); await page.waitForTimeout(3000);
+  const reviewRestarted = await stage('review-undo-after-restart', { reviewVisible: await reviewVisible() });
+  result.reviewSnapshot = { pending: reviewPending.notes, undoneWhileFull: reviewUndone.notes, freeBeforeUndo: reviewFree,
+    reviewVisibleWhileFull: reviewUndone.reviewVisible, freed: reviewFreed.notes, restarted: reviewRestarted.notes,
+    reviewVisibleAfterRestart: reviewRestarted.reviewVisible, reviewRowsAfterClose: result.databases.afterReviewUndo.state?.reviewRows,
+    integrity: result.databases.afterReviewUndo.state?.integrity };
+
   // Approved memory with the project volume full.
   await chooseModel();
   phase = 'memory';
@@ -426,6 +467,14 @@ try {
     assert.equal(ruleAfterRestart, true);
     assert.equal(chatAfterRestart, true, 'A chat reply finished after freeing space survives restart');
     assert.equal(observed.notesAfterRestart, 'changed', 'The kept Agent edit survives restart');
+    const review = result.reviewSnapshot;
+    assert.equal(review.pending, 'other', 'The review round applied answer = 43');
+    assert.equal(review.freeBeforeUndo, 0, 'Undo ran with the profile volume full');
+    assert.equal(review.undoneWhileFull, 'changed', 'Undo restores the reviewed bytes while the profile is full');
+    assert.equal(review.restarted, 'changed', 'Undone bytes survive restart');
+    assert.equal(review.reviewVisibleAfterRestart, false, 'An undone review is not resurrected after restart');
+    assert.equal(review.reviewRowsAfterClose, 0, 'The review record deletion is durable once space is freed');
+    assert.equal(review.integrity, 'ok');
     for (const value of Object.values(observed.integrity).filter(value => typeof value === 'string')) assert.equal(value, 'ok');
     assert.ok(memoryFault.memories.length === 0, 'A failed memory save must not leave a torn memory file');
     assert.match(memoryFault.cardText, /Could not save memory: .*(ENOSPC|no space)/i);
@@ -434,6 +483,15 @@ try {
     assert.deepEqual(await readdir(memoryDirectory).then(names => names.filter(name => name.endsWith('.tmp'))), []);
     assert.equal(result.readOnlyLaunch.probe, 'EROFS', 'The read-only view must produce EROFS');
     assert.equal(result.readOnlyLaunch.databaseUnchanged, true, 'A read-only profile launch must not change saved storage');
+    const readOnly = result.readOnlyLaunch;
+    assert.ok(readOnly.dialog?.windows >= 1, 'A read-only profile shows a native dialog before any window');
+    assert.equal(readOnly.dialog.mainBlockedWhileShown, true, 'The host waits for the dialog');
+    assert.match(readOnly.stderr, /OpenVision cannot start because its profile folder cannot be written\./);
+    assert.ok(readOnly.stderr.includes(join(directory, 'readonly-view/profile')), 'The dialog names the profile path');
+    assert.match(readOnly.stderr, /read-only file system\. \(EROFS\)/);
+    assert.match(readOnly.stderr, /--user-data-dir set to a writable folder/);
+    assert.equal(readOnly.forcedStop, undefined, 'Dismissing the dialog ends startup without being stopped');
+    assert.deepEqual(readOnly.exit, { exitCode: 1, signalCode: null }, 'The host exits with code 1 after the dialog');
     assert.deepEqual(errors, []);
   }
   result.success = true;

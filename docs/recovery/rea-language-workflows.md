@@ -123,3 +123,8 @@ provider quality.
 This closes one stale-edit safety subcase while OV-402 remains Partial. Same-file
 conflicts, in-flight language requests, large-project performance budgets, broader
 extension compatibility and macOS/Linux language checks remain open.
+
+**Linux x64, 19 October 2026.** `npm run verify:rename-race` now runs on Linux and
+passed twice; same-document in-flight requests, provider-token cancellation (with a
+new rename adapter fix) and large-project budgets are covered there. See
+[Language matrix on Linux](rea-language-matrix-linux.md#19-october-2026-additions-linux-x64-container).

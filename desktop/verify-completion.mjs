@@ -13,6 +13,9 @@ import { createCompletionEditingFixture, verifyCompletionEditing, saveFile, pres
 import { createCompletionAcceptanceFixture, verifyCompletionAcceptance, prepareCompletionAcceptanceProject } from './verify-completion-acceptance.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
+// Live saved-provider editor acceptance has its own owner module (verify-completion-live.mjs).
+if (process.argv.includes('--live')) { await import('./verify-completion-live.mjs'); process.exit(); }
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { portable, runtimeRoot, appRoot, layout } = await verificationRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
@@ -24,7 +27,7 @@ await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never',
   'editor.autoIndent': 'none', 'editor.autoClosingBrackets': 'never', 'editor.formatOnType': false,
-  ...(editing ? { 'cursor.cpp.enablePartialAccepts': true } : {}) }));
+  ...(editing || acceptance ? { 'cursor.cpp.enablePartialAccepts': true } : {}) }));
 const file = join(project, 'completion.js');
 await writeFile(file, 'const answer = ');
 if (acceptance) await prepareCompletionAcceptanceProject(project);
@@ -123,7 +126,7 @@ try {
   } else if (acceptance) {
     phase = 'acceptance';
     result.acceptance = {};
-    await verifyCompletionAcceptance({ page, file, directory, fixture: acceptanceFixture }, result.acceptance);
+    await verifyCompletionAcceptance({ page, file, directory, appRoot, fixture: acceptanceFixture }, result.acceptance);
   } else failures = await verifyCompletionFailures({ page, file, directory, requests, setPhase: value => { phase = value; } });
   phase = 'simple';
   await page.keyboard.press('Escape'); await page.keyboard.press('ControlOrMeta+a');

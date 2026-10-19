@@ -82,7 +82,16 @@ async function submit(instruction) {
   await page.locator('.monaco-editor .inputarea').first().focus();
   await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('ControlOrMeta+k');
   const prompt = page.locator('.monaco-editor [contenteditable="true"]').filter({ visible: true }).first();
-  await prompt.click(); await prompt.press('ControlOrMeta+a'); await prompt.press('Backspace');
+  await prompt.click(); await prompt.press('ControlOrMeta+a');
+  // A failed submission keeps its instruction in the prompt. Record what the
+  // select-all shortcut actually selected before clearing it.
+  const existing = (await prompt.innerText()).trim();
+  if (existing) {
+    const selected = await page.evaluate(() => getSelection().toString().trim());
+    (result.promptClears ??= []).push({ instruction, existing, selectedByShortcut: selected });
+    if (selected !== existing) await prompt.evaluate(element => getSelection().selectAllChildren(element));
+  }
+  await prompt.press('Backspace');
   await page.keyboard.insertText(instruction); await prompt.press('Enter');
 }
 

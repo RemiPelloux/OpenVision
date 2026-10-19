@@ -7,7 +7,7 @@ import { platformLayout, linuxSandboxArguments } from './platform.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { verifyMemoryFilesystem } from './verify-memory-filesystem.mjs';
-import { enterWorkspace } from './verification-workspace.mjs';
+import { enterWorkspace, openChat } from './verification-workspace.mjs';
 
 const root = resolve(import.meta.dirname, '..'), layout = platformLayout(root);
 const directory = await mkdtemp(join(root, 'logs/memory-verification-'));
@@ -69,6 +69,9 @@ async function close() {
 async function newChat(prompt) {
   await page.keyboard.press('ControlOrMeta+Shift+l');
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
+  // A fresh project window with no editor focused can leave the Agent pane
+  // closed after the first shortcut; open it through the shared helper.
+  if (!await input.waitFor({ timeout: 3000 }).then(() => true, () => false)) await openChat(page);
   await input.fill(prompt); await input.press('Enter');
 }
 

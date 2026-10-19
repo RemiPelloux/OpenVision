@@ -18,9 +18,16 @@ export const languageMatrix = Object.freeze([
     verified: lsp, notProvided: [] },
   { language: 'markdown', extension: 'markdown-language-features', version: '1.0.0', server: 'bundled Markdown language server',
     verified: ['diagnostics', 'definition', 'references', 'rename', 'large_file'], notProvided: ['format'] },
-  // Grammar-only bundles: no language server ships, so no LSP behavior is claimed.
-  ...[['python', 'python'], ['c/c++', 'cpp'], ['go', 'go'], ['rust', 'rust']].map(([language, extension]) =>
-    ({ language, extension, version: '10.0.0', server: null, verified: [], notProvided: lsp })),
+  // C/C++: the bundled grammar ships no server. Language services come from the
+  // pinned clangd setup (`setup:cpp`), verified separately by `verify:cpp`.
+  { language: 'c/c++', extension: 'cpp', version: '10.0.0', server: null, verified: [], notProvided: lsp,
+    pinnedSetup: { script: 'setup:cpp', verifier: 'verify:cpp', server: 'clangd 23.1.0',
+      extension: 'llvm-vs-code-extensions.vscode-clangd 0.6.0', platforms: ['win32-x64', 'linux-x64'],
+      verified: ['diagnostics', 'completion', 'definition', 'references', 'rename', 'format'] } },
+  // Syntax highlighting only (owner default pending decision): grammar bundles,
+  // no language server is bundled or set up, so no language-server behavior is claimed.
+  ...[['python', 'python'], ['go', 'go'], ['rust', 'rust']].map(([language, extension]) =>
+    ({ language, extension, version: '10.0.0', server: null, syntaxOnly: true, verified: [], notProvided: lsp })),
 ]);
 
 export const scanBudget = Object.freeze({ full_scan_fraction: 0.5,
@@ -70,6 +77,148 @@ export function matrixFixtures() {
     fixtures[`assets/${name}.txt`] = `asset ${id}\n`;
   }
   return fixtures;
+}
+
+// --large-project fixture: 5,000 chained TypeScript modules in the tsconfig
+// program, a package.json, dependency trees under node_modules and unrelated
+// assets. `src/use.ts` imports `depNew`, which only exists after the dependency
+// change, so that window has an observable language result.
+export const LARGE_MODULES = 5000;
+export function largeProjectFixtures() {
+  const fixtures = {
+    'tsconfig.json': largeTsconfig(false),
+    'package.json': largePackageJson(false),
+    'node_modules/dep-a/package.json': JSON.stringify({ name: 'dep-a', version: '1.0.0', types: 'index.d.ts' }),
+    'node_modules/dep-a/index.d.ts': 'export declare function depValue(): number;\n',
+    'src/use.ts': 'import { depValue, depNew } from "dep-a";\nimport { v99 } from "./m00/f099";\n' +
+      'const total: number = depValue() + v99 + depNew;\nconst wrong: number = "large project diagnostic";\nconsole.log(total, wrong, "OpenVision");\n',
+  };
+  for (let index = 0; index < LARGE_MODULES; index++) {
+    const dir = Math.floor(index / 100), item = index % 100, name = id => `f${String(id).padStart(3, '0')}`;
+    fixtures[`src/m${String(dir).padStart(2, '0')}/${name(item)}.ts`] = item === 0
+      ? `export const v${item} = ${index};\n`
+      : `import { v${item - 1} } from "./${name(item - 1)}";\nexport const v${item} = v${item - 1} + 1;\n`;
+  }
+  // Installed dependency bodies that are not part of the program.
+  for (let index = 0; index < 500; index++) fixtures[`node_modules/dep-a/lib/part${index}.d.ts`] = `export declare const part${index}: number;\n`;
+  for (let index = 0; index < 500; index++) fixtures[`node_modules/dep-b/lib/file${index}.js`] = `module.exports = ${index};\n`;
+  fixtures['node_modules/dep-b/package.json'] = JSON.stringify({ name: 'dep-b', version: '2.0.0', main: 'lib/file0.js' });
+  for (let index = 0; index < 1000; index++) fixtures[`assets/a${String(index).padStart(4, '0')}.txt`] = `asset ${index}\n`;
+  return fixtures;
+}
+export function largeTsconfig(changed) {
+  return JSON.stringify({ compilerOptions: { strict: true, noEmit: true, target: 'ES2022', module: 'CommonJS',
+    moduleResolution: 'node', types: [], ...(changed ? { noFallthroughCasesInSwitch: true } : {}) }, include: ['src/**/*.ts'] }, null, 2);
+}
+export function largePackageJson(changed) {
+  return JSON.stringify({ name: 'openvision-large-fixture', version: '1.0.0', private: true,
+    dependencies: { 'dep-a': '1.0.0', 'dep-b': '2.0.0', ...(changed ? { 'dep-c': '3.0.0' } : {}) } }, null, 2);
+}
+// Groups entries for per-window reporting.
+export function entryGroup(entry) {
+  return entry.startsWith('node_modules/') ? 'node_modules' : entry.startsWith('pkg/') || entry.startsWith('src/') ? 'program'
+    : entry.startsWith('assets/') ? 'assets' : 'other';
+}
+
+// Windows that are expected to reload dependencies or the project are not held
+// to the small-edit full-scan contract; they have their own numeric budgets.
+export const isEditWindow = name => !/dependency|tsconfig|package/.test(name);
+
+// Large-project budgets (Linux x64, this verifier's 5,000-module fixture). Derived
+// before any optimization (none was made): per-metric maximum over the five
+// runs language-matrix-large-aKyRC0, -Eoas4W, -V7lQNz, -r4jBea and -kPrhNE
+// (19 October 2026), times 1.5, rounded up (milliseconds and MiB to 10). A zero
+// entry baseline counts as 1 so one legitimate stat cannot fail a run. CPU is
+// budgeted over the whole window sequence: per-window CPU budgets from the first
+// three runs failed both enforced runs (r4jBea, kPrhNE) because asynchronous
+// tsserver and extension-host work lands in either of two adjacent windows.
+export const largeProjectBudget = Object.freeze({
+  derivation: 'ceil(max(baseline over aKyRC0, Eoas4W, V7lQNz, r4jBea, kPrhNE) x 1.5); zero entry baselines floored to 1',
+  windows: {
+    'idle': { distinct_entries: 2, program_entries: 2 },
+    'ts-edit-1': { distinct_entries: 2, program_entries: 2 },
+    'ts-edit-2': { distinct_entries: 2, program_entries: 2 },
+    'ts-save': { distinct_entries: 2, program_entries: 2 },
+    'dependency-change': { distinct_entries: 3, program_entries: 2, diagnostic_update_ms: 4910 },
+    'dependency-install': { distinct_entries: 2, program_entries: 2 },
+    'tsconfig-change': { distinct_entries: 2, program_entries: 2, diagnostics_after_reload_ms: 770 },
+    'ts-edit-after-reload': { distinct_entries: 2, program_entries: 2 },
+  },
+  cpu_ms_total: { tsserver: 8130, 'extension-host': 3950 },
+  peak_rss_mib: { tsserver: 860, 'extension-host': 710 },
+  peak_inotify_watches: 7688, peak_watch_fraction: 0.0591, first_diagnostics_ms: 29650,
+});
+
+const reported = ['tsserver', 'extension-host', 'main', 'file-watcher'];
+function byKind(sample) {
+  const kinds = {};
+  for (const item of sample?.processes ?? []) {
+    const kind = kinds[item.kind] ??= { rss_kib: 0, inotify_watches: 0 };
+    kind.rss_kib += item.rss_kib; kind.inotify_watches += item.inotify_watches;
+  }
+  return kinds;
+}
+// Attributes launcher /proc samples to the driver's wall-clock windows. CPU is
+// the per-process tick delta between the last sample before and the first sample
+// after a window (processes that exit inside a window are not counted).
+export function attributeWindows({ windows, timeline, clockTicks = 100, maxUserWatches, trace = {} }) {
+  const watchTotal = sample => (sample?.processes ?? []).reduce((sum, item) => sum + item.inotify_watches, 0);
+  const result = { clock_ticks: clockTicks, samples: timeline.length, max_user_watches: maxUserWatches, windows: {} };
+  for (const [name, window] of Object.entries(windows)) {
+    const before = timeline.findLast(sample => sample.at <= window.started_at) ?? timeline[0];
+    const after = timeline.find(sample => sample.at >= window.ended_at) ?? timeline.at(-1);
+    const inside = timeline.filter(sample => sample.at >= (before?.at ?? 0) && sample.at <= (after?.at ?? 0));
+    const cpu = {}, rss = {};
+    for (const item of after?.processes ?? []) {
+      const start = before?.processes.find(other => other.pid === item.pid)?.cpu_ticks ?? 0;
+      cpu[item.kind] = (cpu[item.kind] ?? 0) + Math.max(0, item.cpu_ticks - start);
+    }
+    for (const sample of inside) for (const [kind, value] of Object.entries(byKind(sample)))
+      rss[kind] = Math.max(rss[kind] ?? 0, value.rss_kib);
+    const filesystem = trace[name];
+    result.windows[name] = { elapsed_ms: window.elapsed_ms, sample_span_ms: (after?.at ?? 0) - (before?.at ?? 0),
+      ...Object.fromEntries(Object.entries(window).filter(([key]) => /_ms$/.test(key) && key !== 'elapsed_ms')),
+      distinct_entries: filesystem?.distinct_entries ?? null, program_entries: filesystem?.pkg_entries ?? null,
+      node_modules_entries: filesystem?.node_modules_entries ?? null, project_syscalls: filesystem?.project_syscalls ?? null,
+      inotify_add_watch: filesystem ? Object.values(filesystem.by_kind).reduce((sum, item) => sum + item.inotify_add_watch, 0) : null,
+      cpu_ms: Object.fromEntries(reported.map(kind => [kind, Math.round((cpu[kind] ?? 0) * 1000 / clockTicks)])),
+      peak_rss_mib: Object.fromEntries(reported.map(kind => [kind, Math.round((rss[kind] ?? 0) / 1024)])),
+      inotify_watches_end: watchTotal(after) };
+  }
+  result.cpu_ms_total = Object.fromEntries(reported.map(kind => [kind,
+    Object.values(result.windows).reduce((sum, window) => sum + window.cpu_ms[kind], 0)]));
+  const peak = timeline.reduce((best, sample) => watchTotal(sample) > watchTotal(best) ? sample : best, timeline[0]);
+  result.peak_inotify_watches = watchTotal(peak);
+  result.peak_inotify_watches_by_kind = Object.fromEntries(Object.entries(byKind(peak)).map(([kind, value]) => [kind, value.inotify_watches]));
+  result.peak_watch_fraction = maxUserWatches ? Number((result.peak_inotify_watches / maxUserWatches).toFixed(4)) : null;
+  result.peak_rss_mib = Object.fromEntries(reported.map(kind => [kind,
+    Math.round(Math.max(0, ...timeline.map(sample => byKind(sample)[kind]?.rss_kib ?? 0)) / 1024)]));
+  return result;
+}
+
+// Compares a large-project measurement with declared budgets. Every declared
+// metric must be present; a missing measurement is a violation, not a pass.
+export function evaluateLargeProject(measurement, budget) {
+  if (!budget) return [];
+  const violations = [];
+  const check = (label, value, limit) => {
+    if (typeof value !== 'number') violations.push(`${label}: not measured`);
+    else if (value > limit) violations.push(`${label} ${value} > ${limit}`);
+  };
+  for (const [name, limits] of Object.entries(budget.windows)) {
+    const window = measurement.windows[name];
+    if (!window) { violations.push(`${name}: window missing`); continue; }
+    for (const [metric, limit] of Object.entries(limits)) {
+      if (typeof limit === 'number') check(`${name}.${metric}`, window[metric], limit);
+      else for (const [kind, value] of Object.entries(limit)) check(`${name}.${metric}.${kind}`, window[metric]?.[kind], value);
+    }
+  }
+  for (const [kind, limit] of Object.entries(budget.peak_rss_mib)) check(`peak_rss_mib.${kind}`, measurement.peak_rss_mib[kind], limit);
+  for (const [kind, limit] of Object.entries(budget.cpu_ms_total ?? {})) check(`cpu_ms_total.${kind}`, measurement.cpu_ms_total?.[kind], limit);
+  check('peak_inotify_watches', measurement.peak_inotify_watches, budget.peak_inotify_watches);
+  check('peak_watch_fraction', measurement.peak_watch_fraction, budget.peak_watch_fraction);
+  check('first_diagnostics_ms', measurement.first_diagnostics_ms, budget.first_diagnostics_ms);
+  return violations;
 }
 
 // Electron and tsserver rewrite their process titles, so /proc cmdline can be a
@@ -131,8 +280,9 @@ export async function summarizeTrace(lines, { project, tids, entries }) {
       if (event.syscall === 'inotify_add_watch') item.watches++;
     }
     windows[name] = { duration_ms: Math.round((end - start) * 1000), project_syscalls: inside.length,
-      distinct_entries: touched.size, pkg_entries: [...touched].filter(entry => entry.startsWith('pkg/')).length,
+      distinct_entries: touched.size, pkg_entries: [...touched].filter(entry => entryGroup(entry) === 'program').length,
       asset_entries: [...touched].filter(entry => entry.startsWith('assets/')).length,
+      node_modules_entries: [...touched].filter(entry => entry.startsWith('node_modules/')).length,
       full_scan: touched.size >= scanBudget.full_scan_fraction * known.size,
       by_kind: Object.fromEntries(Object.entries(byKind).map(([kind, item]) => [kind, { syscalls: item.syscalls,
         distinct_entries: item.entries.size, directory_opens: item.directories, inotify_add_watch: item.watches,

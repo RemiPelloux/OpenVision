@@ -13,6 +13,32 @@ function deadlineFailure(phase) {
   });
 }
 
+// Bound one unfinished SSE event (raw bytes, delimiters included), not the response:
+// an endless event line would otherwise be buffered by the stream parser until the
+// inactivity deadline. LF and CRLF blank lines reset the budget, also when split.
+const maxEventBytes = 4 * 1024 * 1024;
+function streamLimitFailure() {
+  return Object.assign(new Error('Provider SSE event exceeds the 4 MiB safety limit'), { code: 'OPENVISION_PROVIDER_STREAM_LIMIT' });
+}
+function eventBudget(limit = maxEventBytes) {
+  let eventBytes = 0, lineBytes = 0, lastByte;
+  // Returns undefined, or the length of this chunk's complete events before the overflow.
+  return bytes => {
+    let complete = 0;
+    for (let start = 0; start < bytes.length;) {
+      const newline = bytes.indexOf(10, start), end = newline < 0 ? bytes.length : newline + 1, size = end - start;
+      eventBytes += size; lineBytes += size;
+      if (eventBytes > limit) return complete;
+      if (newline >= 0) {
+        const previous = newline > start ? bytes[newline - 1] : lastByte;
+        if (lineBytes === 1 || (lineBytes === 2 && previous === 13)) { eventBytes = 0; complete = end; }
+        lineBytes = 0;
+      }
+      lastByte = bytes[end - 1]; start = end;
+    }
+  };
+}
+
 function responseWithBody(response, body) {
   const wrapped = new Response(body, response);
   // Response's constructor does not carry fetch metadata into the new body.
@@ -25,6 +51,7 @@ function responseWithBody(response, body) {
 
 function watchBody(response, operation) {
   const reader = response.body.getReader();
+  const reserve = response.headers.get('content-type')?.includes('text/event-stream') ? eventBudget(operation.maxEventBytes) : undefined;
   let closed = false, released = false, timer;
   const release = () => { clearTimeout(timer); closed = true; if (!released) { released = true; reader.releaseLock(); } };
   const body = new ReadableStream({
@@ -35,7 +62,14 @@ function watchBody(response, operation) {
         clearTimeout(timer);
         if (closed) return;
         if (result.done) { release(); destination.close(); }
-        else destination.enqueue(result.value);
+        else {
+          const complete = reserve?.(result.value);
+          if (complete === undefined) destination.enqueue(result.value);
+          else {
+            if (complete) destination.enqueue(result.value.subarray(0, complete));
+            throw streamLimitFailure();
+          }
+        }
       } catch (error) {
         clearTimeout(timer);
         if (closed) return;
@@ -62,7 +96,7 @@ async function fetchProviderWithDeadlines(fetchImpl, url, options, limits = infe
   try { response = await fetchImpl(url, { ...options, [deadlinePolicyKey]: true, signal }); }
   catch (error) { throw signal.aborted ? signal.reason : error; }
   finally { clearTimeout(timer); }
-  return response.body ? watchBody(response, { controller, signal, inactivityMs: limits.inactivityMs }) : response;
+  return response.body ? watchBody(response, { controller, signal, inactivityMs: limits.inactivityMs, maxEventBytes: limits.maxEventBytes }) : response;
 }
 
-module.exports = { fetchProviderWithDeadlines, inferenceLimits };
+module.exports = { fetchProviderWithDeadlines, inferenceLimits, maxEventBytes };

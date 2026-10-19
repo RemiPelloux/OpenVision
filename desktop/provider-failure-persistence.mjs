@@ -11,8 +11,8 @@
 // `composerChatService.resumeChat(handle)`. Stack traces and arbitrary fields are
 // never written. Old records without the field load unchanged.
 
-export const marker = '/* OpenVision persist unresolved provider failure v2 */';
-const previousMarkers = ['/* OpenVision persist unresolved provider failure v1 */'];
+export const marker = '/* OpenVision persist unresolved provider failure v3 */';
+const previousMarkers = ['/* OpenVision persist unresolved provider failure v1 */', '/* OpenVision persist unresolved provider failure v2 */'];
 
 const serializerPattern = /function ([\w$]+)\(([\w$]+), ([\w$]+), ([\w$]+)\) \{\n  const ([\w$]+) = ([\w$]+)\(\2, \3\),\n    ([\w$]+) = JSON\.stringify\(\5\);\n  return \(\4\?\.\(\5, \7\), \7\);\n\}/g;
 const loaderPattern = /function ([\w$]+)\(([\w$]+)\) \{\n  const ([\w$]+) = \2\.modelConfig \?\? \{ modelName: "default", maxMode: !1 \},\n    ([\w$]+) = \2\.promptContextOverview,\n    ([\w$]+) = \2\.canvasTray,\n    ([\w$]+) = \{\n      \.\.\.([\w$]+)\(\3, \2\.composerId\),\n      \.\.\.([\w$]+)\(\2\),\n      modelConfig: \2\.modelConfig \?\? \3,\n      workspaceIdentifier: ([\w$]+)\(\2\.workspaceIdentifier\),\n    \};\n/g;
@@ -46,7 +46,10 @@ function openvisionProviderFailureRecord(details) {
     message: text(details.message),
     connectCode: typeof details.connectCode === "number" || typeof details.connectCode === "string" ? details.connectCode : undefined,
     isRetryable: typeof details.isRetryable === "boolean" ? details.isRetryable : undefined,
-    resumeOnRetry: details.resumeOnRetry === true ? true : undefined, extraButtons: buttons };
+    resumeOnRetry: details.resumeOnRetry === true ? true : undefined, extraButtons: buttons,
+    // Bubble id of the empty failure placeholder, removed when the failure is retried.
+    openvisionPlaceholderBubbleId: typeof details.openvisionPlaceholderBubbleId === "string" &&
+      /^[A-Za-z0-9-]{1,64}$/.test(details.openvisionPlaceholderBubbleId) ? details.openvisionPlaceholderBubbleId : undefined };
 }
 function openvisionPersistProviderFailure(details) {
   const record = openvisionProviderFailureRecord(details);

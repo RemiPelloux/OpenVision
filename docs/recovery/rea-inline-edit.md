@@ -137,3 +137,21 @@ attachment instead of two, and cancellation one instead of three. All approved
 rules, instructions, ranges and source contents remain unchanged. This uses a
 controlled local HTTP provider, not live AI. The executed context helper SHA-256
 is `d4bd64006887cddafc809fd5fd0d8943f94cdb77a0678474e9688ae6f92c5e8d`.
+
+## Linux x64 rerun, 19 October
+
+`npm run verify:inline-edit` on the Ubuntu 24.04.5 container (Xvfb) **failed
+twice** with an unchanged verifier (`beOjTK`, `SDqh8B`). After the HTTP-failure
+step, the prompt keeps the failed instruction. The harness's select-all shortcut
+in the prompt then selected nothing, and Backspace removed one character. So the
+recovery request carried `Exercise error handlinRecover after failure`.
+
+The verifier now records what the shortcut selected (`promptClears`) and clears
+the prompt's own text explicitly. Two later runs, `pbrl3o` and `nDjgcT`, pass
+every check: approved-rule inclusion and hidden-memory exclusion, accept/save,
+undo, reject, safe failure and retry, cancellation, and Unicode/CRLF. Both
+recorded `selectedByShortcut: ""`.
+
+**Open defect, not fixed here:** on Linux, the select-all shortcut does not
+select retained text in the Quick Edit prompt. It belongs to the Quick Edit
+story, not OV-301. Controlled fixture replies; not live inference.

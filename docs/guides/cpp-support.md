@@ -1,12 +1,12 @@
 # C and C++ in OpenVision
 
-The prepared Windows x64 profile now has **clangd 23.1.0** and the official
-**llvm-vs-code-extensions.vscode-clangd 0.6.0** extension. Opening a C/C++ file
+The prepared Windows x64 and Linux x64 profiles now have **clangd 23.1.0** and the
+official **llvm-vs-code-extensions.vscode-clangd 0.6.0** extension. Opening a C/C++ file
 activates the language service. It supplies diagnostics, code completion,
 definitions, references, rename and formatting. Use **F12** for definition,
 **F2** for rename and **Format Document** from the command palette.
 
-To reproduce the installation in another prepared Windows x64 checkout:
+To reproduce the installation in another prepared Windows x64 or Linux x64 checkout:
 
 ```sh
 npm run setup:cpp
@@ -34,6 +34,53 @@ indexing. This trades some parallelism/disk I/O for bounded worker concurrency;
 no before/after RAM or speed improvement has been measured. Automatic clangd
 update checks are disabled. Normal setup does not enable verbose protocol logs.
 
+## Linux x64
+
+`setup:cpp` pins the official
+[clangd 23.1.0 Linux archive](https://github.com/clangd/clangd/releases/tag/23.1.0)
+next to the Windows archive and installs the same extension. It extracts with
+Info-ZIP `unzip`, which keeps the archive's executable bit. Linux receives no
+`--path-mappings` argument: the Windows drive-letter fix below does not apply.
+Your compiler stays your own; supply `compile_commands.json` from your build
+system (CMake: `-DCMAKE_EXPORT_COMPILE_COMMANDS=ON`; Meson writes one by default).
+Linux arm64 and macOS have no pinned clangd build; setup refuses them.
+
+| Pinned Linux input | SHA-256 |
+| --- | --- |
+| Official clangd Linux ZIP (`clangd-linux-23.1.0.zip`) | `e53b1a96196095faedb7642cf64964f7fb9ad4a0c1f00dd2c172a3d9dcbafdfd` |
+| Executed `clangd` | `5a535973dd1274270c8a0d34677fe4758d8c9aaa164aa3701602c957c42dc9e2` |
+| Open VSX extension VSIX (same as Windows) | `32030694fa6c0ef438f4e4219f84677cd32f603c7faa4c71a283efc1f5b51751` |
+| Extension bundle (same as Windows) | `55e37b5a799c5e2702a9d20512a9dda90a793e74e01588feca0e5aecf75afd2d` |
+
+The Linux archive hash was computed from the download on 18 October 2026; GitHub's
+release API was not reachable from the verification container, so it was not
+cross-checked against a published digest. The executed binary reports
+`clangd version 23.1.0 (https://github.com/llvm/llvm-project ea7d852a70e8bdfaf601d6626a760f9771b2c4b4)`,
+the same llvm-project commit as the pinned Windows build.
+
+`npm run verify:cpp` on Linux writes a GCC compilation database (`g++ -std=c++17`,
+`gcc -std=c11`) and, after the language checks, builds the renamed C++ and C fixtures
+with `g++`, `clang++`, `gcc` and `clang` using `-Wall -Wextra -Werror`, and runs
+each program. Two runs on 19 October 2026 passed first time
+(`logs/cpp-verification-6yRZee`, `logs/cpp-verification-yzG78a`) on Ubuntu 24.04
+x64 with GCC 13.3.0 and Clang 18.1.3, under Xvfb:
+
+| Check | Observed result |
+| --- | --- |
+| C and C++ diagnostics | Real clang errors (`init_conversion_failed`, `-Wint-conversion`); bounded replacement clears them; undo restores them |
+| C++ definition | Provider target `math.cpp`; native F12 opens it |
+| C++ references | Declaration, implementation and consumer |
+| C++ and C rename | Exact disk bytes in three files through Save All; undo/redo exact |
+| C and C++ formatting | Native Format Document changes content; undo/redo succeeds |
+| C and C++ completion | `addNumbers(int a, int b)` |
+| Build/run | Renamed sources compile warning-free with all four compilers; programs exit 0 |
+| Renderer / host | No page errors; host exit 0 |
+
+Two consecutive `setup:cpp` runs left `data/local/User/settings.json` byte-identical
+on the second run (one backup from the first). Language checks took 7.5 s after
+activation in `yzG78a`; one observation, not a benchmark. CPU, peak memory and
+large C/C++ repositories were not measured on Linux.
+
 ## Windows file identity fix
 
 The actual server returned two identical rename edits for `main.cpp`, one under
@@ -55,7 +102,7 @@ boundary check; the earlier `dW2jvn` attempt remains a recorded failure.
 
 Run `npm run verify:cpp`. It uses disposable profiles and synthetic C/C++ files,
 the real packaged extension and server, and public editor APIs/native commands.
-It sends **no AI requests**. The current compiler fixture expects the existing
+It sends **no AI requests**. On Windows the compiler fixture expects the existing
 MSVC 14.44.35207 Build Tools installation; other compiler paths need an explicit
 fixture update, not a claimed pass.
 
@@ -113,7 +160,8 @@ language provider is involved.
 OV-402 remains Partial: large C++ repositories, complete standard-library/SDK
 configurations, cancellation, same-document conflicts, stale rename results
 while language requests are in flight, UNC or case-sensitive Windows directories,
-debugging, and native macOS/Linux still need verification. These concurrent edits
+debugging, and native macOS still need verification (Linux x64 results are in
+[Linux x64](#linux-x64)). These concurrent edits
 target separate documents in one window. CPU, peak process-family memory and
 filesystem scan counts are not measured. The small fixture's standard-library
 indexing logs include an incomplete-index warning; it is not proof of full

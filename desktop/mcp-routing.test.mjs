@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { lazyMcpRouting } from './mcp-routing-customization.mjs';
+import { lazyMcpRouting, recreateUnownedConnectedServers } from './mcp-routing-customization.mjs';
 import { recoveredMcpRouting } from './mcp-routing-fixture.mjs';
 import { readableApp } from './recovered-source.mjs';
 
@@ -52,5 +52,29 @@ for (const variant of ['desktop', 'glass']) {
     const { service, calls } = recoveredMcpRouting(lazyMcpRouting(await source), variant);
     service.dispose(); await tick();
     assert.equal(calls.some(call => call[0] === 'migration' || call[0] === 'registered'), false);
+  });
+}
+
+for (const variant of ['desktop', 'glass']) {
+  test(`${variant}: a connected status left by a reset legacy client does not skip the shared-process client`, async () => {
+    const text = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
+    const patched = recreateUnownedConnectedServers(text);
+    assert.equal(recreateUnownedConnectedServers(patched), patched);
+    const start = patched.indexOf('async createClientIfNotExists(');
+    const method = patched.slice(start, patched.indexOf('\n          }\n', start) + 12);
+    const Service = new Function('z_', `return class { ${method} }`)(() => {});
+    const run = async (connected, provider) => {
+      const created = [], service = Object.assign(new Service(), {
+        statusCache: () => (connected ? { s: { type: 'connected' } } : {}),
+        mcpClientProviders: new Map(provider ? [['s', {}]] : []), logMcpServerFile() {},
+        _shouldSkipPassiveCreateForDurableSnapshot: () => false, structuredLogService: {},
+        createClient: async server => { created.push(server.identifier); return true; } });
+      await service.createClientIfNotExists({ identifier: 's' });
+      return created;
+    };
+    assert.deepEqual(await run(true, true), [], 'A connected server with its client is not recreated');
+    assert.deepEqual(await run(true, false), ['s'], 'A stale connected status after a routing reset is recreated');
+    assert.deepEqual(await run(false, false), ['s']);
+    assert.throws(() => recreateUnownedConnectedServers('async createClientIfNotExists(e) {}'), /connected-server skip contract/);
   });
 }

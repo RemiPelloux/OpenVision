@@ -170,6 +170,12 @@ durability suite), `test:build-integrity` **26/26**, `check:desktop` and
   Agent regression, 29 authenticated controlled requests, no renderer errors,
   five host exits 0.
 
+## Follow-up, 19 October 2026
+
+The [Linux closure report](rea-agent-editing-linux-closure.md) joins Undo All like Keep All and reports a
+failed post-commit cleanup of either group with a **Retry** notification; a new
+`groupedRejectRetry` scenario covers a failing and then succeeding Retry.
+
 ## Unverified and remaining
 
 - **Linux x64 only.** Windows and macOS were not run.

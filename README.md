@@ -196,12 +196,15 @@ Agent support accepts text/tools; Tab autocomplete uses API connections.
 
 ## Roadmap and honest progress
 
-**6 of 42 acceptance stories fully verified · 14.29%.**
-Another **23 are Partial**, **12 Planned** and **1 Unknown**. Partial stories
+**18 of 44 acceptance stories fully verified · 40.91%.**
+Another **11 are Partial**, **14 Planned** and **1 Unknown**. Partial stories
 already contain working features; this score measures complete acceptance gates,
-not the percentage of code implemented or decompiled.
+not the percentage of code implemented or decompiled. Since 18 October, Windows,
+macOS, other-Linux and live-provider clauses are tracked in dedicated platform/live
+stories, and other stories are judged on Linux x64
+([re-scope](docs/planning/eta-and-definition-of-done.md#10-re-scope--18-october-2026)).
 
-The next product target is **34/42 verified stories (at least 80%)**, together
+The next product target is **36/44 verified stories (at least 80%)**, together
 with the critical development workflow. The largest remaining areas are live
 Agent coverage, retrieval/indexing ownership, next-edit prediction, independent
 source rebuilds, upgrade/rollback verification, remote development and a native
