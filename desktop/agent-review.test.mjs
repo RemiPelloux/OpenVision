@@ -156,12 +156,17 @@ function rejectionFixture(source = patched, descriptors = { root: ['a', 'b', 'c'
     diffChangeSourceRegistry: {
       reject(id, options) {
         calls.push({ kind: 'reject', id, options });
-        if (failing.has(id)) throw new Error(`cleanup failed for ${id}`);
         descriptors.root = descriptors.root.filter(value => value !== id);
+        if (failing.has(id)) { service.inlineDiffService.diffHandlers.set(id, { openvisionFate: { kind: 'reject' } }); throw new Error(`cleanup failed for ${id}`); }
       },
-      accept(id) { calls.push({ kind: 'accept', id }); if (failing.has(id)) throw new Error(`cleanup failed for ${id}`); },
+      accept(id) {
+        calls.push({ kind: 'accept', id });
+        if (failing.has(id)) { service.inlineDiffService.diffHandlers.set(id, { openvisionFate: { kind: 'accept' } }); throw new Error(`cleanup failed for ${id}`); }
+      },
     },
-    inlineDiffService: { openvisionRetryReviewFates() { resumed.push(true); } },
+    // Committed decisions whose cleanup failed: their descriptors are already gone.
+    inlineDiffService: { diffHandlers: new Map(), acceptDiff(id) { resumed.push(['accept', id]); if (failing.has(id)) throw new Error(`cleanup failed for ${id}`); this.diffHandlers.delete(id); },
+      rejectDiff(id) { resumed.push(['reject', id]); if (failing.has(id)) throw new Error(`cleanup failed for ${id}`); this.diffHandlers.delete(id); } },
     _notificationService: { prompt(severity, message, choices) { prompts.push({ severity, message, choices }); } },
   });
   return { service, calls, prompts, failing, resumed, descriptors };
@@ -177,7 +182,8 @@ test('recovered Undo All stops at its first failed member and reports nothing; j
   await assert.rejects(f.service.rejectAll('root', { rejectSilently: false }), /cleanup failed for a/);
   assert.deepEqual(f.calls.map(call => call.id), ['a', 'b', 'c'], 'Every member is attempted');
   assert.ok(f.calls.every(call => call.options.sourceContext === 'composer'));
-  assert.deepEqual(f.descriptors.root, ['a'], 'Only the failed member stays pending');
+  assert.deepEqual(f.descriptors.root, [], 'Every member reached its committed decision');
+  assert.deepEqual([...f.service.inlineDiffService.diffHandlers.keys()], ['a'], 'Only the failed member stays owned');
   assert.equal(f.prompts.length, 1);
   assert.match(f.prompts[0].message, /could not finish undoing the review of 1 file/);
   assert.deepEqual([...f.prompts[0].choices].map(choice => choice.label), ['Retry']);
@@ -186,14 +192,14 @@ test('recovered Undo All stops at its first failed member and reports nothing; j
 test('Retry resumes committed decisions, repeats the group and reports again until it succeeds', async () => {
   const f = rejectionFixture(); f.failing.add('b');
   await assert.rejects(f.service.rejectAllDiffs('root', {}));
-  f.prompts[0].choices[0].run(); await drain(); await drain();
-  assert.equal(f.resumed.length, 1, 'Committed decisions resume at the inline-diff owner');
+  await f.prompts[0].choices[0].run();
+  assert.deepEqual(f.resumed, [['reject', 'b']], 'The committed decision resumes at the inline-diff owner');
   assert.equal(f.prompts.length, 2, 'A retry that fails again is reported again');
   f.failing.clear();
-  f.prompts[1].choices[0].run(); await drain(); await drain();
+  await f.prompts[1].choices[0].run();
   assert.equal(f.prompts.length, 2, 'A successful retry reports nothing');
-  assert.deepEqual(f.descriptors.root, []);
-  assert.deepEqual(f.calls.filter(call => call.id === 'b').length, 3);
+  assert.equal(f.service.inlineDiffService.diffHandlers.size, 0);
+  assert.equal(f.calls.filter(call => call.id === 'b').length, 1, 'The registry decision is not repeated');
 });
 
 test('Keep All reports failed members with a retry; multiple failures are aggregated', async () => {
@@ -201,8 +207,8 @@ test('Keep All reports failed members with a retry; multiple failures are aggreg
   await assert.rejects(f.service.acceptAllDiffs('root', 'composer'), error => error instanceof AggregateError && error.errors.length === 2);
   assert.equal(f.prompts.length, 1);
   assert.match(f.prompts[0].message, /could not finish keeping the review of 2 files/);
-  f.failing.clear(); f.prompts[0].choices[0].run(); await drain(); await drain();
-  assert.equal(f.prompts.length, 1); assert.equal(f.resumed.length, 1);
+  f.failing.clear(); await f.prompts[0].choices[0].run();
+  assert.equal(f.prompts.length, 1); assert.deepEqual(f.resumed, [['accept', 'a'], ['accept', 'c']]);
   const clean = rejectionFixture(); await clean.service.rejectAll('root'); await clean.service.acceptAllDiffs('root', 'composer');
   assert.equal(clean.prompts.length, 0);
   await rejectionFixture(patched, {}).service.rejectAll('missing');

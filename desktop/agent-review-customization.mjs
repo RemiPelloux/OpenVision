@@ -76,7 +76,8 @@ export function joinAgentReviewAcceptance(text) {
 // members stay pending, and neither group action told the user. Rejection is
 // joined like acceptance, and a failed member of either group is reported with
 // a Retry action. Retry first resumes committed decisions at the inline-diff
-// owner, then repeats the group for anything still pending.
+// owner, then repeats the group for anything still pending; failures are
+// reported again.
 const rejectionMarker = '/* OpenVision joined Agent review rejection v1 */';
 const originalRejection = `rejectAllDiffs(e, t) {
   const n = this.composerDataService.getHandleIfLoaded(e);
@@ -98,10 +99,17 @@ const joinedRejection = `openvisionReportReviewCleanup(kind, e, t, errors) {
     this._notificationService.prompt(2,
       "OpenVision could not finish " + (kind === "accept" ? "keeping" : "undoing") + " the review of " + files +
         ". The decision is kept; retry to finish it.",
-      [{ label: "Retry", run: () => {
-        try { this.inlineDiffService.openvisionRetryReviewFates?.(); }
-        catch (error) { console.error("[composer] Could not resume review cleanup:", error); }
-        (kind === "accept" ? this.acceptAllDiffs(e, t) : this.rejectAllDiffs(e, t)).catch(() => {});
+      [{ label: "Retry", run: async () => {
+        // Committed decisions no longer have a pending descriptor; resume them here
+        // so a retry that fails again is reported again.
+        const failed = [], service = this.inlineDiffService;
+        for (const [id, handler] of [...(service.diffHandlers ?? [])])
+          if (handler.openvisionFate)
+            try { handler.openvisionFate.kind === "accept" ? service.acceptDiff(id) : service.rejectDiff(id); }
+            catch (error) { failed.push(error); }
+        // The group reports its own failures for members still pending.
+        await (kind === "accept" ? this.acceptAllDiffs(e, t) : this.rejectAllDiffs(e, t)).catch(() => {});
+        failed.length && this.openvisionReportReviewCleanup(kind, e, t, failed);
       } }]);
   } catch (error) { console.error("[composer] Could not report review cleanup failure:", error); }
 }
