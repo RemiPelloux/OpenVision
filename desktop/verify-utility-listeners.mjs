@@ -9,6 +9,7 @@ import { probeUtilityListeners } from './utility-listener-probe.mjs';
 import { memorySample } from './native-baseline.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/utility-listeners-'));
@@ -17,8 +18,10 @@ await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(project);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify(verificationSettings));
 const relative = 'resources/app/out/main.js', original = join(root, 'electron-host', relative);
 const originalHash = await fileHash(original);
-const baseline = process.argv.indexOf('--baseline-main');
-const input = baseline < 0 ? original : resolve(process.argv[baseline + 1]);
+// --baseline-main <main.js>: control, must reproduce the accumulation.
+// --input-main <main.js>: candidate assertions against another main (e.g. an earlier fix).
+const baseline = process.argv.indexOf('--baseline-main'), alternate = process.argv.indexOf('--input-main');
+const input = baseline >= 0 ? resolve(process.argv[baseline + 1]) : alternate >= 0 ? resolve(process.argv[alternate + 1]) : original;
 const control = baseline >= 0;
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'),
   new Map([[relative, exposeUtilityProcessOwners(await readFile(input, 'utf8'))]]));
@@ -35,14 +38,18 @@ const result = { directory, control, success: false, checks: {}, identity: { ori
   inputHash: await fileHash(input), overlay: overlay.records,
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   verifierHash: await fileHash(join(root, 'desktop/verify-utility-listeners.mjs')),
-  probeHash: await fileHash(join(root, 'desktop/utility-listener-probe.mjs')) },
+  probeHash: await fileHash(join(root, 'desktop/utility-listener-probe.mjs')),
+  // Inputs that change how a utility child starts; values are not recorded.
+  platform: process.platform, node: process.version, inheritedNodeOptions: Boolean(process.env.NODE_OPTIONS),
+  display: process.env.WAYLAND_DISPLAY ? 'wayland' : process.env.DISPLAY ? 'x11' : 'none' },
   scope: 'Native Electron utility owner and real forks in a disposable overlay; no AI inference or whole-app RAM claim.' };
 let app;
 try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: overlay.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(profile, 'extensions'), '--new-window',
-      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', project] });
+      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(join(directory, 'host')) : []), project] });
   result.stderr = '';
   app.process().stderr?.on('data', chunk => { result.stderr = (result.stderr + chunk).slice(-32768); });
   const page = await app.firstWindow();

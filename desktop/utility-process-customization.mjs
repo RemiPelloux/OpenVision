@@ -46,9 +46,34 @@ export function ownUtilityProcessListeners(text) {
   return `${marker}\n${text}`;
 }
 
+// Electron's child-process-gone details carry no pid, so the owner matches its
+// child by service name, and that name was the same for every run of one owner.
+// A late "killed" event of the previous child then reached the next run's
+// listener, which reported a crash and released the live replacement (its
+// listeners and identity) while that child kept running. Each later run of an
+// owner now gets its own service name; the first run keeps the upstream name.
+const runMarker = '/* OpenVision utility process run identity v1 */';
+const runName = 'const t = `${this.configuration.type}-${this.id}`';
+export function isolateUtilityProcessRuns(text) {
+  if (text.includes(runMarker)) return text;
+  if (!text.includes(marker)) throw Error('Utility process run identity requires listener ownership');
+  const { base, method } = utilityProcessContract(text);
+  const start = method(base, 'doStart'), listeners = method(base, 'registerListeners');
+  const startSource = text.slice(start.start, start.end), listenerSource = text.slice(listeners.start, listeners.end);
+  const [, , service] = listeners.value.params.map(param => param.name);
+  if (startSource.split(runName).length !== 2 || !/serviceName: t,/.test(startSource) ||
+      !listeners.value.params[2] || listenerSource.split('"child-process-gone"').length !== 2 ||
+      !listenerSource.includes(`.name === ${service}`) || text.includes('openvisionRuns'))
+    throw Error('Utility process service identity changed');
+  const at = start.start + startSource.indexOf(runName) + runName.length;
+  text = text.slice(0, at) + ' + (this.openvisionRuns++ ? `-run${this.openvisionRuns}` : "")' + text.slice(at);
+  const field = base.body.start + 1;
+  return `${runMarker}\n${text.slice(0, field)}\nopenvisionRuns = 0;\n${text.slice(field)}`;
+}
+
 export async function installUtilityProcessOwnership(root) {
   const path = join(root, 'source/app/out/main.js'), before = await readFile(path, 'utf8');
-  const after = ownUtilityProcessListeners(before);
+  const after = isolateUtilityProcessRuns(ownUtilityProcessListeners(before));
   if (before === after) return;
   const backup = join(root, 'backups/utility-process', `${digest(before)}.js`);
   await mkdir(dirname(backup), { recursive: true });
