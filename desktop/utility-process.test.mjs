@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { parseJavaScript } from '../tooling/dependencies.mjs';
-import { ownUtilityProcessListeners, isolateUtilityProcessRuns, installUtilityProcessOwnership, keepCrashListenerUntilNextRun } from './utility-process-customization.mjs';
+import { ownUtilityProcessListeners, isolateUtilityProcessRuns, installUtilityProcessOwnership, forwardLateCrash } from './utility-process-customization.mjs';
 
 // An authored contract fixture; native acceptance executes the actual owner,
 // Electron forks and window lifecycle in verify-utility-listeners.mjs.
@@ -53,12 +53,12 @@ test('installer keeps an immutable backup and a second run performs no additiona
   const directory = await mkdtemp(join(tmpdir(), 'openvision-utility-'));
   try {
     const path = join(directory, 'source/app/out/main.js');
-    await mkdir(join(directory, 'source/app/out'), { recursive: true }); await writeFile(path, fixture);
+    await mkdir(join(directory, 'source/app/out'), { recursive: true }); await writeFile(path, exitFixture);
     await installUtilityProcessOwnership(directory); const first = await readFile(path, 'utf8');
     await installUtilityProcessOwnership(directory); assert.equal(await readFile(path, 'utf8'), first);
     const backups = await readdir(join(directory, 'backups/utility-process'));
     assert.equal(backups.length, 1);
-    assert.equal(await readFile(join(directory, 'backups/utility-process', backups[0]), 'utf8'), fixture);
+    assert.equal(await readFile(join(directory, 'backups/utility-process', backups[0]), 'utf8'), exitFixture);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -81,21 +81,39 @@ test('run identity refuses a drifted service-name match or a missing listener ow
     assert.throws(() => isolateUtilityProcessRuns(ownUtilityProcessListeners(input)), /service identity changed/);
 });
 
-test('the crash listener survives exit until the next run starts, so a crash after exit still reports', () => {
-  const owned = isolateUtilityProcessRuns(ownUtilityProcessListeners(fixture));
-  const output = keepCrashListenerUntilNextRun(owned);
-  parseJavaScript(output, { ecmaVersion: 'latest' });
-  assert.equal(keepCrashListenerUntilNextRun(output), output);
-  assert.equal(output.split('this.openvisionCrashListeners.add(').length, 2, 'only the child-process-gone listener moves');
-  assert.equal(output.split('this.openvisionProcessListeners.add(').length, 10);
-  assert.ok(output.includes('openvisionCrashListeners = this._register(new Te());'));
+
+// The exit listener in its recovered form, and the module import that names the app.
+const exitListener = 'this._register(N.fromNodeEventEmitter(e, "exit",\n)((r) => { (this._onExit.fire({ pid: this.processPid, code: r, signal: "unknown" }),\n this.onDidExitOrCrashOrKill()); }));';
+const exitFixture = 'import { MessageChannelMain as sUe, app as iUe, utilityProcess as aUe } from "electron";\n' +
+  fixture.replace(registrations(6), registrations(5) + '\n' + exitListener);
+
+test('a crash reported after exit reaches the owner once; a later run never sees it', async () => {
+  const owned = isolateUtilityProcessRuns(ownUtilityProcessListeners(exitFixture));
+  const output = forwardLateCrash(owned);
+  parseJavaScript(output, { ecmaVersion: 'latest', sourceType: 'module' });
+  assert.equal(forwardLateCrash(output), output);
   const listeners = output.slice(output.indexOf('registerListeners(e, t, n) {'));
-  assert.ok(listeners.indexOf('this.openvisionCrashListeners.clear();') < listeners.indexOf('this.openvisionCrashListeners.add('),
-    'a new run releases the previous run\'s crash listener before registering its own');
-  // Exit releases the ordinary listeners only.
-  const ended = output.slice(output.indexOf('onDidExitOrCrashOrKill() {'));
-  assert.ok(ended.slice(0, ended.indexOf('}')+40).includes('this.openvisionProcessListeners.clear();'));
-  assert.ok(!ended.slice(0, 300).includes('openvisionCrashListeners'));
-  assert.throws(() => keepCrashListenerUntilNextRun(fixture), /requires listener ownership/);
-  assert.throws(() => keepCrashListenerUntilNextRun(owned.replace('"child-process-gone"', '"other-event"')), /crash listener changed/);
+  assert.ok(listeners.indexOf('Hn.openvisionLateGone?.delete(this.openvisionLateName);') < listeners.indexOf('openvisionProcessListeners.add('),
+    'a new run ends the previous run\'s hand-off before registering');
+  assert.ok(listeners.indexOf('this.openvisionAwaitLateGone(n)') < listeners.indexOf('this._onExit.fire('), 'hand-off precedes onExit');
+  assert.throws(() => forwardLateCrash(exitFixture), /requires listener ownership/);
+  assert.throws(() => forwardLateCrash(owned.replace('"exit"', '"other"')), /exit contract changed/);
+  // Execute the helper against a real EventEmitter standing in for the app.
+  const { EventEmitter } = await import('node:events');
+  const helper = output.slice(output.indexOf('openvisionLateName = void 0;'), output.indexOf('openvisionRuns = 0;') > output.indexOf('openvisionLateName')
+    ? output.indexOf('}\n', output.indexOf('runs.set(name, forward);')) + 2 : undefined);
+  const iUe = new EventEmitter(), fired = [];
+  const Hn = Function('iUe', `return class Hn { constructor(pid) { this.processPid = pid; this._onCrash = { fire: value => this.fired.push(value) }; this.fired = []; }\n${helper} };`)(iUe);
+  const first = new Hn(7), second = new Hn(8);
+  first.openvisionAwaitLateGone('shared-process-1');
+  second.openvisionAwaitLateGone('fileWatcher-2');
+  assert.equal(iUe.listenerCount('child-process-gone'), 1, 'one shared listener, not one per owner');
+  iUe.emit('child-process-gone', {}, { type: 'Utility', name: 'shared-process-1', exitCode: 9, reason: 'killed' });
+  iUe.emit('child-process-gone', {}, { type: 'Utility', name: 'shared-process-1', exitCode: 9, reason: 'killed' });
+  assert.deepEqual(first.fired, [{ pid: 7, code: 9, reason: 'killed' }], 'forwarded exactly once');
+  // The owner's next run starts before the late event: the hand-off is dropped.
+  Hn.openvisionLateGone?.delete(second.openvisionLateName);
+  iUe.emit('child-process-gone', {}, { type: 'Utility', name: 'fileWatcher-2', exitCode: 9, reason: 'killed' });
+  assert.deepEqual(second.fired, []);
+  assert.equal(Hn.openvisionLateGone.size, 0);
 });
