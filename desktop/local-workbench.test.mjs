@@ -26,6 +26,10 @@ for (const variant of ['desktop', 'glass']) {
     assert.ok(cloud.patches.some(patch => patch.reason === 'cloud settings navigation'));
     assert.ok(cloud.patches.some(patch => patch.reason === 'cloud command and menu registration'));
     assert.ok(cloud.patches.some(patch => patch.reason === 'cloud notification setting'));
+    assert.ok(cloud.patches.some(patch => patch.reason === 'cloud repository readiness watchers'));
+    const readiness = cloud.text.indexOf('setupRepoReadinessWatchers() {');
+    assert.match(cloud.text.slice(readiness, readiness + 200), /\{\s*return; \/\* OpenVision: hosted cloud repository readiness disabled \*\//,
+      'No environment.json watch, git hook or poll is registered');
     assert.ok(!cloud.text.includes('label: "Cloud Agent Approval Banners While Focused"'));
     assert.ok(!cloud.text.includes('{ id: "cloud", label: "Cloud" }'));
     assert.equal(disableCloudFeatures(localWorkbench(cloud.text, variant).text).text, cloud.text,

@@ -99,9 +99,23 @@ function skillsBackend(text) {
   });
 }
 
+// Hosted cloud-agent repository readiness: a watch on the first folder's
+// .openvision/environment.json (its parent folder while the file is missing),
+// a git-status hook and a five-minute poll in every main window. A watch
+// requested during window teardown outlived the closed window in the main
+// process (OV-304 --watchers). The readiness cache only serves cloud agents.
+function repoReadinessWatchers(text) {
+  const matches = [...text.matchAll(/\n(\s*)setupRepoReadinessWatchers\(\) \{/g)];
+  if (matches.length !== 1) throw new Error('Cloud repository readiness owner missing or ambiguous');
+  const code = 'return; /* OpenVision: hosted cloud repository readiness disabled */';
+  const start = matches[0].index + matches[0][0].length;
+  if (text.slice(start, start + 200).includes(code)) return [];
+  return [{ start, end: start, after: `\n${matches[0][1]}  ${code}`, reason: 'cloud repository readiness watchers' }];
+}
+
 export function disableCloudFeatures(text) {
   const patches = [...settingsVisibility(text), ...commandRegistration(text), ...cloudNotifications(text),
-    ...skillsControls(text), ...skillsBackend(text)];
+    ...skillsControls(text), ...skillsBackend(text), ...repoReadinessWatchers(text)];
   const environment = '  { id: "cloud", label: "Cloud" },';
   const index = text.indexOf(environment);
   if (index >= 0) {
