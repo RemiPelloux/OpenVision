@@ -59,7 +59,9 @@ async function until(label, probe, timeout = 60000, interval = 250) {
 }
 
 // --- Remote account, key, host key and SSH configuration ---------------------
-const status = await host('status');
+const status = await host('status').catch(error => {
+  throw new Error(`The remote fixture host is not reachable at ${control} (${error.code ?? error.message}). Start desktop/remote-ssh-host.mjs as the remote account; see docs/guides/remote-ssh.md#verifying-on-linux.`);
+});
 assert.notEqual(status.uid, process.getuid(), 'The remote account must differ from the verifier user');
 const before = (await host('processes')).rows.filter(row => ['remote-server', 'ssh-session'].includes(row.kind));
 assert.deepEqual(before, [], 'No remote server or SSH session may run before the verifier starts');
@@ -402,9 +404,10 @@ try {
   // Every session accepted by the final sshd instance (after the restart) must
   // be logged as ended; sessions killed earlier on purpose end without a line.
   const journal = (await host('journal')).text;
+  await writeFile(join(directory, 'sshd-journal.log'), journal);
   const lifetime = journal.slice(journal.lastIndexOf('Server listening on'));
   const accepted = [...lifetime.matchAll(/Accepted publickey for \S+ from 127\.0\.0\.1 port (\d+)/g)].map(match => match[1]);
-  const ended = new Set([...lifetime.matchAll(/(?:Disconnected from user \S+|Received disconnect from|Connection closed by(?: user \S+)?|Connection reset by(?: user \S+)?|Timeout, client not responding from user \S+) 127\.0\.0\.1 port (\d+)/g)].map(match => match[1]));
+  const ended = new Set([...lifetime.matchAll(/(?:Disconnected from user \S+|Received disconnect from|Connection closed by(?: user \S+)?|Connection reset by(?: user \S+)?|Timeout, client not responding from user \S+|Read error from remote host|Write failed to remote host) 127\.0\.0\.1 port (\d+)/g)].map(match => match[1]));
   result.observations.journal = { accepted: accepted.length, ended: accepted.filter(port => ended.has(port)).length,
     open: accepted.filter(port => !ended.has(port)) };
   result.checks.journalSessionsClosed = accepted.length > 0 && result.observations.journal.open.length === 0;
@@ -430,7 +433,8 @@ try {
     // DNS goes over connected UDP sockets: track sockets connected to port 53.
     const lookups = [], dnsSockets = new Set();
     for (const line of text.split('\n')) {
-      const call = /^(\d+) ([\d.]+) (connect|sendto|sendmsg|sendmmsg)\((\d+)<UDP:/.exec(line);
+      // strace pads short pids ("9404  1792…").
+      const call = /^(\d+)\s+([\d.]+) (connect|sendto|sendmsg|sendmmsg)\((\d+)<UDP:/.exec(line);
       if (!call) continue;
       const socket = `${call[1]}:${call[4]}`;
       if (call[3] === 'connect') { if (/htons\(53\)/.test(line)) dnsSockets.add(socket); else dnsSockets.delete(socket); continue; }

@@ -15,6 +15,7 @@ Implementation contracts, developer workflows and lifecycle decisions. Start wit
 - [Provider-specific model choices](provider-model-identity.md)
 - [Provider selection lifecycle — 13 October 2026](provider-selection-lifecycle.md)
 - [Reasoning capabilities and saved selections](reasoning-capability-lifecycle.md)
+- [Remote SSH: server input, resolver and key boundary](remote-ssh.md)
 - [Repository layout](repository-layout.md)
 - [Runtime build integrity and shell shutdown](runtime-build-integrity.md)
 - [Utility-process listener ownership](utility-process-ownership.md)
