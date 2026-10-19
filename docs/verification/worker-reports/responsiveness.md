@@ -32,7 +32,7 @@ three causes, now separated:
    - The model stream is now read as it arrives. Text deltas already waiting
      are merged, so one round trip carries the backlog.
    - Last chunk to paint: **12,219 → 650–847 ms** in smoke (10/10 under the
-     1,000 ms budget) and **44,960 → 470–763 ms** at full size (6/6 so far).
+     1,000 ms budget) and **44,960 → 470–763 ms** at full size (7/7).
 3. **Fixture defect (fixed).** The fixture project sits under `logs/` inside the
    OpenVision checkout. The Agent's per-turn `git status --short --branch`
    discovered that checkout and walked its 17,000+ files. That added about 6 s
@@ -61,7 +61,7 @@ slower, so rendering cost is concentrated in the stream window.
 
 | # | Task | State |
 | --- | --- | --- |
-| 1 | Explain and stabilize `stream.lastChunkToPaintMs` (10× smoke, 10× full, profile) | **Done for the metric**: explained (three causes above), harness and product fixed, 10/10 smoke and 6/6 full under budget. **Partly done** for the series: 6 of 10 full runs complete (stopped). Profile: `--profile=stream` run `wCe2jp` (renderer main thread 7.1 s native, 5.5 s idle of 18.3 s sampled; no single JS hotspot); the decisive evidence came from `--trace-stream` and strace instead |
+| 1 | Explain and stabilize `stream.lastChunkToPaintMs` (10× smoke, 10× full, profile) | **Done for the metric**: explained (three causes above), harness and product fixed, 10/10 smoke and 7/7 full under budget. **Partly done** for the series: 7 of 10 full runs complete (stopped). Profile: `--profile=stream` run `wCe2jp` (renderer main thread 7.1 s native, 5.5 s idle of 18.3 s sampled; no single JS hotspot); the decisive evidence came from `--trace-stream` and strace instead |
 | 2 | Prove incremental edits in the large-file phase | **Partly done.** Measurement code is in: per-key renderer writes, extension-host and tsserver reads/writes, per-role CPU, large/small ratios and per-key share of the file (`editTraffic`, `sizeRatios`, `syncBytesPerKeyFileShare`), unit-tested. **Not done:** no native editor run on this branch yet, so no baseline and no budgets |
 | 3 | Scroll frame p95 49.9 vs 50 ms | **Partly done.** `frameRefreshHistogram` (frames by whole 60 Hz refresh intervals) is in every phase, so a p95 of 49.9 ms can be read as a 3-refresh frame. **Not done:** the ≥5 full scroll runs |
 | 4 | Final reruns | **Not done** (stop request) |
@@ -116,7 +116,7 @@ Two runs failed setup before the keyring was configured and are not counted:
 | --- | --- | --- | --- |
 | `fix-smoke-1` (`--trace-stream`) | `yWfnRg` | 802 | 53 merged deltas; last enqueue 2,218 ms after the first chunk (fixture finished at 2,167 ms); renderer CPU 19.4 → 6.0 s |
 | `smoke-1…10` (`--phases=stream`) | `aenH6y foM8BW Qeuo9W jhALAh hPNScO tKgHeG cAOPi6 L5eddY kKwYxD PW61Wx` | **821 847 779 727 686 682 838 821 650 777** (10/10 ≤ 1,000) | typing p95 62–153 (fails 10/10); long tasks 367–734 (fails 4/10); frame p95 33.3–33.4; load 1.3–3.2 |
-| `fullstream-1…6` (`--full --phases=stream`) | `CldXnD uhyjaO 6wqWdW wqUzGq O0VJzT pqsiB9` | **624 739 726 763 588 470** (6/6 ≤ 1,000) | frame p95 49.9–66.7; frames over 100 ms 5–9; long tasks 1,795–2,542 ms; typing p95 99.9–145.6; first chunk 1,240–1,731 ms; load 2.0–3.3 |
+| `fullstream-1…7` (`--full --phases=stream`) | `CldXnD uhyjaO 6wqWdW wqUzGq O0VJzT pqsiB9 gJtDNQ` | **624 739 726 763 588 470 558** (7/7 ≤ 1,000) | frame p95 49.9–66.7; frames over 100 ms 4–9; long tasks 1,708–2,542 ms; typing p95 83.4–145.6; first chunk 1,240–1,731 ms; load 2.0–3.3 |
 
 Every run above is a first-time run; none is a retry. `fullstream-7` was
 running at the stop request and was left to finish. Runs 8–10 were not
@@ -169,7 +169,7 @@ started.
   10× smoke stream series, the measurement code for tasks 2 and 3, and unit
   tests.
 - **Partly done:**
-  - full stream series: 6 complete, 1 finishing at the stop, 3 not started;
+  - full stream series: 7 complete (the 7th was in progress at the stop), 3 not started;
   - task 2 (code only, no native data);
   - task 3 (histogram only).
 - **Not started:**
@@ -178,11 +178,11 @@ started.
   - final reruns: `test:desktop`, smoke ×3, `--full` ×3,
     `verify:model-menu:large`, `docs:check`, `status:features`;
   - the evidence-doc update in `docs/performance/responsiveness-linux.md`.
-- **Last verified run IDs:** smoke `PW61Wx`, full `pqsiB9` (both on build
+- **Last verified run IDs:** smoke `PW61Wx`, full `gJtDNQ` (both on build
   `29483a06`).
 - **Uncommitted findings:** none. Every finding is in this report.
 - **Estimate for the remainder:** one worker session (about one quota round).
-  - About 1 h 45 min of serialized native runs: 4 full stream runs, 3 editor
+  - About 1 h 45 min of serialized native runs: 3 full stream runs, 3 editor
     baselines, 2 scroll runs, 3 smoke, 3 full, the model menu.
   - Then budgets and documentation.
   - Plus one more session if the owner wants GPU-host reruns or
