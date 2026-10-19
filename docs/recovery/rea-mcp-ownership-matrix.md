@@ -170,14 +170,29 @@ through an owner header.
    later probe launches every server connected through the utility, 4 of them
    through the recovered path.
 
+4. **Legacy-route STDIO connect refused as a hosted call.** On the legacy
+   route, `cursor-mcp` reads team MCP policy through the workbench
+   `$getTeamAdminSettings` bridge. The anonymous hosted-call guard (also from
+   16 Oct) refused that read, and the connection failed with `Cursor service
+   calls require a signed-in Cursor account`. The coordinator reported it from
+   another branch's run (`BYujHc`); here it was reproduced by restoring main's
+   routing in a disposable workbench overlay (`mcp-config-ownership-CZr5WO`). Owner fix in
+   [network-defaults](../../desktop/network-defaults.mjs): for that refusal
+   only, `$getTeamAdminSettings` and `$getTeamRepos` return the empty message
+   the server gives anyone outside a team. No request is sent. With main's
+   routing and this fix, discovery, approval and attributed calls pass
+   (`eBydQ7`). That run then stops at per-window children, which is how the
+   legacy route behaves and is what fix 1 restores. `verify:telemetry` still
+   records no HTTP URLs (`telemetry-verification-2bMD8u`).
+
 ### Observations (final build)
 
 | Run (`logs/`) | Result |
 | --- | --- |
-| `mcp-config-ownership-simultaneous-@@cfg-simultaneous-a@@`, `-@@cfg-simultaneous-b@@` | @@cfg-simultaneous-result@@ |
-| `mcp-config-ownership-http-@@cfg-http-a@@`, `-@@cfg-http-b@@` | @@cfg-http-result@@ |
-| `mcp-config-ownership-same-basename-@@cfg-same-basename-a@@`, `-@@cfg-same-basename-b@@` | @@cfg-same-basename-result@@ |
-| `mcp-config-ownership-@@cfg-ownership@@`, `mcp-config-ownership-failed-close-@@cfg-failed-close@@` | @@cfg-existing-result@@ |
+| `mcp-config-ownership-simultaneous-1ACuUN`, `-X9DGJw` | `1ACuUN` **failed** first time: the profile-call probe after a project-only edit failed after the approval prompt appeared, and the run then hung in cleanup (quit waited on the pending Agent approval), so the assertion text was lost; the verifier now writes `error.txt` before cleanup and bounds quit. `6P0KLQ` and `X9DGJw` passed all five checks; 8 simultaneous rounds started 2 profile children and 0 project children; host exit 0. Cause of the one failure unexplained |
+| `mcp-config-ownership-http-ena9EB`, `-79tdKk` | Both passed all seven checks first time; dedupe selected `user-ov-dup-a`; host exit 0 |
+| `mcp-config-ownership-same-basename-UuZTb7`, `-raQ1Bj` | Both passed all six checks first time; three distinct utility keys; host exit 0 |
+| `mcp-config-ownership-AUw5EJ`, `mcp-config-ownership-failed-close-geq2MB` | Existing modes still pass (and again after the cleanup-bound change: `tyQU3g`, `failed-close-8O6yhn`) |
 
 Same-basename utility keys differ only in their project scope hash, for example
 `project-0-app-ov-base::mcpScope:profile:ZGVmYXVsdA:project:NDQ0ZTQ5NTU:cfg:…`

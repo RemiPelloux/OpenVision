@@ -247,8 +247,8 @@ npm run verify:mcp-http-cleanup -- --pending
 
 | Run (`logs/mcp-http-cleanup-verification-…`) | Mode | Result |
 | --- | --- | --- |
-| `@@http-cleanup-a@@`, `@@http-cleanup-b@@` | Two consecutive close rejections | @@http-cleanup-result@@ |
-| `@@http-cleanup-pending-a@@`, `@@http-cleanup-pending-b@@` | Pending close, then release | @@http-cleanup-pending-result@@ |
+| `eZOzw8`, `b1kVPw` | Two consecutive close rejections | Both passed all seven checks first time; host exit 0 |
+| `Nrh5MN`, `yG2vCB` | Pending close, then release | Both passed all eight checks first time; acknowledgement at 5,000 ms; host exit 0 |
 
 Covered: two consecutive rejections, a pending close then its eventual release,
 the bounded five-second acknowledgement with exactly one real close in flight,

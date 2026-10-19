@@ -119,8 +119,8 @@ the [ownership matrix follow-up](rea-mcp-ownership-matrix.md#19-october-2026-lin
 
 | Run (`logs/agent-verification-…`) | Transport | Result |
 | --- | --- | --- |
-| `@@agent-mcp@@` | HTTP | @@agent-mcp-result@@ |
-| `@@agent-mcp-stdio@@` | STDIO | @@agent-mcp-stdio-result@@ |
+| `MPSAKJ` | HTTP | Passed first time; Stop 268 ms; three owned hosts exit 0; no renderer errors |
+| `NexIMM` | STDIO | Passed first time; Stop 293 ms; all child PIDs absent after shutdown; three hosts exit 0 |
 
 Each run checks late configuration, native discovery, approval and **Skip**
 denial, real tool output in the continuation, **Stop** reaching the server

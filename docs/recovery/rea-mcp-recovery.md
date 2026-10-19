@@ -99,8 +99,8 @@ npm run verify:agent -- --mcp-stdio --mcp-failures
 
 | Run (`logs/agent-verification-…`) | Transport | Result |
 | --- | --- | --- |
-| `@@agent-mcp-failures@@` | HTTP | @@agent-mcp-failures-result@@ |
-| `@@agent-mcp-stdio-failures@@` | STDIO | @@agent-mcp-stdio-failures-result@@ |
+| `aAapbu` | HTTP | Passed first time; Stop 246 ms; disconnect `fetch failed` after 7,632 ms and timeout `MCP error -32001` after 127,699 ms, each executed once; three hosts exit 0 |
+| `VavYuB` | STDIO | Passed first time; Stop 263 ms; disconnect `Connection closed` after 7,751 ms and timeout after 127,933 ms, each executed once; child PIDs absent; three hosts exit 0 |
 
 Both runs cover denial with **Skip**, Stop through the shared utility, real
 output, a disconnect during a call, and the production two-minute idle timeout.
