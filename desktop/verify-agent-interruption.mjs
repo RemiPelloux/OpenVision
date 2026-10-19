@@ -348,7 +348,18 @@ async function fileState(name) {
 // The transcript must not call an unconfirmed edit "Edited"; an interrupted edit
 // is labelled as an attempt with the interruption message.
 const transcript = text => ({ edited: /\bEdited\b[\s\S]{0,40}interrupt-/.test(text),
-  interrupted: /Edit attempted|Edit interrupted before it completed/.test(text) });
+  interrupted: /Edit\s+attempted|Edit interrupted before it completed/.test(text) });
+
+async function openChatFromHistory(title) {
+  const steps = [];
+  try {
+    const history = page.locator('[aria-label*="History" i],.codicon-history').filter({ visible: true }).first();
+    await history.click(); steps.push('history');
+    await page.getByText(title).filter({ visible: true }).first().click({ timeout: 10000 }); steps.push('chat');
+    await page.waitForTimeout(2000);
+  } catch (error) { steps.push(`failed: ${error.message.split('\n')[0]}`); }
+  return steps;
+}
 
 async function runCase(name, spec) {
   const record = { name, ...spec, stages: [], violations: [] };
@@ -423,7 +434,12 @@ async function runCase(name, spec) {
   await launch(); await openChat(page);
   await page.waitForTimeout(4000);
   if (editCase) await waitFor(async () => !(await fileState(name)).temporary.length, 'Startup sweep left the aged temporary', 15000).catch(() => {});
-  const restartedUi = await snapshot(name, 'after-restart');
+  let restartedUi = await snapshot(name, 'after-restart');
+  // Restart may show a new chat; the interrupted one is then opened from chat history.
+  if (spec.kind === 'write' && !/\bEdit(ed|\s+attempted)\b/.test(restartedUi.text)) {
+    record.openedFromHistory = await openChatFromHistory(new RegExp(`Change Before ${name} To`, 'i'));
+    restartedUi = await snapshot(name, 'after-restart-history');
+  }
   record.afterRestart = { file: editCase ? await fileState(name) : undefined,
     ui: restartedUi, transcript: transcript(restartedUi.text), restartRequests: requests.length - requestsAtRestart,
     probe: await probeEvents(fileFor(name)) };
