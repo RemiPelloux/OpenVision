@@ -160,6 +160,14 @@ persisted; in `QdyRa1` the tool bubble was also persisted, but not the inline
 review, and the review was still missing. `GzRx5X` and `rUWFJw` precede the
 review-persistence fix.
 
+## Follow-up, 19 October 2026
+
+The [Linux closure report](rea-agent-editing-linux-closure.md) fixes three items recorded below: the stale
+single-file review bar after Undo/Confirm (a lost first registry change, not a
+graceful-close effect), the **Edited** label for an edit interrupted before its
+result (now *Edit attempted*), and orphan temporaries of files never written
+again (bounded startup sweep). `verify:agent-interruption` now asserts all three.
+
 ## Unverified and limitations
 
 - **Power loss and kernel crash** cannot be simulated honestly here. The fsync of

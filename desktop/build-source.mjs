@@ -47,6 +47,7 @@ import { installProjectNamespace, restoreNamespaceInputs } from './namespace-bui
 import { installRuleDurability } from './rules-durability-customization.mjs';
 import { installProfileStorageDurability } from './profile-storage-durability-customization.mjs';
 import { installProfileWritability } from './profile-writability-customization.mjs';
+import { installFileWriteRestore } from './file-write-restore-customization.mjs';
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
 import { installShutdownOwnership } from './shutdown-customization.mjs';
 import { installUtilityProcessOwnership } from './utility-process-customization.mjs';
@@ -67,6 +68,8 @@ import { installAgentReviewAcceptance } from './agent-review-customization.mjs';
 import { installUnopenedAgentUndo } from './agent-closed-file-undo-customization.mjs';
 import { installAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
 import { installAgentReviewPersistence } from './agent-review-persist-customization.mjs';
+import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
+import { installReviewDescriptors } from './review-descriptors-customization.mjs';
 import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -126,6 +129,8 @@ await installProjectDataBoundaries(root);
 await installAgentReviewAcceptance(root);
 await installUnopenedAgentUndo(root);
 await installAgentReviewPersistence(root);
+await installInterruptedAgentEdits(root);
+await installReviewDescriptors(root);
 await installAgentReviewRecovery(root);
 await installAgentWriteDurability(root);
 await installRenameVersionGuard(root);
@@ -146,6 +151,7 @@ await installCursorImport(root);
 await installRuleDurability(root);
 await installProfileStorageDurability(root);
 await installProfileWritability(root);
+await installFileWriteRestore(root);
 await installWindowTitles(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);

@@ -34,11 +34,11 @@ const gammaBefore = 'export const gamma = [\n  1,\n];\n', deltaBefore = 'export 
 await writeFile(gamma, gammaBefore); await writeFile(delta, deltaBefore);
 const alphaText = value => `export const alpha = ${value};\n`;
 const betaText = value => `export const beta = "${value}";\n`;
-const scenarioNames = ['failedDeletion', 'groupedPostCommit', 'menuUndoRedo', 'groupedRejectPostCommit', 'persistRace', 'abruptAfterAcceptance', 'failedDeletionThenUndo'];
+const scenarioNames = ['failedDeletion', 'groupedPostCommit', 'menuUndoRedo', 'groupedRejectPostCommit', 'groupedRejectRetry', 'persistRace', 'abruptAfterAcceptance', 'failedDeletionThenUndo'];
 const selected = process.argv.find(value => value.startsWith('--scenarios='))?.slice('--scenarios='.length).split(',') ?? scenarioNames;
 assert.ok(selected.every(name => scenarioNames.includes(name)), 'Unknown scenario');
 // Each scenario starts from the file contents left by its predecessors.
-const starts = { failedDeletion: [1, 'one'], groupedPostCommit: [2, 'two'], menuUndoRedo: [3, 'three'], groupedRejectPostCommit: [3, 'three'],
+const starts = { failedDeletion: [1, 'one'], groupedPostCommit: [2, 'two'], menuUndoRedo: [3, 'three'], groupedRejectPostCommit: [3, 'three'], groupedRejectRetry: [3, 'three'],
   persistRace: [3, 'three'], abruptAfterAcceptance: [4, 'three'], failedDeletionThenUndo: [5, 'three'] };
 await writeFile(alpha, alphaText(starts[selected[0]][0])); await writeFile(beta, betaText(starts[selected[0]][1]));
 await writeFile(anchor, 'export const anchor = true;\n');
@@ -99,6 +99,7 @@ const rounds = {
   abrupt: [replace(alpha, 'alpha = 4', 'alpha = 5')],
   restore: [replace(alpha, 'alpha = 5', 'alpha = 6')],
   reject: [replace(gamma, '  1,', '  1,\n  2,\n  3,'), replace(delta, '"before"', '"after"')],
+  rejectRetry: [replace(gamma, '  1,', '  1,\n  2,\n  3,'), replace(delta, '"before"', '"after"')],
 };
 let round = 'pending';
 const requests = [];
@@ -337,6 +338,17 @@ async function instrumentMember(name) {
 
 const memberCounts = () => page.evaluate(() => structuredClone(globalThis.__openvisionMemberCounts));
 
+// Review cleanup notifications shown by the joined Keep All / Undo All owner.
+const cleanupToasts = () => page.locator('.notification-toast').filter({ hasText: /could not finish (keeping|undoing) the review/ })
+  .filter({ visible: true });
+const toastTexts = async () => (await cleanupToasts().allInnerTexts()).map(text => text.replace(/\s+/g, ' ').trim());
+async function clearNotifications() {
+  await page.keyboard.press('ControlOrMeta+Shift+p');
+  await page.locator('.quick-input-widget').getByRole('textbox').fill('>Notifications: Clear All Notifications');
+  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'Clear All Notifications' }).first().click();
+  await cleanupToasts().first().waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+}
+
 // After clearing the fault, an ordinary storage flush is the service's retry trigger.
 async function retryCommittedCleanup(stage) {
   await page.evaluate(() => { globalThis.__openvisionMemberCounts.disposeFail = false; });
@@ -366,7 +378,11 @@ async function groupedPostCommit() {
   await keepAll(); await page.waitForTimeout(1500);
   stage.failed = { ...await live(), counts: await memberCounts(),
     pendingControls: await page.getByText(/^(Keep|Undo)( All)?$/).filter({ visible: true }).count() };
+  stage.failed.notifications = await toastTexts();
   await page.screenshot({ path: join(directory, 'group-member-failed.png') });
+  assert.equal(stage.failed.notifications.length, 1, 'The failed Keep All member is reported with a retry');
+  assert.match(stage.failed.notifications[0], /could not finish keeping the review of 1 file\. The decision is kept; retry to finish it\./);
+  assert.equal(await cleanupToasts().first().getByRole('button', { name: 'Retry', exact: true }).count(), 1);
   assert.deepEqual(stage.failed.handlers, ['beta.js'], 'Only the failed member remains owned');
   assert.equal(stage.failed.counts.disposeInjected, 1);
   assert.deepEqual(stage.failed.records, [], 'The accepted decision ends both pending-review records');
@@ -378,6 +394,7 @@ async function groupedPostCommit() {
   assert.equal(counts.undoLabels.filter(label => label === 'Undo Accept Diff').length, 1, 'One acceptance history entry');
   assert.equal(counts.undoLabels.filter(label => label === 'Undo Remove Diff').length, 1, 'One removal history entry');
   assert.deepEqual(records, []);
+  await clearNotifications();
 }
 
 // Scenario 2b: one member of a grouped Undo All fails after its text was restored.
@@ -391,9 +408,11 @@ async function groupedRejectPostCommit() {
   await page.waitForTimeout(1500);
   stage.failed = { ...await live(), counts: await memberCounts(), gamma: await readFile(gamma, 'utf8'),
     pendingControls: await page.getByText(/^(Keep|Undo)( All)?$/).filter({ visible: true }).count() };
+  stage.failed.notifications = await toastTexts();
   await page.screenshot({ path: join(directory, 'group-reject-member-failed.png') });
-  // The recovered Undo All stops at its first failed member; later members stay pending.
-  assert.equal(stage.failed.handlers[0], 'gamma.js', 'The failed member remains owned');
+  // The joined Undo All attempts every member; only the failed member remains owned.
+  assert.deepEqual(stage.failed.handlers, ['gamma.js'], 'Only the failed member remains owned');
+  assert.equal(stage.failed.notifications.length, 1, 'The failed Undo All member is reported with a retry');
   assert.equal(stage.failed.gamma, gammaBefore, 'The committed rejection restored gamma.js text once');
   assert.ok(stage.failed.counts.disposeInjected >= 1);
   await retryCommittedCleanup(stage);
@@ -405,6 +424,58 @@ async function groupedRejectPostCommit() {
   assert.equal(stage.files.delta, deltaBefore);
   assert.equal(counts.textEdits, 1, 'Rejection text edits are applied once');
   assert.equal(counts.rejectRecords, 1); assert.equal(counts.rejectCallbacks, 1); assert.equal(counts.rejectEvents, 1);
+  assert.equal(counts.undoLabels.filter(label => label === 'Undo Reject Diff').length, 1);
+  assert.equal(counts.undoLabels.filter(label => label === 'Undo Remove Diff').length, 1);
+  assert.deepEqual(records, []);
+  await page.keyboard.press('ControlOrMeta+w'); await page.keyboard.press('ControlOrMeta+w');
+  await clearNotifications();
+}
+
+// Scenario 2c: Undo All whose first member keeps failing post-commit cleanup. Every
+// other member is still undone; the failure is reported with Retry; a Retry that
+// fails again is reported again; a Retry after the fault clears finishes the member.
+async function groupedRejectRetry() {
+  const stage = { scenario: 'grouped Undo All: joined members, retryable cleanup notification, failed and successful Retry' };
+  result.stages.push(stage);
+  await submit('rejectRetry', 'Insert two list entries in gamma.js and change delta.js again. Leave review pending.');
+  await persist(); stage.before = await live();
+  assert.deepEqual(stage.before.handlers.sort(), ['delta.js', 'gamma.js']);
+  await instrumentMember('gamma.js');
+  await page.getByText('Undo All', { exact: true }).filter({ visible: true }).click();
+  await page.getByText('Confirm', { exact: true }).filter({ visible: true }).click();
+  await cleanupToasts().first().waitFor({ timeout: 10000 });
+  stage.failed = { ...await live(), counts: await memberCounts(), notifications: await toastTexts(),
+    pendingControls: await page.getByText(/^(Keep|Undo)( All)?$/).filter({ visible: true }).count() };
+  await page.screenshot({ path: join(directory, 'group-reject-retry-notification.png') });
+  assert.deepEqual(stage.failed.handlers, ['gamma.js'], 'The later member is undone although the first member failed');
+  // The storage flush owner may already have retried the committed cleanup once.
+  assert.ok(stage.failed.counts.disposeInjected >= 1);
+  assert.equal(stage.failed.notifications.length, 1);
+  assert.match(stage.failed.notifications[0], /could not finish undoing the review of 1 file\. The decision is kept; retry to finish it\./);
+  // Retry while the fault persists: the committed decision resumes, fails again and is reported again.
+  await cleanupToasts().first().getByRole('button', { name: 'Retry', exact: true }).click();
+  const injectedBeforeRetry = stage.failed.counts.disposeInjected;
+  await page.waitForFunction(count => globalThis.__openvisionMemberCounts.disposeInjected > count, injectedBeforeRetry, { timeout: 10000 });
+  await cleanupToasts().first().waitFor({ timeout: 10000 });
+  stage.failedRetry = { ...await live(), counts: await memberCounts(), notifications: await toastTexts() };
+  assert.deepEqual(stage.failedRetry.handlers, ['gamma.js'], 'A failing retry keeps the member owned');
+  assert.ok(stage.failedRetry.notifications.length >= 1, 'A failing retry is reported again');
+  // The fault clears; Retry finishes the committed cleanup without replaying it.
+  await page.evaluate(() => { globalThis.__openvisionMemberCounts.disposeFail = false; });
+  await cleanupToasts().first().getByRole('button', { name: 'Retry', exact: true }).click();
+  await page.waitForFunction(() => globalThis.__openvisionInlineDiffService.diffHandlers.size === 0, undefined, { timeout: 10000 });
+  await page.waitForTimeout(1500);
+  stage.retried = { ...await live(), counts: await memberCounts(), notifications: await toastTexts() };
+  await page.screenshot({ path: join(directory, 'group-reject-retry-finished.png') });
+  await openEditor(gamma); await page.keyboard.press('ControlOrMeta+s'); await page.waitForTimeout(500);
+  await openEditor(delta); await page.keyboard.press('ControlOrMeta+s'); await page.waitForTimeout(500);
+  stage.files = { gamma: await readFile(gamma, 'utf8'), delta: await readFile(delta, 'utf8') };
+  const { counts, records } = stage.retried;
+  assert.deepEqual(stage.retried.notifications, [], 'A successful retry reports nothing new');
+  assert.equal(stage.files.gamma, gammaBefore); assert.equal(stage.files.delta, deltaBefore);
+  assert.equal(counts.textEdits, 1, 'Rejection text edits are applied once across both retries');
+  // Telemetry is recorded at most once (observed 0 for this repeated round of the same chat).
+  assert.ok(counts.rejectRecords <= 1); assert.equal(counts.rejectCallbacks, 1); assert.equal(counts.rejectEvents, 1);
   assert.equal(counts.undoLabels.filter(label => label === 'Undo Reject Diff').length, 1);
   assert.equal(counts.undoLabels.filter(label => label === 'Undo Remove Diff').length, 1);
   assert.deepEqual(records, []);
@@ -519,7 +590,7 @@ async function failedDeletionThenUndo() {
   result.stages.at(-1).rejected = await live();
 }
 
-const scenarios = { failedDeletion, groupedPostCommit, menuUndoRedo, groupedRejectPostCommit, persistRace, abruptAfterAcceptance, failedDeletionThenUndo };
+const scenarios = { failedDeletion, groupedPostCommit, menuUndoRedo, groupedRejectPostCommit, groupedRejectRetry, persistRace, abruptAfterAcceptance, failedDeletionThenUndo };
 try {
   await launch();
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
