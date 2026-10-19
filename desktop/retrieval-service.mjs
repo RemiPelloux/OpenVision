@@ -21,7 +21,10 @@ export class RetrievalService {
   constructor({ userDataDirectory, root, rgPath, grammarDirectory, filesExclude = {}, embeddings, log = () => {}, ...options }) {
     this.userDataDirectory = userDataDirectory;
     this.root = root;
-    this.workerData = { root, rgPath, grammarDirectory, filesExclude, embeddings, batchSize: options.batchSize, maxFiles: options.maxFiles };
+    // Plain JSON only: editor configuration values can be proxies that a
+    // worker message cannot clone.
+    this.workerData = JSON.parse(JSON.stringify({ root, rgPath, grammarDirectory, filesExclude, embeddings,
+      batchSize: options.batchSize, maxFiles: options.maxFiles }));
     this.options = { ...serviceDefaults, ...options };
     this.log = log;
     this.requests = new Map();

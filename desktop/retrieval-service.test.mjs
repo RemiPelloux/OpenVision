@@ -204,3 +204,13 @@ test('Delete and Rebuild remove the index directory and rebuild from scratch', a
     await owner.dispose();
   } finally { await fx.cleanup(); }
 });
+
+test('configuration proxies are passed to the worker as plain data', async () => {
+  const fx = await fixture(5);
+  try {
+    const filesExclude = new Proxy({ '**/node_modules': true }, {});
+    const owner = service(fx, { filesExclude });
+    assert.ok((await owner.search('order')).results.length);
+    await owner.dispose();
+  } finally { await fx.cleanup(); }
+});

@@ -221,6 +221,9 @@ async function toolMode() {
   for (const row of result.ranked) assert.ok(row.rank >= 1 && row.rank <= 5, `${row.id} expected file in top 5 (got ${row.rank})`);
   result.checks.rankedResultsInToolOutput = true;
   const expectedName = chosen[0].expected[0].path.split('/').at(-1);
+  // The transcript groups tool calls ("Explored 3 searches"); expand it.
+  await page.getByText(/^\d+ search(es)?$/).filter({ visible: true }).first().click();
+  await page.getByText(chosen[0].query.slice(0, 20)).filter({ visible: true }).first().click();
   await page.getByText(expectedName).filter({ visible: true }).first().waitFor({ timeout: 15000 });
   result.checks.resultVisibleInChat = expectedName;
   await page.screenshot({ path: join(directory, 'codebase-search.png') });
