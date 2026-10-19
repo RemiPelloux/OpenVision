@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { lazyMcpRouting, recreateUnownedConnectedServers, releaseInFlightLegacyClients } from './mcp-routing-customization.mjs';
+import { lazyMcpRouting, recreateUnownedConnectedServers, releaseInFlightLegacyClients, releaseReplacedLegacyClients } from './mcp-routing-customization.mjs';
 import { recoveredMcpRouting } from './mcp-routing-fixture.mjs';
 import { readableApp } from './recovered-source.mjs';
 
@@ -105,5 +105,29 @@ for (const variant of ['desktop', 'glass']) {
     assert.deepEqual(await run(false), [1, 2], 'The in-flight legacy client is deleted again after it connects');
     assert.deepEqual(await run(true), [1, 1], 'A process client is not deleted twice');
     assert.throws(() => releaseInFlightLegacyClients('resetMcpProcessRouting(e) {}'), /reset owner missing|reset contract/);
+  });
+}
+
+for (const variant of ['desktop', 'glass']) {
+  test(`${variant}: a legacy client replaced while connecting is deleted when its connect completes`, async () => {
+    const text = await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8');
+    const patched = releaseReplacedLegacyClients(text);
+    assert.equal(releaseReplacedLegacyClients(patched), patched);
+    const marker = patched.indexOf('replaced legacy client released after connect v1');
+    const statement = patched.slice(patched.indexOf('const openvisionCurrent', marker), patched.indexOf('.catch(() => {});', marker) + 17);
+    const [, provider, server] = /const ([\w$]+) = await this\.getMcpClient\(([\w$]+)\.identifier/.exec(patched.slice(marker - 400, marker));
+    const run = (current, legacy = true) => {
+      const deletes = [], created = { client: legacy ? {} : { getActiveProcessRegistryKey() {} }, deleteClient: async reason => { deletes.push(reason); } };
+      const self = { mcpClientProviders: new Map(current === 'same' ? [['s', created]] : current ? [['s', current]] : []) };
+      new Function(provider, server, statement).call(self, created, { identifier: 's' });
+      return deletes.length;
+    };
+    const processProvider = { client: { getActiveProcessRegistryKey() {} } }, legacyProvider = { client: {} };
+    assert.equal(run('same'), 0, 'the current client is kept');
+    assert.equal(run(undefined), 1, 'a client dropped by the routing reset is deleted');
+    assert.equal(run(processProvider), 1, 'a client replaced by the utility route is deleted');
+    assert.equal(run(legacyProvider), 0, 'a newer legacy replacement keyed by the same identifier is left alone');
+    assert.equal(run(undefined, false), 0, 'process clients are never deleted here');
+    assert.throws(() => releaseReplacedLegacyClients('async createClientInternal(e) {}'), /creation contract/);
   });
 }

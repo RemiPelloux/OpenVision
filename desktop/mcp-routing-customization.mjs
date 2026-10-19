@@ -4,6 +4,7 @@ const marker = '/* OpenVision defer unconfigured MCP routing v1 */';
 const wakeMarker = '/* OpenVision MCP server-status wake v1 */';
 const providerMarker = '/* OpenVision MCP connected-without-client recreate v1 */';
 const pendingMarker = '/* OpenVision MCP reset releases in-flight legacy client v1 */';
+const replacedMarker = '/* OpenVision MCP replaced legacy client released after connect v1 */';
 
 export function mcpRoutingOwner(text) {
   const anchor = 'this.hasLoggedWaitingForExperimentService = !1';
@@ -17,7 +18,7 @@ export function mcpRoutingOwner(text) {
 }
 
 export function lazyMcpRouting(text) {
-  text = releaseInFlightLegacyClients(recreateUnownedConnectedServers(wakeMcpRouting(text)));
+  text = releaseReplacedLegacyClients(releaseInFlightLegacyClients(recreateUnownedConnectedServers(wakeMcpRouting(text))));
   const owner = mcpRoutingOwner(text);
   const method = owner.body.body.find(entry => entry.key?.name === 'initializeAsync');
   if (!method || method.value.params[0]?.type !== 'Identifier') throw new Error('MCP routing initialization changed');
@@ -110,4 +111,26 @@ export function releaseInFlightLegacyClients(text) {
   return text.slice(0, at) + ` ${pendingMarker}
                 const openvisionPendingLegacy = ${provider} && !this.mcpProcessRoutedServerIds.has(${server}) && this.createClientPromises.get(${server});
                 openvisionPendingLegacy && openvisionPendingLegacy.finally(() => ${provider}.deleteClient(${reason}).catch(() => {})).catch(() => {});` + text.slice(at);
+}
+
+// The reset hook above depends on the reset seeing the pending creation; a
+// native run still kept both children once (mcp-config-ownership-ZXltUn: the
+// legacy connect completed after routing latched, no DeleteClient handled).
+// The connect's own completion is the reliable point: when a legacy client
+// finishes connecting but is no longer this server's provider, and the server
+// now has no provider or a process (utility) provider, delete it. Legacy
+// deletes are keyed by identifier, so a newer legacy replacement is left alone;
+// process clients are excluded (their delete could release the replacement's
+// identical utility subscription).
+export function releaseReplacedLegacyClients(text) {
+  if (text.includes(replacedMarker)) return text;
+  const matches = [...text.matchAll(/const ([\w$]+) = await this\.getMcpClient\(([\w$]+)\.identifier, [\w$]+\.name, [\w$]+\),\s*([\w$]+) = this\._serverInfoFromResolvedServer\(\2\),\s*([\w$]+) = await \1\.createClient\(\3\);/g)];
+  if (matches.length !== 1 || !text.includes('getActiveProcessRegistryKey()') || !/\(this\.client = [\w$]+\.client\)/.test(text))
+    throw new Error('MCP client creation contract changed');
+  const [match] = matches, [, provider, server] = match, at = match.index + match[0].length;
+  return text.slice(0, at) + ` ${replacedMarker}
+              const openvisionCurrent = this.mcpClientProviders.get(${server}.identifier);
+              ${provider} !== openvisionCurrent && typeof ${provider}.client?.getActiveProcessRegistryKey !== "function" &&
+                (openvisionCurrent === void 0 || typeof openvisionCurrent.client?.getActiveProcessRegistryKey === "function") &&
+                ${provider}.deleteClient("openvision_replaced_while_connecting").catch(() => {});` + text.slice(at);
 }

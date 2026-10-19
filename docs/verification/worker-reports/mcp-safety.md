@@ -241,3 +241,32 @@ In total, one to two worker sessions. If the failure does not reproduce on a
 clean build here, it may be specific to the coordinator's host. That needs
 their run directories (the `observations.finalProfileChildTimeout` records
 and the project file watcher logs) to decide.
+
+## Resume after stop: integrated-branch regression (19 October 2026)
+
+Base: `origin/ccr-a39d6f13-jurmdv` at `2b61fcbc`, clean rebuild with Node
+24.18.0. The coordinator's deterministic "5 !== 8" did not reproduce here, even
+on the clean build (`simultaneous-zYxik0` passed). Code reading found the cause
+anyway: overlapping reloads of one MCP config file finished out of order, and
+the last to finish replaced the window's server list (a stale revision could
+win). A unit test reproduces it against the recovered method shape. Fixed at
+the owner by queuing reloads per file (`1be9473e`,
+`desktop/mcp-config-reload-customization.mjs`).
+
+The first acceptance pass then failed the default mode once (`ZXltUn`): two
+profile children at startup with no `DeleteClient`. The reset-time hook from
+`e68c9258` had missed the race. Fixed in `d24abbe4`: the legacy connect's own
+completion deletes a client whose route was replaced. Newer legacy replacements
+and process clients are left alone. Unit tests cover all five cases.
+
+Acceptance on the final build, all first-time passes: `--simultaneous` ×5
+consecutive (`n10ncg`, `V2CSfX`, `B4Pzue`, `hYnfnE`, `vZ2R8T`), default
+`DbaFcn`, `--failed-close` `lTAgrt`, `--http` `Ysf9Uw`, `--same-basename`
+`eXwZFV`, and `verify:agent -- --mcp-stdio --mcp-failures` `Bic7oL`. Unit
+tests: `test:mcp-lazy` 63/63.
+
+Recommendation: **promote OV-303 to Verified on Linux x64.** One caveat: the
+coordinator-host "5 !== 8" failure was not reproduced here, so its fix is
+evidenced by code reading, a unit reproduction and passing native runs. A
+confirming run on the coordinator host would close that.
+

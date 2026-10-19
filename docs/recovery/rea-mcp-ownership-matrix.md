@@ -202,6 +202,30 @@ through an owner header.
    once each: `wtmVXP`, `failed-close-WoPFav`, `http-AfqFq3`,
    `same-basename-jxqt7r`.
 
+6. **Overlapping config reloads applied a stale revision.** Each change to a
+   project `.openvision/mcp.json` or the profile `mcp.json` starts a reload. The
+   reload parses the file, awaits client deletion, then replaces the window's
+   server list. Overlapping reloads finished in any order, so the last to
+   finish won. On the coordinator's host, `--simultaneous` failed 5/5
+   ("Re-approved child runs the final project configuration 5 !== 8"). It did
+   not reproduce in this container, even on a clean build (`zYxik0`). The race
+   is reproduced against the recovered method shape in
+   [mcp-config-reload.test.mjs](../../desktop/mcp-config-reload.test.mjs). Owner
+   fix: [config reload serialization](../../desktop/mcp-config-reload-customization.mjs)
+   queues reloads per file, and each still reads the file when it runs.
+7. **Release a replaced legacy client at connect completion.** Fix 5's
+   reset-time hook missed one startup race (`mcp-config-ownership-ZXltUn`: two
+   children, no `DeleteClient`). The legacy connect's own completion now
+   deletes that client when the server has no provider or has a utility
+   provider. A newer legacy replacement and process clients are left alone.
+
+   Acceptance on a clean build of `2b61fcbc` with fixes 6 and 7, all first
+   time: `--simultaneous` ×5 (`n10ncg`, `V2CSfX`, `B4Pzue`, `hYnfnE`,
+   `vZ2R8T`), default `DbaFcn`, `failed-close-lTAgrt`, `http-Ysf9Uw`,
+   `same-basename-eXwZFV`, and `verify:agent -- --mcp-stdio --mcp-failures`
+   `Bic7oL`. The extension now handles `DeleteClient` for the replaced
+   legacy clients in each run.
+
 ### Observations (final build)
 
 | Run (`logs/`) | Result |
