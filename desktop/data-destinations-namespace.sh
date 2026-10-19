@@ -39,5 +39,5 @@ if command -v tcpdump >/dev/null 2>&1; then
 fi
 status=0
 unshare --user --map-user="$uid" --map-group="$gid" "$@" || status=$?
-if [ -n "$capture" ]; then kill "$capture"; wait "$capture" || true; fi
+if [ -n "$capture" ]; then kill "$capture" 2>/dev/null || true; wait "$capture" || true; fi
 exit "$status"

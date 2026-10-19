@@ -194,6 +194,12 @@ None is counted as a pass.
   - `telemetry-verification-uPe0gw`
   - `telemetry-extended-XE8H2u`
 - **Uncommitted findings:** none.
+- **tcpdump (coordinator note):** on this branch `tcpdump -Z root` runs as the
+  namespace's mapped root and does listen. In the final runs, for example
+  `W8SO9C/tcpdump.log`, it listened on `lo` and captured 0 packets, consistent
+  with 0 non-loopback traffic. Without `-Z root`, as user `ov`, it exits
+  immediately and the pcap is empty. The coordinator's tolerant `kill` line
+  (`ffcca576`) is adopted verbatim.
 - **ETA for the remainder:** one task, the second 600 s extended telemetry run
   (about 25 minutes of native time). It fits in a fraction of one worker
   session or quota round, including the rebuild (about 15 minutes).
