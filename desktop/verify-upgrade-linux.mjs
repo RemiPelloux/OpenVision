@@ -44,7 +44,7 @@ const ruleText = `Upgrade rule ${marker}: prefer small functions.`, newerRuleTex
 const previousRuleText = `Rule written by the previous runtime ${marker}.`;
 const chatPrompt = `Reply with Upgrade chat ${marker}. Do not use tools.`, chatReply = `Upgrade chat ${marker} verified.`;
 const extensionId = 'openvision-test.upgrade-fixture', extensionCommand = 'OpenVision Upgrade Fixture: Hello';
-const result = { runId, checkedAt: new Date().toISOString(), N, N1, commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+const result = { runId, xdgRuntimeDir: process.env.XDG_RUNTIME_DIR ? 'session' : 'private temporary', checkedAt: new Date().toISOString(), N, N1, commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
   steps: [], launches: [], interruptions: [], network: {}, errors: [], success: false };
 const step = (name, detail = {}) => { result.steps.push({ name, at: new Date().toISOString(), ...detail }); console.log(`[step] ${name}${Object.keys(detail).length ? ' ' + JSON.stringify(detail) : ''}`); };
 const exists = path => lstat(path).then(() => true, () => false);
@@ -76,7 +76,11 @@ function runStatus(command, args, options = {}) {
     child.on('close', code => resolve({ code, stdout, stderr }));
   });
 }
-const installerEnv = { ...process.env, XDG_DATA_HOME: xdg };
+// Desktop sessions provide a private XDG_RUNTIME_DIR, where the editor puts its
+// IPC sockets; the deep run directory would exceed the socket path limit otherwise.
+const runtimeDir = process.env.XDG_RUNTIME_DIR ?? await mkdtemp('/tmp/ovrun-');
+if (!process.env.XDG_RUNTIME_DIR) await chmod(runtimeDir, 0o700);
+const installerEnv = { ...process.env, XDG_DATA_HOME: xdg, XDG_RUNTIME_DIR: runtimeDir };
 const releases = join(directory, 'releases'), keys = join(directory, 'keys');
 const files = version => { const names = releaseFiles(version); return { archive: join(releases, names.archive), manifest: join(releases, names.manifest) }; };
 
@@ -129,7 +133,7 @@ async function launch(label, { capture = false, from = installRoot, host, data }
     await chmod(executablePath, 0o755);
     record.proxy = await createLoopbackProxy();
   }
-  const env = { ...process.env, XDG_CACHE_HOME: join(directory, 'xdg-cache') }; delete env.ELECTRON_RUN_AS_NODE;
+  const env = { ...process.env, XDG_CACHE_HOME: join(directory, 'xdg-cache'), XDG_RUNTIME_DIR: runtimeDir }; delete env.ELECTRON_RUN_AS_NODE;
   const profileArguments = data ? ['--user-data-dir', join(data, 'local'), '--extensions-dir', join(data, 'local-extensions'),
     '--disable-updates', '--disable-telemetry', '--disable-crash-reporter'] : portableArguments(host);
   record.profile = (data ?? join(host, 'data')).slice(root.length + 1);
@@ -501,6 +505,7 @@ try {
   for (const version of [N, N1]) await rm(files(version).archive, { force: true });
   await rm(join(directory, 'tamper'), { recursive: true, force: true });
   await rm(join(directory, 'xdg-cache'), { recursive: true, force: true });
+  if (!process.env.XDG_RUNTIME_DIR) await rm(runtimeDir, { recursive: true, force: true });
   await save();
   console.log(JSON.stringify({ runId, directory: directory.slice(root.length + 1), success: result.success, steps: result.steps.length,
     interruptions: result.interruptions.map(entry => entry.phase), errors: result.errors.length }, null, 2));

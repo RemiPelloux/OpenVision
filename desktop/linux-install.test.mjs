@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstat, mkdir, mkdtemp, readdir, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises';
-import { hostname, tmpdir } from 'node:os';
+import { hostname } from 'node:os';
 import { join, resolve } from 'node:path';
-import { install, recover, rollback, stateName, status, uninstall } from './linux-install.mjs';
+import { install, recover, rollback, socketPathLimit, stateName, status, uninstall } from './linux-install.mjs';
 import { createRelease, createSigner } from './linux-release-fixture.mjs';
 import { markerName, readProfileFormat } from './profile-format.mjs';
 
@@ -14,7 +14,8 @@ const linux = { skip: process.platform !== 'linux' };
 let directory, signer;
 const releases = {};
 test.before(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'openvision-install-test-'));
+  // A short base: the default editor socket lives in the profile (see socketPathCheck).
+  directory = await mkdtemp('/tmp/ovi-');
   signer = await createSigner(join(directory, 'signer'));
   for (const [version, profileFormat] of [['1.0.0', 1], ['1.1.0', 1], ['1.2.0', 1], ['0.9.0', null]])
     releases[version] = await createRelease({ directory: join(directory, 'releases'), version, signer, profileFormat });
@@ -266,4 +267,13 @@ test('foreign directories and concurrent installers are refused', linux, async (
   await writeFile(join(d.root, 'install.lock'), JSON.stringify({ pid: process.pid, start: stat.slice(stat.lastIndexOf(')') + 2).split(' ')[19] }));
   await assert.rejects(installRelease(d, '1.1.0'), /Another OpenVision installer/);
   await assert.rejects(install({ ...d, archive: releases['1.1.0'].archive, allowedSigners: signer.allowedSigners, root: 'relative/path' }), /absolute path/);
+});
+
+test('an install path too long for the editor IPC socket is refused without XDG_RUNTIME_DIR, before any change', linux, async () => {
+  const c = await context();
+  const deep = join(c.root, 'x'.repeat(Math.max(1, socketPathLimit - c.root.length)));
+  await assert.rejects(installRelease({ ...c, root: deep }, '1.0.0', { env: {} }), /too long for the editor's IPC socket/);
+  assert.deepEqual(await readdir(deep).catch(() => []), []);
+  const allowed = await installRelease({ ...c, root: deep }, '1.0.0', { env: { XDG_RUNTIME_DIR: '/run/user/1000' } });
+  assert.match(allowed.warnings[0], /too long/);
 });

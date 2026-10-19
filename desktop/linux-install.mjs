@@ -28,6 +28,18 @@ const lockName = 'install.lock';
 const runtimeEntries = new Set(['SingletonLock', 'SingletonSocket', 'SingletonCookie']);
 
 const exists = async path => { try { return await lstat(path); } catch (error) { if (error.code === 'ENOENT') return undefined; throw error; } };
+// Without XDG_RUNTIME_DIR the editor places its IPC sockets in the profile
+// (<user-data-dir>/<version>-<type>.sock, type up to six characters); Linux
+// refuses socket paths of 107 bytes or more and the app then fails to start.
+export const socketPathLimit = 107;
+export function socketPath(root, version) { return join(root, 'versions', version, 'electron-host/data/local', '3.21-shared.sock'); }
+export function socketPathCheck(root, version, env = process.env) {
+  const length = Buffer.byteLength(socketPath(root, version));
+  if (length < socketPathLimit) return undefined;
+  const message = `Install path is too long for the editor's IPC socket (${length} >= ${socketPathLimit} bytes) when XDG_RUNTIME_DIR is not set; choose a shorter --root.`;
+  if (!env.XDG_RUNTIME_DIR) throw Error(message);
+  return message;
+}
 const stamp = () => new Date().toISOString().replace(/[:.]/g, '-');
 const dataOf = versionDirectory => join(versionDirectory, 'electron-host/data');
 
@@ -254,7 +266,7 @@ async function withRoot(root, task) {
 // Fresh install or upgrade. The new version receives a migrated copy of the
 // current profile (or of the newest retained profile after an uninstall).
 export async function install({ root = defaultRoot(), archive, manifest, signature, allowedSigners, identity,
-  xdgDataHome, hooks = noHooks, log = () => {} }) {
+  xdgDataHome, hooks = noHooks, log = () => {}, env = process.env }) {
   return withRoot(root, async (root, state) => {
     log('[phase] verify');
     let held = false;
@@ -262,6 +274,7 @@ export async function install({ root = defaultRoot(), archive, manifest, signatu
       onArchiveChunk: async () => { if (!held) { held = true; await hooks.hold('verify'); } } });
     const { version } = release;
     if (version === state.current) throw Error(`OpenVision ${version} is already the current version.`);
+    const warnings = [socketPathCheck(root, version, env)].filter(Boolean);
     const from = state.current, fromDirectory = from && join(root, 'versions', from);
     if (fromDirectory) assertNotRunning(await runningProfile(dataOf(fromDirectory)), `OpenVision ${from}`);
 
@@ -308,7 +321,7 @@ export async function install({ root = defaultRoot(), archive, manifest, signatu
       if (name !== state.current && name !== state.previous) { await rm(join(root, 'versions', name), { recursive: true, force: true }); removed.push(name); }
     await rm(join(root, 'staging'), { recursive: true, force: true });
     const desktopEntry = await writeDesktopEntry(root, xdgDataHome);
-    return { action: from ? 'upgrade' : 'install', root, from, to: version, backup: saved, migration, removed, desktopEntry };
+    return { action: from ? 'upgrade' : 'install', root, from, to: version, backup: saved, migration, removed, desktopEntry, warnings };
   });
 }
 

@@ -123,6 +123,10 @@ How it protects your work:
   version, rollback refuses unless you pass `--keep-previous-data`, which returns
   to that version's own older profile.
 - Quit OpenVision first: the installer refuses while the profile is in use.
+- Desktop sessions set `XDG_RUNTIME_DIR`, where the editor keeps its IPC
+  sockets. Without it the sockets live in the profile, whose path must then stay
+  under the 107-byte Unix socket limit; the installer refuses a `--root` that is
+  too long in that case (and warns when it is long but `XDG_RUNTIME_DIR` is set).
 - Only the current and previous versions are kept; backups are never pruned
   automatically.
 
