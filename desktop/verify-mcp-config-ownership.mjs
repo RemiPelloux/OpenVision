@@ -378,7 +378,11 @@ async function simultaneousEdits() {
     await delay(revision % 2 ? 0 : 40);
   }
   await until('final profile child', async () => open(g).length === 1 && g.connections.length > before.global &&
-    await revisionOf(open(g)[0]) === rounds && listedBy(g, open(g)[0].instance), 60000);
+    await revisionOf(open(g)[0]) === rounds && listedBy(g, open(g)[0].instance), 60000).catch(async error => {
+    result.observations.finalProfileChildTimeout = await Promise.all(g.connections.slice(before.global - 1).map(async item =>
+      ({ ...item, revision: await revisionOf(item), listed: listedBy(g, item.instance) })));
+    throw error;
+  });
   // A changed project configuration changes its approval hash: approval is revoked, the child released, nothing new starts.
   await until('approved project child released after its configuration changed', () => open(p).length === 0, grace);
   await delay(3000);
