@@ -43,6 +43,7 @@ executable mapped).
 | --- | --- | --- | --- |
 | `logs/native-loaded-3wUtyh` | `29cb989e` + uncommitted verifier (committed unchanged as `91a9077c`) | pass, first full run | 630 trace files, 32,529 lines, 248 executions, 133 samples; clean exit, no survivors |
 | `logs/native-loaded-XCwv4L` | `91a9077c` (clean) | pass, repeat run | 619 trace files, 32,910 lines, 247 executions, 133 samples; same 15/2/2/1/41 states; clean exit, no survivors |
+| `logs/native-loaded-7hcCs8` | `2b61fcbc` merged branch (clean) | pass, merged build | 603 trace files, 33,259 lines, 233 executions; same states and triggers for all 61 paths; four host/Chromium paths gain the labels `gpu-process`/`child:bash` from the merged sampler; clean exit |
 
 Earlier short smoke runs (0.2 min idle) found and fixed verifier defects: the
 Explorer step lost `hello.js` in the virtualized tree, the Agent provider dialog
