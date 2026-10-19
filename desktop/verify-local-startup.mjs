@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, writeFile, readdir, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, readdir, readlink, realpath, symlink } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { _electron } from '../tooling/browser.mjs';
 import { createRuntimeOverlay } from './verification-runtime-overlay.mjs';
@@ -8,8 +8,9 @@ import { verificationSettings } from './verification-profile.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 import { changeProjectInSameWindow } from './verify-project-window.mjs';
 import { fileHash } from './import-files.mjs';
+import { linuxSandboxArguments } from './platform.mjs';
 
-assert.equal(process.platform, 'win32', 'This verifier currently covers Windows');
+assert.ok(['win32', 'linux'].includes(process.platform), 'This verifier covers Windows and Linux');
 const root = resolve(import.meta.dirname, '..');
 const directory = await mkdtemp(join(root, 'logs/local-startup-verification-'));
 const profile = join(directory, 'profile'), project = join(directory, 'Startup Project');
@@ -25,11 +26,11 @@ const phase = 'zc.localMode ? _s.AfterRestored : _s.BlockRestore';
 assert.equal(source.split(phase).length, 2, 'Expected production local startup lifecycle');
 if (control) source = source.replace(phase, '_s.BlockRestore');
 const overlay = await createRuntimeOverlay(join(root, 'electron-host'), join(directory, 'host'), new Map([[relative, source]]));
-await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), 'junction');
+await symlink(join(root, 'desktop'), join(directory, 'host/desktop'), process.platform === 'win32' ? 'junction' : 'dir');
 const result = { directory, control, checks: {}, pageErrors: [], success: false,
   identity: { commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
     originalHash, overlay: overlay.records, verifierHash: await fileHash(join(root, 'desktop/verify-local-startup.mjs')) },
-  scope: 'Windows native Explorer, reload and same-window project switching; disposable profile, no AI inference.' };
+  scope: `${process.platform} native Explorer, reload and same-window project switching; disposable profile, no AI inference.` };
 let app, page;
 async function explorer() {
   await enterWorkspace(page);
@@ -49,7 +50,8 @@ try {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   app = await _electron.launch({ executablePath: overlay.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(profile, 'extensions'), '--new-window',
-      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', project] });
+      '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry',
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(join(directory, 'host')) : []), project] });
   result.stderr = '';
   app.process().stderr?.on('data', chunk => { result.stderr = (result.stderr + chunk).slice(-16384); });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
@@ -84,6 +86,16 @@ finally {
     const child = app.process();
     try { await app.close(); result.exitCode = child.exitCode; assert.equal(child.exitCode, 0); }
     catch (error) { result.cleanupError = error.stack; }
+    // Linux lifecycle: the whole process family of this disposable host ends with the app,
+    // identified by executable path rather than PID alone.
+    if (process.platform === 'linux') try {
+      const executable = await realpath(overlay.executable);
+      const survivors = async () => (await Promise.all((await readdir('/proc')).filter(name => /^\d+$/.test(name))
+        .map(async name => await readlink(`/proc/${name}/exe`).catch(() => null) === executable ? Number(name) : null))).filter(Boolean);
+      for (let attempt = 0; attempt < 50 && (result.survivors = await survivors()).length; attempt++) await new Promise(next => setTimeout(next, 200));
+      assert.deepEqual(result.survivors, [], 'No host process may outlive a clean close');
+      result.checks.processFamilyEnded = true;
+    } catch (error) { result.cleanupError ??= error.stack; }
   }
   const rendererLogs = await logs(join(profile, 'logs')).catch(error => { result.logError = error.message; return []; });
   result.rendererLogs = rendererLogs.map(({ path }) => path);

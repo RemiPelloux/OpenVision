@@ -92,6 +92,17 @@ function modelPage(models, options) {
   return { visible, count, enabled, page, offset };
 }
 
+// Without a persisted Secret Service the workbench asks how to store secrets in
+// its own dialog. A modal provider dialog would cover that prompt and make it
+// inert, so Save waited forever (issue #6). Release the dialog first, then
+// report whether the secret reached disk.
+export async function secretStorageNeedsChoice(secrets) {
+  try { await secrets?.resolvedStorageService; } catch {}
+  return secrets?.type === 'in-memory';
+}
+export const sessionOnlySecretMessage = 'Saved for this session only: no Secret Service is available, so the key is not stored on disk. ' +
+  'Start GNOME Keyring or KWallet, or choose "Use weaker encryption", then save the key again.';
+
 export function mountModels(container, bridge) {
   if (!container || container.dataset.mounted) return;
   container.dataset.mounted = 'true';
@@ -166,11 +177,16 @@ export function mountModels(container, bridge) {
     ui.form.onsubmit = async event => {
       event.preventDefault();
       save.disabled = true;
+      let released = false;
       try {
         const headerText = headers.value.trim();
+        const keyValue = clearKey?.checked ? '' : savedProvider && !key.value ? undefined : key.value;
+        if ((keyValue || headerText) && await secretStorageNeedsChoice(bridge.secrets)) {
+          released = true; ui.node.close();
+          status.textContent = 'Waiting for your answer to the keyring prompt ("OS keyring couldn\'t be identified") before saving the key.';
+        }
         const saved = await providers.save({ id: savedProvider?.id, name: name.value, url: url.value,
-          key: clearKey?.checked ? '' : savedProvider && !key.value ? undefined : key.value,
-          headers: headerText || undefined, clearHeaders: clearHeaders?.checked === true });
+          key: keyValue, headers: headerText || undefined, clearHeaders: clearHeaders?.checked === true });
         savedProvider = saved;
         key.value = '';
         headers.value = '';
@@ -178,9 +194,10 @@ export function mountModels(container, bridge) {
         if (discover.checked) await providers.discover(saved.id);
         if (!providers.state.activeId) await providers.activate(saved.id);
         ui.node.close();
-        status.textContent = providers.state.credentialCleanup?.length ? 'Saved. Retired credential cleanup is pending; save again to retry.' : 'Saved';
+        status.textContent = providers.state.credentialCleanup?.length ? 'Saved. Retired credential cleanup is pending; save again to retry.'
+          : released && bridge.secrets.type === 'in-memory' ? sessionOnlySecretMessage : 'Saved';
         render();
-      } catch (error) { ui.status.textContent = error.message; render(); }
+      } catch (error) { (released ? status : ui.status).textContent = error.message; render(); }
       finally { save.disabled = false; }
     };
     name.focus();
@@ -306,16 +323,22 @@ export function mountModels(container, bridge) {
       const selected = [...choices].filter(([, box]) => box.checked).map(([entry]) => ({ ...entry, replace: entry.status !== 'new' }));
       if (!selected.length) { ui.status.textContent = 'Select at least one provider to import.'; return; }
       confirm.disabled = true;
+      let released = false;
       try {
         const keys = await piRequest(bridge, { action: 'keys', digest: source.digest, providers: selected.map(entry => entry.sourceId) });
         if (!keys.ok) throw new Error(keys.error);
+        if (Object.keys(keys.keys).length && await secretStorageNeedsChoice(bridge.secrets)) {
+          released = true; ui.node.close();
+          status.textContent = 'Waiting for your answer to the keyring prompt ("OS keyring couldn\'t be identified") before saving the keys.';
+        }
         const results = await providers.importProviders(selected, new Map(Object.entries(keys.keys)));
         if (request) await piRequest(bridge, { action: 'clear-staged' });
         ui.node.close();
         status.textContent = `Imported from pi: ${results.filter(result => !result.skipped).map(result =>
-          `${result.name} (${result.models} models${result.keyStored ? ', key stored encrypted' : ', no key'})`).join('; ')}.`;
+          `${result.name} (${result.models} models${result.keyStored ? ', key stored encrypted' : ', no key'})`).join('; ')}.` +
+          (released && bridge.secrets.type === 'in-memory' ? ` ${sessionOnlySecretMessage}` : '');
         render();
-      } catch (error) { ui.status.textContent = error.message; render(); }
+      } catch (error) { (released ? status : ui.status).textContent = error.message; render(); }
       finally { confirm.disabled = false; }
     };
   }

@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "description": "Critical native verification suite: acceptance story, clause, verifier script and the platforms the verifier supports. Run with npm run verify:critical. A verifier listed for a platform still needs a native run on that platform; Windows results never prove Linux behaviour and the reverse.",
+  "platforms": ["win32-x64", "linux-x64"],
+  "subsets": {
+    "linux-critical": "OV-903 Linux critical workflows for one distribution/display cell",
+    "wayland-smoke": "Reduced OV-903 smoke set for additional display cells",
+    "release": "Additional story checks re-run for the OV-1004 release matrix"
+  },
+  "entries": [
+    { "id": "package-linux", "story": "OV-903", "clause": "Portable package relocates to a path with spaces and Unicode, keeps its profile inside the package, uses the openvision app ID and installs/removes its launcher entry", "script": "verify:package:linux", "platforms": ["linux-x64"], "subsets": ["linux-critical"] },
+    { "id": "welcome", "story": "OV-903", "clause": "Branded welcome screen and native window", "script": "verify:welcome", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "wayland-smoke", "release"] },
+    { "id": "project", "story": "OV-903", "clause": "Open a project; two-root search, Unicode edit/undo/redo/save and a task", "script": "verify:project", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "wayland-smoke", "release"] },
+    { "id": "explorer", "story": "OV-401", "clause": "Explorer create/rename/move/delete, symlinks, permissions and restore", "script": "verify:explorer", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "release"] },
+    { "id": "development", "story": "OV-403", "clause": "Terminals, Unicode, Ctrl+C, tasks, Node debugger and child cleanup", "script": "verify:development", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "wayland-smoke", "release"] },
+    { "id": "git", "story": "OV-404", "clause": "Worktrees, diff review and conflicts", "script": "verify:git", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "release"] },
+    { "id": "agent", "story": "OV-103", "clause": "Agent stream, read, multi-file edits, command approval/Stop and restart (controlled model fixture)", "script": "verify:agent", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "wayland-smoke", "release"] },
+    { "id": "completion", "story": "OV-603", "clause": "Tab completion accept/undo, cancellation and response failures (controlled fixture)", "script": "verify:completion", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "release"] },
+    { "id": "extensions", "story": "OV-702", "clause": "Extension install, activation, update, disable and removal lifecycle", "script": "verify:extensions", "platforms": ["win32-x64", "linux-x64"], "subsets": ["linux-critical", "release"] },
+    { "id": "linux-secrets", "story": "OV-903", "clause": "API keys use the Secret Service when present and an explicit fallback when absent", "script": "verify:linux-secrets", "platforms": ["linux-x64"], "subsets": ["linux-critical", "wayland-smoke"] },
+    { "id": "review-storage", "story": "OV-103", "clause": "Persisted Agent review storage survives restart and storage failure", "script": "verify:review-storage", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "model-discovery", "story": "OV-201", "clause": "Model discovery from a configured provider (controlled fixture)", "script": "verify:model-discovery", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "model-discovery-host", "story": "OV-201", "clause": "Model discovery in the isolated extension host process", "script": "verify:model-discovery:host", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "mcp-session", "story": "OV-303", "clause": "HTTP MCP session expiry and reinitialization", "script": "verify:mcp-session", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "local-metadata", "story": "OV-501", "clause": "Project metadata stays in .openvision/ for local profiles", "script": "verify:local-metadata", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "local-startup", "story": "OV-401", "clause": "Local startup lifecycle: Explorer, reload restore and same-window project switch without startup errors", "script": "verify:local-startup", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "onboarding", "story": "OV-903", "clause": "Optional account integrations: onboarding stays skippable for local profiles (fixture accounts, no sign-in)", "script": "verify:onboarding", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "account-switch", "story": "OV-903", "clause": "Optional account integrations: disposable-profile account switching (fixture accounts, no sign-in)", "script": "verify:account-switch", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] },
+    { "id": "account-picker", "story": "OV-903", "clause": "Optional account integrations: themed account picker (fixture accounts, no sign-in)", "script": "verify:account-picker", "platforms": ["win32-x64", "linux-x64"], "subsets": ["release"] }
+  ]
+}

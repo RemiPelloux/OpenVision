@@ -23,7 +23,8 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout, manifest, appRoot, portable } = await verificationRuntime(root);
 const measureBaseline = process.argv.includes('--baseline');
 if (measureBaseline && portable) throw Error('Baseline measurements require the original input manifests; omit --portable.');
-if (measureBaseline) assert.equal(process.platform, 'win32', 'The process-memory baseline currently requires Windows');
+// The baseline reads Windows private-byte counters. On Linux, verify:idle-memory measures the process family instead.
+if (measureBaseline) assert.equal(process.platform, 'win32', 'benchmark:native measures Windows process memory; on Linux run npm run verify:idle-memory');
 const baseline = measureBaseline ? { ...await baselineIdentity(manifest), launches: [], samples: [] } : undefined;
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/agent-verification-'));

@@ -10,7 +10,9 @@ product changes.
 | Prepare native inputs | `prepare-source.mjs` · `npm run prepare:desktop` |
 | Build the customized application | `build-source.mjs` · `npm run build:desktop` |
 | Launch | `start.mjs` · `npm start` |
-| Create a portable package | `package-portable.mjs` · `npm run package:windows` or `npm run package:linux` |
+| Create a portable package | `package-portable.mjs` · `npm run package:windows` or `npm run package:linux`; Linux scripts in `linux-package-scripts.mjs` |
+| Verify the Linux package | `verify-package-linux.mjs` · `npm run verify:package:linux` |
+| Run the critical native suite | `critical-suite.json`, `verify-critical.mjs` · `npm run verify:critical` |
 | Check JavaScript syntax | `check.mjs` · `npm run check:desktop` |
 | Calculate feature acceptance | `feature-status.mjs` · `npm run status:features` |
 
