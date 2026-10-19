@@ -355,6 +355,9 @@ try {
 } catch (error) {
   result.failure = error.stack; process.exitCode = 1;
 } finally {
+  // A failure outside a cell (baseline) must not leave the owned app running.
+  const child = session?.app?.process();
+  if (child && child.exitCode === null && child.signalCode === null) await closeOwned(session.app, exits, 'final cleanup').catch(() => {});
   await fixture.close();
   await new Promise(resolve => terminalServer.close(resolve));
   result.finalSurvivors = await survivors(runId, [], 3000);
