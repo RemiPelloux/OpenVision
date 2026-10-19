@@ -354,13 +354,57 @@ export function activeModelIds(storage) {
   return [...routingSnapshot(storage).routes.keys()];
 }
 
+// Display catalog: degrades to account providers when the saved configuration
+// is unreadable. Request routing stays strict (combinedState) and fails loudly.
 export function allCatalog(storage) {
-  return stateCatalog(combinedState(storage));
+  return stateCatalog(combinedState(storage, { tolerant: true }));
 }
 
-function combinedState(storage) {
-  const state = readState(storage.get(storageKey, -1));
+// The display catalog degrades to account providers when the saved
+// configuration is unreadable; the stored value is never changed here. Routing
+// and writers (ModelProviders) still refuse, so nothing is sent to a guessed
+// provider and nothing can overwrite the stored value by accident.
+const reportedUnreadable = new Set();
+function combinedState(storage, { tolerant = false } = {}) {
+  const text = storage.get(storageKey, -1);
+  let state;
+  try { state = readState(text); }
+  catch (error) {
+    if (!tolerant) throw error;
+    state = { version: 1, providers: [], activeId: null };
+    const id = `unreadable-providers:${text?.length ?? 0}:${error.message}`;
+    if (!reportedUnreadable.has(id)) {
+      reportedUnreadable.add(id);
+      console.error('[OpenVision] Saved provider configuration could not be read:', error.message);
+      (globalThis.openvisionProfileRecoveryQueue ??= []).push({ id, kind: 'unreadable-providers', store: 'Provider configuration',
+        title: `Saved provider configuration could not be read (${error.message})`,
+        detail: 'It was left unchanged and custom providers are unavailable; account connections still work. ' +
+          'Settings > Models offers "Back up and reset providers", which keeps the unreadable value in a backup entry.',
+        path: `${storageKey} (application storage)` });
+    }
+  }
   return { ...state, providers: [...state.providers, ...accountProviders(storage)] };
+}
+
+// Recovery for an unreadable configuration: the exact stored text is first
+// saved under a timestamped backup key (acknowledged by SQLite), and only then
+// is the configuration key removed. API-key secrets are left in place.
+export async function backupAndResetProviders(storage, now = Date.now()) {
+  const text = storage.get(storageKey, -1);
+  if (text === undefined) return undefined;
+  let readable = true;
+  try { readState(text); } catch { readable = false; }
+  if (readable) throw new Error('Saved provider configuration is readable; nothing was reset.');
+  const backupKey = `${storageKey}.unreadable.${now}`;
+  storage.store(backupKey, text, -1, 1);
+  await durableApplicationWrite(storage, backupKey, text);
+  if (storage.get(backupKey, -1) !== text) throw new Error('Provider configuration backup could not be verified; nothing was reset.');
+  storage.remove(storageKey, -1);
+  const database = storage.getStorage?.(-1)?.database;
+  if (typeof database?.updateItems === 'function') await database.updateItems({ delete: new Set([storageKey]) });
+  else await storage.flush?.();
+  routeSnapshots.delete(storage);
+  return backupKey;
 }
 
 export function modelPreference(storage, preferences, id) {

@@ -1,4 +1,4 @@
-import { ModelProviders, refreshAccountModels, normalizeBaseUrl, normalizeUserCapabilities } from './openvision-model-providers.js';
+import { ModelProviders, refreshAccountModels, normalizeBaseUrl, normalizeUserCapabilities, backupAndResetProviders } from './openvision-model-providers.js';
 import { completionControl } from './openvision-completion-provider.js';
 import { reasoningSource } from './model-reasoning.js';
 import { planPiImport, describeCapabilities } from './pi-import.js';
@@ -102,6 +102,26 @@ export async function secretStorageNeedsChoice(secrets) {
 }
 export const sessionOnlySecretMessage = 'Saved for this session only: no Secret Service is available, so the key is not stored on disk. ' +
   'Start GNOME Keyring or KWallet, or choose "Use weaker encryption", then save the key again.';
+// The saved configuration is unreadable: explain, keep it unchanged, and offer
+// a reset that first backs up the exact stored value.
+function unreadableProviders(container, bridge, error) {
+  const message = element('p', `Saved provider configuration could not be loaded (${error.message}). ` +
+    'It was left unchanged. Custom providers are unavailable until it is restored or reset.');
+  message.setAttribute('role', 'alert');
+  const status = element('p', '', 'openvision-model-status');
+  status.setAttribute('role', 'status');
+  const reset = element('button', 'Back up and reset providers');
+  reset.onclick = async () => {
+    reset.disabled = true;
+    try {
+      const backup = await backupAndResetProviders(bridge.storage);
+      status.textContent = `Backed up to ${backup}. You can add providers again; API keys must be re-entered.`;
+      container.replaceChildren(); delete container.dataset.mounted; mountModels(container, bridge);
+      container.prepend(status);
+    } catch (resetError) { status.textContent = resetError.message; reset.disabled = false; }
+  };
+  container.append(message, reset, status);
+}
 
 export function mountModels(container, bridge) {
   if (!container || container.dataset.mounted) return;
@@ -110,7 +130,7 @@ export function mountModels(container, bridge) {
   const status = element('p', '', 'openvision-model-status');
   status.setAttribute('role', 'status');
   try { providers = new ModelProviders(bridge); }
-  catch { container.append(element('p', 'Saved provider configuration could not be loaded.')); return; }
+  catch (error) { unreadableProviders(container, bridge, error); return; }
   let busy = false;
   const accounts = createAccountSettings(undefined, async () => {
     await refreshAccountModels(bridge.storage, true); providers.publishModels();

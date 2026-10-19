@@ -25,15 +25,29 @@ export class LocalRules {
 
   ownsKey(key) { return typeof key === 'string' && key.startsWith(prefix); }
 
-  read() {
-    return [profileScope, workspaceScope].flatMap(scope =>
-      this.keys(scope).filter(key => this.ownsKey(key)).flatMap(key => {
+  // Readable rules plus every unreadable record. Unreadable records are never
+  // changed here; they are reported so startup can load the readable rules.
+  inspect() {
+    const items = [], unreadable = [];
+    for (const scope of [profileScope, workspaceScope])
+      for (const key of this.keys(scope).filter(key => this.ownsKey(key))) {
         const raw = this.storage.get(key, scope);
-        if (raw === undefined) return [];
-        const item = parseRule(raw, key.slice(prefix.length));
-        if (scopeOf(item) !== scope) throw new Error('A saved rule has an unexpected scope; its original data was preserved.');
-        return [item];
-      })).sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '') || a.id.localeCompare(b.id));
+        if (raw === undefined) continue;
+        try {
+          const item = parseRule(raw, key.slice(prefix.length));
+          if (scopeOf(item) !== scope) throw new Error('A saved rule has an unexpected scope; its original data was preserved.');
+          items.push(item);
+        } catch (error) { unreadable.push({ key, scope, error: error.message }); }
+      }
+    items.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '') || a.id.localeCompare(b.id));
+    return { items, unreadable };
+  }
+
+  // Strict read for writes: refuse to hide or overwrite an unreadable saved state.
+  read() {
+    const { items, unreadable } = this.inspect();
+    if (unreadable.length) throw new Error(unreadable[0].error);
+    return items;
   }
 
   keys(scope) {

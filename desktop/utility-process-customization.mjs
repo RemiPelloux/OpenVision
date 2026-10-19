@@ -71,9 +71,35 @@ export function isolateUtilityProcessRuns(text) {
   return `${runMarker}\n${text.slice(0, field)}\nopenvisionRuns = 0;\n${text.slice(field)}`;
 }
 
+// OV-1004: Electron may emit a utility process's "exit" before the app-level
+// "child-process-gone" for the same kill. Releasing every listener on exit then
+// dropped the crash listener first, so onCrash never fired: a killed shared
+// process showed no "restart the application" prompt. The crash listener now
+// lives in its own store until the owner's next run starts (or the owner is
+// disposed): at most one per owner, and a later run never sees it because it is
+// released before that run registers its own listeners.
+const crashMarker = '/* OpenVision utility process crash listener v1 */';
+export function keepCrashListenerUntilNextRun(text) {
+  if (text.includes(crashMarker)) return text;
+  if (!text.includes(marker) || !text.includes(runMarker)) throw Error('Utility crash listener requires listener ownership and run identity');
+  const { base, method } = utilityProcessContract(text);
+  const listeners = method(base, 'registerListeners'), source = text.slice(listeners.start, listeners.end);
+  const gone = source.indexOf('"child-process-gone"');
+  const add = source.lastIndexOf(`${field}.add(`, gone);
+  if (gone < 0 || add < 0 || source.indexOf('"child-process-gone"', gone + 1) !== -1 ||
+      source.slice(add, gone).split(`${field}.add(`).length !== 2 || /;\s*$/.test(source.slice(add, gone)))
+    throw Error('Utility process crash listener changed');
+  const body = listeners.value.body.start + 1 - listeners.start;
+  const edited = source.slice(0, body) + `\n${crashMarker}\nthis.openvisionCrashListeners.clear();` +
+    source.slice(body, add) + 'this.openvisionCrashListeners.add(' + source.slice(add + `${field}.add(`.length);
+  text = text.slice(0, listeners.start) + edited + text.slice(listeners.end);
+  const fieldAt = base.body.start + 1;
+  return text.slice(0, fieldAt) + '\nopenvisionCrashListeners = this._register(new Te());' + text.slice(fieldAt);
+}
+
 export async function installUtilityProcessOwnership(root) {
   const path = join(root, 'source/app/out/main.js'), before = await readFile(path, 'utf8');
-  const after = isolateUtilityProcessRuns(ownUtilityProcessListeners(before));
+  const after = keepCrashListenerUntilNextRun(isolateUtilityProcessRuns(ownUtilityProcessListeners(before)));
   if (before === after) return;
   const backup = join(root, 'backups/utility-process', `${digest(before)}.js`);
   await mkdir(dirname(backup), { recursive: true });

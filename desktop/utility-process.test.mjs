@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { parseJavaScript } from '../tooling/dependencies.mjs';
-import { ownUtilityProcessListeners, isolateUtilityProcessRuns, installUtilityProcessOwnership } from './utility-process-customization.mjs';
+import { ownUtilityProcessListeners, isolateUtilityProcessRuns, installUtilityProcessOwnership, keepCrashListenerUntilNextRun } from './utility-process-customization.mjs';
 
 // An authored contract fixture; native acceptance executes the actual owner,
 // Electron forks and window lifecycle in verify-utility-listeners.mjs.
@@ -79,4 +79,23 @@ test('run identity refuses a drifted service-name match or a missing listener ow
   for (const input of [fixture.replace('r.name === n', 'r.serviceName === n'), fixture.replace('serviceName: t,', 'serviceName: n,'),
     fixture.replace('`${this.configuration.type}-${this.id}`', '`${this.configuration.type}`')])
     assert.throws(() => isolateUtilityProcessRuns(ownUtilityProcessListeners(input)), /service identity changed/);
+});
+
+test('the crash listener survives exit until the next run starts, so a crash after exit still reports', () => {
+  const owned = isolateUtilityProcessRuns(ownUtilityProcessListeners(fixture));
+  const output = keepCrashListenerUntilNextRun(owned);
+  parseJavaScript(output, { ecmaVersion: 'latest' });
+  assert.equal(keepCrashListenerUntilNextRun(output), output);
+  assert.equal(output.split('this.openvisionCrashListeners.add(').length, 2, 'only the child-process-gone listener moves');
+  assert.equal(output.split('this.openvisionProcessListeners.add(').length, 10);
+  assert.ok(output.includes('openvisionCrashListeners = this._register(new Te());'));
+  const listeners = output.slice(output.indexOf('registerListeners(e, t, n) {'));
+  assert.ok(listeners.indexOf('this.openvisionCrashListeners.clear();') < listeners.indexOf('this.openvisionCrashListeners.add('),
+    'a new run releases the previous run\'s crash listener before registering its own');
+  // Exit releases the ordinary listeners only.
+  const ended = output.slice(output.indexOf('onDidExitOrCrashOrKill() {'));
+  assert.ok(ended.slice(0, ended.indexOf('}')+40).includes('this.openvisionProcessListeners.clear();'));
+  assert.ok(!ended.slice(0, 300).includes('openvisionCrashListeners'));
+  assert.throws(() => keepCrashListenerUntilNextRun(fixture), /requires listener ownership/);
+  assert.throws(() => keepCrashListenerUntilNextRun(owned.replace('"child-process-gone"', '"other-event"')), /crash listener changed/);
 });

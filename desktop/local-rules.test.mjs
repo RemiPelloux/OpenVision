@@ -97,6 +97,20 @@ test('malformed and failed storage writes preserve prior rule data', async () =>
   assert.throws(() => rules.read(), /unsupported format/);
 });
 
+test('one unreadable rule does not hide readable rules and stays unchanged', async () => {
+  const storage = storageFixture(), rules = new LocalRules(storage);
+  const kept = await rules.add('Kept', 'Readable rule');
+  await rules.add('Broken', 'Will be damaged');
+  const key = [...storage.values.keys()].find(name => !name.endsWith(kept) && name.startsWith('openvision.user-rule.v1.'));
+  storage.values.set(key, '{broken');
+  const { items, unreadable } = rules.inspect();
+  assert.deepEqual(items.map(item => item.id), [kept]);
+  assert.deepEqual(unreadable.map(entry => [entry.key, /invalid JSON/.test(entry.error)]), [[key, true]]);
+  assert.throws(() => rules.read(), /invalid JSON/, 'writes still refuse to hide unreadable data');
+  await assert.rejects(rules.add('New', 'Text'), /invalid JSON/);
+  assert.equal(storage.values.get(key), '{broken');
+});
+
 test('rule cache and completion wait for the native storage acknowledgement', async () => {
   const storage = storageFixture(), rules = new LocalRules(storage);
   const { channel } = storage.getStorage(0).database, save = channel.call;
@@ -169,7 +183,7 @@ for (const variant of ['desktop', 'glass']) {
     const patched = localUserRules(source, variant);
     assert.equal(localUserRules(patched, variant), patched);
     const body = extractClass(patched, variant);
-    const prior = patched.replace('/* OpenVision local user rules v3 */', '/* OpenVision local user rules v2 */')
+    const prior = patched.replace('/* OpenVision local user rules v4 */', '/* OpenVision local user rules v3 */')
       .replace(body, `class extends ${variant === 'desktop' ? 'Se' : 'ot'} { oldService() {} }`);
     const upgraded = localUserRules(prior, variant);
     assert.equal(extractClass(upgraded, variant), body);
