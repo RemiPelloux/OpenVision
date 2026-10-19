@@ -202,14 +202,15 @@ already contain working features; this score measures complete acceptance gates,
 not the percentage of code implemented or decompiled. Since 18 October, Windows,
 macOS, other-Linux and live-provider clauses are tracked in dedicated platform/live
 stories, and other stories are judged on Linux x64
-([re-scope](docs/planning/eta-and-definition-of-done.md#10-re-scope--18-october-2026)).
+([re-scope](docs/planning/eta-and-definition-of-done.md#re-scope-baseline-v3)).
 
-The next product target is **36/44 verified stories (at least 80%)**, together
-with the critical development workflow. The largest remaining areas are live
-Agent coverage, retrieval/indexing ownership, next-edit prediction, independent
-source rebuilds, upgrade/rollback verification, remote development and a native
-macOS release. The Windows portable package is delivered in this preview, and
-Linux x64 now builds, packages and passes its native suite locally.
+The next product target is **36/44 verified stories (at least 80%)**. All worker
+branches are merged into `main` (clean build, 13 unit suites passing). The
+[status page](docs/planning/eta-and-definition-of-done.md) lists every remaining story
+with its gap, its gate (Linux work, owner decision or external machine/balance) and the
+ETA: about 3 more worker rounds for the Linux work, with a Linux ceiling of 39/44. Owner
+decisions are tracked in [#5](https://github.com/RemiPelloux/OpenVision/issues/5); the
+Windows, macOS, other-Linux and live-provider stories in issues #1–#4.
 
 The [feature roadmap](docs/planning/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.

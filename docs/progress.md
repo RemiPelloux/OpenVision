@@ -1,6 +1,6 @@
 # OpenVision progress, percentages and delivery gates
 
-Updated **16 October 2026**. Start here for the feature backlog, recovery results
+Updated **19 October 2026**. Start here for the feature backlog, recovery results
 and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
@@ -12,7 +12,7 @@ separates the 3.24.18 reference archive, 3.21.13 runtime base and preview.7 down
 
 ## Product feature coverage
 
-The [acceptance ledger](planning/completion-sprints.md) owns the 42 stories and their
+The [acceptance ledger](planning/completion-sprints.md) owns the 44 stories and their
 statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
@@ -24,96 +24,21 @@ statuses. Run `npm run status:features` to recalculate this count.
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
 Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603 and OV-602 are Verified under it. See
-[ETA §10](planning/eta-and-definition-of-done.md#10-re-scope--18-october-2026); the branch-by-branch status and ETA at the 19 October stop are in [§11](planning/eta-and-definition-of-done.md#11-stop-checkpoint--19-october-2026-1600-utc).
+the [status page](planning/eta-and-definition-of-done.md#re-scope-baseline-v3), which also lists [every story's gap and ETA](planning/eta-and-definition-of-done.md#story-status-and-gaps).
 
 Partial stories include working implementations with unfinished checks. This is
 not a percentage of broken features, missing code or original-product parity.
 Recovery work alone does not promote a feature to Verified. Original hosted
 accounts, billing and cloud agents are excluded from this ledger.
 
-17 October: [Linux language matrix](recovery/rea-language-matrix-linux.md) (OV-402 stays Partial).
-18 October: [Linux extension lifecycle](recovery/rea-extension-lifecycle-linux.md) (OV-702 stays Partial).
 
-## Critical-first delivery plan
+## Status, gaps and ETA
 
-The [ETA, remaining work and Definition of Done](planning/eta-and-definition-of-done.md)
-summarizes points, blocking gate types (Linux, Windows, macOS, live provider) and
-the story, release and project DoD as of 17 October 2026.
-
-The [16 October Linux reliability session](verification/linux-session-2026-10-16.md)
-summarizes the fixes, evidence, behavior changes and open gates below. All are
-Linux x64 source-build evidence; the ledger stays at 6/42 and preview.7 is unchanged.
-[Provider import from pi and user-specified capabilities](verification/provider-import-linux.md)
-adds an explicit import, manual capabilities and a text-only image gate; Linux x64 only, no story promoted.
-The Linux [Explorer matrix](recovery/rea-explorer-linux.md) passes every OV-401 clause and fixes hidden symlink cycles (Linux x64 only); OV-401 stays Partial for its Windows cells.
-[Autocomplete acceptance safety](recovery/rea-autocomplete-acceptance-linux.md) adds stale-range, wrong-tab, external-change, multi-cursor, CRLF and typing-burst checks and fixes full-accept undo grouping; Linux x64 only, OV-603 stays Partial.
-
-The [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
-preserves retry/history ownership after cancellation or disposal failure and
-resumes cleanup without repeating completed steps.
-[Review record deletion and post-commit cleanup](recovery/rea-agent-review-deletion.md)
-follows it on Linux x64 only; OV-103 status and points are unchanged.
-The [Agent I/O-fault report](recovery/rea-agent-io-faults.md) fixes saved-file loss on a full
-volume (Linux x64 evidence); OV-103 status and points are unchanged.
-The [profile I/O-fault report](recovery/rea-profile-io-faults.md) fixes lost provider keys and torn memories on a full volume (Linux x64); OV-103/301 stay Partial.
-The Linux [MCP ownership matrix](recovery/rea-mcp-ownership-matrix.md) fixes STDIO children surviving window close and profile switch; OV-303 stays Partial.
-The Linux [provider failure matrix](recovery/rea-provider-failure-matrix.md) verifies certificate expiry/hostname, mid-stream, capability and restart cells, and fixes unfinished-stream automatic repeats; its follow-up saves an unresolved failure, Try again/Resume and dismissal across restart. OV-102/204 stay Partial.
-
-[Agent context budgets](performance/agent-context-linux.md) measure four fixed workloads and stop a looping model's 14 repeated requests (now 2) and closed chats' open requests (Linux x64, fixtures); OV-1001 stays Partial.
-[Idle and long-session memory](performance/idle-memory-linux.md) inventories the process family, attributes the cold-start Node peak to a js-debug fixture scan and releases killed terminals' shells (Linux x64); OV-1003 stays Partial.
-
-The [Agent interruption report](recovery/rea-agent-interruption.md) covers Stop, close and abrupt
-exit during outstanding writes/tools (Linux x64 evidence); OV-103 status and points are unchanged.
-
-The latest [review-cleanup follow-up](recovery/rea-agent-review-removal.md)
-preserves retry/history ownership after cancellation or disposal failure and
-resumes cleanup without repeating completed steps. It advances P0 OV-103 within
-the existing status and points; the preview.7 portable payload is unchanged.
-[Rule discovery isolation](recovery/rea-rules-isolation.md) closes one OV-302
-producer in source (Linux native pass); OV-302 stays Partial.
-[Global path isolation](recovery/rea-global-path-isolation.md) moves user skills, commands,
-hooks and third-party user folders into the profile (Linux native pass); OV-302 stays Partial.
-Its follow-up moves agent data, plans, worktrees, sandbox, plugins and `argv.json` into the profile home; a full native session in two installations leaves HOME untouched (Linux x64). OV-302 stays Partial.
-The [project-data destination trace](recovery/rea-project-data-destinations.md) maps indexing/file-sync/upload owners and blocks hosted Quick Edit reranking and file sync after native capture (Linux x64); OV-501 is Partial.
-
-The [ranked feature roadmap](planning/roadmap.md#ranked-rea-implementation-and-verification-work)
-owns story order, dependencies and point estimates. The following groups link to
-that queue; detailed acceptance clauses remain in the
-[sprint ledger](planning/completion-sprints.md).
-
-| Order | Remaining scope | Provisional points |
-| --- | --- | ---: |
-| P0 | Agent editing/recovery, chat retry/Stop, provider errors, configuration and MCP ownership, rules durability, terminal cleanup, data destinations, telemetry and release safety | 81 |
-| P1 | RAM, context/request efficiency, UI responsiveness, Explorer, language tools, autocomplete, subagents, reasoning, imports, extensions and authenticated MCP | 87 |
-| P2 | Native/WASM dependency disposition, rebuildable host/addons, owned helper replacements and a clean independent build | 47 |
-| P3 | Relevant retrieval, incremental indexing, index recovery and next-edit prediction | 42 |
-| P4 | Windows/Linux completion, macOS, updates and rollback | 39 |
-| P5 | Remote development and specialized image/browser/computer modes | 26 |
-| **Total** | **36 unfinished acceptance stories** | **322** |
-
-Points measure provisional complexity, not completion or time. Do not calculate
-progress from completed points: no equivalent completed-point baseline exists.
-Native Agent header/body timeout recovery and explicit live retry now pass. A
-real Codex Easy `gpt-6.1-sol` run also passes the native two-file edit review,
-retry, Undo/Redo and restart path; remaining editing/storage-failure checks and
-other chat/provider failure classes stay open. See the
-[delivery gates and dependencies](planning/roadmap.md#critical-first-backlog-and-eta) and
-[release claims](verification/release-claims.md) before treating source work as a shipped app.
-
-The latest [storage ownership report](engineering/storage-write-ownership.md)
-connects a native model-discovery failure to the newer recovered storage owner.
-Its pending/in-flight correction passes focused tests and scoped Windows Quick
-Edit/provider regressions. The [native Undo/Redo follow-up](recovery/rea-agent-undo-retry.md)
-passes keyboard snapshot failures and retry guidance on the rebuilt source.
-Physical storage faults, remaining menu/group failure combinations and platform
-checks remain. This is progress within existing stories, with
-no change to the acceptance percentage or backlog points.
-
-The latest [transactional review-storage follow-up](recovery/rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
-also restores the previous in-memory snapshot value after a failed write and
-retries the initial snapshot before Undo restores a review. Its **58/58** focused
-Agent checks and **26/26** build-integrity checks pass; physical I/O, outstanding
-write/tool termination and the remaining OV-103 combinations remain open.
+The [status, gaps, ETA and Definition of Done](planning/eta-and-definition-of-done.md)
+page lists every story with its gate (Linux work, owner decision or external), the
+finishing rounds and the Linux ceiling (39/44). The dated 16–19 October delivery
+log that used to be here is archived in
+[planning history](planning/history/checkpoints-2026-10.md#progress-delivery-log-1619-october-2026).
 
 ## Recovery coverage by version
 

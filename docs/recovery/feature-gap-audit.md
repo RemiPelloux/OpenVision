@@ -165,7 +165,7 @@ verification evidence separately.
 | Which input was recovered, and where is its code? | [Bundle index](../../curs_source/modules/3.24.18/README.md) for browsing; [publication manifest](../../curs_source/manifest.json) for paths, hashes, representations and retries. |
 | Where should a product change be implemented? | [Repository layout](../engineering/repository-layout.md), [desktop entry points](../../desktop/README.md) and the maintained implementation links below. |
 | What counts as fully Verified? | [42-story baseline](../planning/feature-acceptance.json) and [acceptance ledger](../planning/completion-sprints.md). |
-| What should happen next, and how large is it? | [Ranked roadmap](../planning/roadmap.md#ranked-rea-implementation-and-verification-work) owns priorities/points; [ETA](../planning/remaining-work-estimates.md) links delivery gates. |
+| What should happen next, and how large is it? | [Ranked roadmap](../planning/roadmap.md#ranked-rea-implementation-and-verification-work) owns priorities/points; [ETA](../planning/history/checkpoints-2026-10.md#remaining-work-estimates-16-october-2026) links delivery gates. |
 | How do the percentages relate? | [Progress dashboard](../progress.md) separates feature acceptance, version-specific recovery and the Rust plan. |
 | Which behavior was actually tested or released? | Linked investigation reports, [release claims](../verification/release-claims.md#source-additions-after-preview6) and the [preview.7 package report](../verification/portable-preview7.md). |
 | What will move to Rust? | [Component audit](../planning/rust/rust-component-audit.md) and [acceptance map](../planning/rust/rust-acceptance-map.md); the overlapping migration points are separate from this backlog. |
@@ -199,7 +199,7 @@ Only completed, linked evidence contributes to this register. The
 [preview.7 package checks](../verification/portable-preview7.md) add scoped
 forwarding and handled-error evidence; they do not close process-wide log or
 cross-window durability gates.
-The [points-based ETA](../planning/remaining-work-estimates.md) therefore remains
+The [points-based ETA](../planning/history/checkpoints-2026-10.md#remaining-work-estimates-16-october-2026) therefore remains
 **322 points across 36 unfinished stories**, with **6/42 Verified (14.29%)**.
 
 ## Measured recovery coverage

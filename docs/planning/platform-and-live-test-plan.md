@@ -1,6 +1,6 @@
 # Platform and live test plan (baseline v3)
 
-Created 18 October 2026 with the [baseline v3 re-scope](eta-and-definition-of-done.md#10-re-scope--18-october-2026).
+Created 18 October 2026 with the [baseline v3 re-scope](eta-and-definition-of-done.md#re-scope-baseline-v3).
 Every clause below was moved out of a Linux-judged story into one of four stories in
 the [ledger](completion-sprints.md). Each one needs a real machine, a funded
 provider or an official account, so it cannot be closed from the Linux host.

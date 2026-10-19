@@ -8,7 +8,7 @@ Baseline v3 (18 October re-scope) moves platform and live clauses into OV-901,
 OV-902, OV-905 and OV-205, so the denominator is **44 acceptance stories** and **36
 must be fully Verified**. Current ledger: **18 Verified, 11 Partial, 14 Planned, 1
 Unknown**, or **40.91%**. Eighteen additional stories must pass to reach the
-numeric target. See [ETA §10](eta-and-definition-of-done.md#10-re-scope--18-october-2026).
+numeric target. See [status page](eta-and-definition-of-done.md#re-scope-baseline-v3).
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 

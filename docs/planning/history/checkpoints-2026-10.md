@@ -1,0 +1,665 @@
+# Planning checkpoints, 16–19 October 2026 (archive)
+
+This archive keeps the dated checkpoint record verbatim. For the current status, gaps, ETA and Definition of Done, see [status, ETA and Definition of Done](../eta-and-definition-of-done.md).
+
+Contents: [ETA checkpoints §1–§12](#eta-checkpoints-1617-october-to-19-october-2026) · [Remaining-work estimates of 16 October](#remaining-work-estimates-16-october-2026) · [Progress delivery log](#progress-delivery-log-1619-october-2026)
+
+## ETA checkpoints, 16–17 October to 19 October 2026
+
+
+Checkpoint: **17 October 2026**, after the 16–17 October Linux sessions
+([session report](../../verification/linux-session-2026-10-16.md)). Ledger owner:
+[completion sprints](../completion-sprints.md); order owner: [roadmap](../roadmap.md).
+
+**18 October re-scope:** the current counts (18/44 Verified, baseline v3) and the
+re-scope are in [§10](#10-re-scope--18-october-2026); the state of every branch and the ETA at the
+19 October stop are in [§11](#11-stop-checkpoint--19-october-2026-1600-utc); the merge-all checkpoint and finishing queue are in [§12](#12-merge-all-checkpoint--19-october-2026). §1–§9 keep the
+17–18 October record as written.
+
+Per [`objective.md`](../../../objective.md), the ETA is expressed as **acceptance
+stories, provisional complexity points and blocking gates**, never calendar or
+engineer time. Points are provisional sizes of whole stories: they only "burn
+down" when a story is promoted to Verified, so a session that closes many gates
+can leave the point total unchanged.
+
+### 1. Where we are
+
+| Measure | Value |
+| --- | --- |
+| Accepted local-feature stories | 42 |
+| Verified | **6** (OV-101, OV-105, OV-201, OV-202, OV-404, OV-601), **14.29%** |
+| Partial / Planned / Unknown | 23 / 12 / 1 |
+| Unfinished points | **322** (P0 81 · P1 87 · P2 47 · P3 42 · P4 39 · P5 26) |
+| 80% milestone | 34 Verified: **28 more promotions** |
+| Full objective | 42 Verified plus every release gate and a verified distributable |
+| Latest download | 0.2.0-preview.7. **None of the 16–17 October fixes are in it.** |
+
+What the two sessions changed: more than 25 reproduced defects were fixed in the
+source, each with a native Linux verifier (agent edits, reviews, interruptions,
+provider failures, profile storage, MCP, rules/skills/home isolation, data leaks,
+shutdown, Explorer, language rename, autocomplete undo, agent request waste,
+terminal release). No story was promoted, because every Partial story still has
+at least one clause that needs another platform, a live provider or work not yet
+done.
+
+### 2. What blocks promotion: four kinds of gates
+
+| Gate type | What it needs | Stories mainly blocked |
+| --- | --- | --- |
+| **L: Linux work** | Code plus native verification on this host | Most P1–P3 and P5 stories, and the remaining P0 sub-cases |
+| **W: Windows rerun** | The Windows x64 test host recorded in earlier evidence; this Linux host cannot prove Windows | Almost every Partial story re-verified after the October fixes; OV-403 exit 134 and the worker `0xC0000005`; OV-901 |
+| **M: macOS** | A real Mac (none available), or an explicit decision not to claim macOS | OV-902, plus every story whose claimed platforms include macOS |
+| **$: Live provider** | Codex Easy balance (all three keys currently return HTTP 403 `INSUFFICIENT_BALANCE`) | OV-102, OV-103 (live edit on Linux), OV-104, OV-203, OV-204, OV-602, OV-1001 (live budgets) |
+
+### 3. Remaining work by story (ranked)
+
+Status after the 17 October merges. "Next" lists the concrete remaining gates.
+
+### P0 — protect work, make Agent dependable · 81 points
+
+| Rank | Story | Pts | Done on Linux this round | Next (gate types) |
+| ---: | --- | ---: | --- | --- |
+| 1 | OV-103 Agent editing | 8 | Full-disk/partial-write durability, interruption matrix, review deletion/group/menu cleanup | Live edit on Linux ($); Windows rerun of the new verifiers (W); power loss/EIO not producible (documented) |
+| 2 | OV-102 Chat, Stop, retry | 8 | Failure persists across restart; no automatic stream repeats; loop retry capped | Live GPT/DeepSeek/Grok retry/Stop/history/fork ($); W |
+| 3 | OV-204 Provider failures | 5 | Cert expiry/hostname, malformed/mid-stream, capability, balance/quota messages | Live cells ($); W |
+| 4 | OV-302 Config isolation | 8 | Rules, skills, hooks and home writers moved into the profile; two installations | `.bash_history` written to HOME on graceful shell exit (L, policy); daemon/MCP discovery reads (L); W |
+| 5 | OV-303 MCP ownership | 5 | Window-close and profile-switch child release | Simultaneous project+profile edits, HTTP same-name, same-named folders (L); W |
+| 6 | OV-301 Rules and memories | 5 | Atomic memories, acknowledged profile writes | Read-only-profile UX (L); W |
+| 7 | OV-403 Terminals/tasks/shutdown | 8 | pty fd inheritance, pty host on quit, debuggee journal, killed-terminal release | Windows exit 134 and worker crash (W) |
+| 8 | OV-501 Project-data destinations | 13 | Native canary capture; Quick Edit rerank leak and file sync blocked | Merge the telemetry fix so TypeScript type acquisition stops (L, see §6); W; M |
+| 9 | OV-1005 Telemetry | 8 | 40 → 0 automatic destinations (branch `telemetry-ov1005-blocked`) | Fix its regression (project customizations hidden), then merge (L); signed-in workloads; W; M |
+| 10 | OV-1004 Failure/release safety | 13 | — | Runs last: secret/permission/crash matrix across all accepted stories |
+
+### P1 — daily development and efficiency · 87 points
+
+| Rank | Story | Pts | Done this round | Next |
+| ---: | --- | ---: | --- | --- |
+| 11 | OV-1003 Idle RAM | 8 | Process inventory, idle/long-session verifier, killed-terminal release; 1.9 GiB cold peak explained (js-debug scan in a verifier layout) | Re-measure once the always-local idle loop is fixed (185 hosted calls/min, the largest idle owner); renderer history bounds (L); W; M |
+| 12 | OV-1001 Agent context | 8 | Budgets set and enforced; loop retries and closed-chat requests fixed | Live token budgets ($); closed-chat history still retained in memory (L) |
+| 13 | OV-1002 Responsive editing/chat | 8 | — | Frame/input latency, transcript virtualization measurements (L) |
+| 14 | OV-401 Explorer | 5 | **Every clause passes on Linux**; symlink-cycle fix | Windows cells only (W) |
+| 15 | OV-402 Language tools | 8 | Pinned Linux matrix; stale-rename corruption fixed | Linux C/C++ (clangd) setup; Python/Go/Rust decision; W |
+| 16 | OV-603 Safe autocomplete | 8 | Acceptance safety matrix; full-accept undo fixed | Intermittent multiline Tab; IME, split editors (L); W |
+| 17 | OV-602 Useful autocomplete | 8 | — | Live quality across languages ($) |
+| 18 | OV-104 Subagents | 8 | — | Live overrides and child status ($) |
+| 19 | OV-203 Model reasoning | 5 | Manual capability overrides and pi import | Live advertised efforts ($) |
+| 20 | OV-701 Import/restore | 5 | pi provider import | Interrupted import, I/O rollback matrix (L, W) |
+| 21 | OV-702 Extension lifecycle | 8 | — | Install/update/uninstall, native addons (L, W) |
+| 22 | OV-304 Authenticated MCP | 8 | — | OAuth consent/refresh/expiry, secret storage (L) |
+
+### P2 — independently buildable · 47 points
+
+OV-801 native/WASM inventory (13), OV-802 buildable host and addons (13),
+OV-803 owned helper replacements (13), OV-804 clean independent build (8). All
+are **L** work plus pinned toolchains. Until OV-804 passes, every build depends
+on the prepared 3.21.13 recovery input, so **no release can be called
+independent**.
+
+### P3 — retrieval and prediction · 42 points
+
+OV-502 relevant retrieval (13), OV-503 incremental indexing (8), OV-504 index
+recovery and resources (8), OV-604 next-edit prediction (13). Mostly **L**;
+quality measurements need live models ($).
+
+### P4 — distribution · 39 points
+
+OV-901 Windows release (8, W), OV-903 Linux completion (5, L: distribution,
+display and architecture matrix), OV-902 macOS (13, M), OV-904 updates and
+rollback (13, L+W). Each depends on OV-804.
+
+### P5 — broader modes · 26 points
+
+OV-703 SSH/WSL/containers (13), OV-704 image/browser/computer modes (13).
+
+### 4. ETA
+
+| Target | Promotions still needed | Points to burn | Hard prerequisites |
+| --- | ---: | ---: | --- |
+| Nearest promotions | OV-401 first, then OV-403, OV-303, OV-603 | 26 | A Windows rerun (W); for OV-403, the exit-134 diagnosis |
+| P0 complete | 10 | 81 | Live balance ($), Windows reruns (W), the telemetry regression fix; OV-1004 last |
+| 80% milestone | 28 | depends on which 28 | P0 + P1 + most of P2/P4; impossible without W, and without M unless macOS is dropped from claims |
+| Full objective | 36 | 322 | All of the above, plus OV-804 independent build, packaged and verified distributables, and accurate docs |
+
+Honest reading: on Linux alone, with no live balance, **no story can currently
+be promoted**. Every Partial story has a W or $ clause. Closing Linux gates still
+matters (it removes defects and makes each later promotion a rerun rather than
+new work), but the burn-down starts only when W and $ are available.
+
+### 5. Definition of Done
+
+### Story DoD (promotion to Verified)
+
+1. Every clause of the story in [completion-sprints.md](../completion-sprints.md)
+   passes **on every platform the story claims**.
+2. Each clause has a committed, rerunnable verifier or test, and a dated evidence
+   report with run IDs, exact commands, and observations kept separate from
+   inferences.
+3. Native checks use the real UI, files, storage and processes. Controlled
+   fixtures are labeled; live clauses use real authenticated providers.
+4. Failure, cancel, retry, restart, concurrency and cleanup paths are covered
+   where the clause involves them.
+5. No known open defect in the story's scope; residual exclusions are explicitly
+   accepted in the ledger.
+6. Performance-related stories meet numeric budgets that were set from baselines
+   before any optimization.
+7. Ledger, roadmap, progress and README are updated; `status:features` and
+   `docs:check` pass; the change is committed, pushed and the remote hash is
+   confirmed.
+
+### Release DoD (a downloadable version)
+
+1. Built from the commit being released, with a clean rebuild; after OV-804, built
+   without the prepared recovery input.
+2. Packaged artifacts pass the critical native suite on each claimed
+   platform/architecture.
+3. Zero automatic outbound destinations in the extended telemetry capture.
+   Data-destination capture shows project content goes only to configured
+   providers.
+4. Secret scan of the artifacts and docs; no credentials, logs or profile data.
+5. Release notes and [release claims](../../verification/release-claims.md) say
+   exactly which fixes are packaged and which are source-only; checksums are
+   published.
+6. Install, upgrade, rollback and uninstall keep user data (OV-904); signed where
+   advertised.
+7. No GitHub Actions or hosted CI; local packaging is reproducible.
+
+### Project DoD ("perfect")
+
+All 42 stories Verified on their claimed platforms; OV-1004 passes across all of
+them; the release DoD holds for every claimed platform; critical verifiers have
+no unexplained flakes; numeric budgets are enforced by verifiers; and the docs
+describe exactly the delivered product.
+
+### 6. Everything still needed (beyond code)
+
+**External prerequisites (owner: you)**
+
+1. **Codex Easy balance**, to unblock every live clause. The commands are listed
+   in [live provider Linux](../../verification/live-provider-linux.md).
+2. **A Windows x64 test session** to rerun the new verifiers after the October
+   fixes, and to diagnose exit 134 and the worker crash with stderr captured.
+3. **macOS**: provide a Mac, or decide formally not to claim macOS. That removes
+   OV-902 from scope and the macOS cells from other stories.
+4. **Signing**, if signed releases will be advertised: a Windows Authenticode
+   certificate, an Apple Developer ID and notarization.
+5. **Product decisions**:
+   - parent-folder rule inheritance (currently off);
+   - the terminal Claude/Codex status setting (off by default);
+   - Python/Go/Rust: ship language servers or declare them syntax-only;
+   - which Linux distributions, displays and architectures to claim.
+
+**Known engineering items not yet closed**
+
+- Telemetry branch `telemetry-ov1005-blocked` (commit `5ea2d86a`) hides
+  project-level skills, commands and rules in Customize. A bisect confirmed it.
+  Fix, then merge; that also stops TypeScript type acquisition (OV-501), and
+  likely the always-local idle loop (OV-1003).
+- Integrated or Agent shells write `~/.bash_history` into HOME on graceful exit
+  (OV-302 policy).
+- `verify:utility-listeners` fails on Linux (never verified there).
+- Timing-sensitive checks: causes found and fixed in the harnesses (18 October), see [verifier stability](../../verification/verifier-stability-linux.md).
+- Startup whole-tree scans: `cursorsandbox --preflight-only` ×5 and ripgrep ×30;
+  per-root config polling every 5 s; a system-wide process scan every 10 s.
+- Closed chats keep their history in renderer memory.
+
+**Process**
+
+- Merge parallel work one branch at a time, with a clean rebuild and a native
+  run after each merge. Two of this round's regressions were only caught that
+  way.
+- Keep the shared recovery input on disk, not in `/tmp`: a reboot wiped the
+  first copy.
+- Run heavy native verifiers with less parallel load, or mark them load-sensitive.
+
+### 7. Verification of this checkpoint (merged `main`, 17 October 2026, Linux x64)
+
+Clean rebuild from the prepared 3.21.13 input, run sequentially with no other
+native workload.
+
+- **Unit and integration suites (28 commands):** all pass, 0 failures. This
+  includes `test:desktop` 171/171, `test:agent-review` 95/95,
+  `test:provider-storage` 72/72, `test:completion` 43/43 and `test:shutdown` 34/34.
+- **Native, passed first time:** `verify:explorer`, `verify:agent-context-budget`,
+  `verify:shutdown-cycles`, `verify:agent -- --review-recovery`,
+  `verify:provider-matrix`.
+- **Native, passed on rerun after one intermittent failure:**
+  `verify:language-matrix`; `verify:completion -- --acceptance` (the known
+  intermittent multiline Tab); `verify:data-destinations` (an unexplained clean
+  app quit during idle indexing, seen once before). These are recorded as open
+  flakiness, not as passes on first attempt.
+- **Native, known failure:** `verify:global-paths` reports only `~/.bash_history`,
+  which was already present before these merges (OV-302 item in §6). Project and
+  profile customizations are listed correctly.
+- **Data destinations, without the held telemetry fix:** `api2.cursor.sh`,
+  `registry.npmjs.org` and the spellcheck download remain. That is expected until
+  `telemetry-ov1005-blocked` is fixed and merged.
+
+### 8. Update — 18 October 2026 (Linux x64, source build)
+
+Merged and verified on `main`:
+
+| Story | Result |
+| --- | --- |
+| OV-1005 / OV-501 | The telemetry branch is merged. The hidden Customize project scope came from a feature flag that only Cursor's servers used to switch on; it is now set locally. `verify:data-destinations` shows 0 non-provider requests (18 before); `verify:telemetry:extended` shows 0 non-user destinations over 600 s idle. The TypeScript registry gate is closed on Linux. The always-local idle loop (about 185 hosted calls per minute) is gone. |
+| OV-302 | `~/.bash_history` is resolved. Agent state shells have history switched off in all 7 bundled copies. The user's own terminal history is allowed only when attributed. `verify:global-paths` passes. |
+| OV-702 | All 16 lifecycle cases pass. Fixed: replacement of protected bundled extensions, misleading wrong-architecture addon errors, and junk left behind by manifests without a publisher. |
+| OV-1002 | Streaming and the transcript were already batched and virtualized. A 12.4 MB model list is no longer rewritten into stored settings on every save (record 13.7 MB → 1.3 MB). `verify:responsiveness` failed one timing budget under host load (small-file typing p95 365.9 > 360 ms) and passed on rerun. |
+
+Combined verification:
+
+- Clean rebuild, then 12 suites with 0 failures (`test:desktop` 197/197).
+- Native checks passed first time: `verify:global-paths`, `verify:data-destinations`, `verify:telemetry`, `verify:extensions`, `verify:shutdown-cycles`, `verify:development`, `verify:agent -- --review-recovery`.
+- `verify:responsiveness` passed on rerun.
+- Ledger unchanged at 6/42: every story still has W, M or $ gates.
+
+The §6 items for the telemetry regression and `.bash_history` are closed. New open
+items:
+
+- flag drift: 206 server-controlled feature-flag defaults differ from the anonymous server response, and have not been assessed;
+- `verify:model-menu:large` uses a stale selector;
+- closed chats keep their history in renderer memory;
+- intermittent verifiers (stabilization in progress).
+
+### 9. Pause checkpoint — 18 October 2026
+
+[Verifier stability](../../verification/verifier-stability-linux.md) is merged. Five
+intermittent checks are fixed in the harness; none was a product defect and no
+budget was raised. Wall time is cut for focused runs: interruption `write-kill`
+499 s → 50 s, multiline Tab 65 s → 21 s, responsiveness smoke 330 s → 224 s
+(`--full` keeps the original datasets).
+
+Verified on merged `main`: suites with 0 failures (`test:desktop` 198/198), plus
+`verify:completion -- --acceptance`, `verify:language-matrix`,
+`verify:agent-interruption -- --cases=write-kill` and `verify:model-menu:large`.
+
+Still open: `stream.lastChunkToPaintMs` failed once in smoke mode (1789 > 1000);
+a keystroke during the async Tab accept could be misplaced (untested).
+
+The ledger is unchanged: **6/42 Verified, 36 stories and 322 points remaining.**
+Work is paused here.
+
+### 10. Re-scope — 18 October 2026
+
+**Why the percentage barely moved before this checkpoint.** A story counted only when
+every clause passed on every platform it claimed. Almost every Partial story had at
+least one Windows, macOS or live-provider clause, and none of those could be run from
+the Linux host. So the 16–18 October sessions fixed more than 25 defects and promoted
+nothing. That was the rule working as written, not a lack of progress.
+
+**Owner decision (baseline v3, `feature-acceptance.json` version 3).** Platform and
+live clauses move out of every story into four dedicated stories:
+
+| Story | Owns |
+| --- | --- |
+| OV-901 Windows (repurposed) | Install plus every Windows clause of every story; exit 134 and worker `0xC0000005`; Windows ports of Linux-only verifiers (`verify:explorer`, `verify:shutdown-cycles`, `verify:global-paths`, `verify:mcp-config-ownership`, `verify:data-destinations`, `verify:telemetry:extended`, `verify:idle-memory`, `verify:responsiveness` filesystem probe) |
+| OV-902 macOS (repurposed) | Every macOS clause; removed entirely if the owner decides not to claim macOS |
+| OV-905 Linux matrix (new) | Other distributions, real GNOME/KDE/KWallet sessions, Ubuntu desktop AppArmor policy, ARM64 |
+| OV-205 Live providers and accounts (new) | Every live GPT/DeepSeek/Grok clause and optional signed-in account workloads; needs Codex Easy balance |
+
+Other stories are promoted when all remaining clauses pass on Linux x64. The
+denominator grows from 42 to **44**; 80% needs **36**. The exact commands for the
+four platform/live stories are in the [platform and live test plan](../platform-and-live-test-plan.md).
+
+**Result so far:** OV-702 is Verified (Ubuntu/X11 runs `qQAjRu` and `zdi9V9` on merged
+`main`, after Arch/Wayland `B5m8yT`). Ledger: **7/44 Verified (15.91%)**.
+
+**The audit after the re-scope.** Eight read-only agents audited all 36 unfinished
+stories clause by clause. Only OV-401, OV-403 and OV-702 were Linux-complete. Every
+other story still has real Linux work or an owner decision, not just platform gates.
+The rerun of OV-401 and OV-403 in an Ubuntu 24.04/X11 container then found four new
+failures, so those two stay Partial until fixed:
+
+- `test:shutdown`: `pty-exec.test.mjs` "missing executable" returns status `null`, not 1 (Ubuntu's `/bin/sh` is dash).
+- `verify:explorer`: `externalEdit.probesPerRootPerSecond` 4.33 exceeds the budget of 4.
+- `verify:project:lifecycle`: hot-exit restore of unsaved editors timed out.
+- `verify:shutdown-cycles` (`PYZ4Nx`): terminal history not restored in cycles 3 and 7.
+
+Passed first time in the same rerun: `test:desktop`, `test:extensions`,
+`verify:extensions`, `verify:project`, `verify:project:scale`, `verify:development`.
+
+**Linux implementation sessions (started 18 October).** One isolated cloud session per
+story cluster, each on its own branch. Each builds from the pinned input, verifies
+natively under Xvfb as a non-root user, and writes a report under
+`docs/verification/worker-reports/`. Branches are merged one at a time, each followed
+by a clean rebuild and a native run.
+
+| Branch | Stories | Main Linux work |
+| --- | --- | --- |
+| `ov/agent-chat-failures` | OV-102, OV-204 | Fixture Fork/history verifier, full-duration fixture timeouts, custom-header secret matrix, oversized stream cell |
+| `ov/agent-editing` | OV-103 | Stale review bar, "Edited" on unapplied write, Undo All resume, full-volume Reject/Undo, orphan temp sweep |
+| `ov/subagent-reasoning` | OV-104, OV-203 | Child status label, child and parent retry/resume, profile subagents |
+| `ov/rules-memories` | OV-301 | Read-only profile dialog, Linux memory-filesystem verifier, first-request rule fixture, two-window runs |
+| `ov/config-isolation` | OV-302 | Editor/daemon MCP discovery from HOME, plugin ownership, gated roots, migration check, second packaged installation |
+| `ov/mcp-safety` | OV-303 | Agent MCP failure modes on Linux, HTTP cleanup port, simultaneous edits, HTTP same-name, same basename |
+| `ov/mcp-auth` | OV-304 | OAuth trace, OAuth fixture verifier, secret storage, precedence, invalid config, watcher disposal |
+| `ov/language-tools` | OV-402 | In-flight edits, rename race on Linux, large-project budgets, Linux clangd |
+| `ov/import-restore` | OV-701 | Stronger native import checks, realistic profile, interrupted/ENOSPC/EROFS rollback, exclusions |
+| `ov/autocomplete-safety` | OV-603 | Keystroke during async accept, split editors, IME, latency budgets |
+| `ov/autocomplete-quality` | OV-602 | Multi-language quality corpus and scorer, live-mode editor acceptance (fixture dry run) |
+| `ov/agent-context` | OV-1001 | Fork workload, closed-chat renderer release, live usage capture, reasoning replay pinning |
+| `ov/idle-resources` | OV-1003 | `verify:utility-listeners` on Linux, inert proclist scan, numeric idle budgets, startup traversal dedup |
+| `ov/responsiveness` | OV-1002 | `lastChunkToPaintMs` cause, incremental-edit proof, scroll p95 |
+| `ov/data-telemetry` | OV-501, OV-1005 | Extra capture workloads, loaded-addon inventory, clean-quit flake, 206 drifted gates |
+| `ov/linux-completion` | OV-903 | Package verifier, X11 cell, headless Wayland, never-run verifiers, critical-suite runner |
+| `ov/release-safety` | OV-1004 | Secret scanner, corrupt-state, crash-recovery and authority matrices, recovery guide |
+| `ov/updates-rollback` | OV-904 | Signed release pipeline, side-by-side install/upgrade/rollback, native upgrade verifier |
+| `ov/native-inventory` | OV-801 | Linux native/WASM inventory, loaded roles, dispositions, esbuild.wasm evidence |
+| `ov/upstream-host` | OV-802 | Upstream Electron 42.10.0 host option, rebuilt storage/terminal/watcher addons, provenance |
+| `ov/helper-replacement` | OV-803 | Measured helper ranking, crepectl/cursorsandbox contracts, tree-chunk and file_service harnesses |
+| `ov/retrieval-index` | OV-502, OV-503, OV-504 | Owned FTS5 retrieval, quality corpus, incremental indexer, durable storage, native verifiers |
+| `ov/modes-inventory` | OV-704, OV-604 prep | Specialized-mode inventory and probe, image input matrix, next-edit decision paper |
+| `ov/remote-ssh` | OV-703 | Pinned and branded remote server, SSH verifier against a local sshd |
+| `ov/ubuntu-rerun-fixes` | OV-401, OV-403 | The four Ubuntu/X11 failures above, plus the OV-403 Linux clause table |
+
+Each session applies conservative defaults where an owner decision is needed and
+lists them in its report. None of those defaults is final until the owner accepts it.
+
+**Owner decisions still needed** (none blocks the Linux sessions):
+
+1. macOS: claim it (needs a Mac) or drop it (removes OV-902).
+2. OV-804: where the application JavaScript comes from. Publishing the recovered
+   3.21.13 source as an OpenVision-owned input is a distribution-rights question;
+   without it, "independent build" cannot pass on Linux even after every native is rebuilt.
+3. OV-604 next-edit prediction: support it through the configured provider, or record an exclusion.
+4. OV-502: whether lexical (FTS5) retrieval is enough for the release, or semantic embeddings are required.
+5. Python/Go/Rust: ship language servers or declare them syntax-only.
+6. Whether a story may be promoted while a story it depends on is still Partial (for example OV-702 depends on OV-402).
+7. Update strategy and signing-key custody for OV-904.
+8. Which drifted server-controlled features (from the 206) ship on by default.
+
+**Update, 19 October.** All 25 sessions stopped within an hour on the shared account
+usage limit, and only 3 pushed partial work. They now run 5 at a time, pushing after
+each task. `ov/ubuntu-rerun-fixes` fixed the four Ubuntu/X11 failures above (one
+product defect in the pty wrapper, three harness defects). After a coordinator rebuild
+and a first-time rerun, OV-401 and OV-403 are Verified. Ledger: **9/44 Verified (20.45%)**. Then `ov/subagent-reasoning` (OV-104, OV-203) merged and reran first-time: **11/44 (25.00%)**. Then `ov/rules-memories` (OV-301): **12/44 (27.27%)**. Then `ov/config-isolation` (OV-302): **13/44 (29.55%)**. Then `ov/agent-chat-failures` (OV-102, OV-204): **15/44 (34.09%)**. Then `ov/import-restore` (OV-701): **16/44 (36.36%)**. Then `ov/autocomplete-safety` and `ov/autocomplete-quality` (OV-603, OV-602): **18/44 (40.91%)**.
+
+### 11. Stop checkpoint — 19 October 2026, 16:00 UTC
+
+The owner asked to stop all workers. All 7 running workers finished their current step,
+wrote a "Status at stop" section in its report, committed and pushed. No worker is
+running. The coordinator branch is `ccr-a39d6f13-jurmdv`. Merged branches were rebuilt
+from clean and rerun natively on Ubuntu 24.04/X11 before any promotion.
+
+**Ledger: 18/44 Verified (40.91%).** The 80% target needs 36.
+
+### Story status by branch
+
+Merged and Verified on Linux x64 (coordinator rerun, first-time passes):
+
+| Stories | Branch |
+| --- | --- |
+| OV-702 | (rerun only) |
+| OV-401, OV-403 | `ov/ubuntu-rerun-fixes` |
+| OV-104, OV-203 | `ov/subagent-reasoning` |
+| OV-301 | `ov/rules-memories` |
+| OV-302 | `ov/config-isolation` |
+| OV-102, OV-204 | `ov/agent-chat-failures` |
+| OV-701 | `ov/import-restore` |
+| OV-603, OV-602 | `ov/autocomplete-safety`, `ov/autocomplete-quality` |
+
+Merged, checks pass, held:
+
+| Story | Branch | Held for |
+| --- | --- | --- |
+| OV-103 | `ov/agent-editing` | Owner acceptance of residuals ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
+| OV-402 | `ov/language-tools` | Owner decision on host-class budgets (13.0 s > 10 s symbols, 259 > 250 ms p95) and Python/Go/Rust syntax-only (#5) |
+| OV-1001 | `ov/agent-context` | Owner decision on long-chat retention held by React/Solid (#5) |
+| OV-1003 | `ov/idle-resources` | Slope 15.7 > 15 MiB in 1 of 3 runs; `verify:startup-traversal` 1,394 > 1,300 listings on the merged code (`OLDKis`) |
+| OV-303 | `ov/mcp-safety` (merged to `8085e882`; head `c4e00504`) | `--simultaneous` fails 5/5 on the merged clean build (`5 !== 8`, re-approved child runs an old config); passes on the worker's incremental build. Suspected interaction with a later merge |
+
+Pushed, not merged yet (each needs a coordinator merge plus clean rerun):
+
+| Story | Branch head | State at stop | Remaining |
+| --- | --- | --- | --- |
+| OV-304 | `ov/mcp-auth` `f61c5acc` | All modes pass ×2; 7 defects fixed | Merge and rerun; recommended for promotion |
+| OV-903 | `ov/linux-completion` `28144458` | Issue #6 fixed; package, X11/Wayland cells, `verify:critical` added | Explorer budget and `mcp-session` to recheck on the merged code; #8 branding |
+| OV-501, OV-1005 | `ov/data-telemetry` `4b0750ca` | `verify:data-destinations` 14/14; 2 privacy leaks fixed | One 600 s `telemetry:extended` rerun |
+| OV-801 | `ov/native-inventory` `3e6d5ae9` | Inventory, loaded roles, dispositions, esbuild.wasm rebuilt byte-identical | One `verify:native-inventory` rerun; owner accepts defaults |
+| OV-904 | `ov/updates-rollback` `5b7cfe71` | Signed release, install/upgrade/rollback; `verify:upgrade:linux` passed once | Second native run |
+| OV-1002 | `ov/responsiveness` `57a7f892` | Stream delivery defect fixed (12.2 s → 0.65–0.85 s) | Incremental-edit and scroll budgets; frame budgets fail on a no-GPU host |
+| OV-502–504 | `ov/retrieval-index` `a87a7b4c` | Owned FTS5 index, quality corpus (recall@5 0.947), incremental indexer and worker lifecycle, unit-tested | Fix one customization anchor, rebuild with Node 24.18.0, then 3 native verifiers |
+| OV-1004 | `ov/release-safety` `02fcc1dd` | Secret scanner, recovery guide; 6 product fixes with unit tests, including **security**: workspace tasks auto-ran on folder open without a prompt (`task.allowAutomaticTasks` now off by default), and a dropped shared-process crash listener (an OV-1003 owner) | Fix the corrupt-state baseline ("Provider Name" field not found); asserting runs of the 3 matrices ×2 on the final build; release-safety evidence doc (about 1 session) |
+
+Not started (paused at the usage limit, no commits): OV-704 and OV-604 preparation
+(`ov/modes-inventory`), OV-703 (`ov/remote-ssh`), OV-802 (`ov/upstream-host`) and
+OV-803 (`ov/helper-replacement`). OV-804 waits for an owner decision. The platform and
+live stories are tracked in issues [#1–#4](https://github.com/RemiPelloux/OpenVision/issues).
+
+### ETA
+
+The work is limited by the shared usage quota: about 5 worker sessions per quota window.
+
+| Work | Worker sessions |
+| --- | --- |
+| Finish the pushed branches above | about 8–11 (retrieval 2–3, MCP regression 1–2, the rest about 1 each or less) |
+| The four never-started groups | about 6–8 |
+| Coordinator merge and clean reruns | between rounds |
+
+That is roughly **3–4 quota rounds** of Linux work. Done fully, it could add up to 21
+Linux stories (all except OV-804 and the four platform/live stories), for **39/44 on
+Linux**. That clears the 36 target only once the owner decisions in #5 are taken.
+OV-205, OV-901, OV-902 and OV-905 need balance, a Windows host, a Mac or other Linux
+machines. OV-804 needs the source-distribution decision.
+
+### Issues opened during this run
+
+- [#6](https://github.com/RemiPelloux/OpenVision/issues/6) keyring-less provider save hang (fixed on `ov/linux-completion`)
+- [#7](https://github.com/RemiPelloux/OpenVision/issues/7) Quick Edit Ctrl+A
+- [#8](https://github.com/RemiPelloux/OpenVision/issues/8) Cursor branding after a `--glass` start
+- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **security**: the Agent terminal saves its launch environment (secrets) in plaintext
+- [#10](https://github.com/RemiPelloux/OpenVision/issues/10) custom subagent body never reaches the child request
+
+### Lessons for the next run
+
+- Run no more than 5 sessions at once, and push after every task: 25 at once exhausted the quota in under an hour.
+- Native verifiers need gnome-keyring with a plaintext login keyring, xdotool, imagemagick, sqlite3 and iproute2, as user `ov` under `xvfb-run` and `dbus-run-session`.
+- A clean rebuild needs `build/source-build.json`, `build/namespace-journal.json`, `source/` and `electron-host/` removed. The build needs Node 24.18.0.
+- Re-test every merge combination: two regressions (`--simultaneous` and startup traversal) appeared only after branches were combined.
+
+### 12. Merge-all checkpoint — 19 October 2026
+
+At the owner's request, every pushed worker branch is now merged into `ccr-a39d6f13-jurmdv`:
+
+- `ov/data-telemetry`, `ov/mcp-safety` (head `c4e00504`), `ov/mcp-auth`, `ov/linux-completion`,
+  `ov/native-inventory`, `ov/updates-rollback`, `ov/responsiveness`, `ov/release-safety` and `ov/retrieval-index`;
+- plus everything merged earlier.
+
+**Merge-time resolutions:**
+- The Linux package scripts are now kept in one module, `portable-layout.mjs`. It holds:
+  - the `ov/linux-completion` launcher (UTF-8 locale fix) and desktop entry (Exec quoting, ownership marker) and its uninstaller;
+  - the `ov/updates-rollback` installer.
+- `installRetrievalTool` is merged but **not wired into the build**. Its extension-activation anchor still refuses to patch, as its worker reported. Wiring it is the first retrieval task.
+- `package.json` script lists keep the union of both sides' test files.
+
+**Verification of the merged tree:**
+- clean build passes;
+- 13 unit suites pass with 0 failures (`test:desktop` 222, `test:agent-review` 112, `test:provider-storage` 78, `test:mcp-lazy` 58 and others);
+- the installer, package-script and profile-format tests pass 30/30;
+- `docs:check` is clean.
+
+Native reruns of the newly merged stories happen as each worker finishes its remaining items on top of this tree. Promotion still requires a coordinator clean rerun.
+
+**Ledger: 18/44 Verified.** No promotion yet from these merges: each story still has a recorded native gap (§11).
+
+### Finishing queue
+
+The owner asked that all work be finished. Workers run 5 at a time, each starting from the merged tree. The usage quota is near its weekly warning.
+
+| Round | Workers and remaining work |
+| --- | --- |
+| 1 (running) | `ov/mcp-safety`: `--simultaneous` regression. `ov/release-safety`: matrices and evidence. `ov/mcp-auth`: security issue #9 (secrets in terminal state) and #10 (subagent body). `ov/data-telemetry`: one 600 s run. `ov/native-inventory`: one rerun |
+| 2 | `ov/responsiveness`: edit and scroll budgets. `ov/retrieval-index`: anchor fix, then 3 native verifiers. `ov/linux-completion`: recheck the explorer budget and `mcp-session` on the merged tree, plus #8 branding. `ov/idle-resources`: startup-traversal budget and slope. `ov/updates-rollback`: second upgrade run |
+| 3 | Never-started groups: `ov/modes-inventory` (OV-704, OV-604 decision paper), `ov/remote-ssh` (OV-703), `ov/upstream-host` (OV-802), `ov/helper-replacement` (OV-803). Also #7 (Quick Edit Ctrl+A) |
+
+**ETA:** about 3 rounds of 5 sessions. Rounds 1–2 should finish the 14 stories in progress. Round 3 covers the 4 never-started groups, which may each need a second session.
+
+**What can be verified:** if the owner decisions in [#5](https://github.com/RemiPelloux/OpenVision/issues/5) are taken, Linux can reach **about 35–39/44**. OV-205, OV-901, OV-902, OV-905 and OV-804 stay with the owner: balance, a Windows host, a Mac, other Linux machines and the source-distribution decision.
+
+**Merged into `main` (owner request, 19 October 2026).** `main` was fast-forwarded to the
+integration branch (`b4f52a56..2b61fcbc`, 211 commits). The finishing rounds keep merging
+into `ccr-a39d6f13-jurmdv`, and `main` is fast-forwarded after each verified merge. The 20
+fully merged `ov/*` branches could not be deleted from the agent environment (the git
+proxy answers 403 to deletions). The owner deletes them with
+`git push origin --delete <branches>`.
+
+## Remaining-work estimates, 16 October 2026
+
+
+Updated 16 October 2026 against the acceptance ledger,
+[latest documentation/source reconciliation](../../recovery/feature-gap-audit.md#latest-documentation-and-source-reconciliation),
+[source-to-gap map](../../recovery/feature-gap-audit.md#source-index-to-implementation-gaps),
+[build-integrity correction](../../engineering/runtime-build-integrity.md) and
+[Agent recovery evidence](../../recovery/rea-agent-review-recovery.md).
+The [native keyboard follow-up](../../recovery/rea-agent-undo-retry.md) closes the
+scoped snapshot-failure history/guidance defect within OV-103's existing points;
+menu/group failures, physical faults and active-write/tool interruption remain.
+The [critical-first roadmap](../roadmap.md#critical-first-backlog-and-eta) owns the
+ordered story list, estimates, dependencies and acceptance gates.
+
+The [current working-tree build gate](../../recovery/feature-gap-audit.md#current-build-and-pending-work)
+records the initial failure and exact-hash recovery. Repeat builds and scoped
+native provider-header checks pass in preview.7; remaining physical-failure,
+cross-window, provider and platform gates retain the existing points below.
+
+The 16 October transactional review-storage follow-up now covers source-level
+cache rollback and initial snapshot-write retry. Its **58/58** Agent tests,
+production build and **26/26** build-integrity checks pass. The remaining storage
+gates are physical I/O/full-volume behavior, termination during outstanding
+writes/tools and the broader OV-103 failure matrix; these do not change the
+ledger or points below.
+
+| Order | Remaining work | Stories | Complexity points |
+| --- | --- | ---: | ---: |
+| P0 | Data safety, tool authority, isolation, privacy and failure checks | 10 | 81 |
+| P1 | RAM/request efficiency, project/language/completion workflows and integration lifecycle | 12 | 87 |
+| P2 | Native dependency ownership and independent clean-machine builds | 4 | 47 |
+| P3 | Retrieval, incremental indexing, recovery and next-edit prediction | 4 | 42 |
+| P4 | Complete distribution, update/rollback and native platform coverage | 4 | 39 |
+| P5 | Remote development and specialized modes | 2 | 26 |
+| **Current unfinished acceptance scope** | | **36** | **322** |
+
+These are provisional scope estimates, not promised delivery dates. The ledger
+remains **6/42 fully Verified (14.29%)**, with **28 additional stories** needed
+for the 80% target. The 322 points cover the entire unfinished scope; a reliable
+point estimate for the 80% subset requires choosing its stories and dependencies.
+Account work packages overlap this scope and must not be added twice.
+
+Windows startup and native Agent workflows passed after the
+[build-integrity correction](../../engineering/runtime-build-integrity.md#verification-scope).
+The earlier `urlmon.dll` failure remains historical evidence; successful app
+containment does not identify or repair its OS-level cause. Control-plane
+[HTTP](../../performance/control-plane-http-resources.md),
+[STDIO](../../performance/control-plane-stdio-resources.md) and
+[lifecycle](../../performance/control-plane-mcp-lifecycle.md) checks have separate
+bounded-resource evidence.
+
+**Next: finish Agent editing/recovery and its chat transport dependency.** Close
+the [remaining review gates](../../recovery/rea-agent-review-recovery.md#remaining-acceptance),
+other chat interruption/history and provider-error cases, and the remaining
+[physical storage-failure matrix](../../engineering/storage-write-ownership.md#verification).
+[Full-duration native header/body timeout and explicit live retry](../../recovery/rea-agent-timeout-recovery.md#full-duration-native-follow-up)
+now pass; those subcases no longer await verification.
+Then follow P0/P1 in the roadmap, including configuration durability, MCP
+ownership and measured long-session resources. The Windows payload is refreshed
+in [preview.7](../../verification/portable-preview7.md); the remaining release/platform
+acceptance gates stay open.
+
+Official-account GPT-6 eligibility and missing platform environments remain
+specific open gates. The earlier API balance failure does not establish a
+current universal blocker: later [live API retry checks](../../recovery/rea-agent-retry-history.md)
+passed. Native Linux now has [scoped x64 evidence](../../verification/linux-verification.md);
+native macOS and the remaining Linux matrix are still open. Work independent
+of those gates continues.
+
+The [latest performance fixes](../../performance/autocomplete-stream-performance.md) are implemented
+and locally verified in source; preview.7 packages the current runtime without
+promoting a whole story. The [Rust rewrite](../rust/rust-roadmap.md) has a separate baseline of
+36 planned packages / 195 provisional points, replacing its earlier 99-point
+outline. Its [component audit](../rust/rust-component-audit.md) separates Rust ownership
+from retained engines and compatibility unknowns. Discovery can start early;
+production cutover requires parity, migration and independent-build gates. These
+points overlap existing contracts and do not add to the 322-point feature total.
+
+## Progress delivery log, 16–19 October 2026
+
+### Critical-first delivery plan
+
+The [ETA, remaining work and Definition of Done](../eta-and-definition-of-done.md)
+summarizes points, blocking gate types (Linux, Windows, macOS, live provider) and
+the story, release and project DoD as of 17 October 2026.
+
+The [16 October Linux reliability session](../../verification/linux-session-2026-10-16.md)
+summarizes the fixes, evidence, behavior changes and open gates below. All are
+Linux x64 source-build evidence; the ledger stays at 6/42 and preview.7 is unchanged.
+[Provider import from pi and user-specified capabilities](../../verification/provider-import-linux.md)
+adds an explicit import, manual capabilities and a text-only image gate; Linux x64 only, no story promoted.
+The Linux [Explorer matrix](../../recovery/rea-explorer-linux.md) passes every OV-401 clause and fixes hidden symlink cycles (Linux x64 only); OV-401 stays Partial for its Windows cells.
+[Autocomplete acceptance safety](../../recovery/rea-autocomplete-acceptance-linux.md) adds stale-range, wrong-tab, external-change, multi-cursor, CRLF and typing-burst checks and fixes full-accept undo grouping; Linux x64 only, OV-603 stays Partial.
+
+The [review-cleanup follow-up](../../recovery/rea-agent-review-removal.md)
+preserves retry/history ownership after cancellation or disposal failure and
+resumes cleanup without repeating completed steps.
+[Review record deletion and post-commit cleanup](../../recovery/rea-agent-review-deletion.md)
+follows it on Linux x64 only; OV-103 status and points are unchanged.
+The [Agent I/O-fault report](../../recovery/rea-agent-io-faults.md) fixes saved-file loss on a full
+volume (Linux x64 evidence); OV-103 status and points are unchanged.
+The [profile I/O-fault report](../../recovery/rea-profile-io-faults.md) fixes lost provider keys and torn memories on a full volume (Linux x64); OV-103/301 stay Partial.
+The Linux [MCP ownership matrix](../../recovery/rea-mcp-ownership-matrix.md) fixes STDIO children surviving window close and profile switch; OV-303 stays Partial.
+The Linux [provider failure matrix](../../recovery/rea-provider-failure-matrix.md) verifies certificate expiry/hostname, mid-stream, capability and restart cells, and fixes unfinished-stream automatic repeats; its follow-up saves an unresolved failure, Try again/Resume and dismissal across restart. OV-102/204 stay Partial.
+
+[Agent context budgets](../../performance/agent-context-linux.md) measure four fixed workloads and stop a looping model's 14 repeated requests (now 2) and closed chats' open requests (Linux x64, fixtures); OV-1001 stays Partial.
+[Idle and long-session memory](../../performance/idle-memory-linux.md) inventories the process family, attributes the cold-start Node peak to a js-debug fixture scan and releases killed terminals' shells (Linux x64); OV-1003 stays Partial.
+
+The [Agent interruption report](../../recovery/rea-agent-interruption.md) covers Stop, close and abrupt
+exit during outstanding writes/tools (Linux x64 evidence); OV-103 status and points are unchanged.
+
+The latest [review-cleanup follow-up](../../recovery/rea-agent-review-removal.md)
+preserves retry/history ownership after cancellation or disposal failure and
+resumes cleanup without repeating completed steps. It advances P0 OV-103 within
+the existing status and points; the preview.7 portable payload is unchanged.
+[Rule discovery isolation](../../recovery/rea-rules-isolation.md) closes one OV-302
+producer in source (Linux native pass); OV-302 stays Partial.
+[Global path isolation](../../recovery/rea-global-path-isolation.md) moves user skills, commands,
+hooks and third-party user folders into the profile (Linux native pass); OV-302 stays Partial.
+Its follow-up moves agent data, plans, worktrees, sandbox, plugins and `argv.json` into the profile home; a full native session in two installations leaves HOME untouched (Linux x64). OV-302 stays Partial.
+The [project-data destination trace](../../recovery/rea-project-data-destinations.md) maps indexing/file-sync/upload owners and blocks hosted Quick Edit reranking and file sync after native capture (Linux x64); OV-501 is Partial.
+
+The [ranked feature roadmap](../roadmap.md#ranked-rea-implementation-and-verification-work)
+owns story order, dependencies and point estimates. The following groups link to
+that queue; detailed acceptance clauses remain in the
+[sprint ledger](../completion-sprints.md).
+
+| Order | Remaining scope | Provisional points |
+| --- | --- | ---: |
+| P0 | Agent editing/recovery, chat retry/Stop, provider errors, configuration and MCP ownership, rules durability, terminal cleanup, data destinations, telemetry and release safety | 81 |
+| P1 | RAM, context/request efficiency, UI responsiveness, Explorer, language tools, autocomplete, subagents, reasoning, imports, extensions and authenticated MCP | 87 |
+| P2 | Native/WASM dependency disposition, rebuildable host/addons, owned helper replacements and a clean independent build | 47 |
+| P3 | Relevant retrieval, incremental indexing, index recovery and next-edit prediction | 42 |
+| P4 | Windows/Linux completion, macOS, updates and rollback | 39 |
+| P5 | Remote development and specialized image/browser/computer modes | 26 |
+| **Total** | **36 unfinished acceptance stories** | **322** |
+
+Points measure provisional complexity, not completion or time. Do not calculate
+progress from completed points: no equivalent completed-point baseline exists.
+Native Agent header/body timeout recovery and explicit live retry now pass. A
+real Codex Easy `gpt-6.1-sol` run also passes the native two-file edit review,
+retry, Undo/Redo and restart path; remaining editing/storage-failure checks and
+other chat/provider failure classes stay open. See the
+[delivery gates and dependencies](../roadmap.md#critical-first-backlog-and-eta) and
+[release claims](../../verification/release-claims.md) before treating source work as a shipped app.
+
+The latest [storage ownership report](../../engineering/storage-write-ownership.md)
+connects a native model-discovery failure to the newer recovered storage owner.
+Its pending/in-flight correction passes focused tests and scoped Windows Quick
+Edit/provider regressions. The [native Undo/Redo follow-up](../../recovery/rea-agent-undo-retry.md)
+passes keyboard snapshot failures and retry guidance on the rebuilt source.
+Physical storage faults, remaining menu/group failure combinations and platform
+checks remain. This is progress within existing stories, with
+no change to the acceptance percentage or backlog points.
+
+The latest [transactional review-storage follow-up](../../recovery/rea-agent-review-recovery.md#transactional-snapshot-cache-and-initial-write-retry)
+also restores the previous in-memory snapshot value after a failed write and
+retries the initial snapshot before Undo restores a review. Its **58/58** focused
+Agent checks and **26/26** build-integrity checks pass; physical I/O, outstanding
+write/tool termination and the remaining OV-103 combinations remain open.
+
