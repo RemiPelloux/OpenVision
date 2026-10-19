@@ -13,7 +13,7 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { enterWorkspace, openChat, openChatFromHistory } from './verification-workspace.mjs';
 import { electronNames, hostLoad, processFamily } from './process-family-linux.mjs';
-import { applicableBudgets, checkBudgets, collectProbe, installProbe, ioDelta, parseProcIo, percentile, profileHotspots, summarizeFrames, summarizeLatency } from './responsiveness-measure.mjs';
+import { applicableBudgets, checkBudgets, collectProbe, editTraffic, installProbe, ioDelta, parseProcIo, percentile, profileHotspots, sizeRatios, summarizeFrames, summarizeLatency, waitForStreamPaint } from './responsiveness-measure.mjs';
 
 // OV-1002 fixed responsiveness datasets on the native application. Every model
 // response is scripted by a loopback fixture (not live inference). Datasets:
@@ -42,6 +42,9 @@ const noBudgets = process.argv.includes('--no-budgets');
 // Diagnostic: --profile=stream,editorLarge records a renderer CPU profile per named phase (perturbs timings).
 const profiled = process.argv.find(value => value.startsWith('--profile='))?.slice(10).split(',') ?? [];
 const traceStorage = process.argv.includes('--trace-storage'); // diagnostic logpoints, perturbs timings
+// Diagnostic logpoints on the renderer's text delta coalescer: when each streamed delta
+// arrives in the renderer and when text is handed to the transcript (perturbs timings).
+const traceStream = process.argv.includes('--trace-stream');
 const budgetsPath = join(root, 'desktop/responsiveness-budgets.json');
 const budgets = JSON.parse(await readFile(budgetsPath, 'utf8'));
 const { layout } = await loadRuntime(root);
@@ -78,8 +81,11 @@ for (let index = 0; streamPieces.length < STREAM_CHUNKS - 1; index++) {
 }
 streamPieces.push(`\n\n${marker} stream done`);
 
-let script; // { kind: 'turn', reply } | { kind: 'stream' }
-const fixture = { requests: 0, streamChunksSent: 0, streamStartedAt: 0, streamEndedAt: 0, unscripted: 0 };
+let script; // { kind: 'turn', reply } | { kind: 'stream', sentLast }
+// Wall-clock milliseconds with sub-millisecond resolution, comparable with the renderer's
+// performance.timeOrigin + performance.now() on the same host.
+const epochNow = () => performance.timeOrigin + performance.now();
+const fixture = { requests: 0, streamChunksSent: 0, streamStartedAt: 0, streamEndedAt: 0, streamRequestEpoch: 0, firstChunkSentEpoch: 0, lastChunkSentEpoch: 0, unscripted: 0 };
 const sse = (response, model, delta, finish_reason = null) => response.write(`data: ${JSON.stringify({ id: 'fixture-responsiveness',
   object: 'chat.completion.chunk', model, choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
 const server = createServer(async (request, response) => {
@@ -94,11 +100,13 @@ const server = createServer(async (request, response) => {
   response.writeHead(200, { 'content-type': 'text/event-stream' });
   const current = script;
   if (current?.kind === 'stream') {
-    script = undefined; fixture.streamStartedAt = performance.now();
+    script = undefined; fixture.streamStartedAt = performance.now(); fixture.streamRequestEpoch = epochNow();
     sse(response, payload.model, { role: 'assistant', content: '' });
     for (const piece of streamPieces) {
       if (response.destroyed) break;
       sse(response, payload.model, { content: piece }); fixture.streamChunksSent++;
+      if (fixture.streamChunksSent === 1) fixture.firstChunkSentEpoch = epochNow();
+      if (fixture.streamChunksSent === streamPieces.length) { fixture.lastChunkSentEpoch = epochNow(); current.sentLast(); }
       await new Promise(resolveWait => setTimeout(resolveWait, 4));
     }
     fixture.streamEndedAt = performance.now();
@@ -136,7 +144,7 @@ async function familyIo() {
   const samples = new Map();
   for (const member of members) {
     const text = await readFile(`/proc/${member.pid}/io`, 'utf8').catch(() => '');
-    if (text) samples.set(`${member.pid}:${member.start}`, { role: member.role, ...parseProcIo(text) });
+    if (text) samples.set(`${member.pid}:${member.start}`, { role: member.role, cpuTicks: member.cpuTicks, ...parseProcIo(text) });
   }
   return { samples, members: members.length, readable: samples.size };
 }
@@ -205,13 +213,17 @@ async function measure(name, work, { transcript = false } = {}) {
     fsWriteBytes: io.write_bytes, fsByRole: io.byRole, ioProcessesReadable: `${ioAfter.readable}/${ioAfter.members}`,
     ...await dom(), ...await heap(), hostLoad1m: loadBefore, ...cpuShare(cpuBefore, await cpuTimes()), ...extra };
   result.phases[name] = phase;
-  console.log(`${name}: ${JSON.stringify({ ...phase, mutatedRows: undefined, fsByRole: undefined, latencySamples: undefined })}`);
+  console.log(`${name}: ${JSON.stringify({ ...phase, mutatedRows: undefined, fsByRole: undefined, latencySamples: undefined, lastChunkDrainProgress: undefined, streamTrace: undefined })}`);
   return phase;
 }
 async function typeKeys(text, delay) { for (const key of text) { await page.keyboard.type(key); await page.waitForTimeout(delay); } }
 
 async function launch() {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+  // The fixture project lives under logs/ inside the OpenVision checkout. Without a
+  // ceiling, the Agent's per-turn `git status` found that checkout and walked it
+  // (17,000+ files; most of the 6.5 s between submit and the model request here).
+  env.GIT_CEILING_DIRECTORIES = directory;
   app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
@@ -238,6 +250,19 @@ async function launch() {
       ['          async cursorDiskKVSet(t, n) {', '(globalThis.__openvisionStorageTrace && globalThis.__openvisionStorageTrace.kv.push([String(t).split(":")[0], typeof n === "string" ? n.length : (n?.byteLength ?? 0)]), false)'],
       ['          async cursorDiskKVSetBinary(t, n) {', '(globalThis.__openvisionStorageTrace && globalThis.__openvisionStorageTrace.kv.push([String(t).split(":")[0] + "(binary)", n?.byteLength ?? 0]), false)'],
     ]) (result.storageTraceBreakpoints ??= []).push((await cdp.send('Debugger.setBreakpointByUrl', { urlRegex, lineNumber: lineOf(needle) + offset, condition })).locations.length);
+  }
+  if (traceStream) {
+    const workbench = await readFile(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js'), 'utf8');
+    const module = workbench.indexOf('"textDeltaCoalescer.js"() {');
+    // 0-based line of the first `needle` after the coalescer module anchor.
+    const lineAfter = needle => { const index = workbench.indexOf(needle, module); if (module < 0 || index < 0) throw new Error(`stream trace anchor missing: ${needle}`);
+      return workbench.slice(0, index).split('\n').length - 1; };
+    const record = (kind, size) => `((globalThis.__openvisionStreamTrace ??= []).length < 20000 && globalThis.__openvisionStreamTrace.push([${JSON.stringify(kind)}, performance.now(), ${size}]), false)`;
+    await cdp.send('Debugger.enable');
+    const urlRegex = 'workbench\\.desktop\\.main\\.js$';
+    for (const [needle, condition, offset] of [['enqueue(t, n) {', record('enqueue', 'n.length'), 1],
+      ['this.onFlush(t.ctx, o),', record('flushFrame', 'o.length'), 0], ['this.onFlush(t.ctx, t.text),', record('flush', 't.text.length'), 0]])
+      (result.streamTraceBreakpoints ??= []).push((await cdp.send('Debugger.setBreakpointByUrl', { urlRegex, lineNumber: lineAfter(needle) + offset, condition })).locations.length);
   }
 }
 const hostExits = [];
@@ -346,24 +371,41 @@ try {
 
   // Stream dataset: STREAM_CHUNKS deltas while the user types the next prompt.
   if (wants('stream')) await measure('stream', async () => {
-    script = { kind: 'stream' };
+    let sentLast; const lastChunkSent = new Promise(resolveSent => { sentLast = resolveSent; });
+    script = { kind: 'stream', sentLast };
     await input().fill(`${marker} stream: reply with the long fixture stream.`);
-    const submitted = performance.now(); await input().press('Enter');
+    const submittedEpoch = epochNow(), submitted = performance.now(); await input().press('Enter');
     // Light polling (250 ms textContent check) instead of Playwright's per-frame text matching,
     // which itself costs renderer time inside the measured window.
-    const transcriptText = (text, timeout) => page.waitForFunction(({ text, container }) =>
-      [...document.querySelectorAll(container)].some(node => node.textContent.includes(text)), { text, container: CONTAINER_SELECTOR },
-    { polling: 250, timeout });
-    await transcriptText(`${marker} stream begins`, 60000);
-    const firstPaintMs = Math.round(performance.now() - submitted);
+    await page.waitForFunction(({ text, container }) =>
+      [...document.querySelectorAll(container)].some(node => node.textContent.includes(text)), { text: `${marker} stream begins`, container: CONTAINER_SELECTOR },
+    { polling: 250, timeout: 60000 });
+    const firstPaintMs = Math.round(performance.now() - submitted), firstPaintEpoch = epochNow();
+    // The last chunk is detected in the page, per frame, from the moment the fixture sends
+    // it, concurrently with the typing below. It used to be polled only after the typing:
+    // with 500 chunks (about 2.3 s) the stream ends before the 56 keys (about 4 s) do, so
+    // the old figure was mostly the remaining typing time (smoke run xXcKIA: 1,789 ms).
+    const lastPaint = lastChunkSent.then(() => page.evaluate(waitForStreamPaint, { text: `${marker} stream done`, begins: `${marker} stream begins`,
+      rowSelector: ROW_SELECTOR, containerSelector: CONTAINER_SELECTOR, timeoutMs: 120000 }));
+    lastPaint.catch(() => {});
     await input().click();
+    const typingStarted = performance.now();
     await typeKeys('typing during the long fixture stream to measure latency', 60);
-    await transcriptText(`${marker} stream done`, 120000);
-    const donePaintAt = performance.now();
+    const typingEndedEpoch = epochNow(), typingMs = Math.round(performance.now() - typingStarted);
+    const painted = await lastPaint;
+    const streamTrace = traceStream ? await page.evaluate(() => { const trace = globalThis.__openvisionStreamTrace ?? []; globalThis.__openvisionStreamTrace = undefined;
+      return { origin: performance.timeOrigin, events: trace }; }) : undefined;
     await idle();
     return { firstChunkPaintMs: firstPaintMs, chunksSent: fixture.streamChunksSent,
       fixtureStreamMs: Math.round(fixture.streamEndedAt - fixture.streamStartedAt),
-      lastChunkToPaintMs: Math.round(donePaintAt - fixture.streamEndedAt) };
+      // Where the first-chunk time goes: submit -> fixture request -> first chunk sent -> seen (250 ms polling).
+      submitToRequestMs: Math.round(fixture.streamRequestEpoch - submittedEpoch),
+      firstChunkSentToSeenMs: Math.round(firstPaintEpoch - fixture.firstChunkSentEpoch),
+      lastChunkToPaintMs: Math.round(painted.paintedEpoch - fixture.lastChunkSentEpoch),
+      lastChunkToFoundMs: Math.round(painted.foundEpoch - fixture.lastChunkSentEpoch), lastChunkCheckFrames: painted.frames, lastChunkDrainProgress: painted.progress,
+      // Positive: the stream outlasted the typing; negative: typing continued after the last chunk.
+      lastChunkAfterTypingMs: Math.round(fixture.lastChunkSentEpoch - typingEndedEpoch), typingMs,
+      ...streamTrace ? { streamTrace: { ...streamTrace, firstChunkSentEpoch: fixture.firstChunkSentEpoch, lastChunkSentEpoch: fixture.lastChunkSentEpoch } } : {} };
   }, { transcript: true });
   await input().fill('');
 
@@ -447,7 +489,8 @@ try {
     let bursts;
     const phase = await measure(name, async () => { bursts = await typeBursts(); return { openMs, navigateMs }; });
     const burstP95Ms = bursts.map(samples => percentile(samples, 95));
-    Object.assign(phase, { allKeysLatencyP95Ms: phase.latencyP95Ms, burstP95Ms, latencyP95Ms: percentile(burstP95Ms, 50) });
+    Object.assign(phase, { allKeysLatencyP95Ms: phase.latencyP95Ms, burstP95Ms, latencyP95Ms: percentile(burstP95Ms, 50),
+      ...editTraffic(phase.fsByRole, bursts.reduce((sum, samples) => sum + samples.length, 0)) });
     console.log(`${name} bursts: ${JSON.stringify({ burstP95Ms, median: phase.latencyP95Ms, navigateMs,
       hostLoad1m: phase.hostLoad1m, cpuBusyPercent: phase.cpuBusyPercent, cpuStealPercent: phase.cpuStealPercent })}`);
     return phase;
@@ -465,11 +508,23 @@ try {
     const second = await editorAttempt(name, line, openMs);
     second.attempts = [{ ...summary(first), budgetMisses: missed }, summary(second)];
   }
+  // Incremental editing: the same keys typed into the large file must cost about what they
+  // cost in the 40-line control file (per-key synchronisation bytes, per-role CPU, long tasks).
+  const SIZE_COMPARED = ['rendererWritePerKey', 'extensionHostReadPerKey', 'tsserverReadPerKey', 'rendererCpuMsPerKey',
+    'extensionHostCpuMsPerKey', 'tsserverCpuMsPerKey', 'longTaskTotalMs'];
   if (wants('editorSmall')) await editorPhase('editorSmall', 20, await openFile('small.js'));
   if (wants('editorLarge')) {
     const largeOpenMs = await openFile('large.js');
     await page.waitForTimeout(3000);
     await editorPhase('editorLarge', Math.floor(LARGE_LINES / 2), largeOpenMs);
+    const large = result.phases.editorLarge;
+    large.largeFileBytes = Buffer.byteLength(largeFile);
+    // Largest per-key synchronisation payload as a share of the file (1 = the whole file per key).
+    large.syncBytesPerKeyFileShare = Math.round(Math.max(large.rendererWritePerKey ?? 0, large.extensionHostReadPerKey ?? 0,
+      large.tsserverReadPerKey ?? 0) / large.largeFileBytes * 1e5) / 1e5;
+    if (result.phases.editorSmall) Object.assign(large, sizeRatios(large, result.phases.editorSmall, SIZE_COMPARED));
+    console.log(`editorLarge sync: ${JSON.stringify(Object.fromEntries(Object.entries(large).filter(([key]) =>
+      /PerKey|Ratio$|FileShare|editKeys/.test(key))))}`);
   }
 
   // Closed chat: renderer heap and marker strings before and after closing the transcript chat.
