@@ -89,7 +89,7 @@ async function launch(env = {}) {
   app = await _electron.launch({ executablePath: layout.executable, env: environment, timeout: 60000,
     args: ['--user-data-dir', profile, '--extensions-dir', extensions, '--new-window', '--disable-updates',
       '--disable-telemetry', '--disable-crash-reporter', '--skip-welcome', '--skip-release-notes',
-      ...await linuxSandboxArguments(layout.host), project] });
+      ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
   page.on('pageerror', error => result.errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 }); await enterWorkspace(page);

@@ -11,6 +11,7 @@ locally; no real user profile was read and no AI provider was called.
 | --- | --- | --- |
 | Transaction | Import and restore are two-phase: every new byte is staged in a sibling temporary (`<file>.openvision-<uuid>.tmp`) before any destination changes; only the commit renames change destinations. A failure before the commit removes its temporaries, the directories it created and an incomplete backup, and says "failed before changing any file". | `desktop/import-transaction.mjs` |
 | Interruption recovery | The manifest is written (`prepared`/`restoring`, with the committing process id and Linux start time) before the commit. On the next app start (native owner hook) or the next CLI import/restore/`--recover`, an interrupted import is rolled back and an interrupted restore is finished. Transactions of a live process are left alone. `--list-backups` marks them `interrupted`. | `import-transaction.mjs`, `import-ipc.mjs`, `import-owner-customization.mjs` (v2), `import-cli.mjs` |
+| Restore order | Restore undoes newest first (extension directories before the registry that names them), so a running app never sees an unregistered imported directory. | `import-transaction.mjs` |
 | Directories | The manifest records directories the import created; restore removes them when empty, so restore is tree-exact, not only byte-exact. | `import-transaction.mjs`, `import-backup.mjs` |
 | Read-only errors | Node's recursive `mkdir` reports a read-only parent as `ENOENT`; the transaction now retries the first missing level without recursion so the error says `EROFS`. | `import-transaction.mjs` |
 | Running-app registry rewrite (**defect**) | The shared-process extensions-folder watcher re-added every new extension directory to the default profile with `metadata: undefined`, replacing imported entries (gallery metadata, uuid, target platform). Restore then refused the changed registry ("newer edit"). Fixed by an AST-guarded customization that skips directories the default profile already registers or that no longer exist, and by committing the registry before the directories it names. | `import-extension-watcher-customization.mjs`, `install-import.mjs`, `cursor-import.mjs` |
@@ -25,10 +26,17 @@ one at a time. Run directories are under `logs/` (ignored, not published).
 | Command | Run | Result |
 | --- | --- | --- |
 | `npm run test:import` | — | 25/25 pass (adds interruption, exclusion, owner and watcher tests) |
-| `npm run verify:import` | `import-verification-lO4GPL`, `import-verification-SECOND_IMPORT` | pass, pass (15 checks each) |
-| `npm run verify:import -- --realistic-profile` | `import-verification-realistic-RMHEfl`, `import-verification-realistic-SECOND_REALISTIC` | pass, pass (10 checks each) |
-| `npm run verify:import-faults` | `import-faults-verification-Qbc403`, `import-faults-verification-SECOND_FAULTS` | pass, pass |
-| `npm run verify:provider-import` | `provider-import-8r04rv` | pass (with a Secret Service; see failures) |
+| `npm run verify:import` | `import-verification-Pw9kM0`, `import-verification-pJE9Ya`, `import-verification-tkyrCU` | pass, pass, pass (15 checks each; `tkyrCU` after limiting the Linux sandbox flag to Linux, a no-op here) |
+| `npm run verify:import -- --realistic-profile` | `import-verification-realistic-f15i9k`, `import-verification-realistic-vaFRGE` | pass, pass (10 checks each) |
+| `npm run verify:import-faults` | `import-faults-verification-cpHS5H`, `import-faults-verification-1H8VJu` | pass, pass (7 interruption cases, 12 ENOSPC levels, 4 EROFS stages, native full volume) |
+| `npm run verify:provider-import` | `provider-import-8r04rv` | pass (with a Secret Service; see failures). The pi import does not load the import transaction, so the later restore-order commit does not affect it. |
+| `npm run test:portable`, `npm run test:desktop` | — | 30 pass + 1 pre-existing macOS-only skip; 198/198 pass |
+
+The final runs above are first-time passes at commit `0e03e2c0` (clean tree) with
+the source build containing the v2 watcher customization. Earlier passes on
+intermediate commits (`lO4GPL`, `mRi2Hg`, `RMHEfl`, `BOEvjl`, `Qbc403`) are not
+counted for the final code. Detailed results below are from `Qbc403` and were
+identical in shape in `cpHS5H` and `1H8VJu`.
 
 ### verify:import (synthetic)
 
@@ -135,6 +143,7 @@ invoking uid; every mount disappears with the namespace):
 | `import-faults-verification-R6TtlV` | First case recovered; re-import preview refused | Harness: fixture source under `logs/`. Moved to `/tmp`; preview results asserted. |
 | `import-faults-verification-xiXCtN` | All interruption cases and the ENOSPC sweep passed; `mount -o remount,ro` refused in the namespace | Harness: use a read-only bind remount. |
 | `import-faults-verification-q96fYm` | `native-import-3` re-import → immediate restore not exact (passed in `xiXCtN`) | **Product defect (race)**: the watcher adopted the directory after the restore removed it. Fixed (watcher v2 skips directories that no longer exist). |
+| `import-faults-verification-FEfwHO` | Second run of the same `native-import-3` re-import → immediate restore not exact, with watcher v2 | **Product defect (ordering)**: restore reverted the registry before removing the directory, so the app adopted a still-existing, unregistered directory. Fixed: restore undoes newest first. Two clean runs followed. |
 | `import-faults-verification-aocpWH` | EROFS stage reported `ENOENT` | **Product defect**: Node recursive `mkdir` masks `EROFS`. Fixed in the transaction. |
 | `provider-import-c9BUIg` | pi import dialog stayed busy storing keys | Environment: no Secret Service in the container. Passed (`8r04rv`) with `gnome-keyring` (installed: `gnome-keyring`, `libsecret-tools`). Not caused by this branch. |
 
