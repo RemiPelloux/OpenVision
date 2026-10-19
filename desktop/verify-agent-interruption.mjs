@@ -534,8 +534,8 @@ function judge(record) {
     // Bytes were never changed: the transcript must not report the edit as made.
     if (kind === 'write' && interrupt !== 'stop' && record.afterRestart.transcript.edited) fail('unapplied edit is shown as "Edited" after restart');
     if (kind === 'write' && interrupt === 'close' && !record.afterRestart.transcript.interrupted) fail('interrupted edit is not shown as interrupted after restart');
-    if (interrupt === 'stop' && record.stages[0]?.transcript && record.stages.find(entry => entry.transcript)?.transcript.edited)
-      fail('edit held at Stop is shown as "Edited"');
+    const stopped = record.stages.find(entry => entry.transcript)?.transcript;
+    if (interrupt === 'stop' && (stopped?.edited || !stopped?.interrupted)) fail(`edit held at Stop is not shown as interrupted: ${JSON.stringify(stopped)}`);
     if (record.retry && (record.retry.file.state !== 'changed' || record.retry.file.temporary.length || record.retry.requests !== 2 ||
         record.retry.writes !== 2 || !record.retry.controls.includes('Keep'))) fail(`retry after interruption: ${JSON.stringify(record.retry)}`);
   } else {
