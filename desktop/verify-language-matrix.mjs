@@ -216,7 +216,9 @@ try {
       const maxUserWatches = Number((await readFile('/proc/sys/fs/inotify/max_user_watches', 'utf8')).trim());
       result.large_project = attributeWindows({ windows: result.native.scan_windows, timeline, clockTicks, maxUserWatches,
         trace: result.filesystem?.windows ?? {} });
-      result.large_project.first_diagnostics_ms = result.native.large_project?.first_diagnostics_ms;
+      Object.assign(result.large_project, result.native.large_project ?? {});
+      result.large_project.watch_series = timeline.map(sample => [sample.at - timeline[0].at,
+        sample.processes.reduce((sum, item) => sum + item.inotify_watches, 0)]).filter((item, index, all) => index === 0 || item[1] !== all[index - 1][1]);
       result.large_project.budget = largeProjectBudget;
       const violations = evaluateLargeProject(result.large_project, largeProjectBudget);
       result.large_project.violations = violations;

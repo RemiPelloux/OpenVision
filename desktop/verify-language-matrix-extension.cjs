@@ -561,6 +561,24 @@ async function largeProjectWindows() {
   await until(() => diagnosticsFor(ts, missing).length && diagnosticsFor(ts, item => item.code === 2322).length,
     'large project TypeScript program loaded', 600000);
   result.large_project = { first_diagnostics_ms: Math.round(performance.now() - warmStarted) };
+  // tsserver keeps registering per-file watchers after its first diagnostics. The
+  // idle window must start after that, so wait until the main process (the
+  // extension host's parent) holds a stable inotify watch count for 10 s
+  // (registration arrives in bursts several seconds apart).
+  const watchCount = () => { let count = 0;
+    for (const fd of fs.readdirSync(`/proc/${process.ppid}/fdinfo`))
+      try { count += fs.readFileSync(`/proc/${process.ppid}/fdinfo/${fd}`, 'utf8').split('\n').filter(line => line.startsWith('inotify wd:')).length; }
+      catch {}
+    return count; };
+  if (process.platform === 'linux') {
+    const settleStarted = performance.now();
+    let last = -1, stableSince = performance.now();
+    await until(() => { const now = watchCount();
+      if (now !== last) { last = now; stableSince = performance.now(); }
+      return performance.now() - stableSince >= 10000; }, 'main-process watch registration settled', 300000);
+    Object.assign(result.large_project, { watch_registration_settled_ms: Math.round(performance.now() - settleStarted),
+      main_watches_settled: last });
+  }
   await pause(6000);
   async function type(doc, needle, text) {
     const editor = await vscode.window.showTextDocument(doc);

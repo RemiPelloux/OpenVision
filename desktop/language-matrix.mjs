@@ -124,9 +124,27 @@ export function entryGroup(entry) {
 // to the small-edit full-scan contract; they have their own numeric budgets.
 export const isEditWindow = name => !/dependency|tsconfig|package/.test(name);
 
-// Large-project budgets. Declared as null until a baseline exists; see
-// docs/recovery/rea-language-matrix-linux.md for the derivation.
-export const largeProjectBudget = null;
+// Large-project budgets (Linux x64, this verifier's 5,000-module fixture). Derived
+// before any optimization: per-metric maximum over the three valid baseline runs
+// language-matrix-large-aKyRC0, -Eoas4W and -V7lQNz (19 October 2026), times 1.5,
+// rounded up (milliseconds and MiB to 10). A zero baseline counts as 1 entry or
+// 100 ms of CPU so that one legitimate stat or scheduler tick cannot fail a run.
+// Window CPU covers the action plus a 4 s settle (8 s for tsconfig-change).
+export const largeProjectBudget = Object.freeze({
+  derivation: 'ceil(max(baseline over aKyRC0, Eoas4W, V7lQNz) x 1.5); zero baselines floored to 1 entry / 100 ms CPU',
+  windows: {
+    'idle': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 360, 'extension-host': 320 } },
+    'ts-edit-1': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 720, 'extension-host': 380 } },
+    'ts-edit-2': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 360, 'extension-host': 290 } },
+    'ts-save': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 530, 'extension-host': 1230 } },
+    'dependency-change': { distinct_entries: 3, program_entries: 2, cpu_ms: { tsserver: 1230, 'extension-host': 600 }, diagnostic_update_ms: 4900 },
+    'dependency-install': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 150, 'extension-host': 420 } },
+    'tsconfig-change': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 3450, 'extension-host': 1220 }, diagnostics_after_reload_ms: 760 },
+    'ts-edit-after-reload': { distinct_entries: 2, program_entries: 2, cpu_ms: { tsserver: 1190, 'extension-host': 350 } },
+  },
+  peak_rss_mib: { tsserver: 830, 'extension-host': 710 },
+  peak_inotify_watches: 7688, peak_watch_fraction: 0.0591, first_diagnostics_ms: 28020,
+});
 
 const reported = ['tsserver', 'extension-host', 'main', 'file-watcher'];
 function byKind(sample) {

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { languageMatrix, matrixFixtures, LARGE_LINES, LARGE_MODULES, classifyProcess, summarizeTrace, largeProjectFixtures,
-  largeTsconfig, largePackageJson, entryGroup, isEditWindow, attributeWindows, evaluateLargeProject } from './language-matrix.mjs';
+  largeTsconfig, largePackageJson, entryGroup, isEditWindow, attributeWindows, evaluateLargeProject, largeProjectBudget } from './language-matrix.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 
@@ -118,4 +118,15 @@ test('large-project budgets fail on excess and on missing measurements', () => {
   assert.deepEqual(evaluateLargeProject({ ...measurement, peak_inotify_watches: 21 }, budget), ['peak_inotify_watches 21 > 20']);
   assert.deepEqual(evaluateLargeProject({ ...measurement, windows: {} }, budget), ['ts-edit-1: window missing']);
   assert.deepEqual(evaluateLargeProject({ ...measurement, first_diagnostics_ms: undefined }, budget), ['first_diagnostics_ms: not measured']);
+});
+
+test('large-project budgets are declared for every measured window with a recorded derivation', () => {
+  assert.match(largeProjectBudget.derivation, /x 1\.5/);
+  assert.deepEqual(Object.keys(largeProjectBudget.windows), ['idle', 'ts-edit-1', 'ts-edit-2', 'ts-save', 'dependency-change',
+    'dependency-install', 'tsconfig-change', 'ts-edit-after-reload']);
+  for (const [name, window] of Object.entries(largeProjectBudget.windows)) {
+    assert.ok(window.distinct_entries < 0.5 * LARGE_MODULES, `${name} stays far below a program rescan`);
+    assert.ok(window.cpu_ms.tsserver > 0 && window.cpu_ms['extension-host'] > 0, name);
+  }
+  assert.ok(largeProjectBudget.peak_watch_fraction < 1);
 });
