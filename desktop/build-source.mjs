@@ -46,6 +46,7 @@ import { installWelcomeStartup } from './welcome-customization.mjs';
 import { installProjectNamespace, restoreNamespaceInputs } from './namespace-build.mjs';
 import { installRuleDurability } from './rules-durability-customization.mjs';
 import { installProfileStorageDurability } from './profile-storage-durability-customization.mjs';
+import { installFileWriteRestore } from './file-write-restore-customization.mjs';
 import { installExplicitWorktrees } from './git-worktree-customization.mjs';
 import { installShutdownOwnership } from './shutdown-customization.mjs';
 import { installUtilityProcessOwnership } from './utility-process-customization.mjs';
@@ -148,6 +149,7 @@ for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspac
 await installCursorImport(root);
 await installRuleDurability(root);
 await installProfileStorageDurability(root);
+await installFileWriteRestore(root);
 await installWindowTitles(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
