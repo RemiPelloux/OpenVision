@@ -69,6 +69,7 @@ import { installProjectDataBoundaries } from './project-data-customization.mjs';
 import { installAgentReviewAcceptance } from './agent-review-customization.mjs';
 import { installUnopenedAgentUndo } from './agent-closed-file-undo-customization.mjs';
 import { installAgentReviewRecovery } from './agent-review-recovery-customization.mjs';
+import { installProfileRecovery } from './profile-recovery-customization.mjs';
 import { installAgentReviewPersistence } from './agent-review-persist-customization.mjs';
 import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
 import { installReviewDescriptors } from './review-descriptors-customization.mjs';
@@ -152,6 +153,7 @@ await copyFile(join(root, 'desktop/local-rules.js'),
 for (const file of ['workspace-memory.js', 'workspace-memory-card.js', 'workspace-memory-card.css', 'legacy-memory.js', 'legacy-memory-review.js'])
   await copyFile(join(root, 'desktop', file), join(root, 'source/app/out/vs/code/electron-sandbox/workbench', `openvision-${file}`));
 await installCursorImport(root);
+await installProfileRecovery(root);
 await installRuleDurability(root);
 await installProfileStorageDurability(root);
 await installProfileWritability(root);
