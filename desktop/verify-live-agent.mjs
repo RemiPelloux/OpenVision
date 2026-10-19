@@ -203,10 +203,15 @@ async function launch() {
 // VS Code hands a new launch to any process still accepting on the profile's main
 // IPC socket and exits 0. Record who holds it after close and wait (bounded) for its
 // release, so a relaunch never silently attaches to a leftover.
+// Sockets present before the first owned launch belong to other editors and are ignored.
+const runtimeDirectory = process.platform === 'linux' ? process.env.XDG_RUNTIME_DIR : undefined;
+const listMainSockets = async () => runtimeDirectory ? (await readdir(runtimeDirectory).catch(() => []))
+  .filter(name => name.endsWith('-main.sock')).map(name => join(runtimeDirectory, name)) : [];
+const foreignMainSockets = new Set(await listMainSockets());
 async function mainSocketHolders() {
-  const runtime = process.env.XDG_RUNTIME_DIR;
-  if (process.platform !== 'linux' || !runtime) return [];
-  const sockets = (await readdir(runtime).catch(() => [])).filter(name => name.endsWith('-main.sock')).map(name => join(runtime, name));
+  const runtime = runtimeDirectory;
+  if (!runtime) return [];
+  const sockets = (await listMainSockets()).filter(path => !foreignMainSockets.has(path));
   const accepting = [];
   for (const path of sockets) {
     const accepted = await new Promise(resolve => {
