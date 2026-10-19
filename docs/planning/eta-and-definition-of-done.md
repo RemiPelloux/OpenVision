@@ -6,7 +6,7 @@ Checkpoint: **17 October 2026**, after the 16–17 October Linux sessions
 
 **18 October re-scope:** the current counts (18/44 Verified, baseline v3) and the
 re-scope are in [§10](#10-re-scope--18-october-2026); the state of every branch and the ETA at the
-19 October stop are in [§11](#11-stop-checkpoint--19-october-2026-1600-utc). §1–§9 keep the
+19 October stop are in [§11](#11-stop-checkpoint--19-october-2026-1600-utc); the merge-all checkpoint and finishing queue are in [§12](#12-merge-all-checkpoint--19-october-2026). §1–§9 keep the
 17–18 October record as written.
 
 Per [`objective.md`](../../objective.md), the ETA is expressed as **acceptance
@@ -448,3 +448,42 @@ machines. OV-804 needs the source-distribution decision.
 - Native verifiers need gnome-keyring with a plaintext login keyring, xdotool, imagemagick, sqlite3 and iproute2, as user `ov` under `xvfb-run` and `dbus-run-session`.
 - A clean rebuild needs `build/source-build.json`, `build/namespace-journal.json`, `source/` and `electron-host/` removed. The build needs Node 24.18.0.
 - Re-test every merge combination: two regressions (`--simultaneous` and startup traversal) appeared only after branches were combined.
+
+## 12. Merge-all checkpoint — 19 October 2026
+
+At the owner's request, every pushed worker branch is now merged into `ccr-a39d6f13-jurmdv`:
+
+- `ov/data-telemetry`, `ov/mcp-safety` (head `c4e00504`), `ov/mcp-auth`, `ov/linux-completion`,
+  `ov/native-inventory`, `ov/updates-rollback`, `ov/responsiveness`, `ov/release-safety` and `ov/retrieval-index`;
+- plus everything merged earlier.
+
+**Merge-time resolutions:**
+- The Linux package scripts are now kept in one module, `portable-layout.mjs`. It holds:
+  - the `ov/linux-completion` launcher (UTF-8 locale fix) and desktop entry (Exec quoting, ownership marker) and its uninstaller;
+  - the `ov/updates-rollback` installer.
+- `installRetrievalTool` is merged but **not wired into the build**. Its extension-activation anchor still refuses to patch, as its worker reported. Wiring it is the first retrieval task.
+- `package.json` script lists keep the union of both sides' test files.
+
+**Verification of the merged tree:**
+- clean build passes;
+- 13 unit suites pass with 0 failures (`test:desktop` 222, `test:agent-review` 112, `test:provider-storage` 78, `test:mcp-lazy` 58 and others);
+- the installer, package-script and profile-format tests pass 30/30;
+- `docs:check` is clean.
+
+Native reruns of the newly merged stories happen as each worker finishes its remaining items on top of this tree. Promotion still requires a coordinator clean rerun.
+
+**Ledger: 18/44 Verified.** No promotion yet from these merges: each story still has a recorded native gap (§11).
+
+### Finishing queue
+
+The owner asked that all work be finished. Workers run 5 at a time, each starting from the merged tree. The usage quota is near its weekly warning.
+
+| Round | Workers and remaining work |
+| --- | --- |
+| 1 (running) | `ov/mcp-safety`: `--simultaneous` regression. `ov/release-safety`: matrices and evidence. `ov/mcp-auth`: security issue #9 (secrets in terminal state) and #10 (subagent body). `ov/data-telemetry`: one 600 s run. `ov/native-inventory`: one rerun |
+| 2 | `ov/responsiveness`: edit and scroll budgets. `ov/retrieval-index`: anchor fix, then 3 native verifiers. `ov/linux-completion`: recheck the explorer budget and `mcp-session` on the merged tree, plus #8 branding. `ov/idle-resources`: startup-traversal budget and slope. `ov/updates-rollback`: second upgrade run |
+| 3 | Never-started groups: `ov/modes-inventory` (OV-704, OV-604 decision paper), `ov/remote-ssh` (OV-703), `ov/upstream-host` (OV-802), `ov/helper-replacement` (OV-803). Also #7 (Quick Edit Ctrl+A) |
+
+**ETA:** about 3 rounds of 5 sessions. Rounds 1–2 should finish the 14 stories in progress. Round 3 covers the 4 never-started groups, which may each need a second session.
+
+**What can be verified:** if the owner decisions in [#5](https://github.com/RemiPelloux/OpenVision/issues/5) are taken, Linux can reach **about 35–39/44**. OV-205, OV-901, OV-902, OV-905 and OV-804 stay with the owner: balance, a Windows host, a Mac, other Linux machines and the source-distribution decision.
