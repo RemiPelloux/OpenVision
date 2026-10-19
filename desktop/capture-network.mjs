@@ -42,7 +42,7 @@ export function createAuthority(directory) {
 }
 
 export async function startCapture({ directory, clock = () => 'unphased', dnsAddress = [198, 18, 0, 1],
-  ports = { dns: 53, http: 80, https: 443, other: 9999 }, onRecord = () => {} }) {
+  ports = { dns: 53, http: 80, https: 443, other: 9999 }, resolverAddress = '127.0.0.53', onRecord = () => {} }) {
   const authority = createAuthority(directory);
   const records = [], dns = [], servers = [], tunnels = [];
   const push = record => { record.phase ??= clock(); record.at = new Date().toISOString(); records.push(record); onRecord(record); };
@@ -139,19 +139,28 @@ export async function startCapture({ directory, clock = () => 'unphased', dnsAdd
     servers.push(server);
   }
 
-  const udp = createSocket('udp4');
-  udp.on('message', (message, remote) => {
-    const query = parseDnsQuery(message);
-    if (!query) return;
-    dns.push({ name: query.name, type: query.type, phase: clock(), at: new Date().toISOString() });
-    udp.send(dnsAnswer(message, query, dnsAddress), remote.port, remote.address);
-  });
-  await new Promise((resolve, reject) => { udp.once('error', reject); udp.bind(ports.dns, '0.0.0.0', resolve); });
+  // The resolver address in the namespace's resolv.conf gets its own socket:
+  // a reply from a wildcard socket leaves from 127.0.0.1, and resolvers that
+  // connect() their UDP socket to 127.0.0.53 (Chromium, glibc) drop it, so the
+  // name was recorded but the client never connected. The wildcard socket
+  // still answers queries sent to any other address.
+  const udps = [];
+  for (const address of [resolverAddress, '0.0.0.0']) {
+    const udp = createSocket({ type: 'udp4', reuseAddr: true });
+    udp.on('message', (message, remote) => {
+      const query = parseDnsQuery(message);
+      if (!query) return;
+      dns.push({ name: query.name, type: query.type, phase: clock(), at: new Date().toISOString() });
+      udp.send(dnsAnswer(message, query, dnsAddress), remote.port, remote.address);
+    });
+    await new Promise((resolve, reject) => { udp.once('error', reject); udp.bind(ports.dns, address, resolve); });
+    udps.push(udp);
+  }
 
   return {
     authority, records, dns, sni, tunnels, proxyPort: proxy.address().port,
     async close() {
-      udp.close();
+      for (const udp of udps) udp.close();
       for (const server of servers) { server.closeAllConnections?.(); server.close(); }
       tls.close(); plain.close();
     },

@@ -3,12 +3,19 @@
 // (data-destinations-namespace.sh). Every DNS name, TLS server name,
 // connection and decrypted request is recorded and nothing is forwarded.
 // A loopback model-provider fixture is the only configured destination.
+// Workloads: indexing idle, Find in Files, Quick Open, provider setup, Agent,
+// Tab, Quick Edit, terminal (echo + git commit), Source Control commit-message
+// generation, a JS debug launch, an MCP STDIO fixture tool call, a local VSIX
+// install and a final idle. Every loaded native addon is inventoried per
+// process. Options: --no-strace, --proxy (also pass --proxy-server), --signal-trace (record signals and kill calls
+// of the whole family to attribute an unrequested host exit).
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { chmod, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -20,6 +27,10 @@ import { enterWorkspace } from './verification-workspace.mjs';
 import { fileHash } from './import-files.mjs';
 import { startCapture } from './capture-network.mjs';
 import { canaryNeedles, findCanaries, payloadViews, summarizeRecords } from './data-destinations.mjs';
+import { inventoryAddons, threadGroups, tgidOf } from './addon-inventory.mjs';
+import { captureEnvironment, removedProxyVariables, startHeartbeat, startMapsSampler, summarizeSignals } from './capture-harness.mjs';
+import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
+import { vsix } from './extension-lifecycle.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const run = promisify(execFile);
@@ -45,6 +56,8 @@ async function inner(directory) {
   const canary = {
     content: `OVC-CONTENT-${tag}`, fileName: `ovc_name_${tag}`, dirName: `ovc-dir-${tag}`,
     commit: `OVC-COMMIT-${tag}`, branch: `ovc-branch-${tag}`, edit: `OVC-TYPED-${tag}`,
+    terminal: `OVC-TERM-${tag}`, terminalCommit: `OVC-TCOMMIT-${tag}`, staged: `OVC-STAGED-${tag}`,
+    debug: `OVC-DEBUG-${tag}`, vsix: `ovc-vsix-${tag}`,
   };
   const profile = join(directory, 'profile'), project = join(directory, 'project');
   const secretDir = join(project, canary.dirName), secretFile = join(secretDir, `${canary.fileName}.ts`);
@@ -54,16 +67,38 @@ async function inner(directory) {
   await writeFile(secretFile, secretText);
   await writeFile(main, `// ${canary.content} reference\nconst answer = `);
   await writeFile(join(project, 'README.md'), `# Project ${canary.dirName}\n`);
+  // JS debug fixture: the debuggee writes the debug canary to a marker file.
+  const debugMarker = join(directory, 'debug-marker.txt'), terminalMarker = join(directory, 'terminal-marker.txt');
+  await writeFile(join(project, 'debug-canary.cjs'), `const { writeFileSync } = require("node:fs");\n` +
+    `const value = "${canary.debug}";\nconsole.log(value);\nwriteFileSync(process.argv[2], value);\n`);
+  await mkdir(join(project, '.vscode'));
+  await writeFile(join(project, '.vscode/launch.json'), JSON.stringify({ version: '0.2.0', configurations: [{ type: 'node', request: 'launch',
+    name: 'OV debug canary', program: '${workspaceFolder}/debug-canary.cjs', args: [debugMarker], console: 'internalConsole' }] }, null, 2));
   const git = args => run('git', ['-c', 'user.name=OV', '-c', 'user.email=ov@example.invalid', '-c', 'init.defaultBranch=main', ...args], { cwd: project });
   await git(['init', '-q']); await git(['checkout', '-q', '-b', canary.branch]);
+  // The app's own commits need a repository identity (git runs with user.useConfigOnly).
+  await git(['config', 'user.name', 'OV']); await git(['config', 'user.email', 'ov@example.invalid']);
   await git(['add', '.']); await git(['commit', '-q', '-m', canary.commit]);
   await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
     'git.openRepositoryInParentFolders': 'never', 'editor.quickSuggestions': false, 'editor.formatOnSave': false,
-    'editor.autoClosingBrackets': 'never', 'http.proxyStrictSSL': false }));
+    'editor.autoClosingBrackets': 'never', 'http.proxyStrictSSL': false,
+    // In-workbench file picker (Install from VSIX); a controlled terminal shell.
+    'files.simpleDialog.enable': true, 'terminal.integrated.enablePersistentSessions': false,
+    'terminal.integrated.profiles.linux': { 'ov-bash': { path: '/bin/bash', args: ['--noprofile', '--norc'] } },
+    'terminal.integrated.defaultProfile.linux': 'ov-bash' }));
+  // Local VSIX fixture whose name and code carry the extension canary.
+  const vsixFile = join(directory, `${canary.vsix}.vsix`);
+  await writeFile(vsixFile, vsix({ manifest: { name: canary.vsix, publisher: 'openvision-fixture', version: '1.0.0',
+    displayName: `OV destination ${canary.vsix}`, engines: { vscode: '^1.90.0' }, main: './extension.js', activationEvents: ['onStartupFinished'] },
+  files: { 'extension.js': `"use strict";\nexports.activate = () => ({ canary: ${JSON.stringify(canary.vsix)} });\n` } }));
+  const mcp = await createMcpStdioFixture();
   const canaries = [
     { id: 'content', value: canary.content, content: secretText }, { id: 'file-name', value: canary.fileName },
     { id: 'directory-name', value: canary.dirName }, { id: 'commit-message', value: canary.commit },
     { id: 'branch-name', value: canary.branch }, { id: 'typed-text', value: canary.edit },
+    { id: 'terminal-echo', value: canary.terminal }, { id: 'terminal-commit', value: canary.terminalCommit },
+    { id: 'staged-change', value: canary.staged }, { id: 'debug-output', value: canary.debug },
+    { id: 'vsix-extension', value: canary.vsix }, { id: 'mcp-output', value: mcp.marker },
   ];
   const needles = canaryNeedles(canaries);
   let phase = 'startup';
@@ -76,13 +111,16 @@ async function inner(directory) {
 
   // Configured model provider (the only allowed destination).
   const provider = [];
-  let agentPlan = [];
+  let agentPlan = [], agentReply = 'OpenVision destination workload complete.';
+  const generatedMessage = `OV fixture commit message ${tag}`;
   const server = createServer(async (request, response) => {
     const chunks = []; for await (const chunk of request) chunks.push(chunk);
     const body = Buffer.concat(chunks);
-    const record = { phase, method: request.method, path: request.url, bytes: body.length + JSON.stringify(request.headers).length,
+    const record = { phase, at: new Date().toISOString(), method: request.method, path: request.url, bytes: body.length + JSON.stringify(request.headers).length,
       canaries: findCanaries(payloadViews(body, request.headers), needles).map(hit => hit.canary) };
     provider.push(record);
+    // Bodies of single-shot requests (commit message, Tab, Quick Edit) for diagnosis; the run directory is never published.
+    if (!['agent', 'mcp', 'idle-indexing'].includes(phase) && request.url === '/v1/chat/completions') record.excerpt = body.subarray(0, 3000).toString('utf8');
     response.setHeader('content-type', 'application/json');
     if (request.url === '/v1/models') return response.end(JSON.stringify({ data: [{ id: 'fixture-model' }] }));
     if (request.url !== '/v1/chat/completions') { response.statusCode = 404; return response.end('{}'); }
@@ -100,41 +138,86 @@ async function inner(directory) {
         event({}, 'tool_calls');
       } else {
         record.toolResults = payload.messages.filter(message => message.role === 'tool').map(message => message.tool_call_id);
-        event({ role: 'assistant', content: 'OpenVision destination workload complete.' }); event({}, 'stop');
+        event({ role: 'assistant', content: agentReply }); event({}, 'stop');
       }
       return response.end('data: [DONE]\n\n');
     }
-    const content = phase === 'tab' ? '42;' : 'const answer = 2;';
+    const content = phase === 'tab' ? '42;' : phase === 'commit-message' ? generatedMessage : 'const answer = 2;';
+    if (payload.stream) {
+      response.writeHead(200, { 'content-type': 'text/event-stream' });
+      for (const [delta, finish_reason] of [[{ role: 'assistant', content }, null], [{}, 'stop']])
+        response.write(`data: ${JSON.stringify({ id: 'fixture', object: 'chat.completion.chunk', model: payload.model, choices: [{ index: 0, delta, finish_reason }] })}\n\n`);
+      return response.end('data: [DONE]\n\n');
+    }
     response.end(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { role: 'assistant', content } }] }));
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const providerHost = '127.0.0.1';
 
   // Optional process attribution through strace on the owned process family.
+  // clone/fork records map strace thread ids to their process (addon owners);
+  // --signal-trace adds signal deliveries, kill calls and exit records.
+  const signalTrace = process.argv.includes('--signal-trace');
+  // The explicit proxy is opt-in (--proxy): with --proxy-server the BYOK Agent
+  // turn never connects to the provider (reproduced here, logs/data-destinations-Zkbnby:
+  // stream started, no connect; see rea-telemetry-linux.md). The namespace's
+  // transparent catch-alls terminate TLS by SNI and record every request without it.
+  const useProxy = process.argv.includes('--proxy');
   const strace = !process.argv.includes('--no-strace') && await run('strace', ['-V']).then(() => true, () => false);
+  if (signalTrace && !strace) throw new Error('--signal-trace needs strace');
   const traceFile = join(directory, 'strace.log');
   let executable = layout.executable;
   if (strace) {
     executable = join(directory, 'traced-host.sh');
-    await writeFile(executable, `#!/bin/sh\nexec strace -f -qq -e trace=execve,connect,sendto -e signal=none -s 160 -o '${traceFile}' '${layout.executable}' "$@"\n`);
+    const calls = ['execve', 'connect', 'sendto', 'clone', 'clone3', 'fork', 'vfork', ...(signalTrace ? ['kill', 'tgkill', 'tkill'] : [])];
+    const signals = signalTrace ? `-q -ttt -e signal=TERM,INT,HUP,QUIT,KILL,PIPE,ABRT,SEGV,BUS,USR1,USR2` : '-qq -e signal=none';
+    // --seccomp-bpf stops only the traced calls. Without it, ptrace stops on every
+    // syscall of the family and the Agent turn hung after "Using agent backend"
+    // in 4 of 5 runs on this host (logs/data-destinations-V57pK6: 300 s), while the
+    // same run without strace answered in 1.6 s (logs/data-destinations-kYpbAA).
+    await writeFile(executable, `#!/bin/sh\nexec strace -f --seccomp-bpf ${signals} -e trace=${calls.join(',')} -s 160 -o '${traceFile}' '${layout.executable}' "$@"\n`);
     await chmod(executable, 0o755);
   }
 
   const result = { checkedAt: new Date().toISOString(), platform: `${process.platform}-${process.arch}`, scope: 'Linux x64 source build; owned no-route network namespace; loopback provider fixture; nothing forwarded upstream',
-    canaryTag: tag, strace, success: false, checks: {}, hashes: {
+    canaryTag: tag, strace, signalTrace, capture: useProxy ? 'explicit proxy + transparent catch-alls' : 'transparent catch-alls (AnyIP, DNS, nftables)', success: false, removedProxyVariables: removedProxyVariables(process.env), checks: {}, hashes: {
       workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
       retrieval: await fileHash(join(appRoot, 'extensions/cursor-retrieval/dist/main.js')),
       fileServiceAddon: await fileHash(join(appRoot, 'extensions/cursor-retrieval/node_modules/@anysphere/file-service/file_service.linux-x64-gnu.node')),
     } };
   const errors = [];
   let app, page;
-  const env = { ...process.env, NODE_EXTRA_CA_CERTS: caFile }; delete env.ELECTRON_RUN_AS_NODE;
+  const env = captureEnvironment(process.env, { NODE_EXTRA_CA_CERTS: caFile });
+  // Host exits are recorded whether or not this verifier requested them; the
+  // heartbeat survives a verifier that is itself stopped.
+  const hostExits = [];
+  let closing = false, rootPid;
+  const heartbeat = startHeartbeat(join(directory, 'heartbeat.json'), () => ({ phase, hostPid: rootPid, hostExited: hostExits.length > 0 }));
+  const maps = startMapsSampler(() => rootPid);
+  const command = async name => {
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ControlOrMeta+Shift+p');
+    const picker = page.locator('.quick-input-widget');
+    await picker.locator('input[type="text"]').fill(`>${name}`);
+    // Labels may carry a category prefix ("View: …").
+    const row = picker.locator('.quick-input-list .monaco-list-row').filter({ hasText: name }).first();
+    await row.waitFor(); await row.click();
+  };
+  const runAgent = async (text, plan, reply) => {
+    agentPlan = plan; agentReply = reply;
+    // The chat input; Quick Edit uses the same input class inside the editor.
+    await page.keyboard.press('Escape');
+    const input = page.locator('.aislash-editor-input[contenteditable=true]:not(.monaco-editor .aislash-editor-input)').filter({ visible: true }).first();
+    await input.fill(text); await input.press('Enter');
+  };
   try {
     app = await _electron.launch({ executablePath: executable, env, timeout: 90000,
       args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
         '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
-        `--proxy-server=http://127.0.0.1:${capture.proxyPort}`, '--ignore-certificate-errors',
+        ...(useProxy ? [`--proxy-server=http://127.0.0.1:${capture.proxyPort}`] : []), '--ignore-certificate-errors',
         ...await linuxSandboxArguments(layout.host), project, main] });
+    rootPid = app.process().pid;
+    app.process().once('exit', (code, signal) => hostExits.push({ code, signal, phase, at: new Date().toISOString(), requested: closing }));
     page = await app.firstWindow(); page.setDefaultTimeout(20000);
     page.on('pageerror', error => errors.push(error.message));
     await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 90000 });
@@ -187,7 +270,9 @@ async function inner(directory) {
     const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
     await input.fill('Inspect the private canary module and search the project for it. Do not modify files.');
     await input.press('Enter');
-    await page.getByText('OpenVision destination workload complete.', { exact: true }).first().waitFor({ timeout: 90000 });
+    // OV501_AGENT_WAIT_MS (diagnostic): how long the first Agent turn may take.
+    await page.getByText(agentReply, { exact: true }).first().waitFor({ timeout: Number(process.env.OV501_AGENT_WAIT_MS ?? 90000) });
+    result.agentFirstRequestMs = Date.parse(provider.find(item => item.phase === 'agent')?.at ?? '') - Date.parse(phases.find(item => item.phase === 'agent').at);
     await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' }).catch(() => {});
     result.checks.agent = true;
 
@@ -208,20 +293,111 @@ async function inner(directory) {
     await page.getByText('Reject', { exact: true }).filter({ visible: true }).first().click();
     result.checks.inlineEdit = provider.some(item => item.phase === 'inline-edit' && item.kind === 'inline-edit');
 
+    enter('terminal');
+    await command('Terminal: Create New Terminal');
+    const terminal = page.locator('.terminal-wrapper .xterm-helper-textarea').filter({ visible: true }).first();
+    await terminal.waitFor();
+    const shellLine = `echo ${canary.terminal} > '${terminalMarker}' && printf '%s\\n' ${canary.terminal} > term-note.txt && git add term-note.txt && ` +
+      `git -c user.name=OV -c user.email=ov@example.invalid commit -q -m ${canary.terminalCommit} && echo committed >> '${terminalMarker}'`;
+    for (let attempt = 0; attempt < 3 && !(await readFile(terminalMarker, 'utf8').catch(() => '')).includes('committed'); attempt++) {
+      await terminal.focus(); await page.keyboard.type(shellLine); await page.keyboard.press('Enter');
+      for (let i = 0; i < 40 && !(await readFile(terminalMarker, 'utf8').catch(() => '')).includes('committed'); i++) await page.waitForTimeout(250);
+    }
+    result.checks.terminal = (await readFile(terminalMarker, 'utf8').catch(() => '')).startsWith(canary.terminal) &&
+      (await git(['log', '-1', '--format=%s'])).stdout.trim() === canary.terminalCommit;
+
+    enter('commit-message');
+    await writeFile(join(project, 'staged-note.md'), `Staged change ${canary.staged}\n`);
+    await git(['add', 'staged-note.md']);
+    await page.waitForTimeout(4000); // Let the Git extension see the index change.
+    // Source Control has no palette command to open its view; both commands act
+    // on the repository's SCM input, and the commit proves which message it held.
+    await command('Generate Commit Message');
+    for (let i = 0; i < 120 && !provider.some(item => item.phase === 'commit-message' && item.path === '/v1/chat/completions'); i++) await page.waitForTimeout(250);
+    await page.waitForTimeout(2000);
+    const notices = await page.locator('.notifications-toasts .notification-toast').filter({ visible: true }).allInnerTexts().catch(() => []);
+    await command('Git: Commit Staged');
+    const subject = async () => (await git(['log', '-1', '--format=%s'])).stdout.trim();
+    for (let i = 0; i < 80 && await subject() !== generatedMessage; i++) await page.waitForTimeout(250);
+    const generated = await subject() === generatedMessage;
+    result.commitMessage = { notices: notices.map(text => text.slice(0, 300)), providerRequests: provider.filter(item => item.phase === 'commit-message').length,
+      stagedCanaryToProvider: provider.some(item => item.phase === 'commit-message' && item.canaries.includes('staged-change')),
+      committedWithGeneratedMessage: generated };
+    result.checks.commitMessage = generated && result.commitMessage.stagedCanaryToProvider;
+    await page.screenshot({ path: join(directory, 'commit-message.png') });
+
+    enter('debug');
+    await page.keyboard.press('Escape');
+    await command('Debug: Start Debugging');
+    for (let i = 0; i < 160 && !existsSync(debugMarker); i++) await page.waitForTimeout(250);
+    await page.waitForTimeout(3000);
+    result.checks.debug = (await readFile(debugMarker, 'utf8').catch(() => '')) === canary.debug;
+    await page.screenshot({ path: join(directory, 'debug.png') });
+
+    enter('mcp');
+    await writeFile(join(profile, 'User/mcp.json'), JSON.stringify({ mcpServers: { 'openvision-verify': mcp.configuration } }, null, 2));
+    for (let i = 0; i < 180 && !mcp.requests.some(request => request.method === 'tools/list'); i++) await page.waitForTimeout(250);
+    await page.waitForTimeout(3000);
+    await runAgent('Call memory_probe on user-openvision-verify once.', [{ id: 'ov_mcp_call', name: 'CallMcpTool',
+      args: { server: 'user-openvision-verify', toolName: 'memory_probe', description: 'OpenVision destination MCP probe', arguments: {} } }],
+    'OpenVision MCP destination workload complete.');
+    const approval = page.locator('[data-tool-approval-gate]').filter({ visible: true }).getByRole('button', { name: /^Run(?:\s|$)/ });
+    await approval.first().waitFor({ timeout: 45000 }).then(() => approval.first().click(), () => {});
+    await page.getByText('OpenVision MCP destination workload complete.', { exact: true }).first().waitFor({ timeout: 60000 });
+    result.mcp = { toolLists: mcp.requests.filter(request => request.method === 'tools/list').length,
+      toolCalls: mcp.requests.filter(request => request.method === 'tools/call').length, errors: mcp.errors };
+    result.checks.mcp = result.mcp.toolCalls === 1 && provider.some(item => item.phase === 'mcp' && item.canaries.includes('mcp-output'));
+
+    enter('vsix-install');
+    await command('Extensions: Install from VSIX...');
+    const pathInput = page.locator('.quick-input-widget input[type="text"]').filter({ visible: true }).first();
+    await pathInput.waitFor();
+    await pathInput.fill(vsixFile);
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Enter');
+    const installed = () => readdir(join(directory, 'extensions')).then(names => names.some(name => name.startsWith(`openvision-fixture.${canary.vsix}`)), () => false);
+    for (let i = 0; i < 120 && !await installed(); i++) {
+      const dialog = page.locator('.monaco-dialog-box').filter({ visible: true });
+      if (await dialog.count()) {
+        const button = dialog.first().getByRole('button', { name: /^(install|ok|trust)/i }).first();
+        if (await button.count()) await button.click();
+      }
+      await page.waitForTimeout(250);
+    }
+    await page.waitForTimeout(3000);
+    result.checks.vsixInstall = await installed();
+
     enter('idle-final');
     await page.waitForTimeout(Number(process.env.OV501_FINAL_IDLE_MS ?? 30000));
-    result.processes = await ownedProcesses(app.process().pid);
+    await maps.sample();
     await page.screenshot({ path: join(directory, 'final.png') });
   } catch (error) {
     result.failure = error.stack; process.exitCode = 1;
     await page?.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
   } finally {
+    const lostIn = phase;
     enter('shutdown');
+    // A host that quit on its own closes its window before the main process
+    // exits; only a close of a still-open window is a requested exit.
+    closing = Boolean(page) && !page.isClosed();
+    if (page?.isClosed()) result.windowClosedBeforeRequest = { phase: lostIn };
     if (app) {
       const child = app.process();
-      await app.close().catch(error => { result.cleanupFailure = error.message; });
+      const exited = new Promise(done => child.exitCode !== null || child.signalCode !== null ? done() : child.once('exit', done));
+      const closed = app.close().catch(error => { result.cleanupFailure = error.message; });
+      // A running Agent turn asks before quitting.
+      await page?.getByText('Quit Anyway', { exact: true }).click({ timeout: 5000 }).catch(() => {});
+      if (!await Promise.race([exited.then(() => true), new Promise(done => setTimeout(() => done(false), 60000))])) {
+        result.cleanupFailure = 'Host did not exit within 60 s of quit; stopped through the launch handle';
+        child.kill('SIGTERM'); // The launch handle owned by this verifier.
+        await exited;
+      }
+      await closed;
       result.hostExit = { code: child.exitCode, signal: child.signalCode };
     }
+    await maps.stop();
+    await mcp.dispose().catch(error => { result.mcpCleanupFailure = error.message; });
+    await heartbeat.stop();
     await new Promise(resolve => setTimeout(resolve, 1500));
     server.closeAllConnections(); server.close();
     await capture.close();
@@ -240,8 +416,19 @@ async function inner(directory) {
   const providerSummary = { requests: provider.length, bytes: provider.reduce((sum, item) => sum + item.bytes, 0),
     byPhase: Object.fromEntries(phases.map(({ phase: name }) => [name, provider.filter(item => item.phase === name).length])),
     canaryPhases: [...new Set(provider.filter(item => item.canaries.length).map(item => item.phase))] };
-  const trace = strace ? await attribute(traceFile, capture.proxyPort,
-    (result.processes ?? []).filter(item => item.fileServiceLoaded).map(item => item.pid)) : undefined;
+  const sampled = maps.snapshot();
+  const hostRoot = dirname(layout.executable);
+  const fileServicePids = [...sampled].filter(([, entry]) => entry.libraries.some(path => path.endsWith('file_service.linux-x64-gnu.node'))).map(([pid]) => pid);
+  const trace = strace ? await attribute(traceFile, capture.proxyPort, fileServicePids) : undefined;
+  const hashes = new Map();
+  for (const path of new Set([...sampled.values()].flatMap(entry => entry.libraries)))
+    if (path.endsWith('.node') || [appRoot, hostRoot, directory].some(prefix => path.startsWith(`${prefix}/`))) hashes.set(path, await fileHash(path).catch(() => null));
+  const knownFile = join(root, 'desktop/fixtures/linux-x64-addons-3.21.13.json');
+  const known = existsSync(knownFile) ? JSON.parse(await readFile(knownFile, 'utf8')).addons : [];
+  const addons = inventoryAddons({ processes: sampled, hashes, known, appRoot, hostRoot, runDirectory: directory,
+    directPids: trace ? [...new Set(trace.directConnects.map(item => item.tgid))] : [] });
+  result.processes = [...sampled].map(([pid, entry]) => ({ pid, role: entry.role, command: entry.command,
+    addons: entry.libraries.filter(path => hashes.has(path)), fileServiceLoaded: fileServicePids.includes(pid) }));
   const logs = await profileLogs(join(profile, 'logs'));
   Object.assign(result, {
     phases, errors,
@@ -254,13 +441,26 @@ async function inner(directory) {
       ({ phase: when, transport, host, method, path, bodyBytes, bytes, canaries: hits })),
     canaryLeaks: outbound.canaryLeaks.map(({ host, path, canaries: hits, phase: when }) => ({ host, path, phase: when, canaries: hits })),
     canaryInNames: nameHits, provider: providerSummary,
+    providerExcerpts: provider.filter(item => item.excerpt).map(({ phase: when, excerpt }) => ({ phase: when, excerpt })),
     agentTools: provider.find(item => item.tools)?.tools, agentToolResults: provider.findLast(item => item.toolResults)?.toolResults,
     trace, localMode: logs,
+    addons: { ...addons, knownList: existsSync(knownFile) ? 'desktop/fixtures/linux-x64-addons-3.21.13.json' : null, mapsSamples: maps.samples },
+    hostExits, unrequestedHostExits: hostExits.filter(item => !item.requested),
+    heartbeat: { beats: heartbeat.samples.length, minMemAvailableKiB: Math.min(...heartbeat.samples.map(item => item.memAvailableKiB)),
+      maxPressureSomeAvg10: Math.max(0, ...heartbeat.samples.map(item => item.pressureSomeAvg10 ?? 0)) },
+    signals: signalTrace ? summarizeSignals(await readFile(traceFile, 'utf8').catch(() => ''), layout.executable) : undefined,
+    terminalProvider: provider.filter(item => item.phase === 'terminal').length,
   });
   result.checks.noCanaryOutsideProvider = result.canaryLeaks.length === 0 && nameHits.length === 0;
   result.checks.providerReceivedProjectData = providerSummary.canaryPhases.length > 0;
   result.checks.indexingDisabledByLocalMode = logs.localModeIndexingDisabled;
-  if (trace) result.checks.fileServiceNoDirectSockets = trace.addonProcesses.every(pid => !trace.directConnects.some(item => item.pid === pid));
+  if (trace) result.checks.fileServiceNoDirectSockets = trace.addonProcesses.every(pid => !trace.directConnects.some(item => item.tgid === pid));
+  result.checks.addonsInventoried = addons.checks.addonsInventoried && fileServicePids.length > 0;
+  if (trace) result.checks.noAddonDirectSockets = addons.checks.noAddonDirectSockets;
+  // Nothing but the configured provider: no captured request, connection or direct connect.
+  result.checks.noNonProviderTraffic = outbound.requests === 0 && connections.length === 0 && (!trace || trace.directConnects.length === 0);
+  result.checks.hostExitRequested = hostExits.length > 0 && hostExits.every(item => item.requested);
+  if (result.unrequestedHostExits.length) result.mainLogTail = await mainLogTail(join(profile, 'logs'));
   await writeFile(join(directory, 'requests.json'), JSON.stringify(capture.records.map(record => ({ ...record,
     body: record.body ? record.body.subarray(0, 4096).toString('base64') : undefined })), null, 2));
   result.success = !result.failure && Object.values(result.checks).every(Boolean);
@@ -281,34 +481,10 @@ function summarizeNames(entries) {
   return [...names.values()].map(item => ({ ...item, phases: [...item.phases] })).sort((a, b) => b.count - a.count);
 }
 
-// Owned descendants of the launched host, with any that mapped the
-// file-service addon. Read-only /proc inspection; nothing is signalled.
-async function ownedProcesses(rootPid) {
-  const parents = new Map();
-  for (const entry of await readdir('/proc')) {
-    if (!/^\d+$/.test(entry)) continue;
-    const stat = await readFile(`/proc/${entry}/stat`, 'utf8').catch(() => '');
-    const ppid = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[1]);
-    parents.set(Number(entry), ppid);
-  }
-  const owned = new Set([rootPid]);
-  for (let changed = true; changed;) {
-    changed = false;
-    for (const [pid, ppid] of parents) if (owned.has(ppid) && !owned.has(pid)) { owned.add(pid); changed = true; }
-  }
-  const processes = [];
-  for (const pid of owned) {
-    const cmdline = (await readFile(`/proc/${pid}/cmdline`, 'utf8').catch(() => '')).split('\0').filter(Boolean);
-    const maps = await readFile(`/proc/${pid}/maps`, 'utf8').catch(() => '');
-    processes.push({ pid, type: cmdline.find(arg => arg.startsWith('--type='))?.slice(7) ?? (cmdline[0]?.split('/').pop()),
-      fileServiceLoaded: maps.includes('file_service.linux-x64-gnu.node') });
-  }
-  return processes;
-}
-
 // Attribute connect/sendto calls to processes from the strace log.
 async function attribute(file, proxyPort, addonProcesses) {
   const text = await readFile(file, 'utf8').catch(() => '');
+  const groups = threadGroups(text);
   const exec = new Map(), connects = [];
   for (const line of text.split('\n')) {
     const pid = Number(line.match(/^(\d+)\s/)?.[1]);
@@ -319,21 +495,29 @@ async function attribute(file, proxyPort, addonProcesses) {
       exec.set(pid, type ? `${command[1].split('/').pop()}:${type}` : `${command[1].split('/').pop()} ${command[2].slice(0, 120)}`);
     }
     const address = line.match(/(connect|sendto)\(\d+, .*?sin6?_port=htons\((\d+)\), (?:sin_addr=inet_addr\("([^"]+)"\)|inet_pton\(AF_INET6, "([^"]+)")/);
-    if (address) connects.push({ pid, call: address[1], port: Number(address[2]), address: address[3] ?? address[4],
+    if (address) connects.push({ pid, tgid: tgidOf(groups, pid), call: address[1], port: Number(address[2]), address: address[3] ?? address[4],
       result: line.match(/= (-?\d+.*)$/)?.[1] });
   }
   const loopback = address => /^127\.|^::1$|^::ffff:127\./.test(address);
-  const label = pid => exec.get(pid) ?? 'inherited image';
+  const label = pid => exec.get(pid) ?? exec.get(tgidOf(groups, pid)) ?? 'inherited image';
   const directConnects = connects.filter(item => !loopback(item.address) && item.address !== '0.0.0.0');
   const proxyConnects = connects.filter(item => loopback(item.address) && item.port === proxyPort);
   const dnsQueries = connects.filter(item => item.port === 53);
   const byProcess = (items) => Object.entries(items.reduce((map, item) => {
-    const key = `${item.pid} ${label(item.pid)}`; map[key] = (map[key] ?? 0) + 1; return map; }, {}));
+    const key = `${item.tgid} ${label(item.tgid)}`; map[key] = (map[key] ?? 0) + 1; return map; }, {}));
   const traced = await readFile(file, 'utf8').then(() => true, () => false);
-  return { traced, processes: exec.size, connectCalls: connects.length,
+  return { traced, processes: exec.size, threadsResolved: groups.size, connectCalls: connects.length,
     directConnects: directConnects.map(item => ({ ...item, process: label(item.pid) })),
     proxyConnectsByProcess: byProcess(proxyConnects), dnsQueriesByProcess: byProcess(dnsQueries),
     addonProcesses, addonProcessLabels: addonProcesses.map(label) };
+}
+
+// Last main-process log lines, to show what the app recorded before an
+// unrequested exit.
+async function mainLogTail(directory) {
+  const sessions = (await readdir(directory).catch(() => [])).sort();
+  const text = await readFile(join(directory, sessions.at(-1) ?? '', 'main.log'), 'utf8').catch(() => '');
+  return text.split('\n').filter(Boolean).slice(-30);
 }
 
 async function profileLogs(directory) {

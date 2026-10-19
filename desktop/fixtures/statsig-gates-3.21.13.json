@@ -1,0 +1,4964 @@
+{
+ "scope": "OpenVision OV-1005 gate-drift assessment, Linux x64, Cursor 3.21.13 stock workbench. Classification is by gate name; consumers were traced only for the proposed local defaults.",
+ "source": {
+  "workbench": "out/vs/workbench/workbench.desktop.main.js (stock 3.21.13 input)",
+  "workbenchSha256": "30dd57f947cb88810c6fefd0d188fdc53d2f29145254012ae76a558325f779f2",
+  "bootstrap": {
+   "rpc": "aiserver.v1.AnalyticsService/BootstrapStatsig",
+   "anonymous": true,
+   "capturedAt": "2026-10-18T21:33:31Z",
+   "request": {
+    "operatingSystem": "CLIENT_OS_LINUX",
+    "headers": [
+     "x-cursor-client-version: 3.21.13",
+     "x-cursor-client-type: ide",
+     "x-cursor-client-os: linux",
+     "x-cursor-client-arch: x64"
+    ]
+   },
+   "generatedAtMs": 1792359211055,
+   "hashUsed": "djb2",
+   "featureGates": 3550,
+   "evaluatedAppVersion": "3.21.13"
+  }
+ },
+ "counts": {
+  "declared": 763,
+  "inBootstrap": 676,
+  "drifted": 209,
+  "driftedOn": 195,
+  "driftedOff": 14,
+  "byClass": {
+   "local-feature": 53,
+   "hosted-only": 148,
+   "telemetry": 8
+  }
+ },
+ "appliedLocalGateDefaults": {
+  "customize_manage_scope_multiselect": true
+ },
+ "proposedLocalGateDefaults": {
+  "instant_grep_indexing": true,
+  "custom_agents_enabled": true,
+  "customize_global_search": true
+ },
+ "gates": [
+  {
+   "name": "agent_goal_continuation",
+   "hash": "3450408233",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "nal_websocket_client",
+   "hash": "579159465",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "agent_queued_prompt_new_request_id",
+   "hash": "2046783027",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "org_billing_admin_role",
+   "hash": "2125405413",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "org_team_settings_copy_on_create",
+   "hash": "2639864391",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_mobile_session_upgrade",
+   "hash": "3085040113",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "remote_agent_host_mobile",
+   "hash": "2142128422",
+   "default": false
+  },
+  {
+   "name": "response_comparison_comment_prompt",
+   "hash": "1589201852",
+   "default": false
+  },
+  {
+   "name": "cursor_new_colors",
+   "hash": "3982814584",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_team_invite_members",
+   "hash": "3347716437",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_invite_new_users",
+   "hash": "945293731",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_setup_checklist",
+   "hash": "687932340",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_fleet_operations",
+   "hash": "281077805",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "show_dashboard_onboarding_download_grok_bot",
+   "hash": "2555337615",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_grok_bot_topbar_cta_show",
+   "hash": "3265709312",
+   "default": false,
+   "bootstrap": false,
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "dashboard_grok_bot_onboarding_checklist",
+   "hash": "1761138887",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_mobile_transcript_server_tail",
+   "hash": "2508172933",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_mobile_notification_sounds",
+   "hash": "3005004950",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_mobile_agent_computer_console",
+   "hash": "775623663",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_mobile_i18n",
+   "hash": "633155680",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_mobile_unread_on_avatar",
+   "hash": "793864811",
+   "default": false
+  },
+  {
+   "name": "sand_mobile_home_unread_jump_pills",
+   "hash": "3541180411",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_mobile_failures_screen",
+   "hash": "1361975744",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_mobile_feedback_kill_switch",
+   "hash": "540520381",
+   "default": false
+  },
+  {
+   "name": "sand_mobile_app_store_update_indicator",
+   "hash": "1213905495",
+   "default": true
+  },
+  {
+   "name": "sand_mobile_dictation_diagnostics",
+   "hash": "3425163370",
+   "default": true
+  },
+  {
+   "name": "sand_mobile_manage_subscription_kill_switch",
+   "hash": "1590450475",
+   "default": false
+  },
+  {
+   "name": "sand_enable_home_pull_to_refresh",
+   "hash": "3675891698",
+   "default": false
+  },
+  {
+   "name": "sand_special_settings",
+   "hash": "2120066884",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_messages_tools",
+   "hash": "959584835",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_writing_style",
+   "hash": "3198528990",
+   "default": false
+  },
+  {
+   "name": "grok_bot_hide_internal_details",
+   "hash": "384679277",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "sand_send_message_delivery_owed",
+   "hash": "3709038302",
+   "default": false
+  },
+  {
+   "name": "sand_automation_agent_gone_terminal",
+   "hash": "1701846613",
+   "default": false
+  },
+  {
+   "name": "sand_subagent_automation",
+   "hash": "624665750",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_dynamic_tools",
+   "hash": "2112514859",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_browser_use_playwright",
+   "hash": "2707106968",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_server_rooms",
+   "hash": "768850860",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_server_automations",
+   "hash": "4125186032",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_durable_identity",
+   "hash": "2545019474",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_durable_identity_writes",
+   "hash": "457955073",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_shared_identity",
+   "hash": "1223183528",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_identity_backfill",
+   "hash": "2499544731",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_temporal_harness",
+   "hash": "4183189763",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_server_memories",
+   "hash": "3605791787",
+   "default": false
+  },
+  {
+   "name": "grok_bot_stripe_link",
+   "hash": "3207368188",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_memory_dreaming",
+   "hash": "2323480770",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_1pass_integration",
+   "hash": "3960550876",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_new_transcript_journal",
+   "hash": "2288384712",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_cloud_agent_artifacts",
+   "hash": "2178277538",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_cloud_agent_durable_watch",
+   "hash": "2098692855",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_computer_use_unicode_typing",
+   "hash": "3509264698",
+   "default": false
+  },
+  {
+   "name": "sand_usage_limit_tray_recovery",
+   "hash": "1274290529",
+   "default": false
+  },
+  {
+   "name": "sand_on_demand_settings",
+   "hash": "2376809682",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "store_billed_web_on_demand",
+   "hash": "2071410821",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_onboarding_bot",
+   "hash": "2283107006",
+   "default": false
+  },
+  {
+   "name": "sand_notification_sounds",
+   "hash": "1184096989",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_scheduled_computer_updates",
+   "hash": "3512955283",
+   "default": false,
+   "bootstrap": false,
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "sand_browser_navigation_recovery",
+   "hash": "4163870862",
+   "default": false
+  },
+  {
+   "name": "sand_browser_use_stable_refs",
+   "hash": "3774681146",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_network_debugger",
+   "hash": "3498365890",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_user_form",
+   "hash": "157902525",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_form_vault",
+   "hash": "2443786151",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_agent_network",
+   "hash": "217172601",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_draft_external_message",
+   "hash": "4049606796",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_enable_pressure_cpu_profiler",
+   "hash": "3352543353",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "sand_enable_accent_theming",
+   "hash": "316042898",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_anonymized_egress_telemetry",
+   "hash": "3315828259",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "sand_action_audit_logs",
+   "hash": "2320375361",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_legacy_store_blob_retirement",
+   "hash": "799150178",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_conversation_gc",
+   "hash": "457561960",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_notify_bus",
+   "hash": "1807700773",
+   "default": false
+  },
+  {
+   "name": "sand_notify_safety_poll",
+   "hash": "3903653041",
+   "default": true
+  },
+  {
+   "name": "sand_five_min_automation_floor",
+   "hash": "3384540323",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only",
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "sand_canvases",
+   "hash": "1966625121",
+   "default": false,
+   "bootstrap": false,
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "sand_enable_agent_tray",
+   "hash": "3921593713",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_enable_projects",
+   "hash": "2001024507",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only",
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "sand_enable_bot2bot_cloud_agent_ui",
+   "hash": "46785692",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only",
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "sand_hide_slash_commands",
+   "hash": "141131628",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_stream_idle_deadline",
+   "hash": "1232924863",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_browser_ua_token_kill_switch",
+   "hash": "251784590",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_browser_fingerprint_spoof",
+   "hash": "1220939420",
+   "default": false
+  },
+  {
+   "name": "sand_enable_spoof_gpu",
+   "hash": "1728105749",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_box_store_skip_inaccessible",
+   "hash": "2868549070",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_working_state_warming",
+   "hash": "713400198",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only",
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "sand_web_bot_auth_signing",
+   "hash": "268003148",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_web_bot_auth_sign_xhr_fetch",
+   "hash": "65859476",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_web_bot_auth_sign_iframes",
+   "hash": "905165798",
+   "default": false
+  },
+  {
+   "name": "sand_transcript_double_write",
+   "hash": "42334495",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_transcript_store_read",
+   "hash": "3342800098",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_transcript_store_first",
+   "hash": "536641764",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_transcript_server_tail",
+   "hash": "1276055262",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_roster_via_server",
+   "hash": "1838324685",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_attachments_via_server",
+   "hash": "428277406",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_create_temporal_agents",
+   "hash": "705696419",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_server_agent_settings",
+   "hash": "2581178857",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_client_pause",
+   "hash": "3438532701",
+   "default": false
+  },
+  {
+   "name": "sand_roster_waking_hold",
+   "hash": "178958532",
+   "default": false
+  },
+  {
+   "name": "sand_busy_one_click_update",
+   "hash": "1017028772",
+   "default": false
+  },
+  {
+   "name": "sand_channels",
+   "hash": "3504990507",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_get_grok_bot_ios",
+   "hash": "1880323585",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_enable_account_switching",
+   "hash": "1775769659",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_onboarding_role_selection",
+   "hash": "3117116332",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_share_bot",
+   "hash": "2532039532",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_header_template_share_menu",
+   "hash": "4153169549",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_hide_deprecated_context_menu_items",
+   "hash": "414332634",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_multiplayer",
+   "hash": "3562553002",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_multiplayer_sharing_enabled",
+   "hash": "1476036425",
+   "default": false
+  },
+  {
+   "name": "grok_bot_group_chats",
+   "hash": "4087051179",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_team_bot_onboarding",
+   "hash": "3028750085",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_agent_mail",
+   "hash": "992235361",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_scm_connect_card",
+   "hash": "2294232791",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_check_subscription_usage",
+   "hash": "1047193926",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_template_onboarding",
+   "hash": "77601872",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "grok_bot_links_list",
+   "hash": "3914841620",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_agent_sidebar_files_links",
+   "hash": "3296726873",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_simplified_right_pane",
+   "hash": "1563247991",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_in_progress_tasks",
+   "hash": "40463963",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_import_chrome_cookies",
+   "hash": "386810921",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_prompted_cookie_sync",
+   "hash": "1970705236",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_voice_call",
+   "hash": "1456937958",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_voice_call_feedback_card",
+   "hash": "1325258481",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_voice_call_overheard",
+   "hash": "1416136393",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_voice_stay_silent",
+   "hash": "1882684019",
+   "default": false
+  },
+  {
+   "name": "sand_voice_async_update",
+   "hash": "2441169268",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_voice_steer",
+   "hash": "2230739273",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_voice_final_word",
+   "hash": "793482171",
+   "default": false
+  },
+  {
+   "name": "sand_voice_memos",
+   "hash": "2224759281",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_voice_server_harness",
+   "hash": "3472253692",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_focus_staleness_catch_up",
+   "hash": "1990966960",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "disable_smart_auto_show_routed_model",
+   "hash": "1823936964",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "migrate_default_model_config_to_auto_smart_cost",
+   "hash": "1331993924",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "model_nudge_opt_out_setting",
+   "hash": "3573539609",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "app_open_model_nudge_pre_render_only",
+   "hash": "1103048520",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "new_automation_templates_slack_github_triggers",
+   "hash": "3266885689",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "customer_evals_ui",
+   "hash": "1188456381",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "git_diff_collect_stderr",
+   "hash": "209912996",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_chat_switch_tracing",
+   "hash": "569342267",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_chat_switch_macrotask_adopt",
+   "hash": "1314855099",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_chat_switch_post_paint_commit",
+   "hash": "559129264",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_catalog_cache",
+   "hash": "689204050",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_dispose_workspace_on_release",
+   "hash": "772819860",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_origin_pr_notifications",
+   "hash": "2871018913",
+   "default": false
+  },
+  {
+   "name": "glass_git_diff_meter",
+   "hash": "677335167",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_auto_reroot_after_create_project",
+   "hash": "3702247894",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_agent_worktree_reroot_prompt",
+   "hash": "1997865371",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_cloud_meta_agents",
+   "hash": "4094248059",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "named_agent_single_session",
+   "hash": "124663647",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_empty_state_pickers_redesign",
+   "hash": "681736718",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_empty_state_recommended_actions",
+   "hash": "993236278",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_branch_picker_redesign",
+   "hash": "1737697736",
+   "default": false
+  },
+  {
+   "name": "composer_pr_hash_menu",
+   "hash": "504754354",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "unified_composer_tray_debug",
+   "hash": "3174112860",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_remember_new_agent_environment_selection",
+   "hash": "3734964792",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_editor_shadow_isolation",
+   "hash": "839945022",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_defer_shadow_style_rebuild",
+   "hash": "1559219198",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_filetree_dont_show_default",
+   "hash": "4017564075",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "sand_audit_logs",
+   "hash": "369618478",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "limit_hit_ui_kill_switch",
+   "hash": "448288570",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "rate_limited_reconnect_message_kill_switch",
+   "hash": "2933175825",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_no_x_on_chips",
+   "hash": "3375325417",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_preview_linear_tickets",
+   "hash": "778691911",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "origin_repos",
+   "hash": "2086777064",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "origin_app_install_requests",
+   "hash": "1115641791",
+   "default": false
+  },
+  {
+   "name": "origin_app_user_confirmation",
+   "hash": "1334688050",
+   "default": false
+  },
+  {
+   "name": "codebase_branches_redesign_in_progress",
+   "hash": "2017594183",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "automations_origin_request_reviewers",
+   "hash": "3754366248",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "origin_raw_file_links",
+   "hash": "2969689574",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_auto_review",
+   "hash": "665689261",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_auto_review_admin_enforce",
+   "hash": "3474859744",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_auto_review_admin_rules",
+   "hash": "3841529717",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_local_egress_admin_control",
+   "hash": "1229101586",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "sand_spotlight",
+   "hash": "3193795417",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "smart_mode_classifier_shadow_mode",
+   "hash": "217003242",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ext_host_document_memory_estimates",
+   "hash": "827949880",
+   "default": false
+  },
+  {
+   "name": "agent_exec_text_document_api_access_tracking",
+   "hash": "182340103",
+   "default": false
+  },
+  {
+   "name": "cursor_agent_host",
+   "hash": "2516219691",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_agent_host_move_exec",
+   "hash": "501590059",
+   "default": false
+  },
+  {
+   "name": "cursor_agent_host_owned_session_storage",
+   "hash": "411109924",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_agent_host_session_storage_migrate_on_open",
+   "hash": "3190221973",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_agent_host_native_cloud_subagent",
+   "hash": "3285659299",
+   "default": false
+  },
+  {
+   "name": "cursor_agent_host_subagent_interactions",
+   "hash": "3834892231",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "agent_host_local_loop",
+   "hash": "1967931573",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_local_ollama",
+   "hash": "2581582941",
+   "default": false
+  },
+  {
+   "name": "agent_host_updater",
+   "hash": "2138917932",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_host_private_inference",
+   "hash": "211488768",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "defer_cursor_agent_exec_activation",
+   "hash": "1667808718",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "shell_exec_output_backpressure",
+   "hash": "3849772331",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "file_watcher_metrics",
+   "hash": "739022973",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_shared_application_storage",
+   "hash": "601495125",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "reactivestorage_single_pass_stringify",
+   "hash": "2877814871",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "reactive_storage_size_report_enabled",
+   "hash": "1118313258",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "model_catalog_own_key",
+   "hash": "1901135594",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "slow_ipc_deserialize_sentry",
+   "hash": "3827941792",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "chunked_document_open_sync",
+   "hash": "2520179871",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ripgrep_invocation_monitor",
+   "hash": "2760972155",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "rules_discovery_respect_cursorignore",
+   "hash": "1576306168",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "subagents_discovery_allow_external_symlinks",
+   "hash": "2066292368",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grep_fallback_monitor",
+   "hash": "3283429190",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "crepe_lazy_external_git_index",
+   "hash": "3223703400",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "exthost_rpc_channel_history",
+   "hash": "1571918088",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "exthost_rpc_metrics",
+   "hash": "501066867",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "remote_exthost_watchdog",
+   "hash": "33514780",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_remote_connection_dormancy",
+   "hash": "1860765652",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "disable_remote_workspace_reh_healthcheck",
+   "hash": "3208009622",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_kv_auto_gc",
+   "hash": "3456010258",
+   "default": false
+  },
+  {
+   "name": "service_account_repo_scope_use_installation_fanout",
+   "hash": "43914348",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "grok_bot_gkw_connectors",
+   "hash": "1508803106",
+   "default": false
+  },
+  {
+   "name": "ide_make_github_request_enabled",
+   "hash": "3457715857",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "customize_hooks_execution_log_detail",
+   "hash": "2208308190",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "dashboard_agent_requests_heatmap",
+   "hash": "631901174",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "bugbot_enable_bulk_rules_upload_in_portal",
+   "hash": "3227518029",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "team_rule_agent_type_ui",
+   "hash": "4109769630",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "advanced_setup_for_self_hosted_gitlab_available",
+   "hash": "3430647039",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "gitlab_com_service_account_token_available",
+   "hash": "3472990693",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_bitbucket_data_center_onboarding",
+   "hash": "260517428",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_bitbucket",
+   "hash": "640573819",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "internal_team_user_profiles",
+   "hash": "2156410942",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "user_claim_handle_glass",
+   "hash": "2612270780",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "user_profile_glass",
+   "hash": "3141930994",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_cursor_agent_worker_extension",
+   "hash": "2344192005",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "automations_chain_prompts",
+   "hash": "1716504398",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "website_use_new_model_picker_for_automations",
+   "hash": "1102577414",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "green_dot_automation_status",
+   "hash": "2321992296",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "automations_validate_on_enable",
+   "hash": "2771120861",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "automations_retry_button",
+   "hash": "889852364",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "managed_automations_team_revamp",
+   "hash": "2739076160",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "automations_gitlab_extended_triggers",
+   "hash": "1533689824",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "automations_bitbucket_extended_triggers",
+   "hash": "1159430518",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "automations_forge_agnostic_mirrors",
+   "hash": "654693554",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "managed_agents_enabled",
+   "hash": "3906776752",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "custom_agents_enabled",
+   "hash": "2528236702",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "agents_bugbot_bottom_upsell",
+   "hash": "1506842150",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "review_agents_shared_growth",
+   "hash": "145051895",
+   "default": false
+  },
+  {
+   "name": "automations_org_scoped_triggers_ui",
+   "hash": "1749145863",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agents_no_repo_enabled",
+   "hash": "3741312587",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_resubmit_from_message",
+   "hash": "2078709602",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_cloud_agent_sidebar_ci_status",
+   "hash": "2054767745",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_migration_resume_kickoff",
+   "hash": "410490668",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_cloud_agent_fork_from_turn",
+   "hash": "3381590940",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_use_prewarmed_pods",
+   "hash": "1063464386",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_cloud_blob_prefetch_bloom_filter",
+   "hash": "2699543559",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_stop_permanent_stream_reconnect",
+   "hash": "3874050914",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_repair_stalled_pane",
+   "hash": "3877405974",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_bounded_transcript_body_residency",
+   "hash": "1778544256",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_plugins",
+   "hash": "1071954908",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_origin_env_migration_rpc",
+   "hash": "2989479053",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "local_agent_subagent_state_blob_refs",
+   "hash": "783566664",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_env_setup_with_dockerfiles",
+   "hash": "610147766",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "generalized_env_setup",
+   "hash": "37366692",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_ask_question_auto_answer",
+   "hash": "1728556735",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_ask_question_auto_answer_timeout_setting",
+   "hash": "716748786",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_env_builds_default_enabled",
+   "hash": "4012212383",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_migrate_to_builds_setup_agent_cta",
+   "hash": "2270339078",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_transcript_reliability_controls",
+   "hash": "3925274176",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "local_agent_transcript_search_in_glass",
+   "hash": "2828536286",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "agent_conversation_search_tool",
+   "hash": "2991449101",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "disable_cloud_agent_transcript_indexing_in_glass",
+   "hash": "2320494051",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "nal_agent_retries",
+   "hash": "101914982",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cli_harness_telemetry",
+   "hash": "2042289483",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cli_image_arg",
+   "hash": "5816595",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "x-chat-context",
+   "hash": "2109504367",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "referral_codes_v2",
+   "hash": "3270320023",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "p2p_referrals_v1",
+   "hash": "208048277",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "disk_usage_monitor",
+   "hash": "324401562",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "oom_crash_watcher",
+   "hash": "3095843570",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "local_request_tracing",
+   "hash": "1678797374",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "local_request_trace_dd_slogs",
+   "hash": "3906225377",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "memory_pressure_profiling",
+   "hash": "1625349802",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cpu_monitor_process_snapshot",
+   "hash": "3282909328",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "issue_traces_enabled",
+   "hash": "486446070",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "glass_automations_ui",
+   "hash": "3060951706",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_stable_diff_group_keys",
+   "hash": "1627874125",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "local_automations",
+   "hash": "553517928",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "local_automations_nav",
+   "hash": "2720720844",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_agent_confetti_cannon",
+   "hash": "4247533271",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_install_plugin_tool_enabled",
+   "hash": "3800617535",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cursor_backend_control_automation_mcp",
+   "hash": "165121448",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_configure_multi_root_option",
+   "hash": "1344821520",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_multi_root_workspace_editing",
+   "hash": "1194416506",
+   "default": false
+  },
+  {
+   "name": "glass_remote_ssh_workspace_repair",
+   "hash": "2670878692",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_remote_ssh_management_connection_token_loss_repair",
+   "hash": "3309933105",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_custom_theme_support",
+   "hash": "1333829614",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_send_feedback",
+   "hash": "1337808601",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "environment_param_for_subagent",
+   "hash": "4263411609",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_assistant_message_selection_feedback",
+   "hash": "141977844",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_editor_panel_tab_copy_link",
+   "hash": "4097588272",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_peaky_file_trees",
+   "hash": "2711988314",
+   "default": false
+  },
+  {
+   "name": "glass_markdown_table_expand",
+   "hash": "815253752",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "conversation_table_of_contents",
+   "hash": "1285439701",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "save_button_glass_env_setup",
+   "hash": "1389916573",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_status_bar_environment_picker",
+   "hash": "420925776",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_agent_branch_status_picker",
+   "hash": "942208315",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_all_changes_diff_scope",
+   "hash": "579775511",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_scm_dynamic_base_branch",
+   "hash": "703907819",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_direct_github_connect",
+   "hash": "224546593",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "scm_connect_in_app_ad",
+   "hash": "1542263460",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "scm_connect_in_app_ad_gitlab",
+   "hash": "2282525302",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "scm_connect_ad_cheap_probe",
+   "hash": "2397101179",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_last_turn_diff_scope",
+   "hash": "3089645526",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "import_cc_conversation",
+   "hash": "2685744488",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "import_cc_conversation_default",
+   "hash": "176212586",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_drafts_quick_action_pill",
+   "hash": "673673638",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_sidebar_source_metadata",
+   "hash": "3970544685",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_sidebar_scroll_active_row_if_needed",
+   "hash": "1665013765",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_sidebar_archive_toggle",
+   "hash": "3984049367",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_sidebar_env_icons",
+   "hash": "345056802",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_btw_side_question",
+   "hash": "135260017",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_side_chats",
+   "hash": "3245114326",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_side_chats",
+   "hash": "429981047",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_desktop_lease",
+   "hash": "2076238771",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_project_coordinator_v2",
+   "hash": "4193021211",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_project_worker_membership_rpc",
+   "hash": "991313588",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_composer_markdown_support",
+   "hash": "987236027",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_cloud_child_question_answered_in_child",
+   "hash": "1604070011",
+   "default": false
+  },
+  {
+   "name": "prompt_input_image_annotation",
+   "hash": "2946452899",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_split_tabs",
+   "hash": "93370918",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_browser_responsive_design_mode",
+   "hash": "345451923",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_default_pr_tabs",
+   "hash": "3805929690",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_agent_surface_keepalive",
+   "hash": "915749081",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_lazy_file_tabs",
+   "hash": "1732956281",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_offline_tray",
+   "hash": "2160967669",
+   "default": false
+  },
+  {
+   "name": "glass_projects_enabled",
+   "hash": "1340142303",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "internal_cloud_project_remote_control",
+   "hash": "679812054",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_add_local_agent_to_cloud_project",
+   "hash": "2615596979",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "remote_agent_host_glass",
+   "hash": "1587490424",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_projects_as_agents",
+   "hash": "637291225",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_first_project_onboarding",
+   "hash": "1233046611",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "dev_only_force_first_project_experience",
+   "hash": "1039325916",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_project_notes_tldr_card",
+   "hash": "1997225410",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_project_notes_only_title_context",
+   "hash": "1435923580",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_project_notes_notion_links",
+   "hash": "2753053078",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_project_notes_document",
+   "hash": "3911472866",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_projects_empty_state",
+   "hash": "1852450749",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_projects_unread_divider",
+   "hash": "369195307",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_projects_open_apps_on_create",
+   "hash": "3270736642",
+   "default": false
+  },
+  {
+   "name": "glass_projects_prefer_interrupt",
+   "hash": "3515601174",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_vercel_connect_pill_cloud",
+   "hash": "2112508057",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_vercel_connect_pill_local",
+   "hash": "2120896975",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "web_vercel_publish_pill",
+   "hash": "2839357558",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "local_interactive_child_inbox",
+   "hash": "2132357874",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_diff_ci_tab",
+   "hash": "1127527795",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "managed_review_agent_skills_enabled",
+   "hash": "337662629",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_diff_commits_tab",
+   "hash": "157994011",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_diff_reviews_tab",
+   "hash": "6007450",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_worktree_to_cloud",
+   "hash": "3406085502",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_agentic_migration_reconcile",
+   "hash": "1164373114",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_cloud_to_worktree",
+   "hash": "3230312038",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_pr_viewed",
+   "hash": "1614975454",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_pr_realtime_updates",
+   "hash": "3309465936",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_cursor_tab",
+   "hash": "521105359",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_avoid_secondary_scanline",
+   "hash": "2579835081",
+   "default": false
+  },
+  {
+   "name": "glass_auto_suggested_quick_actions_skills",
+   "hash": "2684474175",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_skill_keyword_nudges",
+   "hash": "3768344159",
+   "default": false
+  },
+  {
+   "name": "glass_continue_working_pill",
+   "hash": "3290492316",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_agent_pr_followup_pill",
+   "hash": "4186098220",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_open_resource_tool_enabled",
+   "hash": "3139847833",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_pr_tray_stack_groups",
+   "hash": "861871546",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "open_github_pr_links_in_review_cursor",
+   "hash": "1815922975",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_com_review_pages",
+   "hash": "724185060",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "show_cursor_review_early_access_ad",
+   "hash": "3632561506",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "smart_allowlist_required",
+   "hash": "2449284013",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "bugbot_low_mode",
+   "hash": "1648097178",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "bugbot_connect_repo_implicit_enable",
+   "hash": "1892050033",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "bugbot_onboarding_high_effort_learning_defaults_team_v2",
+   "hash": "3316595684",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "bugbot_suggested_repos_banner",
+   "hash": "1323959410",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bugbot_non_admin_enablement",
+   "hash": "3919673711",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "use_model_parameters",
+   "hash": "2916299896",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_default_model_picker",
+   "hash": "710139110",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_default_auto_modes",
+   "hash": "1260173218",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "use_react_model_picker",
+   "hash": "1126334172",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "model_picker_max_badge",
+   "hash": "3168743661",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "model_picker_hover_options",
+   "hash": "78882816",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "model_picker_hide_max_mode_token_users",
+   "hash": "2931405283",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bugbot_auto_spawn_cloud_agent",
+   "hash": "2215770643",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bugbot_fail_check_on_findings",
+   "hash": "1447163838",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "vscode_text_model_telemetry",
+   "hash": "3932356102",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "composer_auto_routing_result_display",
+   "hash": "2316393770",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "seat_upgrade_economics_recommendations",
+   "hash": "839314588",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "self_serve_team_tiered_pricing_conversion",
+   "hash": "912599822",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "self_serve_team_tiered_pricing_manual_conversion",
+   "hash": "4274531895",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "self_serve_team_tiered_pricing_new_team_creator",
+   "hash": "1693101185",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "self_serve_team_tiered_pricing_legacy_conversion",
+   "hash": "1528664660",
+   "default": false
+  },
+  {
+   "name": "enable_spend_alerts_percentage_threshold",
+   "hash": "3683161745",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cursor_models_additional_budget",
+   "hash": "992519313",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "composer_enable_bga_hydration_from_snapshot",
+   "hash": "2905550704",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "fix_remote_ssh_checkpoints",
+   "hash": "3621009829",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_composer_header_pagination",
+   "hash": "2989196752",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "voice_mode_settings",
+   "hash": "1724223218",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "voice_dictation_streaming_only",
+   "hash": "3520797462",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_realtime_voice",
+   "hash": "128251009",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_blame",
+   "hash": "2861018886",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_skill_enabled",
+   "hash": "828338730",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "onboard_skill_enabled",
+   "hash": "420438395",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ai_attribution_tool",
+   "hash": "2202612879",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "pr_metrics_admin_view_override",
+   "hash": "3963583741",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "portal_pr_code_tour",
+   "hash": "1065418848",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_code_tours_custom_prompt",
+   "hash": "2656107448",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_code_tour_path_scope",
+   "hash": "2986359019",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "portal_pr_code_tour_stack_nav",
+   "hash": "1984436685",
+   "default": false
+  },
+  {
+   "name": "portal_pr_code_tour_stack_generate",
+   "hash": "843022091",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_code_tour_walk",
+   "hash": "1698344378",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_code_tour_section_reviewed",
+   "hash": "741338242",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_pr_code_tour",
+   "hash": "4246109008",
+   "default": false
+  },
+  {
+   "name": "portal_pr_activity",
+   "hash": "3263913305",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "portal_hide_projects_sidebar",
+   "hash": "3983118945",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "enable_ex_hs",
+   "hash": "2937675355",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "stars_popup_ignore_dont_ask_again",
+   "hash": "2411577032",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "terminal_execution_service_2",
+   "hash": "3552971390",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "long_running_jobs",
+   "hash": "119294905",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "background_nudge_2",
+   "hash": "177531901",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "auto_background_foreground_tools_on_followup",
+   "hash": "2648728301",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "user_message_timestamps",
+   "hash": "976047689",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_preview_port_forward",
+   "hash": "1014770018",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "terminal_ui_2",
+   "hash": "2841516330",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "composer_protected_tooltip",
+   "hash": "3710252819",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "auto_open_review_during_plan_build",
+   "hash": "1275420468",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "analyze_query_intent",
+   "hash": "63779334",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mcp_allowlists",
+   "hash": "3077206449",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "allowlist_in_ask_every_time_mode",
+   "hash": "3997312937",
+   "default": false
+  },
+  {
+   "name": "analytics_output_channel",
+   "hash": "4044243358",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "analytics_batch_coalesce_watermark",
+   "hash": "1283615114",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "browser_features_access_control",
+   "hash": "290471341",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cli_sandbox_default_enable",
+   "hash": "690254776",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cli_auto_run_hint",
+   "hash": "2228936556",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cli.hints",
+   "hash": "810420350",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cli.rewind",
+   "hash": "3931049289",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cli_debug_mode",
+   "hash": "4078188686",
+   "default": true
+  },
+  {
+   "name": "cli_btw_side_question",
+   "hash": "684572693",
+   "default": true
+  },
+  {
+   "name": "cli_model_picker",
+   "hash": "1167169315",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cli_zen_mode_available",
+   "hash": "1088314824",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cli_show_images",
+   "hash": "3335122267",
+   "default": true
+  },
+  {
+   "name": "pr_analytics",
+   "hash": "3991374217",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "xai_team_link",
+   "hash": "1716263357",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "enable_cc_plugin_import",
+   "hash": "1307925454",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "model_picker_nudge",
+   "hash": "465940352",
+   "default": false
+  },
+  {
+   "name": "terminal_ide_shell_exec",
+   "hash": "3988346392",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_agent_origin_repos",
+   "hash": "2261824044",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_new_project_entrypoint",
+   "hash": "3527953031",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_new_project_empty_root_commit",
+   "hash": "3233383673",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_new_project_jit_no_namespace",
+   "hash": "319331504",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "agent_create_repo_tray",
+   "hash": "1418568282",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_create_repo_tray_cloud_publish",
+   "hash": "890661856",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "codebase_browse_ask_cursor",
+   "hash": "3306990832",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_origin_agentic_repo_board",
+   "hash": "221162294",
+   "default": false
+  },
+  {
+   "name": "codebase_browse_symbol_nav",
+   "hash": "3997754128",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "enable_automations_show_all_mirrored_repos",
+   "hash": "3685440897",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_forge_source_pr_creation_setting",
+   "hash": "2100881021",
+   "default": false
+  },
+  {
+   "name": "origin_dogfooding_cursor_creation_provider_override",
+   "hash": "182940549",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "origin_request_access_disabled",
+   "hash": "912454446",
+   "default": false
+  },
+  {
+   "name": "origin_non_admin_namespace_creation_allowed",
+   "hash": "2891925063",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "origin_enable_org_member_direct_grants",
+   "hash": "296765350",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "enable_origin_external_collaborators",
+   "hash": "1553226550",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "origin_repo_collaborators_tab",
+   "hash": "2590913327",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "enable_origin_external_sharing",
+   "hash": "4079990181",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "enable_clonekit_in_app",
+   "hash": "1244094449",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "origin_mcp",
+   "hash": "2411102465",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only",
+   "requiresAuthenticatedBootstrap": true
+  },
+  {
+   "name": "enable_origin_research_preview_for_enterprises",
+   "hash": "272558302",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "marketplace_origin_distribution",
+   "hash": "2022398729",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "atlas_enabled",
+   "hash": "64011149",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mcp_multi_account",
+   "hash": "1597660994",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "cloud_agent_interactive_mcp_auth",
+   "hash": "2803097390",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "mcp_profile_scoped_global_disabled_state",
+   "hash": "713966870",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "team_mcps_in_ide",
+   "hash": "1746880148",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "team_mcps_in_cli",
+   "hash": "1746874634",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "remote_permissions_file_path_admin",
+   "hash": "2547361572",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "admin_command_denylist",
+   "hash": "3149440526",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "admin_reset_agent_run_mode_to_auto_review",
+   "hash": "2264396658",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "admin_command_denylist_enforcement_killswitch",
+   "hash": "132945602",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "restrict_team_member_invite_button",
+   "hash": "2330309922",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "editor_bugbot",
+   "hash": "3110654437",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bugbot_autorun_killswitch",
+   "hash": "1662588577",
+   "default": false
+  },
+  {
+   "name": "keybinding_migration_killswitch",
+   "hash": "1474581628",
+   "default": false
+  },
+  {
+   "name": "agent_review_fake_dev",
+   "hash": "2325070840",
+   "default": false
+  },
+  {
+   "name": "enable_moved_lines_treatment",
+   "hash": "1761554416",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ide_cmd_enter_submit",
+   "hash": "4057087801",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ide_nal_migration",
+   "hash": "588546899",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ide_new_sidebar",
+   "hash": "1512505768",
+   "default": false
+  },
+  {
+   "name": "playwright_mcp_provider",
+   "hash": "1410909500",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "web_audit_events",
+   "hash": "3791449352",
+   "default": false
+  },
+  {
+   "name": "web_cloud_agent_followup_model_picker",
+   "hash": "3607871176",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "web_cloud_agent_new_model_picker",
+   "hash": "1304440562",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "web_cloud_agent_kickoff_lands_in_run_view",
+   "hash": "246571799",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "web_cloud_agent_external_source_attachment",
+   "hash": "3882213858",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_new_cloud_onboarding_ui_changes",
+   "hash": "500248919",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_agent_portal_ask_question",
+   "hash": "2066769435",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "web.show_local_source_filter",
+   "hash": "3688738656",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "open_agent_window_bottom_convo",
+   "hash": "4191588007",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "open_agent_window_top",
+   "hash": "3151108949",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass.enable_open_agent_in_window",
+   "hash": "3591334245",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_best_of_n_disabled",
+   "hash": "3896498622",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_prompt_upload_presign",
+   "hash": "640054809",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "search_telemetry",
+   "hash": "3755577826",
+   "default": false
+  },
+  {
+   "name": "scim_require_user_directory_ui",
+   "hash": "284955701",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "allow_legacy_billing_group_creation",
+   "hash": "685970851",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "new_file_ux",
+   "hash": "2695326887",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "internal_browser_evaluate",
+   "hash": "1441205522",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "browser_canvas",
+   "hash": "130280015",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_canvas_skill",
+   "hash": "615729780",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "cloud_canvas_tools",
+   "hash": "616778238",
+   "default": false
+  },
+  {
+   "name": "composer_separate_shell_activity_groups",
+   "hash": "3768015832",
+   "default": false
+  },
+  {
+   "name": "show_grouped_edit_diff_stats",
+   "hash": "2879597335",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "composer_end_of_turn_summary",
+   "hash": "1157962313",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "allowlist_toggle_menu",
+   "hash": "1061948050",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "slim_codeblock_render",
+   "hash": "3163184823",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "compact_terminal",
+   "hash": "2773639192",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "sand_android_iap_enabled",
+   "hash": "2780248655",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "composer_sandbox_settings_visible",
+   "hash": "1492320525",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "sandbox_force_disable_win32",
+   "hash": "3278343000",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "admin_network_controls",
+   "hash": "2126461079",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "mcp_access_network_allowlist",
+   "hash": "1301911424",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mcp_admin_tool_discovery",
+   "hash": "918104126",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "mcp_admin_only_servers",
+   "hash": "3107588530",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mcp_admin_only_tools",
+   "hash": "1439087229",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sandbox_mcp_servers",
+   "hash": "1624503923",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sandbox_read_control_portal",
+   "hash": "1188488671",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sandbox_read_control_portal_ui",
+   "hash": "2850671860",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "mcp_network_allowlist",
+   "hash": "191731505",
+   "default": false
+  },
+  {
+   "name": "mcp_settings_overhaul",
+   "hash": "339148123",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "mcp_settings_overhaul_portal",
+   "hash": "3226328016",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "mcp_tool_allowlist_modes",
+   "hash": "1250354486",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "cloud_agent_environment_mcp_allowlist",
+   "hash": "471859986",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_environment_mcp_allowlist_ui",
+   "hash": "4047945441",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_keyring_ui",
+   "hash": "1830315528",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_rules_batch_update",
+   "hash": "3060902719",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "agent_skills_batch_update",
+   "hash": "3979323921",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "mcp_structured_logging",
+   "hash": "1488226614",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "mcp_runtime_dedupe",
+   "hash": "3918784979",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "dedupe_mcp_servers",
+   "hash": "1316230643",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "mcp_oauth_unsafe_redirect_logging",
+   "hash": "155230696",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "proper_well_known_for_mcp_scopes",
+   "hash": "2447531832",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "context_visualizer",
+   "hash": "912885102",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "context_usage_canvas",
+   "hash": "2796402246",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "browser_mcp_chip",
+   "hash": "2704354056",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "local_computer_use",
+   "hash": "2315951799",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mac_computer_use",
+   "hash": "2176748371",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "playwright_autorun",
+   "hash": "262893686",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "allow_download_prompts",
+   "hash": "3447903502",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_context_injection",
+   "hash": "3029184397",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "project_agent_team_store",
+   "hash": "1945542239",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "project_followups_use_steering",
+   "hash": "849452391",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "cloud_agent_docker_build_secrets_enabled",
+   "hash": "854464345",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "clone_blob_upload",
+   "hash": "3743652097",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "internal_session_recording_status_bar",
+   "hash": "876692895",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_video_signed_url_uploads",
+   "hash": "171918685",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "gemini_video_developer_api",
+   "hash": "3895034455",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "nal_task_tool",
+   "hash": "3911282796",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "explore_subagent",
+   "hash": "471128305",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_watch_video_in_ide",
+   "hash": "721719936",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "shell_subagent",
+   "hash": "3455137268",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_build_with_swarm",
+   "hash": "1282898540",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "explicit_subagent_models",
+   "hash": "229234457",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "nal_trace",
+   "hash": "193922719",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ask_question_all_modes",
+   "hash": "3767355775",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "disable_terminal_output_ui_streaming",
+   "hash": "4084870825",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "generate_user_instructions",
+   "hash": "389042511",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ide_nal_rdv",
+   "hash": "4036972489",
+   "default": false
+  },
+  {
+   "name": "use_nlb_for_nal",
+   "hash": "2887948048",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "use-usw1-agent-for-nal",
+   "hash": "4184326654",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "retry_interceptor_disabled",
+   "hash": "1322856589",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "retry_interceptor_enabled_for_streaming",
+   "hash": "2970566013",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bidi_append_fix",
+   "hash": "509640835",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bidi_append_binary_encoding",
+   "hash": "2153972543",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "http1_keepalive_disabled",
+   "hash": "3715713993",
+   "default": false
+  },
+  {
+   "name": "ws_reachability_probe",
+   "hash": "2400445451",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ws_dark_durability_probe",
+   "hash": "2205412480",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "large_proto_logging_enabled",
+   "hash": "2953874438",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "submitlogs_flush_throttle",
+   "hash": "487469949",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "background_composer_list_focus_aware_poll",
+   "hash": "2352819098",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "agentkit_enabled",
+   "hash": "2117120691",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "agent_sdk_v2",
+   "hash": "1713229595",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "enterprise_early_access",
+   "hash": "1566806494",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "use_byok_allowlist",
+   "hash": "3957274707",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "show_prerelease_release_track",
+   "hash": "3491396890",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "show_dogfood_release_track",
+   "hash": "631323500",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "client_numeric_metrics",
+   "hash": "1042053405",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "solidjs_total_observers_metric",
+   "hash": "4092509912",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "renderer_heap_metrics",
+   "hash": "164185964",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_react_commit_churn",
+   "hash": "180983367",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "sand_renderer_heap_metrics",
+   "hash": "610422257",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "collect_sample_for_unresponsive_ext_host",
+   "hash": "3199981346",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "unresponsive_ext_host_enhanced_attachments",
+   "hash": "3210848846",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "worktree_nal_only",
+   "hash": "3379159842",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_precompute_diff_tokenization",
+   "hash": "3029962973",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "review_changes_fast_multi_diff",
+   "hash": "1081638315",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cpp_perf_instrumentation",
+   "hash": "1859392308",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "hide_titlebar_default",
+   "hash": "2199592474",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "migrate_editor_mode",
+   "hash": "918403233",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "show_dev_only_ttft_warning",
+   "hash": "2654226418",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_local_review_first_bugbot_cta",
+   "hash": "1403621187",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "editor_review_cta_uses_review_bugbot",
+   "hash": "1689459307",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "local_commit_reflog_signal_killswitch",
+   "hash": "1636230223",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "gitlab_progressive_repo_load_v1",
+   "hash": "2231058463",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "repo_picker_server_side_search_v1",
+   "hash": "3087604930",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "azure_devops_progressive_repo_load_v1",
+   "hash": "633434797",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "bugbot_azure_devops_settings",
+   "hash": "2070690185",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "meta_mcp_tool",
+   "hash": "405995031",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "mcp_input_schema_json",
+   "hash": "472203372",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ai_connect_stream_encode_yield",
+   "hash": "2392968215",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ai_connect_stream_decode_yield",
+   "hash": "1256578543",
+   "default": false
+  },
+  {
+   "name": "ai_connect_stream_raw_bytes",
+   "hash": "2664932993",
+   "default": false
+  },
+  {
+   "name": "mcp_meta_tool_slim_descriptors",
+   "hash": "513081780",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "local_agent_event_subscriptions",
+   "hash": "3937373699",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "web_cloud_agent_conversation_quick_access_rail",
+   "hash": "836475790",
+   "default": false
+  },
+  {
+   "name": "mcp_direct_client_tool_fetch",
+   "hash": "2435134070",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mcp_always_expose_auth_tool",
+   "hash": "4053533599",
+   "default": false
+  },
+  {
+   "name": "glass_mcp_app_focus_on_type_guard",
+   "hash": "2185616275",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "shared_chats",
+   "hash": "3582543809",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "shared_canvases",
+   "hash": "376320672",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "share_transcripts_include_plan",
+   "hash": "3555615298",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "shared_transcripts_bulk_download",
+   "hash": "2871873657",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "use_ide_browser_script",
+   "hash": "1967202735",
+   "default": false
+  },
+  {
+   "name": "plan_mode_build_in_cloud",
+   "hash": "1819355474",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "expose_babysit_pr_cloud_entrypoint",
+   "hash": "2500979923",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "expose_branch_mismatch_continue_in_cloud_entrypoint",
+   "hash": "3568604537",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "expose_plan_build_in_cloud_entrypoint",
+   "hash": "2267497334",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "new_plan_editor",
+   "hash": "3385981732",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ai_code_tracking_format_detection",
+   "hash": "1440588778",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ai_code_tracking_v2_scoring",
+   "hash": "3191811449",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "ai_code_tracking_assume_all_commits_ai",
+   "hash": "3610333423",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ai_code_tracking_use_commit_timestamp_for_tracking_start",
+   "hash": "3748133340",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ai_code_tracking_git_operations_binding_fix",
+   "hash": "3999281666",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "ai_code_tracking_extension_backend",
+   "hash": "453435527",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_slack_default_worker",
+   "hash": "2013911311",
+   "default": false
+  },
+  {
+   "name": "grok_bot_contextual_banner_killswitch",
+   "hash": "262755911",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_cloud_agent_timings",
+   "hash": "651440361",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "subagent_support_interrupt",
+   "hash": "552075513",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "web_cloud_agent_environment_defaults",
+   "hash": "3753953229",
+   "default": false
+  },
+  {
+   "name": "web_cloud_agent_no_repo_entrypoint",
+   "hash": "3841744220",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_store_dashboard",
+   "hash": "2316691324",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_store_undelete",
+   "hash": "3261809564",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_bc_id_attachment",
+   "hash": "3636169357",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_persistent_terminals",
+   "hash": "1563874713",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_glass_shared_sessions",
+   "hash": "3179591146",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "shared_terminal_env_setup",
+   "hash": "3586740418",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "instant_grep_indexing",
+   "hash": "1006171963",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "cli_instant_grep_indexing",
+   "hash": "88547676",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "push_git_tracked_state_exp",
+   "hash": "651910152",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "instant_grep_user_search",
+   "hash": "2455412561",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "parallel_agent_workflow",
+   "hash": "488238321",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_multitask_mode",
+   "hash": "750097728",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cloud_guest_chats_no_workspace",
+   "hash": "495243724",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_subagent_followups",
+   "hash": "3637365392",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_custom_modes",
+   "hash": "413482181",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "cloud_custom_modes",
+   "hash": "3557808812",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "hide_async_subagent_task_notifications",
+   "hash": "2485756520",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "cloud_agent_message_sender_attribution",
+   "hash": "3506110193",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_subagent_tray_done_section",
+   "hash": "3517577018",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "enable_await_for_subagents",
+   "hash": "1471028339",
+   "default": false
+  },
+  {
+   "name": "fix_claude_subagent_await",
+   "hash": "3493245811",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "fix_grok_subagent_await",
+   "hash": "1550160234",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "public_leaderboard_web",
+   "hash": "540635580",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_cloud_agent_repo_selector",
+   "hash": "2366898572",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "route_ent_trial_to_model",
+   "hash": "4004456184",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "debug_mode_autorun_support_enabled",
+   "hash": "582318814",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "analytics_conversation_classification",
+   "hash": "3365749225",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "use_cursor_github_app_id",
+   "hash": "3831118436",
+   "default": true,
+   "bootstrap": false,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "push_local_agent_to_cloud",
+   "hash": "2491545284",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "send_to_cloud_on_followup",
+   "hash": "753419509",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "midturn_move_to_cloud_ads",
+   "hash": "2564611478",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cloud_agent_checkout_convert_to_local",
+   "hash": "3813657800",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "show_browser_popup",
+   "hash": "490549011",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_layout_show_diffs_quick_settings",
+   "hash": "2455967405",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "skip_git_telemetry_computations",
+   "hash": "1134823455",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "composer_background_throttling_remote_only",
+   "hash": "598471679",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "composer_gc_handles",
+   "hash": "1452805991",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "composer_retention_structural_byte_metrics",
+   "hash": "227566382",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "tokenize_stream_code_blocks",
+   "hash": "2874729437",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "composer_react_transcript_working_indicator",
+   "hash": "1912833143",
+   "default": false
+  },
+  {
+   "name": "composer_transcript_steer_float_up",
+   "hash": "1394049878",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "inline_visualizations",
+   "hash": "555759157",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "diff_tab_viewport_virtualization",
+   "hash": "1632164814",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "private_cloud_workers",
+   "hash": "754725615",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "allow_shared_private_worker_assignment",
+   "hash": "1619358030",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "private_workers_label_filtering",
+   "hash": "2468727705",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "skip_github_app_for_private_worker",
+   "hash": "319784938",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "update_use_localhost",
+   "hash": "1076912613",
+   "default": false
+  },
+  {
+   "name": "hide_inline_changed_files",
+   "hash": "348756195",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "wysiwyg_markdown_default",
+   "hash": "3489379043",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "markdown_embedded_project_databases",
+   "hash": "2372135821",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "skill_icon_color",
+   "hash": "2620681931",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "opt_devs_into_experimental_model_toggle",
+   "hash": "4175022039",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "default_on_chat_editors",
+   "hash": "3715307297",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "default_tsgo_internal",
+   "hash": "3474345687",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "desktop_bridge",
+   "hash": "3243374860",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "disable_no_title_bar",
+   "hash": "2600381605",
+   "default": false
+  },
+  {
+   "name": "show_debug_aux_pane_border",
+   "hash": "3800609338",
+   "default": false
+  },
+  {
+   "name": "glass_typography_refresh",
+   "hash": "3482895726",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "browser_subagent",
+   "hash": "2967633916",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "browser_subagent_gating",
+   "hash": "982068331",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "browser_cpp_telemetry",
+   "hash": "694454086",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "network_access_control",
+   "hash": "3276197811",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "git_snapshot_indexing",
+   "hash": "3455870654",
+   "default": true
+  },
+  {
+   "name": "cpp_telem_chunking",
+   "hash": "1183082285",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "marketplaces_enabled",
+   "hash": "2597120394",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "customize_page",
+   "hash": "3605840139",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "customize_page_leaderboard_enabled",
+   "hash": "4020578123",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "customize_manage_scope_multiselect",
+   "hash": "773020204",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "customize_global_search",
+   "hash": "950779592",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "customize_plugin_detail_mcp_management",
+   "hash": "3682447398",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "web_agent_pilled_page",
+   "hash": "4051353713",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "team_marketplace_mcps",
+   "hash": "1954445615",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "publish_user_skills",
+   "hash": "3826951174",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "private_skills_user_store",
+   "hash": "3230683086",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "plugin_aware_mcp_edit_modal",
+   "hash": "1027214730",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "plugin_marketplace_allowlisted_publisher",
+   "hash": "1592208963",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "prompt_suggestion",
+   "hash": "1022083007",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "extension_signature_verification",
+   "hash": "3568631362",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "extension_gallery_query_chunking",
+   "hash": "287232121",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "subagents_client_side_vscode",
+   "hash": "623164207",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "mcp_coalesce_metrics_sampling",
+   "hash": "3372602134",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "mcp_shared_process_transports",
+   "hash": "295967215",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "sand_box_egress_tunnel",
+   "hash": "932760067",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "task_card_tips_enabled",
+   "hash": "1364385231",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "codebase_telemetry_v2",
+   "hash": "927437091",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "codebase_telemetry_v2_git_history",
+   "hash": "1061256203",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "codebase_telemetry_v2_agent_dot_dirs",
+   "hash": "3570384210",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "codebase_protection_client_enforcement",
+   "hash": "2954925745",
+   "default": false
+  },
+  {
+   "name": "codebase_protection_reporting",
+   "hash": "802813865",
+   "default": false
+  },
+  {
+   "name": "codebase_telemetry_v1_deprecation",
+   "hash": "2074193367",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "sand_codebase_telemetry",
+   "hash": "4061458067",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "telemetry"
+  },
+  {
+   "name": "disable_codebase_indexing",
+   "hash": "2886953242",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "disable_docs_client_usage",
+   "hash": "3061756442",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "composer_promo_expiration_reminder",
+   "hash": "2898519667",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_plugin_nudge",
+   "hash": "2260975179",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "import_3p_plugins",
+   "hash": "1282330840",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_local_3p_plugin_imports",
+   "hash": "2145608628",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_new_team_member_usage_boost",
+   "hash": "3893697575",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "disable_push_request_context",
+   "hash": "2096478673",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_ide_enterprise_plan_usage",
+   "hash": "2770010392",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "bugbot_merged_pr_scan",
+   "hash": "2521731955",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "windows_linux_update_auth_headers",
+   "hash": "777827614",
+   "default": false
+  },
+  {
+   "name": "updater_recovery_windows",
+   "hash": "879521935",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "glass_focus_outline",
+   "hash": "1047903320",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "glass_inline_assistant_turn_actions_bar",
+   "hash": "1366961587",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "inline_diff_defer_hidden_diff_state",
+   "hash": "475441067",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "park_inline_diffs",
+   "hash": "3677525533",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "enable_marketplace_plugin_logging",
+   "hash": "1968986883",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "enable_sparse_plugin_clones",
+   "hash": "3186886303",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_always_local_agent_workspace",
+   "hash": "1111718586",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "glass_disable_eager_indexing_for_local_sessions",
+   "hash": "2517780693",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "glass_rainbow_csv_extension",
+   "hash": "2942943738",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "retry_hydration_optimization",
+   "hash": "2961397133",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "full_self_driving",
+   "hash": "1147669892",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "fsd_suggestions_platform_local_mcp",
+   "hash": "2785068370",
+   "default": false
+  },
+  {
+   "name": "full_self_driving_glass",
+   "hash": "4128982273",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "full_self_driving_glass_pr_tab",
+   "hash": "2239787222",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "shutdown_hang_watchdog_darwin_sigkill",
+   "hash": "2963550341",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "cursor_shared_session_file_watcher",
+   "hash": "3541837619",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_update_supervisor",
+   "hash": "420699125",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_private_inference_download_prompt",
+   "hash": "1855269488",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "cursor_cli_private_inference_download_prompt",
+   "hash": "1515693969",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "disable_sqlite_storage_backup",
+   "hash": "1444723330",
+   "default": true,
+   "bootstrap": true
+  },
+  {
+   "name": "agent_store_sync_client",
+   "hash": "1563501783",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_store_citation_index_tier",
+   "hash": "3811103855",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "agent_store_principal_local_mounts",
+   "hash": "231782231",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "agent_store_local_user_mount",
+   "hash": "4283804177",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "hosted-only"
+  },
+  {
+   "name": "agent_store_quota_notices",
+   "hash": "2773646012",
+   "default": false
+  },
+  {
+   "name": "proxy_agent_secure_context_cache",
+   "hash": "1370492821",
+   "default": false,
+   "bootstrap": false
+  },
+  {
+   "name": "auto_disable_unused_models",
+   "hash": "252585292",
+   "default": false
+  },
+  {
+   "name": "drop_custom_prompt_context",
+   "hash": "1653278482",
+   "default": false
+  },
+  {
+   "name": "composer_reuse_editor_input",
+   "hash": "3492898786",
+   "default": false,
+   "bootstrap": true,
+   "drifted": true,
+   "class": "local-feature"
+  },
+  {
+   "name": "disposable_leak_reporting",
+   "hash": "1505092881",
+   "default": false,
+   "bootstrap": false
+  }
+ ]
+}

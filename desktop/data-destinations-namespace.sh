@@ -10,6 +10,9 @@ dir=$1; uid=$2; gid=$3; shift 3
 ip link set lo up
 ip route add local 0.0.0.0/0 dev lo
 ip -6 route add local ::/0 dev lo 2>/dev/null || true
+# A non-loopback address: with only 127.0.0.1, getaddrinfo's AI_ADDRCONFIG
+# suppresses IPv4 lookups, so a name was never resolved or connected.
+ip addr add 198.18.0.2/32 dev lo
 echo 0 > /proc/sys/net/ipv4/ip_unprivileged_port_start
 printf 'nameserver 127.0.0.53\noptions edns0\n' > "$dir/resolv.conf"
 sed -E 's/^hosts:.*/hosts: files dns/' /etc/nsswitch.conf > "$dir/nsswitch.conf"
@@ -29,7 +32,9 @@ else
 fi
 capture=
 if command -v tcpdump >/dev/null 2>&1; then
-  tcpdump -i lo -U -n -w "$dir/bypass.pcap" 'not net 127.0.0.0/8 and not ip6 host ::1' 2>"$dir/tcpdump.log" &
+  # -Z root: stay the namespace's mapped root; dropping to a 'tcpdump' user
+  # fails where that user has no mapping in the user namespace.
+  tcpdump -Z root -i lo -U -n -w "$dir/bypass.pcap" 'not net 127.0.0.0/8 and not ip6 host ::1' 2>"$dir/tcpdump.log" &
   capture=$!
 fi
 status=0

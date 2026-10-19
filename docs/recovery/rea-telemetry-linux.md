@@ -267,3 +267,70 @@ extension host 4 counted refused calls by RPC.
 
 OV-1005 stays **Partial**: macOS, the packaged release and signed-in workloads
 remain, as listed above.
+
+## Extended workloads, name observer and gate drift (19 October 2026, Linux x64 cloud container)
+
+Environment: Ubuntu 24.04 container, kernel 6.18, 4 CPUs, Xvfb, Node 24.18.0.
+There is no systemd-resolved. Branch `ov/data-telemetry` includes the merged
+`ov/mcp-safety`. Worker report:
+[data-telemetry](../verification/worker-reports/data-telemetry.md).
+
+### Workload added to `verify:telemetry:extended`
+
+The verifier now runs these steps after search and before the idle period:
+
+1. **Tab completion** against the loopback provider (the Tab model is selected
+   in OpenVision Settings).
+2. **Quick Edit** (Ctrl+K, rejected).
+3. **Source Control:** stage a change, run **Generate Commit Message** (loopback
+   provider), then **Git: Commit Staged**. The commit must carry the generated
+   message.
+4. A **JS debug session** of a project file (js-debug).
+5. A **second window**, opened with Ctrl+Shift+N and closed.
+6. An **MCP STDIO fixture** written to the profile's `mcp.json`. The Agent calls
+   its tool once, approved with Run.
+
+The fixture repository has its own Git identity; the app commits with
+`user.useConfigOnly`.
+
+### Name observer without systemd-resolved
+
+The 16 October observer read hostname queries from systemd-resolved's Unix
+socket. In this container there is no such socket. With only loopback
+configured, glibc's `AI_ADDRCONFIG` also suppressed IPv4 lookups, so names were
+never queried and never observed. `verify-telemetry-extended.sh` now adds a
+mount namespace and these changes:
+
+- `/etc/resolv.conf` points to `127.0.0.53`.
+- `198.18.0.2/32` is added on `lo`.
+- The verifier answers every query at `127.0.0.53` with NXDOMAIN and records it
+  (`observers.resolverLookups`).
+
+Nothing can connect onward. The 0 non-user destination gate is unchanged. A
+recorded name outside the initiated Extensions phase fails it.
+
+### Results
+
+Final build, all changes on this branch:
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `npm run verify:telemetry:extended -- --idle-seconds 600` | `logs/telemetry-extended-XE8H2u` | **Pass** with every phase above plus a 600 s idle. 0 non-user destinations, 0 telemetry matches, 0 direct remote sockets. The family drained (57 processes). No device-id file. 12 recorded lookups, all `marketplace.cursorapi.com` in the Extensions phase (user-initiated) |
+| same, second run | `telemetry-extended-fXnIJA` | Stopped on the owner's stop request during idle; not counted |
+| `npm run verify:telemetry` | `telemetry-verification-uPe0gw` | Pass |
+| development, 20 s idle | `telemetry-extended-rHzUxH` | Pass |
+
+Model fixture requests per run: Agent, Tab, Quick Edit, commit message and two
+MCP Agent turns, all on loopback.
+
+### Gate drift
+
+The 206/752 drift item above is assessed in
+[rea-statsig-gate-drift](rea-statsig-gate-drift.md):
+
+- 209 of 763 gates drift: 148 hosted-only, 53 local features, 8 telemetry.
+- The classification is pinned in `npm run test:telemetry`.
+- Three local defaults are proposed but not applied.
+- **A profile's cached `workbench.experiments.statsigBootstrap` was still
+  applied:** 208 gates differed from a fresh profile (`statsig-cache-qoYduc`).
+  It is now ignored (`statsig-cache-DSSkBi`: 0 differences).

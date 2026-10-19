@@ -185,6 +185,60 @@ ${indent}}`;
   }
   return text;
 }
+
+// --- Cached Statsig bootstrap (OV-1005 gate drift; ov/data-telemetry) -------
+// The experiment service applies the bootstrap a profile cached under
+// `workbench.experiments.statsigBootstrap` at every start, with no expiry, before
+// and independent of the (now inert) server refresh. A profile from a build that
+// still refreshed it therefore keeps the anonymous server values for ~200 gates
+// forever, while a fresh profile uses the bundled and local defaults
+// (logs/statsig-cache-*). The cache is ignored so every local profile evaluates
+// the same defaults; the stored value is left untouched (reversible). Kept
+// separate from the experiment-refresh change above.
+const cachedBootstrapMarker = '/* OpenVision cached Statsig bootstrap ignored v1 */';
+export function ignoreCachedStatsigBootstrap(text) {
+  if (text.includes(cachedBootstrapMarker)) return text;
+  const methods = [...text.matchAll(/\n(\s*)_initFromCachedBootstrap\(\) \{/g)];
+  if (methods.length !== 1) throw new Error('Cached experiment bootstrap owner missing or ambiguous');
+  const [method] = methods, body = text.slice(method.index, method.index + 600);
+  if (!/this\.storageService\.get\([\w$]+\.STATSIG_BOOTSTRAP_STORAGE_KEY, -1\)/.test(body))
+    throw new Error('Cached experiment bootstrap contract changed');
+  const at = method.index + method[0].length;
+  return text.slice(0, at) + ` ${cachedBootstrapMarker} return !1;` + text.slice(at);
+}
+
+// --- Local VSIX installs (OV-501 data destinations; ov/data-telemetry) -----
+// After installing from a VSIX file, the install task's updateMetadata looks the
+// extension up in the Marketplace by its identifier (extensionquery with
+// publisher.name, logs/data-destinations-daLpz9), sending the identity of a
+// possibly private, locally built extension to marketplace.cursorapi.com. A
+// local install now records no Marketplace metadata and makes no request;
+// installs from the Marketplace are unchanged. Owner decision pending
+// (worker report ov/data-telemetry).
+const vsixMetadataMarker = '/* OpenVision local VSIX install keeps Marketplace metadata unset v1 */';
+export function skipVsixGalleryMetadata(text) {
+  if (text.includes(vsixMetadataMarker)) return text;
+  const methods = [...text.matchAll(/\n(\s*)async updateMetadata\(([\w$]+), ([\w$]+)\) \{\s*try \{\s*let \[([\w$]+)\] = await this\.galleryService\.getExtensions\(\s*\[\{ id: \2\.identifier\.id, version: \2\.manifest\.version \}\],/g)];
+  const callers = [...text.matchAll(/this\.source instanceof [\w$]+ && this\.updateMetadata\(/g)];
+  if (methods.length !== 1 || callers.length !== 1) throw new Error('VSIX install metadata owner missing or changed');
+  const at = text.indexOf('{', methods[0].index + 1) + 1;
+  return text.slice(0, at) + ` ${vsixMetadataMarker} return;` + text.slice(at);
+}
+// The workbench then matches installed extensions that have no gallery record
+// with the Marketplace (matchInstalledExtensionsWithGallery, after each install
+// and when listing installed extensions). Local VSIX installs are left out of
+// that query, which otherwise sends their identifiers too (logs/data-destinations-bzFObc,
+// CORS preflight from the renderer).
+const vsixMatchMarker = '/* OpenVision local VSIX installs are not matched with the Marketplace v1 */';
+export function skipVsixGalleryMatch(text) {
+  if (text.includes(vsixMatchMarker)) return text;
+  const filters = [...text.matchAll(/(async matchInstalledExtensionsWithGallery\(([\w$]+)\) \{\s*const [\w$]+ = \2\.filter\(\(([\w$]+)\) => \3\.local && !\3\.gallery && \3\.local\.source !== "resource")\);/g)];
+  if (filters.length !== 1) throw new Error('Installed-extension gallery match owner missing or changed');
+  const [filter] = filters, at = filter.index + filter[1].length, item = filter[3];
+  return text.slice(0, at) + ` && ${item}.local.source !== "vsix" ${vsixMatchMarker}` + text.slice(at);
+}
+export const vsixInstallTargets = ['out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js', 'out/vs/code/node/cliProcessMain.js'];
+
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
   'extensions/cursor-agent-host/dist/agent-host-daemon/dist/bin/daemon.cjs'];
 
@@ -208,7 +262,12 @@ export async function installNetworkDefaults(root) {
 
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
-    await backedWrite(root, `${app}/${relative}`, text, emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text))));
+    await backedWrite(root, `${app}/${relative}`, text,
+      skipVsixGalleryMatch(ignoreCachedStatsigBootstrap(emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text))))));
+  }
+  for (const relative of vsixInstallTargets) {
+    const text = await readFile(join(root, app, relative), 'utf8');
+    await backedWrite(root, `${app}/${relative}`, text, skipVsixGalleryMetadata(text));
   }
   for (const relative of transportTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
@@ -228,5 +287,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally; cached Statsig bootstrap ignored; local VSIX installs make no Marketplace lookup`);
 }
