@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { disableSpellcheckDownloads, removeControlUrl, controlManifestGuard, setContributedDefaults, extensionDefaults,
   disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile,
   localGateDefaults, setLocalGateDefaults, emptyAnonymousTeamSettings, ignoreCachedStatsigBootstrap,
-  skipVsixGalleryMetadata, vsixInstallTargets } from './network-defaults.mjs';
+  skipVsixGalleryMetadata, skipVsixGalleryMatch, vsixInstallTargets } from './network-defaults.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'source/app');
@@ -169,6 +169,24 @@ test('a local VSIX install records no Marketplace metadata and makes no gallery 
   assert.throws(() => skipVsixGalleryMetadata(task.replace('version: e.manifest.version', 'version: e.version')), /VSIX install metadata owner/);
 });
 
+test('installed local VSIX extensions are not matched with the Marketplace', () => {
+  const service = `class X {
+    async matchInstalledExtensionsWithGallery(e) {
+      const t = e.filter((i) => i.local && !i.gallery && i.local.source !== "resource");
+      return t.map((i) => i.id);
+    }
+  }`;
+  const once = skipVsixGalleryMatch(service);
+  assert.equal(skipVsixGalleryMatch(once), once);
+  const X = new Function(`${once}\nreturn X;`)();
+  return new X().matchInstalledExtensionsWithGallery([{ id: 'vsix', local: { source: 'vsix' } },
+    { id: 'gallery-missing', local: { source: 'gallery' } }, { id: 'resource', local: { source: 'resource' } }])
+    .then(ids => {
+      assert.deepEqual(ids, ['gallery-missing']);
+      assert.throws(() => skipVsixGalleryMatch(service.replace('!i.gallery && ', '')), /gallery match owner/);
+    });
+});
+
 test('anonymous-call guard refuses a changed transport contract', () => {
   assert.throws(() => refuseAnonymousHostedCalls(minified.replace('Authorization header omitted', 'changed')), /authorization owner/);
 });
@@ -239,6 +257,7 @@ test('built source carries every network-default owner change', { skip: !built &
     assert.ok(disableWorkbenchHostedReports(text) === text, relative);
     assert.ok(setLocalGateDefaults(text) === text, `${relative} local gate defaults`);
     assert.ok(ignoreCachedStatsigBootstrap(text) === text, `${relative} cached Statsig bootstrap`);
+    assert.ok(skipVsixGalleryMatch(text) === text, `${relative} VSIX gallery match`);
     assert.ok(emptyAnonymousTeamSettings(text) === text, `${relative} anonymous team settings`);
   }
   for (const relative of vsixInstallTargets) {

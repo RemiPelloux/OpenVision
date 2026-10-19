@@ -224,6 +224,19 @@ export function skipVsixGalleryMetadata(text) {
   const at = text.indexOf('{', methods[0].index + 1) + 1;
   return text.slice(0, at) + ` ${vsixMetadataMarker} return;` + text.slice(at);
 }
+// The workbench then matches installed extensions that have no gallery record
+// with the Marketplace (matchInstalledExtensionsWithGallery, after each install
+// and when listing installed extensions). Local VSIX installs are left out of
+// that query, which otherwise sends their identifiers too (logs/data-destinations-bzFObc,
+// CORS preflight from the renderer).
+const vsixMatchMarker = '/* OpenVision local VSIX installs are not matched with the Marketplace v1 */';
+export function skipVsixGalleryMatch(text) {
+  if (text.includes(vsixMatchMarker)) return text;
+  const filters = [...text.matchAll(/(async matchInstalledExtensionsWithGallery\(([\w$]+)\) \{\s*const [\w$]+ = \2\.filter\(\(([\w$]+)\) => \3\.local && !\3\.gallery && \3\.local\.source !== "resource")\);/g)];
+  if (filters.length !== 1) throw new Error('Installed-extension gallery match owner missing or changed');
+  const [filter] = filters, at = filter.index + filter[1].length, item = filter[3];
+  return text.slice(0, at) + ` && ${item}.local.source !== "vsix" ${vsixMatchMarker}` + text.slice(at);
+}
 export const vsixInstallTargets = ['out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js', 'out/vs/code/node/cliProcessMain.js'];
 
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
@@ -250,7 +263,7 @@ export async function installNetworkDefaults(root) {
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
     await backedWrite(root, `${app}/${relative}`, text,
-      ignoreCachedStatsigBootstrap(emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text)))));
+      skipVsixGalleryMatch(ignoreCachedStatsigBootstrap(emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text))))));
   }
   for (const relative of vsixInstallTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
