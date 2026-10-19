@@ -225,9 +225,51 @@ Every entry of the Linux x64 critical subset has now passed first time on this h
 on the final code or on code differing only by the package-manifest assertion fix,
 which was then rerun twice.
 
+## Follow-up after the coordinator rerun — 19 October 2026
+
+The coordinator's merged-build run (suite `P95enb`, commit `de80baac`) failed 2/11:
+`verify:package:linux` ("No matching workbench window", no window targets on the
+first launch) and `verify:linux-secrets` (Playwright `TypeError ... '_object'` from
+`app.process()` after the app had disconnected, run `dWZMzI`). Restarted from
+`origin/ccr-a39d6f13-jurmdv` `d94e6e32` with Node 24.18.0 and a clean `npm ci` and
+rebuild.
+
+Observations on this host:
+
+- Neither failure reproduced: `package-linux-verification-aqodck` and
+  `linux-secrets-verification-DUr8wT` passed on the unmodified merged build.
+- The first reproduction attempt failed with `ENOSPC`: every package run kept a
+  1.1 GiB package copy, and earlier runs had filled the volume. The coordinator
+  run's logs were not available here, so whether disk space caused its missing
+  window is an inference, not an observation.
+- The `linux-secrets` failure mode hid its cause: the first error is lost because
+  `app.process()` throws on a disconnected app.
+
+Fixes (`b132c19e`, verifier-only):
+
+- `verify:package:linux` refuses to start with less than 4 GiB free under `logs/`,
+  removes its package copy after a passing run (`--keep` retains it; failing runs
+  keep it), and on a missing window records the CDP targets, live package
+  processes, free space and the tail of the host's `main.log`.
+- `verify:linux-secrets` takes each process handle at launch and closes through one
+  helper that records close errors, exit code and signal, so a crash reports the
+  real failure. The no-service case keeps its partial record and host stderr.
+
+Clean rebuild of `b132c19e`, then the full subset twice in a row (X11 Xvfb, non-root,
+D-Bus session, plaintext gnome-keyring, retries 1):
+
+| Run | Result |
+| --- | --- |
+| `critical-suite-u0QmwJ` | **11/11 first-time pass**, 0 flaky: package-linux `GJySPj`, welcome `tt1hjr`, project-home `ImNnrS`, project `8qMbwm`, explorer `ROgkTg`, development `ratbJt`, git `IQnxgQ`, agent `dknfej`, completion `n1GqXs`, extensions `VWM46T`, linux-secrets `qzeupQ` |
+| `critical-suite-vMDMzw` | **11/11 first-time pass**, 0 flaky: package-linux `2N6zhC`, welcome `K2ith2`, project-home `uwYwWB`, project `ajWe5G`, explorer `TWQIYU`, development `hAIeOo`, git `CjW11E`, agent `LLTB3E`, completion `KPrOXE`, extensions `kyBP3E`, linux-secrets `51BpRZ` |
+
+Disk use across both runs grew by about 2 GiB instead of 2.2 GiB per run for the
+package copies alone.
+
 ## Recommendation per story
 
-- **OV-903: promote to Verified on Linux x64**, subject to the owner decisions below
+- **OV-903: promote to Verified on Linux x64** (two consecutive 11/11 first-time runs on
+  `b132c19e`), subject to the owner decisions below
   (claimed matrix, `--glass` as a supported entry point, OV-804 not blocking). The
   earlier Linux gaps (explorer budget, `verify:mcp-session`, Glass Enter workspace and
   the CURSOR/Sign in empty window) are closed on merged code plus this branch. Remaining
