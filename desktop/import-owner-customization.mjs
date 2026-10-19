@@ -1,6 +1,6 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
-const marker = '/* OpenVision import destination owner v1 */';
+const marker = '/* OpenVision import destination owner v2 */';
 export function installImportOwner(text) {
   if (text.includes(marker)) return text;
   const anchor = 'this.heicConversionFolderPath =';
@@ -13,5 +13,6 @@ export function installImportOwner(text) {
   if (!body.includes('this.windowsMainService =') || !body.includes('this.environmentMainService =') ||
       !owner.body.body.some(method => method.key?.name === 'getWindows')) throw Error('Native import ownership contract changed.');
   const end = constructor.value.body.end - 1;
-  return text.slice(0, end) + `\n${marker}\nglobalThis.openvisionImportOwner = this;\n` + text.slice(end);
+  // v2: also notify the import IPC module, which recovers interrupted imports for this profile.
+  return text.slice(0, end) + `\n${marker}\nglobalThis.openvisionImportOwner = this;\nglobalThis.openvisionImportOwnerReady?.(this);\n` + text.slice(end);
 }
