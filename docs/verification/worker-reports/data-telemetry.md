@@ -121,19 +121,9 @@ None is counted as a pass.
     (moved below).
   - The VSIX owner change needs an owner decision (below), but it is reversible
     and conservative.
-- **OV-1005: promote to Verified on Linux x64 for the local profile** after one
-  more passing `--idle-seconds 600` run. The second required run was stopped
-  on request.
-  - The workload covers Tab, Quick Edit, commit message, debug, a second window
-    and MCP.
-  - The name observer now also works without systemd-resolved.
-  - Gate drift is classified, and the cached bootstrap no longer reapplies
-    server values.
-  - Not Linux: macOS checks and the packaged release.
-  - Proposed local gate defaults await the owner.
-
-## Moved to platform/live stories
-
+- **OV-1005: promote to Verified on Linux x64 for the local profile.** The
+  second required `--idle-seconds 600` run passed on the merged clean build
+  (`OfXO1m`; see "Completion on the merged build").
 - Windows and macOS captures of every workload above.
 - Workloads with a signed-in Cursor account, where hosted calls are
   user-configured.
@@ -203,3 +193,21 @@ None is counted as a pass.
 - **ETA for the remainder:** one task, the second 600 s extended telemetry run
   (about 25 minutes of native time). It fits in a fraction of one worker
   session or quota round, including the rebuild (about 15 minutes).
+
+## Completion on the merged build (19 October 2026)
+
+The owner asked to finish after the stop. Branch reset (fast-forward) to the
+merged `origin/ccr-a39d6f13-jurmdv` at `2b61fcbc`, which contains all of this
+branch. Clean rebuild with Node 24.18.0, then one run of each verifier, in
+sequence, all first-time passes:
+
+| Command | Run | Result |
+| --- | --- | --- |
+| `npm run verify:data-destinations` | `logs/data-destinations-vnUHoK` | Pass, 18 of 18 checks. 11 provider requests; 0 non-provider requests, connections, names, direct connects; no unrequested exit; 13 addons, none unknown |
+| `npm run verify:telemetry` | `logs/telemetry-verification-ww5ScF` | Pass |
+| `npm run verify:telemetry:extended -- --idle-seconds 600` | `logs/telemetry-extended-OfXO1m` | Pass with every phase and a 600 s idle. 0 non-user destinations, 0 telemetry matches, 0 direct remote sockets, family drained (51 processes), no device-id file. 12 recorded lookups, all the gallery in the Extensions phase |
+
+With `XE8H2u`, two `--idle-seconds 600` runs have now passed. Task 6 is complete.
+**Recommendation: promote OV-501 and OV-1005 to Verified on Linux x64** (local
+profile). The owner decisions and the moved platform/live items above still
+apply.
