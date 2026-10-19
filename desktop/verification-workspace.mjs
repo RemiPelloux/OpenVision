@@ -18,3 +18,28 @@ export async function openChat(page) {
   }
   return input;
 }
+
+// Reopen a chat that is not on screen through the native Chat History list (by
+// its title) and confirm that the reopened chat shows every `expected` text.
+// Matching is case-sensitive and limited to that chat: titles repeat prompt
+// words in title case. Returns false when any step does not happen.
+export async function openChatFromHistory(page, { id, title, expected = [], timeout = 15000 }) {
+  await openChat(page);
+  await page.keyboard.press("Control+Alt+'"); // Show Chat History: its search box takes focus
+  const search = page.getByRole('textbox', { name: 'Search agents' }).filter({ visible: true });
+  if (!await search.first().waitFor({ timeout: 10000 }).then(() => true, () => false)) return false;
+  await search.first().fill(title);
+  const row = page.locator('[data-component="menu-row"]').filter({ visible: true })
+    .filter({ has: page.getByText(title, { exact: true }) });
+  if (!await row.first().waitFor({ timeout: 10000 }).then(() => true, () => false) || await row.count() !== 1) return false;
+  await row.first().click();
+  const opened = await page.waitForFunction(id => [...document.querySelectorAll('[data-composer-id]')]
+    .some(element => element.getAttribute('data-composer-id') === id && element.getClientRects().length), id, { timeout })
+    .then(() => true, () => false);
+  if (!opened) return false;
+  const chat = page.locator(`[data-composer-id="${id}"]`).filter({ visible: true });
+  for (const text of expected)
+    if (!await chat.getByText(new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))).filter({ visible: true }).first()
+      .waitFor({ timeout }).then(() => true, () => false)) return false;
+  return true;
+}

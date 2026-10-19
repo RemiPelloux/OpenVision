@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { analyzeRequest, summarizeWorkload, checkBudgets, requestIdentity } from './agent-context-measure.mjs';
+import { analyzeRequest, summarizeWorkload, checkBudgets, requestIdentity, messagesContaining, fixtureUsage, usageComparison } from './agent-context-measure.mjs';
 
 const file = 'export const alpha = 1;\n';
 const request = (extra = []) => ({ model: 'm', stream: true, tools: [{ type: 'function', function: { name: 'Read', parameters: {} } }],
@@ -52,4 +52,21 @@ test('committed budgets cover every fixed workload and the session clauses', asy
       assert.equal(typeof budgets.workloads[name]?.[key], 'number', `${name}.${key}`);
   for (const key of ['maxStopToTransportCloseMs', 'stopExtraRequests', 'windowCloseToTransportCloseMs'])
     assert.equal(typeof budgets.session[key], 'number', key);
+});
+
+test('fork accounting counts source copies; dry-run usage and usage comparison stay labelled synthetic inputs', () => {
+  const body = request();
+  assert.equal(messagesContaining(body, 'first'), 1); assert.equal(messagesContaining(body, 'missing'), 0);
+  assert.equal(messagesContaining(body, 'done', 'assistant'), 1);
+  const first = JSON.stringify(request()), second = JSON.stringify(request([{ role: 'user', content: 'third' }]));
+  const cold = fixtureUsage(first, undefined, 'reply'), warm = fixtureUsage(second, first, 'reply');
+  assert.equal(cold.prompt_tokens_details.cached_tokens, 0);
+  assert.ok(warm.prompt_tokens_details.cached_tokens > 0 && warm.prompt_tokens_details.cached_tokens <= warm.prompt_tokens);
+  assert.equal(warm.total_tokens, warm.prompt_tokens + warm.completion_tokens);
+  const entries = [first, second].map((raw, index) => ({ index, analysis: analyzeRequest(raw),
+    usage: index ? { promptTokens: 10, completionTokens: 2, cachedTokens: 8 } : undefined }));
+  const comparison = usageComparison(entries);
+  assert.equal(comparison.requests, 2); assert.equal(comparison.requestsWithUsage, 1); assert.equal(comparison.requestsWithCachedTokens, 1);
+  assert.equal(comparison.promptTokens, null, 'A total is reported only when every request has usage');
+  assert.equal(usageComparison(entries.slice(1)).cachedTokens, 8);
 });
