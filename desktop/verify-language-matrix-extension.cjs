@@ -146,6 +146,10 @@ async function largeFile(language, name, match, needle, replacement) {
     const symbols = await until(async () => { const items = await vscode.commands.executeCommand(
       'vscode.executeDocumentSymbolProvider', doc.uri); return items?.length && items; }, `${name} symbols`);
     const symbolMs = Math.round(performance.now() - symbolsStarted);
+    // Diagnostic only: a second request for the same version (provider cache).
+    const repeatStarted = performance.now();
+    await vscode.commands.executeCommand('vscode.executeDocumentSymbolProvider', doc.uri);
+    const symbolsRepeatMs = Math.round(performance.now() - repeatStarted);
     const firstStarted = performance.now();
     await until(() => diagnosticsFor(doc, match).length, `${name} first diagnostic`, 120000);
     const firstDiagnostic = Math.round(performance.now() - firstStarted);
@@ -153,7 +157,7 @@ async function largeFile(language, name, match, needle, replacement) {
     assert.equal(await doc.save(), true);
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     return { lines: doc.lineCount, bytes: Buffer.byteLength(doc.getText()), open_ms: opened,
-      symbols: symbols.length, symbols_ms: symbolMs, first_diagnostic_ms: firstDiagnostic,
+      symbols: symbols.length, symbols_ms: symbolMs, symbols_repeat_ms: symbolsRepeatMs, first_diagnostic_ms: firstDiagnostic,
       edit_clear_ms: incremental.clear_ms, undo_restore_ms: incremental.restore_ms,
       edit_ranges: incremental.changes.length, extension_host_lag: lagSummary() };
   });
@@ -616,6 +620,18 @@ async function largeProjectWindows() {
     return { diagnostics_after_reload_ms: Math.round(performance.now() - started) };
   }, 8000);
   await measure('ts-edit-after-reload', () => type(ts, 'OpenVision', 'z'));
+  // Outside the budgeted windows: an external write to an unopened program file
+  // must still reach tsserver through file watching (here, the shared workspace
+  // watcher), and so must restoring it.
+  const program = file('src/m00/f099.ts'), original = await fsp.readFile(program, 'utf8');
+  const wrongs = () => diagnosticsFor(ts, item => item.code === 2322).length;
+  const baseline = wrongs(), changed = performance.now();
+  await fsp.writeFile(program, 'export const v99 = "now a string";\n');
+  await until(() => wrongs() === baseline + 1, 'external program-file change reaches tsserver', 60000);
+  const changeMs = Math.round(performance.now() - changed), restored = performance.now();
+  await fsp.writeFile(program, original);
+  await until(() => wrongs() === baseline, 'external program-file restore reaches tsserver', 60000);
+  result.large_project.unopened_program_file_change = { diagnostic_ms: changeMs, restore_ms: Math.round(performance.now() - restored) };
   await vscode.commands.executeCommand('workbench.action.files.revert');
   await vscode.commands.executeCommand('workbench.action.closeAllEditors');
   return windows;

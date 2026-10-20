@@ -27,7 +27,9 @@ const profile = join(directory, 'profile'), project = join(directory, 'project')
 await Promise.all([mkdir(join(profile, 'User'), { recursive: true }), mkdir(project), mkdir(extension)]);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never', 'git.enabled': false,
-  'typescript.disableAutomaticTypeAcquisition': true, 'typescript.tsserver.log': 'off',
+  'typescript.disableAutomaticTypeAcquisition': true,
+  // --tsserver-log is a development diagnostic; such a run never reports success.
+  'typescript.tsserver.log': process.argv.includes('--tsserver-log') ? 'verbose' : 'off',
   'typescript.format.enable': true, 'javascript.format.enable': true, 'json.schemaDownload.enable': false,
   'markdown.validate.enabled': true, 'editor.formatOnSave': false, 'editor.detectIndentation': false,
   'editor.tabSize': 2, 'editor.insertSpaces': true, 'files.autoSave': 'off', 'files.eol': '\n',
@@ -181,7 +183,7 @@ try {
   for (const path of Object.keys(identities)) assert.equal(await fileHash(join(root, path)), identities[path], `Input changed: ${path}`);
   result.input_build_unchanged = true;
   await page.screenshot({ path: join(directory, 'language-matrix.png') }).catch(() => {});
-  result.success = result.native.success === true && !only;
+  result.success = result.native.success === true && !only && !process.argv.includes('--tsserver-log');
   if (!result.success) result.failure = result.native.failure ?? `Failed cases: ${result.native.failures?.join(', ')}`;
 } catch (error) {
   result.success = false; result.failure = error.stack;
