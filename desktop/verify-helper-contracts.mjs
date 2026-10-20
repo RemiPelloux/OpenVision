@@ -329,13 +329,15 @@ async function main() {
     result.observations.crepectl = { missingCacheDirectory: 'exit 0 with {"success":null,"error":…} on stdout', spillDirectoryAfterParentKill: result.helpers.crepectl.cleanup.spillLeft };
 
     // ----- file-service GrepClient (spawns the shipped crepectl) -----
+    // Fixture clones go through git's transport (--no-local): the crepectl kill above can leave git maintenance
+    // repacking `big`, and a hard-linking --local clone then fails on objects that move underneath it.
     const outsideToken = `OV_OUTSIDE_${process.pid}_${Date.now()}`;
     const outside = join(directory, 'grep-outside'); await mkdir(outside); await writeFile(join(outside, 'secret.txt'), `${outsideToken}\n`);
     const grepRepo = join(directory, 'grep-repo');
-    execFileSync('git', ['clone', '-q', '--local', big, grepRepo]);
+    execFileSync('git', ['clone', '-q', '--no-local', big, grepRepo]);
     await symlink(outside, join(grepRepo, 'linked-outside'));
     const secondRepo = join(directory, 'grep-second-repo');
-    execFileSync('git', ['clone', '-q', '--local', big, secondRepo]);
+    execFileSync('git', ['clone', '-q', '--no-local', big, secondRepo]);
     const grep = await runWorker(directory, 'grep', [grepRepo, outsideToken, 'contract', secondRepo]);
     const grepWindow = grep.trace?.['grep-authority'];
     assert.ok(grepWindow, 'file-service authority window missing from the trace');
@@ -354,7 +356,7 @@ async function main() {
     check('file-service.identity', grep.identity?.crepectlSeen && grep.identity.parentIsHost && grep.identity.parentPidVariable, grep.identity);
     // Host death: the crepectl child spawned by GrepClient stops when its host process is killed.
     const killRepo = join(directory, 'grep-kill-repo');
-    execFileSync('git', ['clone', '-q', '--local', big, killRepo]);
+    execFileSync('git', ['clone', '-q', '--no-local', big, killRepo]);
     const killOutput = join(directory, 'grep-kill.json');
     const host = spawn(process.execPath, [fileURLToPath(import.meta.url), '--worker', 'grep', killOutput, killRepo, outsideToken, 'kill'], { stdio: 'ignore' });
     for (let attempt = 0; attempt < 600 && !existsSync(killOutput); attempt++) await delay(20);

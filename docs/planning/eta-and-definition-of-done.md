@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **29 (65.91%)** |
-| Partial / Planned / Unknown | 6 / 8 / 1 |
-| 80% target | 36 Verified: **7 more** |
+| Verified | **30 (68.18%)** |
+| Partial / Planned / Unknown | 6 / 7 / 1 |
+| 80% target | 36 Verified: **6 more** |
 | Code on `main` | Every worker branch merged (20 October); clean build, unit suites and the Linux critical subset pass |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)); settled 20 October in [owner decisions](owner-decisions.md) |
 | X | External: a machine, balance or account |
 
-### Verified (29)
+### Verified (30)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision).
+- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision), 803.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -66,7 +66,6 @@ merged code. "Gate" is what blocks promotion:
 | OV-704 Specialized modes | Scope decided; probe passes natively (`oxnQvd`, `tizi1z`) | Image-input matrix; browser reachability for the local Agent | L | Next worker slot |
 | OV-703 Remote (SSH) | Matrix decided (SSH to Linux x64, Agent local-only); SSH verifier passes | Remote host writes to `~/.cursor`: remote profile isolation | L | Worker running |
 | OV-802 Buildable host | Upstream host passes the critical subset; defaults decided | Rebuilt add-ons need glibc 2.38; must build on the 2.28 sysroot | L | Next worker slot |
-| OV-803 Replaceable helpers | Defaults decided (original helpers, options kept) | Authority, malformed-input, identity and cleanup tests for every loaded helper | L | Worker running |
 | OV-804 Independent build | Not started | Distribution rights of the recovered source: owner and legal advice | D | Owner only; outside the 36/44 plan |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
 | OV-901 Windows | — | Windows x64 host; exit 134 and worker crash | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
@@ -86,14 +85,14 @@ Owner decisions were made on 20 October ([record](owner-decisions.md)). What rem
 
 | Step | Work | Effect if it passes |
 | --- | --- | --- |
-| Worker round (running) | OV-103 Stop cases, OV-402 optimization, OV-1001 leak, OV-703 remote isolation, OV-803 helper clauses | Up to +5 |
-| Next round | OV-704 image and browser runs, OV-802 glibc 2.28 rebuild | Up to +2 |
+| Worker round (running) | OV-103 Stop cases, OV-402 optimization, OV-1001 leak, OV-703 remote isolation (OV-803 done) | Up to +4 |
+| Next round | OV-704 image and browser runs (running), OV-802 glibc 2.28 rebuild | Up to +2 |
 | Reference host | OV-1002 and OV-1003 on a GPU, reference-class machine | Up to +2 |
 | Release gate | OV-1004 last, on the same build | +1 |
 | External | OV-205 balance, OV-901 Windows, OV-902 Mac, OV-905 other Linux; OV-804 owner/legal | Up to +5 |
 
-**36/44 needs 7 more:** the running round plus the next round can supply them
-(7 stories) on Linux alone, in about **2 quota rounds**; every remaining gap is
+**36/44 needs 6 more:** the running round plus the next round can supply them
+(6 stories) on Linux alone, in about **2 quota rounds**; every remaining gap is
 now plain engineering work with no decision pending. The Linux ceiling is
 39/44: those 36, then OV-1002 and OV-1003 on a reference host, then OV-1004.
 
