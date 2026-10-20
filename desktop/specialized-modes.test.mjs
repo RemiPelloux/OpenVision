@@ -42,8 +42,8 @@ test('inventory is deterministic and passes the decision facts for the expected 
   assert.doesNotMatch(JSON.stringify(first), /\d{4}-\d{2}-\d{2}T|\/home\//);
   assert.deepEqual(decisionFailures(first), []);
   assert.deepEqual(first.modes.map(mode => [mode.id, mode.proposal]), [
-    ['image-input', 'include'], ['image-generation', 'exclude'], ['in-app-browser', 'include'],
-    ['browser-automation', 'include-if-locally-reachable'], ['computer-use', 'explain-unavailable'],
+    ['image-input', 'include'], ['image-generation', 'provider-backed (owner decision)'], ['in-app-browser', 'include'],
+    ['browser-automation', 'explain-unavailable'], ['computer-use', 'explain-unavailable'],
     ['next-edit-prediction', 'decision-pending (OV-604)']]);
 });
 
@@ -53,6 +53,9 @@ test('drift in a decision fact fails the inventory with a named reason', () => {
     [files => { files['out/vs/workbench/workbench.desktop.main.js'] = files['out/vs/workbench/workbench.desktop.main.js'].replace('sidecarManifestUrl: ""', 'sidecarManifestUrl: "https://x"'); }, /macOS sidecar manifest/],
     [files => { files['extensions/cursor-computer-use/dist/extension.js'] = files['extensions/cursor-computer-use/dist/extension.js'].replace('OpenVision computer use unavailable explanation v2', ''); }, /explanation is not installed/],
     [files => { files['out/vs/workbench/workbench.desktop.main.js'] = files['out/vs/workbench/workbench.desktop.main.js'].replace('isFusedCursorPredictionModel: false', ''); }, /fused prediction/],
+    [files => { files['out/vs/workbench/workbench.desktop.main.js'] = files['out/vs/workbench/workbench.desktop.main.js'].replace('OpenVision local browser server explanation v1', ''); }, /browser automation explanation/],
+    [files => { files['out/vs/workbench/workbench.desktop.main.js'] = files['out/vs/workbench/workbench.desktop.main.js'].replace('OpenVision rejected image file removed v1', ''); }, /image input fixes/],
+    [files => { files['extensions/cursor-agent-exec/dist/main.js'] = ''; }, /images endpoint/],
     [files => { files['extensions/cursor-browser-automation/dist/extension.js'] += ' https://tracker.example/x'; }, /fixed network host/],
   ];
   for (const [mutate, reason] of cases) {

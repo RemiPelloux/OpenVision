@@ -42,5 +42,27 @@ export function fixtureBrowserReply(payload, event, phase, state) {
     state.discoverSchema = discover.parameters;
     return toolCall(event, 'discover', 'GetMcpTools', { server: browserServerName });
   }
+  // call:<step> — one CallMcpTool on the browser server with the arguments the verifier set.
+  if (phase.startsWith('call:')) {
+    const step = phase.slice('call:'.length), output = toolResult(payload, step);
+    if (output) {
+      const images = (payload.messages ?? []).flatMap(message => Array.isArray(message.content) ? message.content : [])
+        .filter(part => part?.type === 'image_url').length;
+      state.results[step] = { result: text(output.content).slice(0, 8000), imagePartsInRequest: images };
+      return finish(event, step);
+    }
+    if (!advertised.includes('CallMcpTool')) {
+      state.results[step] = { error: 'CallMcpTool is not advertised', advertised };
+      return finish(event, step);
+    }
+    const { tool, args } = state.calls[step];
+    return toolCall(event, step, 'CallMcpTool', { server: browserServerName, toolName: tool, arguments: args });
+  }
   return finish(event, phase);
+}
+
+// Element refs from a browser_snapshot result, e.g. `- textbox "Name" [ref=e3]`.
+export function snapshotRef(snapshot, role, name) {
+  const pattern = new RegExp(`${role}\\s+"${name}"[^\\n]*?\\[ref=([\\w-]+)\\]`);
+  return pattern.exec(text(snapshot))?.[1];
 }

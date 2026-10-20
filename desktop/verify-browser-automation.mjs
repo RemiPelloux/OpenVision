@@ -15,7 +15,8 @@ import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 import { createLoopbackProxy } from './network-capture.mjs';
-import { fixtureBrowserReply, browserFinished } from './browser-automation-fixture.mjs';
+import { fixtureBrowserReply, browserFinished, snapshotRef } from './browser-automation-fixture.mjs';
+import { browserUnavailableMessage } from './browser-automation-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const { layout, portable } = await verificationRuntime(root);
@@ -43,7 +44,7 @@ const site = createServer((request, response) => {
 await new Promise(resolve => site.listen(0, '127.0.0.1', resolve));
 const siteUrl = `http://127.0.0.1:${site.address().port}/`;
 
-const requests = [], errors = [], state = { siteUrl, results: {} };
+const requests = [], errors = [], state = { siteUrl, results: {}, calls: {} };
 let phase = 'discover';
 const provider = createServer(async (request, response) => {
   if (request.url === '/v1/models') {
@@ -81,6 +82,25 @@ async function submit(text) {
   const input = page.locator('.aislash-editor-input[contenteditable=true]').filter({ visible: true }).first();
   await input.fill(text); await input.press('Enter');
 }
+// One CallMcpTool step: approve it when the Agent asks, then wait for the reply.
+async function callStep(step, tool, args) {
+  state.calls[step] = { tool, args };
+  phase = `call:${step}`;
+  await submit(`Use the ${tool} tool of cursor-ide-browser (${step}).`);
+  const gate = page.locator('[data-tool-approval-gate]').filter({ visible: true });
+  const done = page.getByText(browserFinished(step), { exact: true }).first();
+  await Promise.race([gate.waitFor({ timeout: 60000 }), done.waitFor({ timeout: 60000 })]);
+  const approval = { requested: await gate.count() > 0 };
+  if (approval.requested) {
+    approval.hitsBefore = pageHits.length;
+    approval.buttons = await gate.getByRole('button').allInnerTexts();
+    await page.screenshot({ path: join(directory, `approval-${step}.png`) });
+    await gate.getByRole('button', { name: /^Run(?:\s|$)/ }).first().click();
+  }
+  await finished(step);
+  (result.steps ??= {})[step] = { approval, ...state.results[step] };
+  return state.results[step];
+}
 async function finished(name, timeout = 60000) {
   await page.getByText(browserFinished(name), { exact: true }).first().waitFor({ timeout });
   await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden' });
@@ -91,10 +111,14 @@ try {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'),
       '--new-window', '--disable-updates', '--skip-welcome', '--skip-release-notes',
       '--disable-telemetry', '--disable-crash-reporter', `--proxy-server=http://127.0.0.1:${proxy.port}`,
+      // --trace records MCP service and extension diagnostics in the run's profile logs.
+      ...(process.argv.includes('--trace') ? ['--log', 'trace'] : []),
       ...(process.platform === 'linux' ? await linuxSandboxArguments(layout.host) : []), project] });
   page = await app.firstWindow();
   page.setDefaultTimeout(15000);
   page.on('pageerror', error => errors.push(error.message));
+  // MCPService reports discovery failures on the renderer console only.
+  page.on('console', message => { if (/MCPService|ide-browser|browser automation/i.test(message.text())) (result.mcpConsole ??= []).push(message.text().slice(0, 2000)); });
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 60000 });
   await enterWorkspace(page);
   await page.waitForTimeout(8000);
@@ -121,6 +145,45 @@ try {
   await page.screenshot({ path: join(directory, 'discover.png') });
   assert.ok(result.reachability, 'Discovery produced no result');
   result.reachable = result.reachability.tools.includes('browser_navigate');
+  // What Settings shows for the browser server (status and any error text).
+  await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
+  const cells = await page.locator('.cursor-settings-sidebar-cell-label').allInnerTexts();
+  result.settingsCells = cells;
+  result.settingsPages = {};
+  for (const name of ['Browser & Network', 'Customize']) {
+    if (!cells.includes(name)) continue;
+    await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: new RegExp(`^${name}$`) }).first().locator('..').click();
+    await page.waitForTimeout(3000);
+    result.settingsPages[name] = await page.locator('body').innerText();
+    await page.screenshot({ path: join(directory, `settings-${name.replace(/\W+/g, '-')}.png`) });
+  }
+  if (!result.reachable) {
+    // 2a. Not reachable: the Agent's call is refused with the reason, before any page load.
+    const refused = await callStep('navigate', 'browser_navigate', { url: siteUrl });
+    await page.screenshot({ path: join(directory, 'refused.png') });
+    // The tool row expands to show its error; record whether the reason is on screen there.
+    const toolRow = page.getByText(/cursor-ide-browser|browser_navigate/).filter({ visible: true }).last();
+    await toolRow.click().catch(() => {});
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: join(directory, 'refused-expanded.png') });
+    result.unavailable = { toolResult: refused.result, uiShowsReason: (await page.locator('body').innerText()).includes(browserUnavailableMessage) };
+    assert.ok(refused.result.includes(browserUnavailableMessage), `Unavailable browser server explained: ${refused.result.slice(0, 500)}`);
+    assert.doesNotMatch(refused.result, /blocked by team admin/i, 'No false team-admin reason for a local profile');
+    assert.deepEqual(pageHits, [], 'A refused browser call must not load the page');
+    assert.equal(result.steps.navigate.approval.requested, false, 'Nothing to approve for a refused server');
+  } else {
+    // 2. Drive the loopback page.
+    const navigate = await callStep('navigate', 'browser_navigate', { url: siteUrl });
+    assert.ok(pageHits.includes('/'), `Navigation reached the loopback page: ${JSON.stringify(navigate)}`);
+    const snapshot = await callStep('snapshot', 'browser_snapshot', {});
+    const textbox = snapshotRef(snapshot.result, 'textbox', 'Name'), button = snapshotRef(snapshot.result, 'button', 'Greet');
+    assert.ok(textbox && button, `Snapshot refs found: ${snapshot.result.slice(0, 1500)}`);
+    await callStep('type', 'browser_type', { ref: textbox, element: 'Name', text: 'OpenVision' });
+    await callStep('click', 'browser_click', { ref: button, element: 'Greet' });
+    const after = await callStep('verify', 'browser_snapshot', {});
+    assert.match(after.result, /Hello OpenVision/, 'Typed text and click changed the page');
+    await callStep('screenshot', 'browser_take_screenshot', {});
+  }
   result.external = proxy.events.filter(event => !event.allowed).map(({ method, host, port, url }) => ({ method, host, port, url }));
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
   assert.deepEqual(errors, []);
