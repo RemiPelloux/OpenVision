@@ -168,8 +168,8 @@ and rechecks once after 5 s (:65415–65433, :65795).
 | Item | Contract (from addon and helper strings, and a run on a fixture) |
 | --- | --- |
 | Command | `crepectl build --worktree <repo> --cache-path <dir> [--commit <sha>] [--filter no-filter\|hidden-file-filter\|ripgrep-default-filter]`. `--memory-limit <MB>` exists; the addon does not pass it |
-| Environment | `CREPECTL_PARENT_PID` (orphan watchdog) |
-| stdout | JSON `DiskIndexPath { index_dir, staging_dir }`; stderr carries logs |
+| Environment | `CREPECTL_PARENT_PID`. **Observed:** the helper exits 3 without building unless the value equals its parent PID. It exits within about 50 ms after that parent dies |
+| stdout | **Observed:** `{"success":[<documents>,"<index directory>"],"error":null}`, or `{"success":null,"error":"…"}` on failure. Some failures still exit 0, for example a missing worktree, cache directory or commit. stderr carries logs. (The `DiskIndexPath` string in the binary is an internal type.) |
 | Index | `index.bin`, `metadata.json`, `postings.bin` and `definitions.bin` under **`<repo>/.git/cursor/crepe/<commit>`**. This was observed on the harness fixture. It is a project-data destination inside `.git` |
 | Outcomes | `success`, `timeout`, `spawn_failed`, `crashed`, `bad_output`, `build_error`. They reach JavaScript only as the metric callback `crepectlInvocation` |
 | Gate | `instant_grep_indexing` (default off, server-driven) and the `indexingGrepEnabled` setting. There is no local-mode check |
@@ -277,6 +277,64 @@ mode, so nothing reaches this path today. The finding is recorded, not changed.
 
 No replacement was written. Its scope would be the indexed-grep service (an
 index format plus queries); ripgrep already provides the unindexed path.
+
+## Native contract checks under the decided defaults (20 October 2026)
+
+The owner decided ([owner decisions](../planning/owner-decisions.md)):
+
+- Defaults stay on the original helpers.
+- `tree-chunk-napi` loads lazily.
+- Sandboxed auto-run stays off.
+- Indexed grep stays for this release.
+
+`npm run verify:helper-contracts` (`desktop/verify-helper-contracts.mjs`)
+checks authority, malformed input, process identity and cleanup for every helper
+the ranking shows as loaded. It runs the **shipped default binaries**, as an
+unprivileged user:
+
+- Executables run as their callers run them.
+- Addons run in Node 24.18.0 workers under strace, not inside Electron.
+- Each worker brackets its measured window with marker `stat()` calls.
+- Only verifier-owned children and process groups are signalled.
+
+Values below are from the iteration run `helper-contracts-UrUQPh` (all 20 checks passed). The counted runs are listed in the [worker report](../verification/worker-reports/helper-replacement.md).
+
+| Helper | Authority | Malformed input | Process identity | Cleanup |
+| --- | --- | --- | --- | --- |
+| `cursorsandbox` (original) | The shared matrix (`desktop/sandbox-contract.mjs`): workspace writes allowed, outside writes and read-only workspaces denied, TCP and UDP denied unless `networkAccess` | 14 invalid inputs fail closed: non-zero exit, command not run | The command replaces the helper: same PID, own session and group. fd 3 is inherited | SIGTERM to the group stops the shell and two background children; no survivors |
+| `crepectl` | Writes only under `--cache-path`; no IP sockets; no other process; worktree unchanged | 11 malformed requests build no index. Each exits 2 (usage) or reports an error in the stdout JSON | Builds only when `CREPECTL_PARENT_PID` equals its parent; otherwise exits 3 | Parent killed mid-build: exits within 2 s, staging directory removed |
+| `file-service` `GrepClient` | Nothing outside its roots: unknown roots return `null` (`no_index`), `../**` includes and a symlink out of the repository give no results. Writes only under `<repo>/.git/cursor`; no IP sockets; the only process started is `crepectl` | Bad shapes throw typed errors (`InvalidArg`, `BooleanExpected`); an invalid regex returns `null` (`exec_failure`); a 1 MiB pattern returns normally; the host survives | `crepectl` is a child of the host process, with `CREPECTL_PARENT_PID` set to the host PID | Dispose during a build: the build does not outlive the client. Thread growth over 10–30 construct/dispose cycles ≤ 4 and RSS growth ≤ 16 MiB (`MALLOC_ARENA_MAX=2`). Host killed: `crepectl` stops within 2 s, no staging left |
+| `cursor-proclist` | 20 scans: no writes, IP sockets or processes. The default scan reports only the caller's own tree | 7 malformed scans and 1 bad memory call resolve without crashing; invalid roots fall back to the caller | Its own tuple has the correct PID and parent PID; the name is the executable path | 1,500 concurrent scans: threads unchanged, RSS +1 MiB, prompt exit |
+| `tree-chunk-napi` | Parse, chunk, compress and contextualize over 6 languages: no file opens, writes, IP sockets or processes | 14 malformed calls throw typed errors or return results, including surrogates, NUL bytes, 20,000-level nesting, a 5 MB file and out-of-range ranges | In process; starts no child process | 300 parses: threads unchanged, RSS +1 MiB, prompt exit |
+
+**Observations, recorded and not changed** (all in the original binaries):
+
+- **`GrepClient` callbacks stay referenced after `dispose()`.** Node does not
+  exit on its own after construct plus dispose. The extension host exits
+  explicitly, so the product is not affected.
+- **glibc arenas.** With default per-thread arenas, RSS grows during repeated
+  construct/dispose and plateaus at about 245 MiB after 90 clients on a
+  40,000-file repository. With `MALLOC_ARENA_MAX=2` it stays flat (87 MiB).
+  This is arena retention, not a leak.
+- **Spill directory left behind.** A `crepectl` build killed through its parent
+  leaves an empty `crepe-spill-*` directory, which the next build does not
+  remove. With the original helpers this sits under `<repo>/.git/cursor/crepe`,
+  and only when indexed grep is enabled (`instant_grep_indexing` is off by
+  default).
+- **`cursorsandbox` leniency.** It accepts a relative `cwd` (resolved against the
+  caller's directory), a 4 MiB policy and a symlinked policy file. Callers
+  write absolute paths into a 0700 directory, so none of these arise. The
+  Landlock replacement refuses all three.
+- **`tree-chunk-napi` input handling.** An unsupported file type parses with
+  the indentation fallback, and a 5 MB file produces 0 chunks.
+- **`cursor-proclist` roots.** It reports other processes when the caller names
+  them as roots. This is the API contract; the OpenVision callers are disabled
+  (OV-1003).
+
+Unit guards: `desktop/helper-contracts.test.mjs` covers trace windows,
+hyphenated marker names and rename destinations.
+`desktop/sandbox-helper.test.mjs` runs the same sandbox contract against the
+Landlock replacement.
 
 ## Remaining Linux gaps
 
