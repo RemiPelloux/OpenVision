@@ -142,3 +142,81 @@ natively. Remaining Linux gaps before promotion, in the coordinator's ledger:
   the cause was not investigated.
 - Host setup differs from the documented proven setup: `sqlite3` and
   `gnome-keyring` were installed (see Verification).
+
+## Follow-up, 20 October 2026: owner item 5 (cancel paths)
+
+The owner accepted residuals 1–4 and 6 and sent item 5 back: Stop or close
+during tool-argument streaming, during an MCP tool call, and between the files of
+a multi-file edit. The branch was reset to `origin/main` (`95dd887d`, which
+already contains the earlier work) and rebuilt from scratch.
+
+### New native cases (`verify:agent-interruption`)
+
+| Case | Interruption point | Required and observed |
+| --- | --- | --- |
+| `stream-stop`, `stream-close` | A `StrReplace` call whose arguments have started streaming; the response is held, so the call never completes | File keeps its exact original bytes; the write helper never runs; no temporary, no review; no owned process survives; the same chat accepts the next prompt (one request, reply shown); restart sends no request |
+| `mcp-stop`, `mcp-close` | A real STDIO MCP server's `memory_probe` call in slow mode, approved and running (it never answers until cancelled) | Stop reaches the server as `notifications/cancelled`; after close (and at the end) every MCP server process has closed its control connection and exited; the tool ran exactly once (no replay after restart); the same chat resumes |
+| `multi-stop`, `multi-close` | One assistant turn edits two files; the first is written, the second write is held by the probe | Close: first file changed, second keeps its original bytes, its interrupted temporary is swept at restart. Stop: the held second write completes. After restart both files are reviewable (Keep All/Undo All) and Undo restores both exact originals; each file was written once; the same chat resumes |
+
+No product defect was found: every case met these rules on its first run. The
+only correction was in the verifier: a two-file review shows *Keep All/Undo All*,
+which the first check did not accept (diagnostic run `agent-interruption-uUakGO`,
+not credited).
+
+### Runs on the clean rebuild (commit `ff5d3251`)
+
+Workbench SHA-256 `50b4ac178d358b6986a6adbd57b089ee8d927a68df051acd671b2cd85b47aa54`,
+Agent exec `24097dea2c8d97dc953ed23a4aa5515cade65eaf3dbcd3c01240a170e210af53`. The
+clean build validates 250 scripts, 124 manifests and 36 local main-process modules.
+
+| Verifier | Run | Result |
+| --- | --- | --- |
+| `verify:agent-interruption` (all 14 cases, 6 new) | `agent-interruption-EigRvm` | **Pass**, first time: 24 authenticated requests, no renderer errors, no owned process left |
+| `verify:agent-interruption` (repeat) | `agent-interruption-3v9KEa` | **Pass**, first time |
+| `verify:review-deletion` | `review-deletion-verification-jtNoRa` | Pass |
+| `verify:agent-io-faults` | `agent-io-fault-verification-LfCPa5` | Pass |
+| `verify:agent` | `agent-verification-HNwfJE` | Pass |
+| `verify:agent -- --review-recovery` | `agent-verification-bJyQ8P` | Pass |
+| `verify:agent -- --review-abrupt` | `agent-verification-FY55Z9` | Pass |
+| `verify:profile-io-faults` | `profile-io-fault-verification-39nnjr`, `-YoEr8w` | **Fail** (below) |
+| Control: same build with only the OV-1002 stream coalescing reverted | `profile-io-fault-verification-LvteOr` | Pass |
+
+`test:agent-review` 114/114, `check:desktop` and `docs:check` pass.
+
+### Regression found in an existing OV-103 check (not fixed here)
+
+`verify:profile-io-faults` fails on merged `main`: "A chat reply finished after
+freeing space survives restart". With the profile full, the chat turn is now sent
+**while full** and its reply shown; once space is freed the turn is sent a
+**second** time and the reply is streamed twice into one bubble (`reply, chat,
+chat, …`). Both runs on `main` fail; the earlier branch build passed twice
+(`zBhen6`, `FC8IG1`) with the request sent only after space was freed.
+
+Control: reverting only the OV-1002 change `29483a06` (coalesced Agent text
+delivery, `agent-stream-delivery-customization.mjs`) in the built Agent exec
+bundle, and nothing else, makes the same verifier pass with one chat request
+(`LvteOr`). The extension-host log shows the turn failing with `SQLITE_FULL` and
+being retried with growing delays (09:10:20, :21, :25, :33). *Inference, not
+traced:* reading the model stream ahead lets the first attempt send its request
+and deliver its text before an awaited storage write fails, so the loop's retry
+sends the turn again. This belongs to the OV-1002 stream-delivery owner (and the
+loop retry policy); it was not changed on this branch.
+
+The first of the two failing runs also hung: merged `main` drives the read-only
+profile dialog with `xdotool` and ImageMagick `import`, which were not installed
+here, so the spawned app stayed blocked in its dialog. That app was ended by its
+unique run-directory pattern (SIGTERM was ignored while it was blocked; SIGKILL
+then). Both tools were installed and the second run completed.
+
+Host packages added in this follow-up: `xdotool`, `imagemagick`. The keyring is a
+`gnome-keyring` daemon started unlocked in each verifier's private D-Bus session
+(`gnome-keyring-daemon --unlock --components=secrets` with a throwaway password),
+`XDG_RUNTIME_DIR` set, run as the non-root user `ov`.
+
+### Recommendation
+
+**Hold OV-103.** Item 5 is closed: the six new cancel cases pass twice, first
+time, on a clean rebuild, and the other OV-103 checks pass once. The hold is for
+the `verify:profile-io-faults` regression introduced by the merged OV-1002
+stream-delivery change. Once that owner fixes it (or the owner accepts it),
+OV-103 has no remaining Linux x64 gap from this branch.
