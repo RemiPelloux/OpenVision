@@ -55,13 +55,28 @@ class Bs extends Error { constructor({ toolName }) { super("Model tried to call 
           if (null == n) throw new Bs({ toolName: e.toolName, availableTools: Object.keys(t) });
           return { type: "tool-call", toolCallId: e.toolCallId, toolName: r, args: JSON.parse(e.args) };
         }
+        const f9 = t => t.toolName, Q6 = { warn() {} };
+        async function v9(e, t, r, n, s, o, i, a, l, c = new Set()) {
+          const u = f9(t),
+            p = r[u];
+          if (void 0 === p) {
+            if (
+              (Q6.warn(e, "nal.tool_call.failure", { toolNameFromModel: u }), !1)
+            ) {}
+            return dispatch(u, r);
+          }
+          return { content: [{ type: "tool-result", result: "ran " + u }] };
+        }
 function dispatch(u, r) {
   return { content: [{ type: "tool-result",
                   result: \`Tool not found: \${u}. Available tools: \${Object.keys(r).join(", ")}\`,
   }] };
 }
-return { $s, dispatch };`;
-
+return { $s, v9, dispatch };`;
+function argsStream() {
+  const stream = { read: 0, async *[Symbol.asyncIterator]() { for (const chunk of ['{"descr', 'iption":"x"}']) { stream.read++; yield chunk; } } };
+  return stream;
+}
 test('a call to a hidden tool is answered with the reason; other unknown tools are unchanged', async () => {
   const patched = answerHiddenToolCalls(calls);
   assert.equal(answerHiddenToolCalls(patched), patched, 'idempotent');
@@ -75,6 +90,16 @@ test('a call to a hidden tool is answered with the reason; other unknown tools a
     { type: 'tool-call', toolCallId: 'c3', toolName: 'Read', args: { path: 'a' } });
   assert.equal(after.dispatch('GenerateImage', tools).content[0].result, hiddenToolMessage);
   assert.equal(after.dispatch('Invented', tools).content[0].result, before.dispatch('Invented', tools).content[0].result);
+  // The hidden call's argument stream is drained (an undrained stream stalled the turn).
+  const hiddenArgs = argsStream(), otherArgs = argsStream();
+  assert.equal((await after.v9({}, { toolName: 'GenerateImage' }, tools, 0, {}, 0, 0, hiddenArgs)).content[0].result, hiddenToolMessage);
+  assert.equal(hiddenArgs.read, 2);
+  await after.v9({}, { toolName: 'Invented' }, tools, 0, {}, 0, 0, otherArgs);
+  assert.equal(otherArgs.read, 0, 'other unknown tools are unchanged');
+  assert.equal((await after.v9({}, { toolName: 'Read' }, tools, 0, {}, 0, 0, argsStream())).content[0].result, 'ran Read');
+  // v1 builds are upgraded in place.
+  const v1 = patched.replaceAll('answered v2', 'answered v1').replace(/ \/\* OpenVision hidden tool call answered v1 \*\/ if \(\["GenerateImage"\][^\n]*/, '');
+  assert.equal(answerHiddenToolCalls(v1), patched);
   assert.throws(() => answerHiddenToolCalls(calls.replace('availableTools: Object.keys(t)', 'available: 1')), /owner missing/);
 });
 
@@ -83,6 +108,7 @@ for (const relative of imageGenerationTargets) {
   test(`built ${relative} registers no GenerateImage tool`, { skip: !existsSync(path) }, async () => {
     const text = answerHiddenToolCalls(hideGenerateImageTool(await readFile(path, 'utf8')));
     assert.equal(text.split('OpenVision image generation hidden v1').length, 3);
-    assert.equal(text.split('OpenVision hidden tool call answered v1').length, 3);
+    assert.equal(text.split('OpenVision hidden tool call answered v2').length, 4);
+    assert.doesNotMatch(text, /answered v1/);
   });
 }
