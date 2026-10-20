@@ -26,6 +26,7 @@ import { fileHash } from './import-files.mjs';
 import { captureEnvironment, removedProxyVariables } from './capture-harness.mjs';
 import { parseSyscallTrace, trafficConnects } from './network-capture.mjs';
 import { hostRequest } from './remote-ssh-host.mjs';
+import { reconnectionGrace } from './remote-server.mjs';
 
 if (process.platform !== 'linux' || process.arch !== 'x64') throw new Error('verify:remote-ssh requires a Linux x64 client');
 if (process.getuid() === 0) throw new Error('Run verify:remote-ssh as an unprivileged user; the remote account must be a different user.');
@@ -140,6 +141,17 @@ async function close(name) {
 const explorerRow = name => page.locator('.explorer-folders-view .monaco-list-row').filter({ hasText: new RegExp(`^${name.replace('.', '\\.')}$`) }).first();
 const remoteFile = path => remote(`cat ${path} 2>/dev/null || true`);
 async function remoteRows(kinds) { return (await host('processes')).rows.filter(row => kinds.includes(row.kind)); }
+// After a clean window close, no remote server, extension host, pty host or
+// sshd session may outlive the window by more than closeReleaseMs.
+const closeReleaseMs = 30000, { graceMs } = reconnectionGrace, networkLossMarginMs = 90000;
+async function released(label) {
+  const started = Date.now();
+  await until(`${label}: remote processes released`, async () => {
+    const rows = await remoteRows(['remote-server', 'ssh-session']);
+    return rows.length ? { error: rows.map(row => `${row.kind}:${row.argv.slice(0, 80)}`).join(' | ') } : true;
+  }, closeReleaseMs, 250);
+  return Date.now() - started;
+}
 async function openFile(file) {
   await page.keyboard.press('ControlOrMeta+Shift+e');
   await explorerRow(file).click();
@@ -360,6 +372,12 @@ try {
   const reloaded = await until('fixture active in a new extension host', async () =>
     (await activations()).find(item => item.pid !== activation.pid) ?? { error: 'no new activation' }, 120000, 500);
   result.observations.reloadActivation = reloaded;
+  // An intentional reload ends the old extension host promptly; the new
+  // window keeps the server.
+  const reloadStarted = Date.now();
+  await until('old extension host gone after reload', async () =>
+    (await host('processes')).rows.some(row => row.pid === activation.pid) ? { error: 'still running' } : true, closeReleaseMs, 250);
+  result.observations.reloadOldHostGoneMs = Date.now() - reloadStarted;
   result.checks.reloadReconnects = true;
 
   enter('reconnect-killed-connection');
@@ -430,11 +448,8 @@ try {
   result.observations.beforeClose = (await remoteRows(['remote-server', 'ssh-session'])).map(row => ({ kind: row.kind, argv: row.argv.slice(0, 120) }));
   await page.screenshot({ path: join(directory, 'final.png') });
   await close('main');
-  const leftovers = await until('remote processes released', async () => {
-    const rows = await remoteRows(['remote-server', 'ssh-session']);
-    return rows.length ? { error: rows.map(row => `${row.kind}:${row.argv.slice(0, 80)}`).join(' | ') } : [];
-  }, 60000, 500);
-  result.checks.windowCloseReleasesRemote = leftovers.length === 0;
+  result.observations.closeReleaseMs = [await released('main window close')];
+  result.checks.windowCloseReleasesRemote = true;
 
   enter('second-profile');
   // A second local profile on the same host gets its own remote profile home.
@@ -448,8 +463,7 @@ try {
   assert.equal(second.profileHome, remoteProfileHome(secondProfile));
   assert.notEqual(second.profileHome, activation.profileHome);
   await close('second-profile');
-  await until('remote processes released after the second profile', async () =>
-    (await remoteRows(['remote-server', 'ssh-session'])).length ? { error: 'remaining' } : true, 60000, 500);
+  result.observations.closeReleaseMs.push(await released('second profile window close'));
   result.observations.profileHomes = [activation.profileHome, second.profileHome];
   result.checks.separateRemoteProfileHomes = true;
 
@@ -471,6 +485,37 @@ try {
   result.observations.journal = { accepted: accepted.length, ended: accepted.filter(port => ended.has(port)).length,
     open: accepted.filter(port => !ended.has(port)) };
   result.checks.journalSessionsClosed = accepted.length > 0 && result.observations.journal.open.length === 0;
+
+  enter('close-during-reconnect');
+  // The connection drops; the window closes as soon as a new SSH session is
+  // up, before its extension host has reconnected.
+  await launch('close-during-reconnect');
+  await explorerRow('renamed.txt').waitFor({ timeout: 180000 });
+  const sessions = new Set((await remoteRows(['ssh-session'])).map(row => row.pid));
+  await host('kill-sessions');
+  await until('new session after the drop', async () =>
+    (await remoteRows(['ssh-session'])).some(row => !sessions.has(row.pid)) ? true : { error: 'none' }, 120000, 100);
+  await close('close-during-reconnect');
+  result.observations.closeReleaseMs.push(await released('window closed during reconnection'));
+  result.checks.closeDuringReconnectReleasesRemote = true;
+
+  enter('network-loss');
+  // Genuine network loss: the connection drops and stays down (sshd stopped),
+  // then the window closes without reaching the host. The host keeps the
+  // server for the bounded reconnection grace, then stops it.
+  await launch('network-loss');
+  await explorerRow('renamed.txt').waitFor({ timeout: 180000 });
+  const lostAt = Date.now();
+  await host('stop');
+  await close('network-loss');
+  await sleep(20000);
+  result.observations.networkLoss = { serverAliveAfter20s: (await remoteRows(['remote-server'])).length > 0 };
+  const boundMs = graceMs + networkLossMarginMs;
+  await until('remote server released within the bounded grace', async () =>
+    (await remoteRows(['remote-server', 'ssh-session'])).length ? { error: 'remaining' } : true, boundMs - (Date.now() - lostAt), 1000);
+  result.observations.networkLoss.releasedAfterMs = Date.now() - lostAt;
+  result.observations.networkLoss.boundMs = boundMs;
+  result.checks.networkLossBoundedGrace = result.observations.networkLoss.releasedAfterMs <= boundMs;
 } catch (error) {
   result.failure = error.stack; process.exitCode = 1;
   await page?.screenshot({ path: join(directory, 'failure.png') }).catch(() => {});
