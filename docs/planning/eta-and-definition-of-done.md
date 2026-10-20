@@ -44,7 +44,7 @@ merged code. "Gate" is what blocks promotion:
 | Gate | Meaning |
 | --- | --- |
 | L | Linux work |
-| D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
+| D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)); settled 20 October in [owner decisions](owner-decisions.md) |
 | X | External: a machine, balance or account |
 
 ### Verified (28)
