@@ -185,9 +185,18 @@ export function verifyHostKeys(text) {
 // derived from the local profile directory. The remote extension host receives
 // it as VSCODE_OPENVISION_PROFILE_HOME (not the terminal environment), so remote
 // extensions never write ~/.cursor and two local profiles never share data.
-export const profileMarker = '/* OpenVision remote profile home v1 */';
+// The same window is tagged with OPENVISION_REMOTE_WINDOW (a per-window id) in
+// its remote extension host environment. When the window closes or reloads,
+// the resolver's deactivate ends the extension hosts carrying that id (matched
+// by owner, server path, --type=extensionHost and the id) over its SSH
+// connection, so a window closed while its extension-host connection is still
+// reconnecting does not leave the server waiting for the reconnection grace.
+// If the SSH connection itself is down, the bounded grace applies.
+export const profileMarker = '/* OpenVision remote profile home and window release v2 */';
+export const windowVariable = 'OPENVISION_REMOTE_WINDOW';
 const profileHelper = `${profileMarker}
-async function openvisionRemoteProfileHome(connection, installPath, context) {
+const openvisionRemoteWindow = { id: require("crypto").randomUUID(), resolver: void 0, server: void 0 };
+async function openvisionRemoteProfileHome(connection, installPath, context, resolver) {
   const vscode = require("vscode"), fs = require("fs"), path = require("path"), crypto = require("crypto");
   const product = JSON.parse(await fs.promises.readFile(path.join(vscode.env.appRoot, "product.json"), "utf8"));
   const profile = path.dirname(path.dirname(context.globalStorageUri.fsPath));
@@ -196,7 +205,19 @@ async function openvisionRemoteProfileHome(connection, installPath, context) {
   if (!home.startsWith("/")) throw new Error("The remote home directory could not be resolved");
   const data = installPath ? installPath.replace(/^~(?=\\/|$)/, home) : home + "/" + product.serverDataFolderName;
   if (!data.startsWith("/") || /[\\r\\n\\0]/.test(data)) throw new Error("The remote server data folder could not be resolved");
+  // The resolver's current connection is used at release: a reconnecting
+  // window may already have replaced the one used here.
+  Object.assign(openvisionRemoteWindow, { resolver: resolver ?? { sshConnection: connection }, server: data + "/bin/" });
   return data + "/profiles/" + key;
+}
+async function openvisionReleaseRemoteWindow() {
+  const { resolver, id, server } = openvisionRemoteWindow, connection = resolver?.sshConnection;
+  if (!connection || !server || /['\\\\]/.test(server)) return;
+  const script = "for p in /proc/[0-9]*; do [ -O \\"$p\\" ] || continue; " +
+    "tr '\\\\0' '\\\\n' < \\"$p/environ\\" 2>/dev/null | grep -qx '${windowVariable}=" + id + "' || continue; " +
+    "c=$(tr '\\\\0' ' ' < \\"$p/cmdline\\" 2>/dev/null); case \\"$c\\" in *--type=extensionHost*) ;; *) continue;; esac; " +
+    "case \\"$c\\" in *'" + server + "'*) kill -TERM \\"\${p#/proc/}\\" 2>/dev/null;; esac; done; true";
+  try { await Promise.race([connection.exec(script), new Promise(done => setTimeout(done, 3000))]); } catch {}
 }
 `;
 
@@ -205,8 +226,13 @@ export function remoteProfileHome(text) {
   const install = unique(text, /const ([\w$]+)=\(0,[\w$]+\.findServerInstallPath\)\([\w$]+\.hostname,[\w$]+\),[\w$]+=await\(0,[\w$]+\.installCodeServer\)\(this\.sshConnection,/g, 'install path');
   const resolved = unique(text, /const ([\w$]+)=new ([\w$]+)\.ResolvedAuthority\("127\.0\.0\.1",[\w$]+\.localPort,[\w$]+\.connectionToken\);return \1\.extensionHostEnv=([\w$]+),\1/g, 'resolved authority');
   if (resolved.index < install.index) throw new Error('Remote-SSH resolved authority precedes the install');
-  const call = `${resolved[3]}.${variable}=await openvisionRemoteProfileHome(this.sshConnection,${install[1]},this.context);`;
-  const result = profileHelper + text.slice(0, resolved.index) + call + text.slice(resolved.index);
+  const call = `${resolved[3]}.${variable}=await openvisionRemoteProfileHome(this.sshConnection,${install[1]},this.context,this);` +
+    `${resolved[3]}.${windowVariable}=openvisionRemoteWindow.id;`;
+  const deactivate = unique(text, /([\w$]+)\.deactivate=function\(\)\{\}/g, 'deactivate');
+  if (deactivate.index < resolved.index) throw new Error('Remote-SSH deactivate precedes the resolver');
+  let result = text.slice(0, resolved.index) + call + text.slice(resolved.index);
+  result = result.replace(deactivate[0], `${deactivate[1]}.deactivate=function(){return openvisionReleaseRemoteWindow()}`);
+  result = profileHelper + result;
   parseJavaScript(result, { ecmaVersion: 'latest', sourceType: 'script' });
   return result;
 }
