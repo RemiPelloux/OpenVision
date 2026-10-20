@@ -299,11 +299,16 @@ non-loopback request.
 - Runs went one at a time.
 - Every model was a loopback fixture. None of this is live inference.
 
-| Verifier | Runs (first time, both pass) | What it proves |
+**Final set**, on a clean build of commit `0a1ea475`. Every run passed first
+time:
+
+| Verifier | Runs | What it proves |
 | --- | --- | --- |
-| `verify:image-input` | `qj32Kz`, `qtQQC9` | See the image-input list below. |
-| `verify:browser-automation` | `PnBN8U`, `LKqHMF` | See the browser-automation list below. |
-| `verify:modes-probe` | `9MoX5V`, `990bje` | `exthost.log` shows the computer-use extension activated. The explanation is in `exthost/cursor.cursor-computer-use/Computer Use.log`. No sidecar or `*.cursor.com` request was made. The palette shows no computer-use permission command and no image-generation command. |
+| `verify:image-input` | `ydTKFr`, `KQysjD` | See the image-input list below. |
+| `verify:browser-automation` | `DpNng4`, `51gTCv` | See the browser-automation list below. |
+| `verify:modes-probe` | `0nOMVF`, `jImPqx` | `exthost.log` shows the computer-use extension activated. The explanation is in `exthost/cursor.cursor-computer-use/Computer Use.log`. No sidecar or `*.cursor.com` request was made. The palette shows no computer-use permission command and no image-generation command. |
+| `verify:agent -- --mcp` (regression) | `67rNvG` | Pass. This covers the MCP reconnect path that the browser-reason change touches. |
+| `verify:provider-import` (regression) | `Rpg3B7` | Pass. This covers the image gate from provider import. |
 
 **`verify:image-input`** checks that:
 - paste, drag and file attach each send their image;
@@ -312,48 +317,49 @@ non-loopback request.
 - a corrupt file is not sent and is explained, through the picker and through
   drop, and the rejected file is not left in storage;
 - an image removed before sending is not sent;
-- Stop closes the in-flight image request (202 ms and 198 ms);
+- Stop closes the in-flight image request (206 ms and 252 ms);
 - the text-only model gets **0** requests and "Image input is off for this
   model" is shown;
-- `GenerateImage` goes to `/v1/images/generations` on the provider and its
-  failure is reported;
-- after a restart, the history is shown with 3 image pills, and a follow-up
-  works and re-sends 9 earlier images;
+- `GenerateImage` is **not offered**. A call made anyway is answered with the
+  explanation: no image is produced, no request reaches
+  `/v1/images/generations`, and no "Generated image" row appears;
+- after a restart, a follow-up works with the image history;
 - both host exits are 0.
 
 **`verify:browser-automation`** checks that:
-- the local Agent is offered `cursor-ide-browser`, with 16 tools and status
-  `error`;
-- `browser_navigate` is refused with the explanation, not "blocked by team
-  admin";
+- the local Agent is offered `cursor-ide-browser` (16 tools, status `error`);
+- `browser_navigate` is refused with the explanation;
+- the chat row reads "Failed browser_navigate", with no "Navigated to";
+- opening the row shows the reason;
 - there are 0 page loads and nothing to approve;
+- `GenerateImage` is absent from every Agent request;
 - there is no non-loopback request;
 - the host exits 0.
 
-Runs `jeTh0Z` and `OAIa7U` were the same checks before the verifier also
-recorded the offered tool list. They passed too.
+**Earlier runs, not counted.** All of them are kept in the ubuntu tree's
+ignored `logs/`; none is counted as a pass.
 
-**Regression runs on the same clean build:**
+Before the owner decisions:
+- All checks passed twice on the clean build of `5e87e284`: image-input
+  `qj32Kz`, `qtQQC9`; browser `PnBN8U`, `LKqHMF`; probe `9MoX5V`, `990bje`;
+  `exWhfY`; `Ysef0m`.
 
-| Verifier | Run | Result |
-| --- | --- | --- |
-| `verify:provider-import` | `Ysef0m` | Pass, including the image gate. |
-| `verify:agent -- --mcp` | `exWhfY` | Pass. This covers the MCP reconnect path. |
-| `verify:completion -- --next-edit-absent` | `js4dSq` | Pass. |
+After the decisions, on the first clean build of `e52cc22f`, two new checks
+failed first time. Both failures are recorded honestly:
+- **`verify:image-input`** (`7Cg8M6`, `v6dmOQ`) found a real defect: a call
+  to the hidden `GenerateImage` hung the turn.
+  - Fixed in `b7b95d08`.
+  - One rerun (`y5G9dQ`) still hung, because the dispatcher left the argument
+    stream undrained. That was fixed in `0a1ea475`.
+  - An in-place check run `h0sANg` passed.
+- **`verify:browser-automation`** (`sMGN6K`, `aSGmOo`) failed on the verifier
+  itself: it read the row's action and details as one element. The product
+  already showed "Failed browser_navigate" and the reason.
+- In the same batch, the modes probe (`fFzwgc`, `5CdjCa`), `verify:agent --
+  --mcp` (`h4vsGm`) and `verify:provider-import` (`olxdMB`) passed.
 
-**Getting the verifiers right took earlier runs on the same branch.** They
-were not counted as passes:
-- `verify:browser-automation`: runs `PH1Q2d`, `zKqkoR`, `eJ5IhR`, `dalMJ1`,
-  `2ptRax` and `gbular` were diagnosis. `RJeGBf` and `6m3OKv` were the first
-  passes before the clean rebuild.
-- `verify:image-input`: runs `3H4kMK`, `mYGshY`, `QmZ1QN`, `B4iFci`,
-  `1DqI83`, `4SQeHO`, `6uh1cp` and `nFiWza` failed on verifier selectors and
-  measurement. Two of them, `3H4kMK` and `mYGshY`, also exposed the picker
-  and storage defects. `axcWxa` and `lz7FlF` passed before the clean
-  rebuild.
-
-The run directories, with profiles and screenshots, stay under the ignored
-`logs/` of the ubuntu tree. They are not published.
+Getting the verifiers right also took earlier diagnosis runs. Those are listed
+in the worker report.
 
 ## Not proved
 

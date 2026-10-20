@@ -7,10 +7,10 @@ built from source with `npm run prepare:desktop && npm run build:desktop`.
 No live provider, account, Windows or macOS was used.
 
 > **Current status, 20 October 2026.** See the
-> [second follow-up](#follow-up-20-october-2026-image-input-matrix-and-browser-reachability)
-> at the end. All OV-704 Linux checks now pass natively, first time and
-> twice each, on a clean rebuild. Two scope facts changed and go back to the
-> owner. The sections below are kept as the 19 October record.
+> [final follow-up](#follow-up-20-october-2026-owner-decisions-implemented)
+> at the end. The owner decisions are implemented. Every OV-704 Linux check
+> passes natively, first time and twice each, on a clean rebuild of
+> `0a1ea475`. Earlier sections are kept as the record.
 
 ## Summary
 
@@ -294,3 +294,93 @@ If the owner wants browser automation usable, or image generation hidden,
 hold OV-704 for that change and the reachable-branch native runs.
 
 **OV-604:** unchanged. The owner decision is recorded on `main`.
+
+## Follow-up (20 October 2026): owner decisions implemented
+
+The coordinator recorded two decisions in
+[owner decisions](../../planning/owner-decisions.md):
+- **(a)** Browser automation stays *explain unavailable*. The team-policy
+  check is not relaxed.
+- **(b)** Image generation is **hidden** for this release. It will be
+  revisited with live providers in OV-205.
+
+It also asked that refused or failed browser and image tools never show a
+past-tense success. The branch was rebased onto `origin/main` at `64831b22`.
+
+### Changes
+
+| Change | Owner | Commit |
+| --- | --- | --- |
+| `GenerateImage` is no longer registered by any of the three bundled Agent runtimes (`cursor-agent-exec`, `cursor-local-agent-runtime`, `cursor-agent-host`). | `desktop/image-generation-customization.mjs` | `e52cc22f` |
+| **Defect found natively.** With the tool hidden, a model that called it anyway hung the turn. The AI SDK threw `AI_NoSuchToolError` and the turn retried (`7Cg8M6`). After the parser fix, the dispatcher's not-found branch left the argument stream undrained (`y5G9dQ`). For hidden tools only, the parser now passes the call through, and the dispatcher drains the arguments and answers: "Image generation is not available in this OpenVision release…". Other unknown tools are unchanged. v1 builds are upgraded in place. | same module | `b7b95d08`, `0a1ea475` |
+| Browser MCP rows on error read "Failed <tool>", where they used to read "Navigated to <url>". Running and successful rows are unchanged; other tools already used error labels. | `desktop/tool-row-status-customization.mjs` | `e52cc22f` |
+| The inventory records image generation as **hidden (owner decision)**. Its decision facts include both new markers. | `desktop/specialized-modes.mjs` | `e52cc22f` |
+
+All changes are marker-guarded and idempotent, with first backups.
+
+**Unit tests.** `npm run test:modes` passes 33/33. It includes:
+- the registration gate for every flag combination;
+- a hidden call answered, with its arguments drained;
+- other unknown tools unchanged;
+- the v1 upgrade;
+- the failed browser row, with success, running and other MCP rows
+  unchanged.
+
+### Native verification
+
+The final set ran on a clean rebuild of `0a1ea475`, one at a time, as the
+unprivileged `ubuntu` user. Every run passed first time:
+
+| Verifier | Runs |
+| --- | --- |
+| `verify:image-input` | `ydTKFr`, `KQysjD` |
+| `verify:browser-automation` (explanation branch) | `DpNng4`, `51gTCv` |
+| `verify:modes-probe` | `0nOMVF`, `jImPqx` |
+| `verify:agent -- --mcp` | `67rNvG` |
+| `verify:provider-import` | `Rpg3B7` |
+
+The "GenerateImage absent from the Agent's offered tools" check is part of
+both new verifiers:
+- image-input records `generateAdvertised: false`;
+- browser-automation asserts that no Agent request lists `GenerateImage`.
+
+**Failures recorded, not counted.** On the first clean build of `e52cc22f`:
+- `verify:image-input` failed twice (`7Cg8M6`, `v6dmOQ`). This was the
+  real hang defect above.
+- `verify:browser-automation` failed twice (`sMGN6K`, `aSGmOo`). The cause
+  was in the verifier: the row's action and details are separate elements.
+  The product already showed "Failed browser_navigate" and the reason.
+
+### Other checks
+
+| Command | Result |
+| --- | --- |
+| `test:modes` | 33/33 |
+| `test:completion` | 66/66 |
+| `test:build-integrity` | 26/26 |
+| `test:mcp-lazy` | 63/63 |
+| `check:desktop` | pass |
+| `docs:check` | pass |
+| `status:features` | 31/44; OV-704 is not changed by this branch |
+
+`git diff origin/main...HEAD` touches no shared planning file. It contains no
+logs, profiles, `build/`, `source/` or `electron-host/`, and no secrets.
+
+### Recommendation
+
+**OV-704: promote to Verified on Linux x64.**
+- Image input, the computer-use explanation, the browser-automation
+  explanation and the hidden image generation are all native-verified,
+  first time and twice each, on a clean rebuild.
+- The regressions pass.
+
+**Still open, as decided:**
+- Browser automation stays unusable in local profiles. The reachable flow
+  (navigate, snapshot, type, click, screenshot, with approval) is written but
+  has never run.
+- Image generation goes to OV-205.
+- Windows and macOS computer use belong to the platform stories.
+
+**Remaining risk.** A model calling a *different* unknown tool still hits
+Cursor's original `AI_NoSuchToolError` retry-and-hang behaviour. This was
+left unchanged on purpose; it is outside OV-704 and worth its own story.
