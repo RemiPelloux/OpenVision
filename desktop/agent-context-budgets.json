@@ -1,30 +1,30 @@
 {
-  "description": "OV-1001 numeric budgets, set from the Linux x64 pre-change baseline logs/agent-context-5IGIXx (commit 935771e4) before the fixes were accepted. Byte and token budgets are the larger cold/warm baseline value plus 5% for run-specific environment text (git warm-up state, MCP catalog timing); request, duplicate and tool-history budgets are exact. Token counts are estimates. Applies to every pass (cold and warm). Fork budgets (19 October 2026) were set the same way from the pre-change baseline logs/agent-context-238ldi (build of commit b4f52a56, before the closed-chat release; verifier with the fork workload as committed in 4bab83cc); reasoningReplayed 0 with 4 reasoning deltas sent pins the documented current behaviour. Closed-chat release (19 October 2026): 75 s after closing, at most 5 reply-text strings (the chat history; measured 0 in logs/agent-context-DO8srr, 2-27 before) and at most 14 marker occurrences in all (measured 12, all owned by the bounded prompt-input history, its persisted copy, the chat title, subtitle and Chat History header; 45 before), and reopening the chat restores every prompt and reply. heapMarkerStringsAfterClose stays a non-regression budget (3 s after close, before the release window). See docs/performance/agent-context-linux.md.",
+  "description": "OV-1001 numeric budgets, set from the Linux x64 pre-change baseline logs/agent-context-5IGIXx (commit 935771e4) before the fixes were accepted. Byte and token budgets are the larger cold/warm baseline value plus 5% for run-specific environment text (git warm-up state, MCP catalog timing); request, duplicate and tool-history budgets are exact. Token counts are estimates. Applies to every pass (cold and warm). Fork budgets (19 October 2026) were set the same way from the pre-change baseline logs/agent-context-238ldi (build of commit b4f52a56, before the closed-chat release; verifier with the fork workload as committed in 4bab83cc); reasoningReplayed 0 with 4 reasoning deltas sent pins the documented current behaviour. Closed-chat release (19 October 2026): 75 s after closing, at most 5 reply-text strings (the chat history; measured 0 in logs/agent-context-DO8srr, 2-27 before) and at most 14 marker occurrences in all (measured 12, all owned by the bounded prompt-input history, its persisted copy, the chat title, subtitle and Chat History header; 45 before), and reopening the chat restores every prompt and reply. heapMarkerStringsAfterClose stays a non-regression budget (3 s after close, before the release window). CodebaseSearch allowance (20 October 2026): the owner-decided CodebaseSearch tool (OV-502) adds exactly 4,675 schema bytes and 1,302 estimated tokens to every request (logs/agent-context-B0ISB4 against logs/agent-context-DO8srr); each byte and token budget includes exactly that per request (largest request: one schema), nothing else changed; maxToolSchemaBytes pins the 20-tool schema (60,790 bytes per request) so any further tool or schema change needs its own accounting. See docs/performance/agent-context-linux.md.",
   "workloads": {
     "single": {
-      "requests": 1, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
-      "inputBytes": 78883, "estimatedInputTokens": 21047, "maxRequestBytes": 78883
+      "requests": 1, "maxToolSchemaBytes": 60790, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 83558, "estimatedInputTokens": 22349, "maxRequestBytes": 83558
     },
     "reads": {
-      "requests": 6, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
-      "inputBytes": 516238, "estimatedInputTokens": 141212, "maxRequestBytes": 92140,
+      "requests": 6, "maxToolSchemaBytes": 60790, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 544288, "estimatedInputTokens": 149024, "maxRequestBytes": 96815,
       "repeatedFileOccurrences": 3, "min:toolCallsReplayed": 3
     },
     "edit": {
-      "requests": 5, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
-      "inputBytes": 418999, "estimatedInputTokens": 114544, "maxRequestBytes": 86611,
+      "requests": 5, "maxToolSchemaBytes": 60790, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 442374, "estimatedInputTokens": 121054, "maxRequestBytes": 91286,
       "min:toolCallsReplayed": 4, "reasoningReplayed": 0, "min:reasoningDeltasSent": 4
     },
     "fork": {
-      "requests": 1, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
-      "inputBytes": 86128, "estimatedInputTokens": 23792, "maxRequestBytes": 86128,
+      "requests": 1, "maxToolSchemaBytes": 60790, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 90803, "estimatedInputTokens": 25094, "maxRequestBytes": 90803,
       "sourceHistoryCopies": 1, "min:minSourceHistoryCopies": 1, "min:toolCallsReplayed": 4, "reasoningReplayed": 0,
       "min:sourceUnchangedOnDisk": 1, "min:forkKeepsSourceHistory": 1, "forkAddedEntries": 2, "min:forkAddedEntries": 2,
       "min:forkSurvivesRestart": 1
     },
     "long": {
-      "requests": 22, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
-      "inputBytes": 1999857, "estimatedInputTokens": 538277, "maxRequestBytes": 102990,
+      "requests": 22, "maxToolSchemaBytes": 60790, "duplicateRequests": 0, "nearDuplicateRequests": 0, "auxiliaryRequests": 0,
+      "inputBytes": 2102707, "estimatedInputTokens": 566921, "maxRequestBytes": 107665,
       "lastHistoryBytes": 33046, "persistedHistoryBytes": 190747
     }
   },

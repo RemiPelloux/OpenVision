@@ -55,6 +55,7 @@ test('committed budgets cover every fixed workload and the session clauses', asy
   // Fork and reasoning clauses (OV-1001): source history once, tool calls replayed, source unchanged, restart.
   for (const key of ['sourceHistoryCopies', 'min:toolCallsReplayed', 'min:sourceUnchangedOnDisk', 'min:forkSurvivesRestart', 'reasoningReplayed'])
     assert.equal(typeof budgets.workloads.fork[key], 'number', `fork.${key}`);
+  for (const name of ['single', 'reads', 'edit', 'fork', 'long']) assert.equal(budgets.workloads[name].maxToolSchemaBytes, 60790, name);
   assert.equal(budgets.workloads.edit.reasoningReplayed, 0); assert.ok(budgets.workloads.edit['min:reasoningDeltasSent'] > 0);
 });
 
