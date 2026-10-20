@@ -14,29 +14,34 @@ const main = 'out/main.js';
 const computerUse = 'extensions/cursor-computer-use/dist/extension.js';
 const browserAutomation = 'extensions/cursor-browser-automation/dist/extension.js';
 const simpleBrowser = 'extensions/simple-browser/dist/extension.js';
+const agentExec = 'extensions/cursor-agent-exec/dist/main.js';
 
 export const modes = [
   { id: 'image-input', name: 'Image input in Agent chat', proposal: 'include',
-    reason: 'Local, provider-backed; already gated by the user-specified or discovered image capability (OV-704 default).',
+    reason: 'Local, provider-backed; gated by the user-specified or discovered image capability. Picker failures are reported and rejected files removed.',
     gates: [], configs: [],
     symbols: [[workbench, 'selectedImages'], [workbench, 'doesModelSupportImages'],
-      [workbench, 'OpenVision image input capability gate']] },
-  { id: 'image-generation', name: 'Image generation tool', proposal: 'exclude',
-    reason: 'Only a server-side Agent tool result type (generateImageToolCall); no local producer or provider adapter exists.',
+      [workbench, 'OpenVision image input capability gate'], [workbench, 'OpenVision picker image failure explained v1'],
+      [workbench, 'OpenVision rejected image file removed v1']] },
+  { id: 'image-generation', name: 'Image generation tool (GenerateImage)', proposal: 'hidden (owner decision)',
+    reason: 'GenerateImage called the configured provider at /v1/images/generations; hidden for this release, revisit with live providers (OV-205).',
     gates: [], configs: [],
-    symbols: [[workbench, 'generateImageToolCall']] },
+    symbols: [[workbench, 'generateImageToolCall'], [agentExec, 'images/generations'],
+      [agentExec, 'OpenVision image generation hidden v1']] },
   { id: 'in-app-browser', name: 'In-app browser editor (simple-browser opener, WebContentsView)', proposal: 'include',
     reason: 'Runs inside Electron with a sandboxed WebContentsView; no vendor service or download.',
     gates: [], configs: [],
     symbols: [[workbench, 'workbench.action.openBrowserEditor'], [main, 'WebContentsView'],
       [simpleBrowser, 'workbench.action.openBrowserEditor']], extensions: ['simple-browser'] },
-  { id: 'browser-automation', name: 'Agent browser automation (cursor-ide-browser MCP provider)', proposal: 'include-if-locally-reachable',
-    reason: 'Provider has no feature gate and drives the local WebContentsView; reachability from the local Agent loop is not yet proved natively.',
+  { id: 'browser-automation', name: 'Agent browser automation (cursor-ide-browser MCP provider)', proposal: 'explain-unavailable',
+    reason: 'Offered to the local Agent but refused by Cursor team policy without a Cursor account (native run); OpenVision states that reason instead of "blocked by team admin".',
     gates: ['playwright_autorun', 'playwright_mcp_provider', 'browser_features_access_control', 'browser_subagent'], configs: [],
     symbols: [[browserAutomation, '"cursor-ide-browser"'], [browserAutomation, '"browser_navigate"'],
       [browserAutomation, '"browser_snapshot"'], [browserAutomation, '"browser_click"'], [browserAutomation, '"browser_type"'],
       [browserAutomation, '"browser_take_screenshot"'], [browserAutomation, '"browser_cdp"'],
-      [workbench, 'cursor.browserView.takeScreenshot']], extensions: ['cursor-browser-automation'] },
+      [workbench, 'cursor.browserView.takeScreenshot'], [workbench, 'OpenVision local browser server explanation v1'],
+      [workbench, 'OpenVision failed browser tool row v1']],
+    extensions: ['cursor-browser-automation'] },
   { id: 'computer-use', name: 'Computer use (cursor-computer-use MCP provider)', proposal: 'explain-unavailable',
     reason: 'Backends exist for macOS and Windows only; Linux returns before any gate, manifest or download. OpenVision logs why.',
     gates: ['local_computer_use', 'mac_computer_use'],
@@ -112,6 +117,12 @@ export function decisionFailures(inventory) {
   expect(symbol('image-input', 'OpenVision image input capability gate') === 1, 'Agent image input gate is not installed');
   expect(symbol('next-edit-prediction', 'isFusedCursorPredictionModel: false') >= 1, 'local Tab configuration no longer disables fused prediction');
   expect(symbol('image-generation', 'generateImageToolCall') > 0, 'image generation symbol disappeared; re-inventory');
+  expect(symbol('image-generation', 'images/generations') > 0, 'image generation no longer calls the provider images endpoint; re-inventory');
+  expect(symbol('image-input', 'OpenVision picker image failure explained v1') === 1 &&
+    symbol('image-input', 'OpenVision rejected image file removed v1') === 1, 'image input fixes are not installed');
+  expect(symbol('browser-automation', 'OpenVision local browser server explanation v1') === 1 &&
+    symbol('browser-automation', 'OpenVision failed browser tool row v1') === 1, 'browser automation explanation is not installed');
+  expect(symbol('image-generation', 'OpenVision image generation hidden v1') > 0, 'GenerateImage is not hidden from the local Agent');
   const browser = mode('browser-automation').extensions['cursor-browser-automation'];
   expect(browser.hosts.every(host => host === 'go'), 'browser automation references a fixed network host');
   expect(inventory.glassGatesAgree, 'desktop and glass gate defaults differ');
