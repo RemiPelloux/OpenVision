@@ -54,8 +54,16 @@ export function retainerPaths(snapshot, marker, { depth = 14, objectName, nodeId
       reach(node, edge);
     }
   }
+  // Closure source positions (V8 snapshot `locations`: object index, script id, line, column; zero-based).
+  const locationOf = new Map(), locationFields = snapshot.snapshot.meta.location_fields ?? [];
+  if (snapshot.locations?.length && locationFields.length) {
+    const L = locationFields.length, objectField = locationFields.indexOf('object_index');
+    for (let index = 0; index < snapshot.locations.length; index += L)
+      locationOf.set(snapshot.locations[index + objectField] / N, snapshot.locations.slice(index, index + L).filter((_, field) => field !== objectField).join(':'));
+  }
   const describe = node => {
     const type = nodeType(node), name = nodeName(node);
+    if (type === 'closure' && locationOf.has(node)) return `closure:${String(name).slice(0, 40)}@${locationOf.get(node)}`;
     return type === 'string' || type === 'concatenated string' || type === 'sliced string'
       ? `${type}(${name.length})` : `${type}:${String(name).slice(0, 60)}`;
   };
