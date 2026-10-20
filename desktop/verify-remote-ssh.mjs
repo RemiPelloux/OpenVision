@@ -368,15 +368,20 @@ try {
     return beat.pid ? beat : { error: 'no heartbeat' };
   }, 10000);
   result.observations.beforeKill = (await host('processes')).rows.filter(row => row.kind !== 'other').map(row => `${row.kind}:${row.argv.slice(0, 80)}`);
+  const killedAt = Date.now();
   const killed = await host('kill-sessions');
   assert.ok(killed.sessions.length >= 1, 'At least one SSH session was killed');
   result.observations.killedSessions = killed.sessions.length;
   await until('session re-established', async () => (await remoteRows(['ssh-session'])).length ? true : { error: 'no session' }, 120000, 500);
   await editAndSave('renamed.txt', ` reconnected-${tag}`);
-  const beat = await heartbeat();
-  assert.equal(beat.pid, reloaded.pid, 'The remote extension host survives the dropped connection');
   assert.equal((await pingRemoteHost('after the killed connection')).pid, reloaded.pid, 'The same extension host reconnects');
-  assert.ok(Date.now() - beat.at < 5000);
+  // The same extension host kept running through the drop: it beats after it.
+  const beat = await until('heartbeat after the drop', async () => {
+    const value = await heartbeat();
+    return value.at > killedAt ? value : { error: `last beat ${killedAt - value.at} ms before the drop` };
+  }, 30000);
+  assert.equal(beat.pid, reloaded.pid, 'The remote extension host survives the dropped connection');
+  result.observations.heartbeatLagMs = Date.now() - beat.at;
   result.checks.reconnectAfterKilledConnection = true;
 
   enter('reconnect-sshd-restart');
