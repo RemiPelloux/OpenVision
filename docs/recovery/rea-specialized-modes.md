@@ -5,13 +5,15 @@ Input: the Cursor **3.21.13** Linux x64 runtime input, built from source on
 this branch (`ov/modes-inventory`). Linux x64 only.
 
 The owner accepted the scope on 20 October 2026; see
-[owner decisions](../planning/owner-decisions.md). The native runs below
-change two of the facts that decision rested on:
-- **Browser automation:** the local Agent is offered the browser tools, but it
-  cannot use them.
-- **Image generation:** it does have a local, provider-backed producer.
+[owner decisions](../planning/owner-decisions.md). The native runs then
+changed two facts, and the owner decided both the same day:
+- **Browser automation** stays *explain unavailable*. The team-policy check
+  is not relaxed.
+- **Image generation** is **hidden** for this release. It will be revisited
+  with live providers in OV-205.
 
-Both are flagged for the owner in [Proposed scope](#proposed-scope).
+The owner also asked that refused or failed browser tools never show a
+past-tense success in the chat.
 
 The inventory comes from static reading of the built `source/app` tree and the
 original extension `package.json` files. `npm run inventory:modes` reproduces
@@ -19,14 +21,14 @@ the decision-critical facts and fails if any of them changes. The native
 verifiers and their run IDs are listed in
 [Native verification](#native-verification-20-october-2026).
 
-## Proposed scope
+## Scope (owner-decided)
 
 | Mode | Proposal | Why |
 | --- | --- | --- |
 | Image input in Agent chat | **Include** | It runs locally through the configured provider, and the existing image-capability gate already stops images going to text-only models. |
-| Image generation | **Owner decision needed** (was *exclude*) | Corrected by native runs. The local Agent is offered a `GenerateImage` tool. It calls the **configured provider** at `POST /v1/images/generations` (body: `model`, `prompt`, `n`, `aspect_ratio`, `resolution`, `response_format`). A provider without that endpoint fails visibly: "Failed to generate image, error: Provider request failed: 404 Not Found". Nothing is hidden or silently sent elsewhere. Options: include it as provider-backed (live quality goes to a live story), or hide the tool from the local Agent. |
+| Image generation | **Hidden** (owner decision, 20 October 2026) | The local Agent runtimes offered a `GenerateImage` tool that called the configured provider's `POST /v1/images/generations`. All three bundled runtimes now register it nowhere. A model that calls it anyway gets a tool result saying image generation is not available in this release, and nothing reaches the provider. |
 | In-app browser editor | **Include** | It is an Electron `WebContentsView` with a sandboxed, isolated partition. No vendor service or download is involved. |
-| Agent browser automation | **Explain unavailable** (the "only if locally reachable" branch) | Proved natively. The local Agent is offered `cursor-ide-browser` and its 16 tools, but Cursor's `MCPService` refuses the server for any profile without a Cursor account. It used to give the false reason "Server is blocked by team admin". OpenVision keeps the block and states the real reason. Making it usable means changing a Cursor team-policy check; that is the owner's call. |
+| Agent browser automation | **Explain unavailable** (owner decision, 20 October 2026) | Proved natively. The local Agent is offered `cursor-ide-browser` and its 16 tools, but Cursor's `MCPService` refuses the server for any profile without a Cursor account. OpenVision keeps the block and states the real reason; it used to say "Server is blocked by team admin". The chat row reads "Failed browser_navigate". Opening the row shows the reason. |
 | Computer use | **Explain unavailable (Linux)** | Backends exist only for macOS and Windows. On Linux the extension returns before it reads any gate, manifest or download. OpenVision now explains why, in a "Computer Use" output channel. |
 | Next-edit prediction (OV-604) | **Decision pending** | See [next-edit decision](next-edit-decision.md). |
 
@@ -84,14 +86,25 @@ verifiers and their run IDs are listed in
 - **Owner.**
   - `generateImageToolCall` (13 references) is the workbench's rendering of
     the tool call.
-  - The producer is the local Agent runtime: `cursor-agent-exec` offers
-    `GenerateImage` to the model. The 20 October native runs observed it.
-- **Gates.** None found on the client.
-- **Provider capability.** An OpenAI-compatible `POST /v1/images/generations`
-  on the configured provider.
-- **Network.** Only the configured provider.
-- **UI caveat.** The tool row's label is a fixed past-tense summary
-  ("Generated image"), whatever the outcome.
+  - The producer was the local Agent runtime. The registration sites in
+    `cursor-agent-exec`, `cursor-local-agent-runtime` and `cursor-agent-host`
+    added `GenerateImage` whenever `enableGenerateImage` was on, which is the
+    default. It called the configured provider's
+    `POST /v1/images/generations`.
+- **Hidden for this release** (`desktop/image-generation-customization.mjs`).
+  - Both registration sites in each runtime are gated off.
+  - **Defect found while hiding it.** A model that still called
+    `GenerateImage` made the AI SDK throw `AI_NoSuchToolError`. The turn then
+    retried and hung ("Taking longer than expected…", run `7Cg8M6`).
+  - Once the parser let the call through, the runtime's not-found branch
+    answered it but did not read the call's argument stream, and the turn
+    still hung (run `y5G9dQ`).
+  - For hidden tools only, the parser now passes the call through, and the
+    dispatcher drains the arguments and answers: "Image generation is not
+    available in this OpenVision release. Do not call GenerateImage; tell the
+    user that images cannot be generated here."
+  - Other unknown tool names behave as before.
+- **Network.** None: no request reaches the provider's images endpoint.
 
 ### In-app browser
 
@@ -154,10 +167,13 @@ verifiers and their run IDs are listed in
   - A unit test runs every combination of local mode, membership, browser
     feature and `disableAll`, and checks that the block decision is the same
     before and after.
-- **UI caveats (not fixed; outside this story).**
-  - The chat's tool row says "Navigated to <url>" even for the refused call.
-    Tool-row labels are fixed past-tense summaries built from the arguments,
-    not the result.
+- **Tool row fixed** (`desktop/tool-row-status-customization.mjs`).
+  - The browser branch of the chat's tool-row display state used a past-tense
+    summary built from the arguments ("Navigated to <url>"). It ignored the
+    row's error state.
+  - On error the row now reads "Failed <tool>". Running and successful rows
+    are unchanged. Other tools already used their own error labels.
+- **UI caveat (not fixed; outside this story).**
   - Settings → Browser & Network shows "Browser Automation: Connected to
     Browser Tab". That describes the browser editor's connection mode, not
     the MCP server.
