@@ -62,10 +62,9 @@ async function pinnedArchive(directory, input) {
   return path;
 }
 
-// Extracts each verified archive once into its own directory; returns the extracted roots.
-export async function prepareUpstreamInputs(root, context = process) {
-  const inputs = hostInputs(context);
-  const directory = resolve(root, 'build/inputs/upstream');
+// Downloads (if missing), verifies and extracts each pinned archive once into
+// <directory>/<name>-<version>; returns each input with its archive and extracted root.
+export async function preparePinnedArchives(directory, inputs) {
   await mkdir(directory, { recursive: true });
   const result = {};
   for (const [name, input] of Object.entries(inputs)) {
@@ -81,6 +80,12 @@ export async function prepareUpstreamInputs(root, context = process) {
       throw new Error(`${output} was extracted from a different archive; remove it and retry.`);
     result[name] = { ...input, archive, directory: output };
   }
+  return result;
+}
+
+export async function prepareUpstreamInputs(root, context = process) {
+  const inputs = hostInputs(context);
+  const result = await preparePinnedArchives(resolve(root, 'build/inputs/upstream'), inputs);
   result.electron.host = result.electron.directory;
   result.node.binary = join(result.node.directory, `node-v${inputs.node.version}-linux-x64/bin/node`);
   result.headers.nodedir = join(result.headers.directory, 'node_headers');

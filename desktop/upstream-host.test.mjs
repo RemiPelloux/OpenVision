@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { alignLoadSegments, compareHosts, readFuseWire, upstreamHostInputs } from './upstream-host.mjs';
-import { assertToolchain, jsTokens, wrapperDiff } from './native-rebuild.mjs';
+import { assertPortable, assertToolchain, compilerEnvironment, jsTokens, versionAtMost, wrapperDiff } from './native-rebuild.mjs';
 
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'openvision-upstream-host-'));
@@ -87,12 +87,36 @@ test('wrapper diff compares token streams, so reformatting is not a difference',
   assert.deepEqual(jsTokens("'a'"), ['string:a']);
 });
 
-test('toolchain check refuses a compiler, Python, make or Node that differs from the pin', () => {
-  const pinned = { cc: { version: '13.3.0' }, cxx: { version: '13.3.0' }, make: { version: '4.3' }, python: { version: '3.13.16' }, node: { version: '24.18.0' } };
-  const actual = { cc: '13.3.0', cxx: '13.3.0', make: '4.3', python: '3.13.16', node: '24.18.0' };
+test('toolchain check refuses a clang, Python, make or Node that differs from the pin', () => {
+  const pinned = { inputs: { clang: { compilerVersion: '23.0.0git', llvmCommit: 'a'.repeat(40) } }, make: { version: '4.3' }, python: { version: '3.13.16' }, node: { version: '24.18.0' } };
+  const actual = { clang: '23.0.0git', llvm_commit: 'a'.repeat(40), make: '4.3', python: '3.13.16', node: '24.18.0' };
   assert.doesNotThrow(() => assertToolchain(pinned, actual));
-  assert.throws(() => assertToolchain(pinned, { ...actual, cc: '14.2.0' }), /cc 14\.2\.0 differs/);
+  assert.throws(() => assertToolchain(pinned, { ...actual, clang: '18.1.3' }), /clang 18\.1\.3 differs/);
+  assert.throws(() => assertToolchain(pinned, { ...actual, llvm_commit: 'b'.repeat(40) }), /clang commit/);
   assert.throws(() => assertToolchain(pinned, { ...actual, node: '24.18.1' }), /node 24\.18\.1 differs/);
+});
+
+test('portability floor compares GLIBC versions numerically and rejects a shared C++ runtime', () => {
+  assert.equal(versionAtMost('2.2.5', '2.28'), true);
+  assert.equal(versionAtMost('2.28', '2.28'), true);
+  assert.equal(versionAtMost('2.29', '2.28'), false);
+  assert.equal(versionAtMost('2.38', '2.28'), false);
+  const abi = { glibc: '2.17', glibcxx: null, needed: ['libm.so.6', 'libc.so.6'] };
+  assert.doesNotThrow(() => assertPortable(abi, '2.28', 'fixture'));
+  assert.throws(() => assertPortable({ ...abi, glibc: '2.38' }, '2.28', 'fixture'), /GLIBC_2\.38, above the 2\.28 floor/);
+  assert.throws(() => assertPortable({ ...abi, glibcxx: '3.4.31' }, '2.28', 'fixture'), /libstdc\+\+/);
+  assert.throws(() => assertPortable({ ...abi, needed: ['libstdc++.so.6'] }, '2.28', 'fixture'), /shared C\+\+ runtime/);
+});
+
+test('compiler environment follows the sysroot/libc++ recipe and maps checkout paths', () => {
+  const tools = { sysroot: { directory: '/t/sysroot' }, clang: { directory: '/t/clang' }, libcxxHeaders: { directory: '/t/h' },
+    libcxxabiHeaders: { directory: '/t/abi' }, libcxxObjects: { directory: '/t/o' } };
+  const environment = compilerEnvironment(tools, { prefixMaps: [['/repo/pkg', '.']] });
+  assert.equal(environment.CXX, '/t/clang/bin/clang++ --gcc-toolchain=/t/sysroot/x86_64-linux-gnu');
+  for (const flag of ['-nostdinc++', '-D_LIBCPP_ABI_NAMESPACE=Cr', '--sysroot=/t/sysroot/x86_64-linux-gnu/x86_64-linux-gnu/sysroot', '-ffile-prefix-map=/repo/pkg=.'])
+    assert.ok(environment.CXXFLAGS.includes(flag), flag);
+  assert.match(environment.CFLAGS, /--sysroot=\/t\/sysroot\/x86_64-linux-gnu\/x86_64-linux-gnu\/sysroot/);
+  assert.match(environment.LDFLAGS, /-stdlib=libc\+\+ .*-fuse-ld=lld .*-L\/t\/o -lc\+\+abi/);
 });
 
 test('provenance check needs a complete record per substituted file and exact digests for rebuilt output', async () => {

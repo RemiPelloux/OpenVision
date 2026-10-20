@@ -1,43 +1,43 @@
 {
-  "description": "Toolchain pinned for desktop/native-rebuild.mjs. The rebuild refuses a host whose reported versions differ.",
-  "host": "Ubuntu 24.04.5 LTS x86_64, GNU libc 2.39-0ubuntu8.9",
-  "cc": {
-    "command": "gcc",
-    "version": "13.3.0",
-    "package": "gcc-13 13.3.0-6ubuntu2~24.04.1"
+  "description": "Toolchain pinned for desktop/native-rebuild.mjs: VS Code's Linux x64 recipe (Chromium clang, Electron's libc++, glibc 2.28 sysroot). Archives are downloaded only at these sizes and digests; the rebuild refuses a host whose make, Python or Node differ.",
+  "host": "Ubuntu 24.04.5 LTS x86_64 runs the build; headers and libraries come from the sysroot, not the host.",
+  "glibcMax": "2.28",
+  "inputs": {
+    "clang": {
+      "version": "llvmorg-23-init-5669-g8a0be0bc-4", "file": "clang-llvmorg-23-init-5669-g8a0be0bc-4.tar.xz", "bytes": 68803796,
+      "sha256": "bd3a3d7e98cc9037daf24bd7b48f52ba0f0ea5e435c1c707e381034ee4b3c1d6",
+      "url": "https://commondatastorage.googleapis.com/chromium-browser-clang/Linux_x64/clang-llvmorg-23-init-5669-g8a0be0bc-4.tar.xz",
+      "source": "CLANG_REVISION/CLANG_SUB_REVISION of Chromium 148.0.7778.280 tools/clang/scripts/update.py (Electron 42.10.0's Chromium). No published SHA-256; the digest is pinned from the first download, whose MD5 matched the bucket's x-goog-hash md5=TX2qpbY3eRIQF5ZwjeRoeA==.",
+      "compilerVersion": "23.0.0git", "llvmCommit": "8a0be0bc3772e8ed06b9a17255e0cfb25539f125"
+    },
+    "sysroot": {
+      "version": "glibc-2.28-gcc-10.5.0", "file": "x86_64-linux-gnu-glibc-2.28-gcc-10.5.0.tar.gz", "bytes": 112665564,
+      "sha256": "ac4b6b14b4cec027a22a51bbbb049b3504958a78106c8a8d5cec144206b767d1",
+      "url": "https://github.com/microsoft/vscode-linux-build-agent/releases/download/v20260212-405735/x86_64-linux-gnu-glibc-2.28-gcc-10.5.0.tar.gz",
+      "source": "microsoft/vscode build/checksums/vscode-sysroot.txt and build/linux/debian/install-sysroot.ts (release v20260212-405735)"
+    },
+    "libcxxObjects": {
+      "version": "42.10.0", "file": "libcxx-objects-v42.10.0-linux-x64.zip", "bytes": 5725774,
+      "sha256": "7d407127404196c40275438113ddbf857a2963729c7e566f7e188900904e1102",
+      "url": "https://github.com/electron/electron/releases/download/v42.10.0/libcxx-objects-v42.10.0-linux-x64.zip",
+      "source": "Electron 42.10.0 SHASUMS256.txt"
+    },
+    "libcxxHeaders": {
+      "version": "42.10.0", "file": "libcxx_headers.zip", "bytes": 2750921,
+      "sha256": "3bd2212473ffda8e13d2d5d1d6b92f2c8dc7437ee62ffe8fb8564ed95ecfe48b",
+      "url": "https://github.com/electron/electron/releases/download/v42.10.0/libcxx_headers.zip",
+      "source": "Electron 42.10.0 SHASUMS256.txt"
+    },
+    "libcxxabiHeaders": {
+      "version": "42.10.0", "file": "libcxxabi_headers.zip", "bytes": 9615,
+      "sha256": "176f64da935e6c6c9bfb68a65317ea34c521ddc77572ddad83f2e1fca73ffa0c",
+      "url": "https://github.com/electron/electron/releases/download/v42.10.0/libcxxabi_headers.zip",
+      "source": "Electron 42.10.0 SHASUMS256.txt"
+    }
   },
-  "cxx": {
-    "command": "g++",
-    "version": "13.3.0",
-    "package": "g++-13 13.3.0-6ubuntu2~24.04.1"
-  },
-  "make": {
-    "command": "make",
-    "version": "4.3",
-    "package": "make 4.3-4.1build2"
-  },
-  "python": {
-    "command": "python3",
-    "version": "3.13.16"
-  },
-  "node": {
-    "version": "24.18.0",
-    "note": "Runs node-gyp only; addons target the Electron headers below."
-  },
-  "nodeGyp": {
-    "version": "12.3.0",
-    "source": "native/linux-x64/package-lock.json"
-  },
-  "electron": {
-    "version": "42.10.0",
-    "nodeModuleVersion": 146,
-    "headers": "node-v42.10.0-headers.tar.gz"
-  },
-  "systemHeaders": {
-    "note": "Ubuntu packages providing headers linked by native-keymap and kerberos; installed with apt-get on the build host.",
-    "packages": [
-      "libxkbfile-dev 1:1.1.0-1build4",
-      "libkrb5-dev 1.20.1-6ubuntu2.10"
-    ]
-  }
+  "make": { "command": "make", "version": "4.3", "package": "make 4.3-4.1build2" },
+  "python": { "command": "python3", "version": "3.13.16" },
+  "node": { "version": "24.18.0", "note": "Runs node-gyp only; addons target the Electron headers below." },
+  "nodeGyp": { "version": "12.3.0", "source": "native/linux-x64/package-lock.json" },
+  "electron": { "version": "42.10.0", "nodeModuleVersion": 146, "headers": "node-v42.10.0-headers.tar.gz" }
 }

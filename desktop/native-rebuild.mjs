@@ -9,7 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { tokenizer } from '../tooling/dependencies.mjs';
 import { fileHash } from './import-files.mjs';
 import { exists } from './source-assembly.mjs';
-import { prepareUpstreamInputs } from './upstream-host.mjs';
+import { preparePinnedArchives, prepareUpstreamInputs } from './upstream-host.mjs';
 
 export const nativeAddons = [
   { package: 'node-pty', binary: 'build/Release/pty.node', recovered: '1.1.0-beta42',
@@ -48,18 +48,53 @@ function output(command, args, options = {}) {
   return result.stdout + result.stderr;
 }
 
-export function toolVersions() {
+export function toolVersions(clang) {
+  const version = output(clang, ['--version']);
   return {
-    cc: output('gcc', ['-dumpfullversion']).trim(), cxx: output('g++', ['-dumpfullversion']).trim(),
+    clang: /clang version (\S+)/.exec(version)?.[1], llvm_commit: /llvm-project ([0-9a-f]{40})/.exec(version)?.[1],
     make: /GNU Make (\S+)/.exec(output('make', ['--version']))?.[1],
     python: /Python (\S+)/.exec(output('python3', ['--version']))?.[1], node: process.versions.node,
   };
 }
 
 export function assertToolchain(pinned, actual) {
-  for (const name of ['cc', 'cxx', 'make', 'python'])
+  assert.equal(actual.clang, pinned.inputs.clang.compilerVersion, `clang ${actual.clang} differs from pinned ${pinned.inputs.clang.compilerVersion}`);
+  assert.equal(actual.llvm_commit, pinned.inputs.clang.llvmCommit, `clang commit ${actual.llvm_commit} differs from pinned ${pinned.inputs.clang.llvmCommit}`);
+  for (const name of ['make', 'python'])
     assert.equal(actual[name], pinned[name].version, `${name} ${actual[name]} differs from pinned ${pinned[name].version}; see native/linux-x64/toolchain.json`);
   assert.equal(actual.node, pinned.node.version, `node ${actual.node} differs from pinned ${pinned.node.version}`);
+}
+
+const versionParts = version => version.split('.').map(Number);
+export function versionAtMost(version, limit) {
+  const [left, right] = [versionParts(version), versionParts(limit)];
+  for (let index = 0; index < Math.max(left.length, right.length); index++)
+    if ((left[index] ?? 0) !== (right[index] ?? 0)) return (left[index] ?? 0) < (right[index] ?? 0);
+  return true;
+}
+
+// The portability floor: no symbol newer than glibcMax and no shared C++ runtime.
+export function assertPortable(abi, glibcMax, name) {
+  assert.ok(abi.glibc && versionAtMost(abi.glibc, glibcMax), `${name} needs GLIBC_${abi.glibc}, above the ${glibcMax} floor`);
+  assert.equal(abi.glibcxx, null, `${name} needs libstdc++ symbols (GLIBCXX_${abi.glibcxx})`);
+  assert.deepEqual(abi.needed.filter(library => /^lib(std)?c\+\+/.test(library)), [], `${name} links a shared C++ runtime`);
+}
+
+// VS Code's x64 client recipe (build/azure-pipelines/linux/setup-env.sh): Chromium clang,
+// Electron's libc++ in the Cr namespace with ThinLTO, glibc 2.28 sysroot. Prefix maps keep
+// checkout and input paths out of the output so repeat builds can be compared.
+export function compilerEnvironment(tools, { prefixMaps = [] } = {}) {
+  const sysroot = join(tools.sysroot.directory, 'x86_64-linux-gnu/x86_64-linux-gnu/sysroot');
+  const toolchain = join(tools.sysroot.directory, 'x86_64-linux-gnu');
+  const clang = join(tools.clang.directory, 'bin');
+  const headers = tools.libcxxHeaders.directory, abiHeaders = tools.libcxxabiHeaders.directory, objects = tools.libcxxObjects.directory;
+  const maps = prefixMaps.map(([from, to]) => `-ffile-prefix-map=${from}=${to}`).join(' ');
+  return {
+    CC: `${clang}/clang --gcc-toolchain=${toolchain}`, CXX: `${clang}/clang++ --gcc-toolchain=${toolchain}`,
+    CFLAGS: `--sysroot=${sysroot} -fPIC ${maps}`,
+    CXXFLAGS: `-nostdinc++ -D__NO_INLINE__ -DSPDLOG_USE_STD_FORMAT -I${headers} -isystem${headers}/include -isystem${abiHeaders}/include -fPIC -flto=thin -fsplit-lto-unit -D_LIBCPP_ABI_NAMESPACE=Cr -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE --sysroot=${sysroot} ${maps}`,
+    LDFLAGS: `-stdlib=libc++ --sysroot=${sysroot} -fuse-ld=lld -flto=thin -L${objects} -lc++abi -L${sysroot}/usr/lib/x86_64-linux-gnu -L${sysroot}/lib/x86_64-linux-gnu -Wl,--lto-O0 -Wl,--build-id=sha1`,
+  };
 }
 
 // Dynamic ELF facts used for the ABI check: the module registration entry point,
@@ -131,7 +166,8 @@ export async function rebuildNative(root, { only } = {}) {
   if (process.platform !== 'linux' || process.arch !== 'x64') throw new Error('The pinned native rebuild targets Linux x64 only.');
   const workspace = join(root, 'native/linux-x64');
   const pinned = JSON.parse(await readFile(join(workspace, 'toolchain.json'), 'utf8'));
-  const tools = toolVersions();
+  const toolInputs = await preparePinnedArchives(join(root, 'build/inputs/toolchain'), pinned.inputs);
+  const tools = toolVersions(join(toolInputs.clang.directory, 'bin/clang'));
   assertToolchain(pinned, tools);
   const lock = JSON.parse(await readFile(join(workspace, 'package-lock.json'), 'utf8'));
   const gyp = join(workspace, 'node_modules/node-gyp/bin/node-gyp.js');
@@ -149,12 +185,10 @@ export async function rebuildNative(root, { only } = {}) {
     const locked = lock.packages[`node_modules/${addon.package}`];
     assert.equal(metadata.version, locked.version, `${addon.package} differs from the lockfile`);
     await rm(join(directory, 'build'), { recursive: true, force: true });
-    // Prefix maps keep checkout and header paths out of the binary so repeat builds can be compared.
-    const flags = `-ffile-prefix-map=${directory}=. -ffile-prefix-map=${nodedir}=/electron-headers`;
     const args = [gyp, 'rebuild', `--nodedir=${nodedir}`, `--target=${pinned.electron.version}`, '--runtime=electron', '--arch=x64', '--jobs=4'];
-    const cxxflags = [flags, addon.cxxflags].filter(Boolean).join(' ');
-    const log = output(process.execPath, args, { cwd: directory, env: { ...process.env, CFLAGS: flags, CXXFLAGS: cxxflags, LDFLAGS: '-static-libstdc++ -Wl,--build-id=sha1',
-      npm_config_build_from_source: 'true', SOURCE_DATE_EPOCH: '0' } });
+    const environment = compilerEnvironment(toolInputs, { prefixMaps: [[directory, '.'], [nodedir, '/electron-headers'], [join(root, 'build/inputs/toolchain'), '/toolchain']] });
+    if (addon.cxxflags) environment.CXXFLAGS += ` ${addon.cxxflags}`;
+    const log = output(process.execPath, args, { cwd: directory, env: { ...process.env, ...environment, npm_config_build_from_source: 'true', SOURCE_DATE_EPOCH: '0' } });
     const built = join(directory, addon.binary);
     const target = join(destination, addon.package.replace('/', '__'), addon.binary.split('/').at(-1));
     await mkdir(join(target, '..'), { recursive: true });
@@ -164,15 +198,17 @@ export async function rebuildNative(root, { only } = {}) {
     addons.push({ package: addon.package, version: metadata.version, recovered_version: addon.recovered,
       source: { resolved: locked.resolved, integrity: locked.integrity, repository: metadata.repository?.url ?? metadata.repository ?? null,
         git_head: metadata.gitHead ?? null },
-      command: `node node_modules/node-gyp/bin/node-gyp.js ${args.slice(1).join(' ').replaceAll(nodedir, '<electron-headers>')} (cwd native/linux-x64/node_modules/${addon.package}; CFLAGS ${flags.replaceAll(directory, '<package>').replaceAll(nodedir, '<electron-headers>')}; CXXFLAGS ${cxxflags.replaceAll(directory, '<package>').replaceAll(nodedir, '<electron-headers>')}; LDFLAGS -static-libstdc++ -Wl,--build-id=sha1)`,
+      command: `node node_modules/node-gyp/bin/node-gyp.js ${args.slice(1).join(' ').replaceAll(nodedir, '<electron-headers>')} (cwd native/linux-x64/node_modules/${addon.package}; ${Object.entries(environment).map(([name, value]) => `${name}=${value}`).join('; ').replaceAll(join(root, 'build/inputs/toolchain'), '<toolchain>').replaceAll(directory, '<package>').replaceAll(nodedir, '<electron-headers>')})`,
       output: relative(root, target), sha256: await fileHash(target), bytes: (await readFile(target)).length, abi: elfAbi(target),
       recovered_sha256: await exists(join(root, 'source/app', addon.targets[0])) ? await fileHash(join(root, 'source/app', addon.targets[0])) : null,
       recovered_abi: await exists(join(root, 'source/app', addon.targets[0])) ? elfAbi(join(root, 'source/app', addon.targets[0])) : null,
       license: await licenseRecord(directory, metadata), wrapper_diff: await wrapperDiff(directory, recoveredPackage), targets: addon.targets });
-    console.log(`Rebuilt ${addon.package}@${metadata.version}: ${addons.at(-1).sha256} (${addons.at(-1).abi.api})`);
+    assertPortable(addons.at(-1).abi, pinned.glibcMax, addon.package);
+    console.log(`Rebuilt ${addon.package}@${metadata.version}: ${addons.at(-1).sha256} (${addons.at(-1).abi.api}, GLIBC_${addons.at(-1).abi.glibc})`);
   }
   const manifest = { name: 'OpenVision Linux x64 native rebuild', created_at: new Date().toISOString(),
-    toolchain: { ...tools, node_gyp: pinned.nodeGyp.version, electron: pinned.electron.version,
+    toolchain: { ...tools, node_gyp: pinned.nodeGyp.version, electron: pinned.electron.version, glibc_max: pinned.glibcMax,
+      inputs: Object.fromEntries(Object.entries(toolInputs).map(([name, input]) => [name, { url: input.url, sha256: input.sha256 }])),
       node_module_version: pinned.electron.nodeModuleVersion, headers: { url: inputs.headers.url, sha256: inputs.headers.sha256 } },
     lockfile_sha256: await fileHash(join(workspace, 'package-lock.json')), addons };
   await writeFile(join(destination, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
