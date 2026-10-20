@@ -33,12 +33,23 @@ export const nativeAddons = [
   { package: '@vscode/policy-watcher', binary: 'build/Release/vscode-policy-watcher.node', recovered: '1.3.2-cursor.2',
     targets: ['node_modules/@anysphere/policy-watcher/build/Release/vscode-policy-watcher.node'] },
   // Its binding.gyp pins -std=c++17, but Electron 42's V8 headers require C++20 (appended flags win).
+  // The patch replaces basic_string<uint16_t>, which Electron's libc++ no longer supports.
   { package: 'tree-sitter', binary: 'build/Release/tree_sitter_runtime_binding.node', recovered: '0.21.1', cxxflags: '-std=gnu++20',
+    patch: 'native/linux-x64/patches/tree-sitter-0.21.1-symbol-set.patch',
     targets: ['extensions/cursor-agent-exec/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node',
       'extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node'] },
   { package: 'tree-sitter-bash', binary: 'build/Release/tree_sitter_bash_binding.node', recovered: '0.21.0',
     targets: ['extensions/cursor-agent-exec/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node',
       'extensions/cursor-agent-host/dist/agent-host-daemon/dist/node_modules/tree-sitter-bash/build/Release/tree_sitter_bash_binding.node'] },
+];
+
+// Rust/napi-rs addons: pinned git commit plus a committed Cargo.lock (upstream ships none;
+// versions match the strings in the recovered binary: napi 2.13.2, once_cell 1.18.0).
+export const rustAddons = [
+  { package: 'whichlang-node', version: '0.2.1', recovered: '0.2.1', repository: 'https://github.com/amehashi/whichlang-node.git',
+    commit: 'ae7131c04684e61597bd3b0db6757b303fb36348', lockfile: 'native/linux-x64/whichlang-node/Cargo.lock',
+    library: 'libnapi_package_template.so', binary: 'whichlang-node.linux-x64-gnu.node', license: 'MIT',
+    targets: ['extensions/cursor-agent-exec/dist/node_modules/whichlang-node-linux-x64-gnu/whichlang-node.linux-x64-gnu.node'] },
 ];
 
 function output(command, args, options = {}) {
@@ -93,6 +104,9 @@ export function compilerEnvironment(tools, { prefixMaps = [] } = {}) {
     CC: `${clang}/clang --gcc-toolchain=${toolchain}`, CXX: `${clang}/clang++ --gcc-toolchain=${toolchain}`,
     CFLAGS: `--sysroot=${sysroot} -fPIC ${maps}`,
     CXXFLAGS: `-nostdinc++ -D__NO_INLINE__ -DSPDLOG_USE_STD_FORMAT -I${headers} -isystem${headers}/include -isystem${abiHeaders}/include -fPIC -flto=thin -fsplit-lto-unit -D_LIBCPP_ABI_NAMESPACE=Cr -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE --sysroot=${sysroot} ${maps}`,
+    // binding.gyp files that call pkg-config (native-keymap) must resolve sysroot packages, never the host's.
+    PKG_CONFIG_SYSROOT_DIR: sysroot, PKG_CONFIG_PATH: '',
+    PKG_CONFIG_LIBDIR: `${sysroot}/usr/lib/x86_64-linux-gnu/pkgconfig:${sysroot}/usr/share/pkgconfig`,
     LDFLAGS: `-stdlib=libc++ --sysroot=${sysroot} -fuse-ld=lld -flto=thin -L${objects} -lc++abi -L${sysroot}/usr/lib/x86_64-linux-gnu -L${sysroot}/lib/x86_64-linux-gnu -Wl,--lto-O0 -Wl,--build-id=sha1`,
   };
 }
@@ -156,6 +170,58 @@ export async function wrapperDiff(upstream, recovered) {
   return result;
 }
 
+// Installs the pinned rustc, cargo and rust-std components once into one prefix.
+async function installRust(root, toolInputs, version) {
+  const prefix = join(root, 'build/inputs/toolchain', `rust-${version}`), marker = `${prefix}.installed`;
+  const digests = ['rustc', 'cargo', 'rustStd'].map(name => toolInputs[name].sha256).join(',');
+  if (await exists(marker) && (await readFile(marker, 'utf8')).trim() === digests) return prefix;
+  await rm(prefix, { recursive: true, force: true });
+  for (const name of ['rustc', 'cargo', 'rustStd']) {
+    const [unpacked] = await readdir(toolInputs[name].directory);
+    output('sh', [join(toolInputs[name].directory, unpacked, 'install.sh'), `--prefix=${prefix}`, '--disable-ldconfig']);
+  }
+  await writeFile(marker, digests + '\n');
+  return prefix;
+}
+
+async function rebuildRust(root, addon, { toolInputs, rust, environment, destination }) {
+  const source = join(root, 'build/native/src', addon.package);
+  if (!await exists(join(source, '.git'))) {
+    await mkdir(join(source, '..'), { recursive: true });
+    output('git', ['clone', '--quiet', '--no-checkout', addon.repository, source]);
+  }
+  output('git', ['-C', source, 'checkout', '--quiet', '--force', addon.commit]);
+  output('git', ['-C', source, 'clean', '--quiet', '-fdx']);
+  assert.equal(output('git', ['-C', source, 'rev-parse', 'HEAD']).trim(), addon.commit, `${addon.package} checkout is not the pinned commit`);
+  await copyFile(join(root, addon.lockfile), join(source, 'Cargo.lock'));
+  const cargoHome = join(root, 'build/native/cargo-home'), targetDirectory = join(root, 'build/native/rust-target');
+  const sysroot = join(toolInputs.sysroot.directory, 'x86_64-linux-gnu/x86_64-linux-gnu/sysroot');
+  const toolchain = join(toolInputs.sysroot.directory, 'x86_64-linux-gnu');
+  const clang = join(toolInputs.clang.directory, 'bin/clang');
+  const env = { ...process.env, PATH: `${join(rust, 'bin')}:${process.env.PATH}`, CARGO_HOME: cargoHome, CARGO_TARGET_DIR: targetDirectory,
+    RUSTC: join(rust, 'bin/rustc'), CC: clang, CFLAGS: `--gcc-toolchain=${toolchain} ${environment.CFLAGS}`,
+    CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang, SOURCE_DATE_EPOCH: '0',
+    RUSTFLAGS: [`-C link-arg=--gcc-toolchain=${toolchain}`, `-C link-arg=--sysroot=${sysroot}`, '-C link-arg=-fuse-ld=lld',
+      '-C link-arg=-Wl,--build-id=sha1', `--remap-path-prefix=${source}=/${addon.package}`, `--remap-path-prefix=${cargoHome}=/cargo`].join(' ') };
+  // Start from an empty target directory so a repeat build really recompiles.
+  await rm(targetDirectory, { recursive: true, force: true });
+  const log = output(join(rust, 'bin/cargo'), ['build', '--release', '--locked'], { cwd: source, env });
+  const target = join(destination, addon.package, addon.binary);
+  await mkdir(join(target, '..'), { recursive: true });
+  await copyFile(join(targetDirectory, 'release', addon.library), target);
+  await writeFile(`${target}.build.log`, log);
+  const recovered = join(root, 'source/app', addon.targets[0]);
+  const scrub = text => text.replaceAll(join(root, 'build/inputs/toolchain'), '<toolchain>').replaceAll(source, '<source>').replaceAll(root, '<root>');
+  return { package: addon.package, version: addon.version, recovered_version: addon.recovered, kind: 'rust',
+    source: { resolved: `${addon.repository}#${addon.commit}`, integrity: `git:${addon.commit}`, repository: addon.repository, git_head: addon.commit,
+      lockfile: addon.lockfile, lockfile_sha256: await fileHash(join(root, addon.lockfile)) },
+    command: scrub(`cargo build --release --locked (cwd <source>; CC=${env.CC}; CFLAGS=${env.CFLAGS}; linker=${clang}; RUSTFLAGS=${env.RUSTFLAGS})`),
+    output: relative(root, target), sha256: await fileHash(target), bytes: (await readFile(target)).length, abi: elfAbi(target),
+    recovered_sha256: await exists(recovered) ? await fileHash(recovered) : null, recovered_abi: await exists(recovered) ? elfAbi(recovered) : null,
+    license: { id: addon.license, file: 'LICENSE', sha256: await fileHash(join(source, 'LICENSE')) },
+    wrapper_diff: 'binary only (the recovered whichlang-node JavaScript loader is kept)', targets: addon.targets };
+}
+
 async function licenseRecord(directory, metadata) {
   for (const name of ['LICENSE', 'LICENSE.md', 'License.txt', 'LICENSE.txt'])
     if (await exists(join(directory, name))) return { id: metadata.license ?? null, file: name, sha256: await fileHash(join(directory, name)) };
@@ -185,6 +251,12 @@ export async function rebuildNative(root, { only } = {}) {
     const locked = lock.packages[`node_modules/${addon.package}`];
     assert.equal(metadata.version, locked.version, `${addon.package} differs from the lockfile`);
     await rm(join(directory, 'build'), { recursive: true, force: true });
+    if (addon.patch) {
+      const patch = join(root, addon.patch);
+      // Idempotent: apply unless the reverse already applies cleanly.
+      const applied = spawnSync('patch', ['-p1', '-R', '--dry-run', '-s', '-f', '-i', patch], { cwd: directory }).status === 0;
+      if (!applied) output('patch', ['-p1', '-s', '-f', '-i', patch], { cwd: directory });
+    }
     const args = [gyp, 'rebuild', `--nodedir=${nodedir}`, `--target=${pinned.electron.version}`, '--runtime=electron', '--arch=x64', '--jobs=4'];
     const environment = compilerEnvironment(toolInputs, { prefixMaps: [[directory, '.'], [nodedir, '/electron-headers'], [join(root, 'build/inputs/toolchain'), '/toolchain']] });
     if (addon.cxxflags) environment.CXXFLAGS += ` ${addon.cxxflags}`;
@@ -202,9 +274,20 @@ export async function rebuildNative(root, { only } = {}) {
       output: relative(root, target), sha256: await fileHash(target), bytes: (await readFile(target)).length, abi: elfAbi(target),
       recovered_sha256: await exists(join(root, 'source/app', addon.targets[0])) ? await fileHash(join(root, 'source/app', addon.targets[0])) : null,
       recovered_abi: await exists(join(root, 'source/app', addon.targets[0])) ? elfAbi(join(root, 'source/app', addon.targets[0])) : null,
-      license: await licenseRecord(directory, metadata), wrapper_diff: await wrapperDiff(directory, recoveredPackage), targets: addon.targets });
+      license: await licenseRecord(directory, metadata), wrapper_diff: await wrapperDiff(directory, recoveredPackage), targets: addon.targets,
+      ...(addon.patch ? { patch: { path: addon.patch, sha256: await fileHash(join(root, addon.patch)) } } : {}) });
     assertPortable(addons.at(-1).abi, pinned.glibcMax, addon.package);
     console.log(`Rebuilt ${addon.package}@${metadata.version}: ${addons.at(-1).sha256} (${addons.at(-1).abi.api}, GLIBC_${addons.at(-1).abi.glibc})`);
+  }
+  for (const addon of rustAddons.filter(entry => !only || only.includes(entry.package))) {
+    const rust = await installRust(root, toolInputs, pinned.rust.version);
+    const rustc = output(join(rust, 'bin/rustc'), ['--version']).trim();
+    assert.ok(rustc.startsWith(`rustc ${pinned.rust.version} (${pinned.rust.rustcCommit}`), `${rustc} differs from the pinned Rust ${pinned.rust.version}`);
+    tools.rustc = rustc;
+    const environment = compilerEnvironment(toolInputs, { prefixMaps: [[join(root, 'build/native/src', addon.package), `/${addon.package}`], [join(root, 'build/inputs/toolchain'), '/toolchain']] });
+    addons.push(await rebuildRust(root, addon, { toolInputs, rust, environment, destination }));
+    assertPortable(addons.at(-1).abi, pinned.glibcMax, addon.package);
+    console.log(`Rebuilt ${addon.package}@${addon.version}: ${addons.at(-1).sha256} (${addons.at(-1).abi.api}, GLIBC_${addons.at(-1).abi.glibc})`);
   }
   const manifest = { name: 'OpenVision Linux x64 native rebuild', created_at: new Date().toISOString(),
     toolchain: { ...tools, node_gyp: pinned.nodeGyp.version, electron: pinned.electron.version, glibc_max: pinned.glibcMax,

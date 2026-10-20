@@ -117,6 +117,8 @@ test('compiler environment follows the sysroot/libc++ recipe and maps checkout p
     assert.ok(environment.CXXFLAGS.includes(flag), flag);
   assert.match(environment.CFLAGS, /--sysroot=\/t\/sysroot\/x86_64-linux-gnu\/x86_64-linux-gnu\/sysroot/);
   assert.match(environment.LDFLAGS, /-stdlib=libc\+\+ .*-fuse-ld=lld .*-L\/t\/o -lc\+\+abi/);
+  assert.equal(environment.PKG_CONFIG_SYSROOT_DIR, '/t/sysroot/x86_64-linux-gnu/x86_64-linux-gnu/sysroot');
+  assert.ok(environment.PKG_CONFIG_LIBDIR.startsWith('/t/sysroot/'), 'pkg-config must search only the sysroot');
 });
 
 test('provenance check needs a complete record per substituted file and exact digests for rebuilt output', async () => {
