@@ -27,7 +27,9 @@ const profile = join(directory, 'profile'), project = join(directory, 'project')
 await Promise.all([mkdir(join(profile, 'User'), { recursive: true }), mkdir(project), mkdir(extension)]);
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
   'editor.quickSuggestions': false, 'git.openRepositoryInParentFolders': 'never', 'git.enabled': false,
-  'typescript.disableAutomaticTypeAcquisition': true, 'typescript.tsserver.log': 'off',
+  'typescript.disableAutomaticTypeAcquisition': true,
+  // --tsserver-log is a development diagnostic; such a run never reports success.
+  'typescript.tsserver.log': process.argv.includes('--tsserver-log') ? 'verbose' : 'off',
   'typescript.format.enable': true, 'javascript.format.enable': true, 'json.schemaDownload.enable': false,
   'markdown.validate.enabled': true, 'editor.formatOnSave': false, 'editor.detectIndentation': false,
   'editor.tabSize': 2, 'editor.insertSpaces': true, 'files.autoSave': 'off', 'files.eol': '\n',
@@ -65,7 +67,7 @@ const result = { checked_at: new Date().toISOString(), directory, mode: large ? 
   ...(only ? { only, partial: 'Development filter: not an acceptance run' } : {}), platform: process.platform, arch: process.arch,
   launcher_node: process.version, executable_sha256: await fileHash(layout.executable), identities,
   pinned_extensions: pinned, typescript: typescriptVersion, project_entries: Object.keys(fixtures).length,
-  limitations: ['Public-API driver plus native rename widget; the only registered providers are the private .ovconflict race probe and the .ovinflight delayed probes.',
+  limitations: ['Public-API driver plus native rename widget and language status hover; the only registered providers are the private .ovconflict race probe and the .ovinflight delayed probes.',
     'Timings are single local observations on this machine, not cross-machine guarantees.',
     'Trace counts cover file-path syscalls of the owned process family; content reads through already-open descriptors are not path-attributed.'] };
 
@@ -131,6 +133,27 @@ async function inspectFamily(label) {
   return { label, at: Date.now(), processes: snapshot };
 }
 
+// Reads the native language status hover for the driver's syntax-only cases.
+async function readLanguageStatus(handled) {
+  const phase = await optional('phase');
+  const language = /^language-status-(\w+)$/.exec(phase?.mode ?? '')?.[1];
+  if (!language || handled.has(language)) return;
+  handled.add(language);
+  const entry = page.locator('[id="status.languageStatus"]');
+  let text = '';
+  try {
+    await entry.waitFor({ state: 'visible', timeout: 15000 });
+    await page.waitForTimeout(1000);
+    await entry.click();
+    const hover = page.locator('.monaco-hover, .workbench-hover').filter({ visible: true }).first();
+    await hover.waitFor({ state: 'visible', timeout: 10000 });
+    text = await hover.innerText();
+    await page.screenshot({ path: join(directory, `language-status-${language}.png`) }).catch(() => {});
+    await page.keyboard.press('Escape');
+  } catch (error) { text = `unavailable: ${error.message.split('\n')[0]}`; }
+  await writeFile(join(directory, `language-status-${language}.json`), JSON.stringify({ language, text }));
+}
+
 async function fillRename(submitted) {
   const phase = await optional('phase');
   if (!phase || submitted.has(phase.mode)) return;
@@ -150,7 +173,7 @@ try {
   page.on('pageerror', error => errors.push(error.message));
   await page.locator('.part.titlebar .openvision-local-profile').waitFor({ state: 'attached', timeout: 90000 });
   await enterWorkspace(page);
-  const submitted = new Set(), snapshots = [];
+  const submitted = new Set(), statusHandled = new Set(), snapshots = [];
   const deadline = Date.now() + 900000;
   let lastMemory = 0, sawReady = false, sawScan = false;
   while (Date.now() < deadline) {
@@ -160,6 +183,7 @@ try {
     await page.evaluate(() => 0);
     rtt.push(performance.now() - started);
     await fillRename(submitted);
+    await readLanguageStatus(statusHandled);
     if (Date.now() - lastMemory > (large ? 500 : 1000)) {
       lastMemory = Date.now();
       const sample = await inspectFamily('periodic');
@@ -181,7 +205,7 @@ try {
   for (const path of Object.keys(identities)) assert.equal(await fileHash(join(root, path)), identities[path], `Input changed: ${path}`);
   result.input_build_unchanged = true;
   await page.screenshot({ path: join(directory, 'language-matrix.png') }).catch(() => {});
-  result.success = result.native.success === true && !only;
+  result.success = result.native.success === true && !only && !process.argv.includes('--tsserver-log');
   if (!result.success) result.failure = result.native.failure ?? `Failed cases: ${result.native.failures?.join(', ')}`;
 } catch (error) {
   result.success = false; result.failure = error.stack;

@@ -1,5 +1,84 @@
 # Worker report: `ov/language-tools` (OV-402)
 
+## Round 2: owner decisions #5 (20 October 2026)
+
+Branch reset to `origin/main` (`95dd887d`; round 1 below was already merged).
+Linux x64 container: 4 CPUs, Node 24.18.0, non-root `ov` user, `xvfb-run` plus
+`dbus-run-session` with `XDG_RUNTIME_DIR=/run/user/<uid>` and a plaintext login
+gnome-keyring (`gnome-keyring-daemon --start --components=secrets`). Packages
+installed: `gnome-keyring libsecret-tools xdotool imagemagick sqlite3`. Evidence:
+[20 October section](../../recovery/rea-language-matrix-linux.md#20-october-2026-budgets-met-by-optimization-owner-decision-5).
+
+### Summary
+
+Both budgets are met by optimization, not by relaxation. The syntax-only UI is added.
+Every acceptance run passed first time on a clean rebuild.
+
+| Owner item | Result |
+| --- | --- |
+| Large-file symbols ≤ 10 s (was 13.0 s) | Owner: the bundled TypeScript extension's tsserver stdio reader, which copied its whole buffer per chunk (2,924 ms to assemble one 11 MB response). Fixed with geometric growth. **4,246 / 4,400 / 3,635 ms** |
+| Large-project renderer p95 ≤ 250 ms (was 259 ms) | Owner: one main-process watch registration per tsserver-watched file (5,018 inotify watches, each crossing the renderer). Served from the workspace watcher instead. **p95 18 / 16 / 17 ms**, watches 5,125 → 123 |
+| Python/Go/Rust syntax-only, UI must say a language server enables full features | Built-in `openvision.language-status` language status item, verified natively in the matrix (`syntax_only.*`) |
+
+### Defects found and fixed (round 2)
+
+| Defect | Owner | Commit |
+| --- | --- | --- |
+| Quadratic tsserver response assembly (first large response: 510 chunks, 2.9 s) | `typescript-language-features` reader | `8dfb9ccf` |
+| One main-process inotify watch, and one renderer round trip, per tsserver-watched program file | `typescript-language-features` `createFileWatcher` handling | `8dfb9ccf` |
+| No UI saying Python/Go/Rust are syntax-only | new built-in extension | `ff4f7e19` |
+
+### Verification (round 2)
+
+Acceptance on a clean rebuild of `f875bf3b` (source, electron-host, build cache,
+journal and source-build record removed). One run at a time, no reruns:
+
+| Command | Run IDs | Result |
+| --- | --- | --- |
+| `verify:language-matrix` ×3 | `7dKZUr`, `79CCUM`, `swoHiC` | 3/3 first-time pass; 41 cases (37 pass, 4 declared not-provided); symbols 4,246 / 4,400 / 3,635 ms; renderer p95 120 / 77 / 78 ms |
+| `verify:language-matrix -- --large-project` ×3 | `BY1OPy`, `8eq0ZP`, `5dmZSD` | 3/3 first-time pass, 0 budget violations; renderer p95 18 / 16 / 17 ms; unopened program-file change seen in about 3.03 s |
+| `verify:language` | `language-verification-5y1BpE` | Pass |
+| `verify:language-ui` | `language-ui-6zfXVl` | Pass |
+| `verify:rename-race` | `rename-race-ibyrjC` | Pass |
+| `verify:cpp` (pinned clangd already set up) | `cpp-verification-tRyhO8` | Pass |
+
+Development runs (never counted as acceptance): `YQwqii` (watch change only),
+`NXIMec`, `bYitfO` (`--tsserver-log`), `AViPUe` (temporarily instrumented extension,
+discarded by the clean rebuild), `nUTS2X` (both fixes, incremental build), `ceFHBO`
+(`--only=syntax`).
+
+Unit suites: `test:language-matrix` 9/9, `test:rename-version` 11/11, `test:setup-cpp` 2/2,
+`test:typescript-extension` 4/4, `test:language-status` 3/3, `test:desktop` 229/229;
+`docs:check` 0 failures; `status:features` exit 0.
+
+### Recommendation
+
+**OV-402: promote to Verified on Linux x64.** Every Linux clause now has native
+first-time evidence on a clean rebuild: the full matrix 3/3, the budgets 3/3, in-flight
+edits, rename race, C/C++, large project and the syntax-only UI.
+
+### Moved to platform/live stories
+
+Windows and macOS runs of the matrix (all modes), rename race, C/C++, and the two
+TypeScript-extension changes (they apply to every platform).
+
+### Open risks (round 2)
+
+- First diagnostics in large-project mode rose from about 18.6 s to 22.0–22.8 s
+  (budget 29.65 s). The likely cause is the per-registration `realpath` checks; this
+  is inferred, not profiled.
+- The shared watcher relies on the workspace watcher reporting every non-excluded
+  file. A workspace watcher that is disabled or failing would also hide tsserver
+  file changes. Before, per-file watchers were independent of it.
+- Unopened program files under a user `files.watcherExclude` pattern with braces or
+  character classes keep per-file watches (conservative fallback).
+- The reader keeps a buffer of up to twice the largest tsserver message for the
+  server's life (before: about 1×).
+
+---
+
+## Round 1 (18–19 October 2026)
+
 Date: 18–19 October 2026. Scope: Linux x64 only, in a cloud container (Ubuntu 24.04.5,
 kernel 6.18.44, 4 CPUs, 15 GB RAM, Xvfb 1920×1080 under `dbus-run-session`,
 unprivileged `ov` user, Node 24.18.0). Controlled fixtures only; no AI requests and

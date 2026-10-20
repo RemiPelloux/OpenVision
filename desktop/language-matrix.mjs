@@ -27,7 +27,8 @@ export const languageMatrix = Object.freeze([
   // Syntax highlighting only (owner default pending decision): grammar bundles,
   // no language server is bundled or set up, so no language-server behavior is claimed.
   ...[['python', 'python'], ['go', 'go'], ['rust', 'rust']].map(([language, extension]) =>
-    ({ language, extension, version: '10.0.0', server: null, syntaxOnly: true, verified: [], notProvided: lsp })),
+    ({ language, extension, version: '10.0.0', server: null, syntaxOnly: true, verified: [], notProvided: lsp,
+      uiNotice: 'Language status: Syntax highlighting only; install a language server extension (openvision.language-status)' })),
 ]);
 
 export const scanBudget = Object.freeze({ full_scan_fraction: 0.5,
@@ -59,6 +60,9 @@ export function matrixFixtures() {
     'fmt.html': '<div><p>one</p><p>two</p></div>\n',
     'doc.md': '# Intro\n\nSee [intro](#intro) and [missing](#nowhere).\n',
     'other.md': '[back](./doc.md#intro)\n',
+    'syntax.py': 'def greet(name):\n    return name\n',
+    'syntax.go': 'package main\n\nfunc main() {}\n',
+    'syntax.rs': 'fn main() {}\n',
     'source.ovconflict': 'alpha source\n',
     'target.ovconflict': 'keep alpha target\n',
     'large.ts': 'import { greet } from "./lib";\n' + lines(LARGE_LINES, index => `const fixtureValue${index} = ${index};\n`) +

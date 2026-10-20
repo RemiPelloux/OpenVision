@@ -46,7 +46,7 @@ pins against the assembled build. Observed runtime identities: extension API
 | HTML | `html-language-features` | 1.0.0 | HTML server (embedded script) | diagnostics, definition, references, rename, format, 50k-line file | — |
 | Markdown | `markdown-language-features` | 1.0.0 | Markdown server | link diagnostics, header definition, cross-file references and rename, 50k-line file | format |
 | C/C++ | `cpp` grammar plus pinned `setup:cpp` | 10.0.0 | clangd 23.1.0 via vscode-clangd 0.6.0 (not bundled) | 19 October: diagnostics, completion, definition, references, rename, format (`verify:cpp`, [below](#cc-with-pinned-clangd)) | — once `setup:cpp` has run; grammar only without it |
-| Python, Go, Rust | `python`, `go`, `rust` | 10.0.0 | none | **syntax highlighting only** (default pending owner decision) | all language-server features |
+| Python, Go, Rust | `python`, `go`, `rust` | 10.0.0 | none | **syntax highlighting only** (owner decision, 20 October); language status says so ([below](#syntax-only-ui-for-python-go-and-rust)) | all language-server features until the user installs a language server extension |
 
 The "not provided" entries are observed: the driver asked for each feature and the
 bundled server returned nothing. They are not failures. C/C++ language services
@@ -387,20 +387,102 @@ runs on this 4-CPU container under strace (4,892 ms on the Omarchy host). The
 10,000 ms budget was set on the owner's machine and is not changed here. This code
 path is untouched by the 19 October changes.
 
+## 20 October 2026: budgets met by optimization (owner decision #5)
+
+The owner kept both budgets unchanged ([owner decisions](../planning/owner-decisions.md)):
+large-file document symbols within 10 s, and renderer round-trip p95 within 250 ms
+in large-project mode. Same container class as 19 October (4 CPUs, Xvfb under
+`dbus-run-session` with `XDG_RUNTIME_DIR` and a plaintext gnome-keyring, non-root
+user, Node 24.18.0). Clean rebuild of `f875bf3b`.
+
+### Large-file symbols: quadratic tsserver reader
+
+**Measured before the fix.** The raw tsserver work for `large.ts` is small: a
+standalone language service builds the navtree in 85–395 ms, and the 11 MB response
+serializes in 26 ms. The verbose tsserver log (`--tsserver-log`, development run
+`bYitfO`) showed the next queued request reaching the syntax server more than 4 s
+after the navtree response was written. That request was blocked behind the
+extension's processing of the response. Temporary timing in the built extension
+(development run `AViPUe`, not committed) showed that the first `large.ts` navtree
+response arrived in 510 chunks and the stdio reader spent **2,924 ms** appending
+them. JSON.parse took 42 ms and `convertNavTree` 115 ms.
+
+**Owner.** The bundled TypeScript extension's tsserver reader grows its buffer to
+the bytes needed plus 8 KiB, and copies the whole buffer on every chunk. A
+standalone reproduction with the real tsserver copied 1.16 GB to assemble one
+response.
+
+**Fix.** [`growTsserverReader`](../../desktop/typescript-extension-customization.mjs)
+patches that one allocation to grow geometrically. Message framing and parsing are
+unchanged. The patch is regex-guarded, idempotent behind a marker, fails the build on
+a shape change and backs up the original. The unit test frames a 1 MB message
+followed by a multi-byte one, split at random chunk boundaries, through both the
+original and the patched reader class extracted from the bundle. Reallocations stay
+logarithmic.
+
+**Result.** `typescript.large_file.symbols_ms` 4,246 / 4,400 / 3,635 ms in the three
+acceptance runs (before: 6,359 / 13,018 / 8,886 ms).
+
+### Large-project renderer p95: per-file watch registration
+
+**Fix.** [`shareTsserverFileWatches`](../../desktop/typescript-extension-customization.mjs)
+addresses the 19 October finding: one main-process inotify watch per program file.
+tsserver file watches inside a workspace folder now come from one shared
+`workspace.createFileSystemWatcher("**/*")` listener on the recursive workspace
+watcher, dispatched to tsserver watch ids. These keep per-file watchers: non-`file:`
+folders, paths under `node_modules`, `.git` or `.hg`, paths matched by
+`files.watcherExclude` (patterns with braces or classes fall back too), and paths
+whose real location leaves the folder. Directory watchers are unchanged.
+
+**Correctness.** Large-project mode now writes an unopened program file
+(`src/m00/f099.ts`) and waits for tsserver's diagnostic to change, then restores it:
+about 3,030 ms each way in all three runs. The matrix case
+`typescript.external_change_then_rename` (unopened `other.ts`) also passes, as does
+the dependency change under `node_modules` (still a per-file watch).
+
+| Large-project metric | Before (`M7aWIm` / `UhcGgE`) | After (`BY1OPy` / `8eq0ZP` / `5dmZSD`) |
+| --- | --- | --- |
+| Renderer round-trip p95 | 55 / 259 ms | 18 / 16 / 17 ms |
+| Family peak inotify watches (main) | 5,125 (5,018) | 122 / 123 / 123 (16) |
+| tsserver CPU over all windows | 4,910 / 5,190 ms | 2,750 / 3,620 / 3,830 ms |
+| First diagnostics | 18.5–18.7 s | 22.0–22.8 s (budget 29.65 s) |
+
+Budgets were not changed. First diagnostics are slower but within budget. The likely
+cause is the 5,000 synchronous `realpath` checks during registration (inferred, not
+profiled).
+
+### Syntax-only UI for Python, Go and Rust
+
+A generated built-in extension (`openvision.language-status`,
+[`language-status-extension.cjs`](../../desktop/language-status-extension.cjs)) adds
+a language status item for `python`, `go` and `rust`: **Syntax highlighting only**,
+with "Install a *Language* language server extension for completion, diagnostics,
+navigation and rename" and a **Find a language server** action. The item is removed
+while a user-installed extension with code declares or activates on that language.
+The matrix `syntax_only` suite opens each file, clicks the native status-bar entry
+and asserts the hover text. TypeScript is the negative control. Screenshots are
+`language-status-*.png` in each run directory.
+
+### 20 October acceptance runs (clean rebuild, first time, no reruns)
+
+| Command | Runs | Result |
+| --- | --- | --- |
+| `verify:language-matrix` | `7dKZUr`, `79CCUM`, `swoHiC` | 3/3 pass: 41 cases (37 pass, 4 not-provided as declared), renderer p95 120 / 77 / 78 ms, host exit 0, 0 page errors |
+| `verify:language-matrix -- --large-project` | `BY1OPy`, `8eq0ZP`, `5dmZSD` | 3/3 pass, no budget violations |
+| `verify:language` | `language-verification-5y1BpE` | Pass |
+| `verify:language-ui` | `language-ui-6zfXVl` | Pass |
+| `verify:rename-race` | `rename-race-ibyrjC` | Pass |
+| `verify:cpp` | `cpp-verification-tRyhO8` | Pass |
+
 ## Remaining gates
 
-Linux x64 (as of 19 October):
+Linux x64 (as of 20 October): none of the 19 October Linux gaps remain. Both
+budgets pass 3/3 on a clean rebuild, the inotify duplication is fixed, and the
+syntax-only default is accepted with its UI. Remaining outside Linux x64:
 
-- `verify:language-matrix` passed 1 of 2 final full runs on the 4-CPU container: the
-  failure is the pre-existing 10 s large-file symbols budget (13.0 s). Needs a decision
-  on a host-class budget or a quieter host, not a code change in this branch.
-- `--large-project` passed 1 of 2 enforced runs; the failure is the existing renderer
-  round-trip p95 budget (259 > 250 ms).
-- Per-file inotify watches for tsserver-watched files duplicate the recursive workspace
-  watcher (linear growth, 1 watch per program file). Not fixed.
-- Python, Go and Rust: syntax highlighting only, pending owner decision.
 - Third-party or incompatible extension behavior (OV-702).
 
 Moved to platform/live stories: Windows and macOS runs of the matrix (including the
-in-flight and large-project modes), the rename race and C/C++ (macOS has no pinned
-clangd build).
+in-flight, syntax-only and large-project modes), the rename race and C/C++ (macOS
+has no pinned clangd build). The TypeScript-extension changes also apply to Windows
+and macOS builds and are unverified there.
