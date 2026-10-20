@@ -5,10 +5,11 @@ your profile and your provider keys stay on your computer; files, terminals,
 language servers and workspace extensions run on the remote host in the
 OpenVision server.
 
-Status: Linux x64 client to Linux x64 host, verified with a controlled local
-host ([evidence](../verification/remote-ssh-linux-2026-10-19.md)). Windows and
-macOS clients, WSL and containers are not covered yet. The Agent is not
-available in remote windows yet (see [Agent and provider keys](#agent-and-provider-keys)).
+Supported: a Linux x64 client opening folders on Linux x64 hosts, verified
+with a controlled local host
+([evidence](../verification/remote-ssh-linux-2026-10-19.md)). WSL is planned
+with the Windows work, and containers are not part of this release. The Agent
+runs only in local windows (see [Agent and provider keys](#agent-and-provider-keys)).
 
 ## Prepare once
 
@@ -42,6 +43,21 @@ On the first connection OpenVision uploads the prepared server over the SSH
 connection into `~/.openvision-server` on the host and checks its SHA-256
 there. Neither your computer nor the host downloads a server. Later
 connections reuse the installed server.
+
+### What is stored on the host
+
+Everything OpenVision puts on the host lives in `~/.openvision-server`:
+
+| Path | Contents |
+| --- | --- |
+| `bin/<commit>/` | The installed server |
+| `extensions/` | Extensions installed on the host |
+| `data/` | Server settings and logs |
+| `profiles/<key>/` | Data of remote extensions (agent projects, MCP state, plugins), one folder per local OpenVision profile |
+
+Nothing is written to `~/.cursor`, and two OpenVision profiles that connect to
+the same host do not share their remote data. Your shell's own history in
+the integrated terminal behaves as it would over `ssh`.
 
 ### Host keys
 

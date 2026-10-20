@@ -171,3 +171,30 @@ test('resolver does not open a SOCKS proxy unless the user enables it', async ()
   assert.equal(result.contributes.configuration.properties['remote.SSH.enableDynamicForwarding'].default, false);
   assert.equal(manifest.contributes.configuration.properties['remote.SSH.enableDynamicForwarding'].default, true);
 });
+
+test('remote extension host gets a profile home per local profile', async () => {
+  const { remoteProfileHome, profileMarker } = await import('./remote-ssh-customization.mjs');
+  const resolverTail = 'async function r(){const x={};const H=(0,w.findServerInstallPath)(s.hostname,B),M=await(0,w.installCodeServer)(this.sshConnection,l,f);' +
+    'for(const[e,t]of Object.entries(x))t&&this.context.environmentVariableCollection.replace(e,t);const F=await this.openTunnel(0,M.listeningOn);' +
+    'const $=new d.ResolvedAuthority("127.0.0.1",F.localPort,M.connectionToken);return $.extensionHostEnv=x,$}';
+  const result = remoteProfileHome(resolverTail);
+  assert.ok(result.startsWith(profileMarker));
+  assert.ok(result.includes('x.VSCODE_OPENVISION_PROFILE_HOME=await openvisionRemoteProfileHome(this.sshConnection,H,this.context);const $=new d.ResolvedAuthority'));
+  assert.ok(result.indexOf('environmentVariableCollection.replace') < result.indexOf('x.VSCODE_OPENVISION_PROFILE_HOME='), 'not exported to terminals');
+  assert.equal(remoteProfileHome(result), result);
+  assert.throws(() => remoteProfileHome(resolverTail.replace('findServerInstallPath', 'serverPath')), /install path contract/);
+
+  // The helper derives a stable key from the local profile directory.
+  const helper = new Function('require', `${result}; return openvisionRemoteProfileHome;`)(name => name === 'vscode'
+    ? { env: { appRoot: '/app' } } : name === 'fs' ? { promises: { readFile: async () => '{"serverDataFolderName":".openvision-server"}' } } : process.getBuiltinModule(name));
+  const connection = { exec: async () => ({ stdout: '/home/remote' }) };
+  const context = path => ({ globalStorageUri: { fsPath: `${path}/User/globalStorage/jeanp413.open-remote-ssh` } });
+  const first = await helper(connection, undefined, context('/profiles/a')), again = await helper(connection, undefined, context('/profiles/a'));
+  const second = await helper(connection, undefined, context('/profiles/b'));
+  const { createHash } = await import('node:crypto');
+  assert.equal(first, `/home/remote/.openvision-server/profiles/${createHash('sha256').update('/profiles/a/User').digest('hex').slice(0, 16)}`);
+  assert.equal(first, again);
+  assert.notEqual(first, second);
+  assert.equal(await helper(connection, '~/custom-server', context('/profiles/a')), `/home/remote/custom-server/profiles/${first.split('/').pop()}`);
+  await assert.rejects(helper({ exec: async () => ({ stdout: '' }) }, undefined, context('/profiles/a')), /remote home/);
+});
