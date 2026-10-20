@@ -29,6 +29,6 @@ story is on the [status page](../../planning/eta-and-definition-of-done.md#story
 | [updates-rollback](updates-rollback.md) | OV-904 | Verified |
 | [retrieval-index](retrieval-index.md) | OV-502–504 | Verified |
 | [helper-replacement](helper-replacement.md) | OV-803 | Verified |
-| [upstream-host](upstream-host.md) | OV-802 | Checks pass; glibc floor and owner decisions |
+| [upstream-host](upstream-host.md) | OV-802 | glibc 2.28 rebuild done; promote recommended |
 | [modes-inventory](modes-inventory.md) | OV-704, OV-604 | Probe passes; scope and next-edit decisions |
 | [remote-ssh](remote-ssh.md) | OV-703 | SSH to Linux passes; "Agent local-only" decision |

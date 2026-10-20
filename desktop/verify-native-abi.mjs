@@ -6,7 +6,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { spawnSync, execFileSync } from 'node:child_process';
 import { fileHash } from './import-files.mjs';
-import { elfAbi, nativeAddons } from './native-rebuild.mjs';
+import { elfAbi, nativeAddons, rustAddons } from './native-rebuild.mjs';
 import { prepareUpstreamInputs } from './upstream-host.mjs';
 import { nativeManifestPath } from './upstream-host-build.mjs';
 
@@ -40,6 +40,16 @@ try {
     result.checks[addon.package] = { abi, recovered_abi: record.recovered_abi };
     rebuilt[addon.package] = packageDirectory;
     recovered[addon.package] = join(root, 'source/app', addon.targets[0].replace(/\/build\/Release\/[^/]+$/, ''));
+  }
+  // Rust addons have no in-place package: the fixture loads the rebuilt and recovered .node files directly.
+  for (const addon of rustAddons) {
+    const record = manifest.addons.find(entry => entry.package === addon.package);
+    assert.ok(record, `${addon.package} is missing from ${nativeManifestPath}`);
+    assert.equal(await fileHash(join(root, record.output)), record.sha256, `${addon.package} output differs from the manifest`);
+    assert.equal(record.abi.api, record.recovered_abi.api, `${addon.package} registers ${record.abi.api}, recovered ${record.recovered_abi.api}`);
+    result.checks[addon.package] = { abi: record.abi, recovered_abi: record.recovered_abi };
+    rebuilt[addon.package] = join(root, record.output);
+    recovered[addon.package] = join(root, 'source/app', addon.targets[0]);
   }
   for (const [name, packages] of Object.entries({ rebuilt, recovered })) {
     result.variants[name] = fixture(electron, packages);
