@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { readableApp } from './recovered-source.mjs';
 import { agentWriteHelper, agentWriteMarker, agentWriteTargets, durableAgentWriteHelper, durableHelper,
   preserveAgentWrites, previousAgentWriteMarker, staleTemporaryMs, agentTemporarySweep, agentTemporarySweepMarker,
-  sweepAgentTemporariesOnStartup } from './agent-write-durability-customization.mjs';
+  sweepAgentTemporariesOnStartup, agentTemporarySessions, agentTemporarySessionMarker, registerAgentWriteTemporaries,
+  agentWriteRegistryMarker } from './agent-write-durability-customization.mjs';
 
 const require = createRequire(import.meta.url);
 const runner = fileURLToPath(new URL('./agent-write-faults.cjs', import.meta.url));
@@ -275,11 +276,98 @@ test('startup sweep is bounded by directories and entries', { skip: !posix && 'P
   assert.equal(entries.truncated, true); assert.ok(entries.entries <= 5);
 });
 
-test('startup sweep is installed once into Agent execution activation and fails closed on drift', () => {
-  const text = patched['agent-exec'], swept = sweepAgentTemporariesOnStartup(text);
+test('session records are installed once into Agent execution activation, upgrade v1 and fail closed on drift', () => {
+  const text = registerAgentWriteTemporaries(patched['agent-exec']), swept = sweepAgentTemporariesOnStartup(text);
   assert.equal(swept.split(agentTemporarySweepMarker).length, 2);
+  assert.equal(swept.split(agentTemporarySessionMarker).length, 2);
   assert.equal(sweepAgentTemporariesOnStartup(swept), swept);
-  assert.match(swept, /async function \$l\(e\) \{\n      setTimeout\(\(\) => openvisionSweepAgentTemporaries\(\(G\.workspace\.workspaceFolders/);
+  assert.match(swept, /async function \$l\(e\) \{\n      openvisionAgentTemporarySessions\(e\.globalStorageUri\?\.fsPath/);
+  assert.doesNotMatch(swept, /setTimeout\(\(\) => openvisionSweepAgentTemporaries/, 'no unconditional walk');
+  // An earlier build's v1 schedule is upgraded in place to the same result.
+  const v1 = text.replace('async function $l(e) {\n      if (G.cursor.cursorAgentHostEnabled) {', `${agentTemporarySweep()}    async function $l(e) {
+      setTimeout(() => openvisionSweepAgentTemporaries((G.workspace.workspaceFolders ?? [])
+        .filter((folder) => folder.uri.scheme === "file").map((folder) => folder.uri.fsPath))
+        .then((swept) => swept.removed.length && console.log("[OpenVision] Removed " + swept.removed.length + " interrupted Agent write temporaries"),
+          () => {}), 2000).unref?.();
+      if (G.cursor.cursorAgentHostEnabled) {`);
+  const upgraded = sweepAgentTemporariesOnStartup(v1);
+  assert.equal(upgraded.split(agentTemporarySessionMarker).length, 2);
+  assert.doesNotMatch(upgraded, /setTimeout\(\(\) => openvisionSweepAgentTemporaries/);
   assert.throws(() => sweepAgentTemporariesOnStartup(recovered['agent-exec']), /activation contract/);
   assert.throws(() => sweepAgentTemporariesOnStartup(text.replace('async function $l(e) {', 'async function $m(e) {')), /activation contract/);
 });
+
+test('the agent-exec writer registers its temporary only while the write is in flight', { skip: !posix && 'POSIX atomic path' }, async () => {
+  const registered = registerAgentWriteTemporaries(patched['agent-exec']);
+  assert.equal(registerAgentWriteTemporaries(registered), registered);
+  assert.equal(registered.split(agentWriteRegistryMarker).length, 2);
+  assert.throws(() => registerAgentWriteTemporaries(recovered['agent-exec']), /Durable Agent write helper missing/);
+  const target = agentWriteTargets[0];
+  const { names } = agentWriteHelper(recovered['agent-exec'], target.shape);
+  const file = join(modules, 'agent-exec-registered.cjs');
+  fs.writeFileSync(file, `'use strict';
+const ${names.fsp} = require('node:fs/promises'), ${names.fs} = require('node:fs');
+class ${names.refuse} extends Error {}
+${durableAgentWriteHelper(registered).source}
+module.exports = ${names.name};
+`);
+  const writeRegistered = require(file), root = workspace(), seen = [];
+  const set = (globalThis.__openvisionAgentTemporaries ??= new Set()), add = set.add.bind(set);
+  set.add = value => (seen.push(value), add(value));
+  await writeRegistered(join(root, 'a.txt'), 'bytes', { flush: true });
+  set.add = add;
+  assert.equal(seen.length, 1);
+  assert.match(seen[0], /\.a\.txt\.openvision-[0-9a-f-]{36}\.tmp$/);
+  assert.equal(set.size, 0, 'released after the rename');
+  assert.equal(fs.readFileSync(join(root, 'a.txt'), 'utf8'), 'bytes');
+});
+
+// One Agent execution session in a child process: activation, optional
+// in-flight temporary, then a clean exit, a SIGKILL or staying alive.
+const sessionScript = (storage, root, { pending, end, hold = 2600 }) => `'use strict';
+${agentTemporarySweep()}
+${agentTemporarySessions()}
+openvisionAgentTemporarySessions(${JSON.stringify(storage)}, () => [${JSON.stringify(root)}]);
+${pending ? `globalThis.__openvisionAgentTemporaries.add(${JSON.stringify(pending)});` : ''}
+setTimeout(() => { ${end === 'kill' ? 'process.kill(process.pid, "SIGKILL");' : end === 'stay' ? 'setInterval(() => {}, 1000);' : 'process.exit(0);'} }, ${hold});
+`;
+function session(storage, root, options) {
+  const file = join(modules, `session-${Math.random().toString(16).slice(2)}.cjs`);
+  fs.writeFileSync(file, sessionScript(storage, root, options));
+  if (options.end === 'stay') return require('node:child_process').spawn(process.execPath, [file], { stdio: 'ignore' });
+  return spawnSync(process.execPath, [file], { encoding: 'utf8' });
+}
+
+test('session records: no ended session means no walk; recorded and unclean endings are swept', { skip: process.platform !== 'linux' && 'Linux process identity' }, async () => {
+  const uuid = '0123abcd-0123-4567-89ab-0123456789ab', aged = new Date(Date.now() - 2 * staleTemporaryMs);
+  const make = path => { fs.mkdirSync(join(path, '..'), { recursive: true }); fs.writeFileSync(path, 'partial'); fs.utimesSync(path, aged, aged); return path; };
+  const storage = workspace(), root = workspace();
+  const orphan = make(join(root, 'deep', `.x.js.openvision-${uuid}.tmp`));
+  const records = () => fs.readdirSync(join(storage, 'openvision-agent-write-sessions'));
+  // Fresh profile: the first session finds no ended session and walks nothing.
+  session(storage, root, { end: 'exit' });
+  assert.equal(fs.existsSync(orphan), true, 'no walk without an ended session');
+  assert.deepEqual(records(), [], 'a clean exit with nothing in flight leaves no record');
+  // A clean exit with a write in flight lists its temporary; the next start removes only that one.
+  const inflight = make(join(root, `.y.js.openvision-${uuid}.tmp`));
+  session(storage, root, { end: 'exit', pending: inflight });
+  assert.equal(records().length, 1);
+  session(storage, root, { end: 'exit' });
+  assert.equal(fs.existsSync(inflight), false, 'recorded temporary removed');
+  assert.equal(fs.existsSync(orphan), true, 'targeted, not a walk');
+  // A SIGKILLed session leaves an unclean record; the next start walks the roots.
+  session(storage, root, { end: 'kill' });
+  session(storage, root, { end: 'exit' });
+  assert.equal(fs.existsSync(orphan), false, 'unclean ending triggers the walk');
+  assert.deepEqual(records(), []);
+  // A live session of another window is not an ended session.
+  const other = make(join(root, `.z.js.openvision-${uuid}.tmp`));
+  const live = session(storage, root, { end: 'stay', hold: 100 });
+  try {
+    await new Promise(done => setTimeout(done, 1500));
+    session(storage, root, { end: 'exit' });
+    assert.equal(fs.existsSync(other), true, 'a live window does not trigger a walk');
+    assert.equal(records().length, 1, 'the live record is kept');
+  } finally { live.kill('SIGKILL'); }
+});
+

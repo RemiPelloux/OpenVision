@@ -317,6 +317,7 @@ Final build, all changes on this branch:
 | --- | --- | --- |
 | `npm run verify:telemetry:extended -- --idle-seconds 600` | `logs/telemetry-extended-XE8H2u` | **Pass** with every phase above plus a 600 s idle. 0 non-user destinations, 0 telemetry matches, 0 direct remote sockets. The family drained (57 processes). No device-id file. 12 recorded lookups, all `marketplace.cursorapi.com` in the Extensions phase (user-initiated) |
 | same, second run | `telemetry-extended-fXnIJA` | Stopped on the owner's stop request during idle; not counted |
+| same, on the merged clean build (`2b61fcbc`) | `telemetry-extended-OfXO1m` | **Pass**, same gate results (51 processes); with `verify:telemetry` `ww5ScF` and `verify:data-destinations` `vnUHoK` |
 | `npm run verify:telemetry` | `telemetry-verification-uPe0gw` | Pass |
 | development, 20 s idle | `telemetry-extended-rHzUxH` | Pass |
 

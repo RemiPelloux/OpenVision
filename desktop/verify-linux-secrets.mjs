@@ -20,6 +20,14 @@ const argv = join(homedir(), '.openvision-local/argv.json');
 const result = { success: false, checkedAt: new Date().toISOString(), desktop: process.env.XDG_CURRENT_DESKTOP ?? null,
   argvBefore: await fileHash(argv), checks: {}, exits: [] };
 
+// Close an owned app and record how its host ended. The process handle is taken at launch:
+// after a crash or disconnect app.process() itself throws and would hide the real error.
+async function closeApp(app, child, name) {
+  const exit = { name };
+  try { await app.close(); } catch (error) { exit.closeError = error.message; }
+  result.exits.push(Object.assign(exit, { exitCode: child.exitCode, signalCode: child.signalCode }));
+}
+
 async function run(name, { args = [], env = {}, act }) {
   const profile = join(directory, name, 'profile');
   await mkdir(join(profile, 'User'), { recursive: true });
@@ -29,6 +37,7 @@ async function run(name, { args = [], env = {}, act }) {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, name, 'extensions'), '--new-window',
       '--disable-updates', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
       ...await linuxSandboxArguments(layout.host), ...args] });
+  const child = app.process();
   try {
     const page = await app.firstWindow();
     await page.locator('.monaco-workbench').waitFor({ state: 'attached', timeout: 60000 });
@@ -38,10 +47,7 @@ async function run(name, { args = [], env = {}, act }) {
       if (act.decrypt) output.plain = safeStorage.decryptString(Buffer.from(act.decrypt, 'base64'));
       return { ...output, backend: safeStorage.getSelectedStorageBackend(), available: safeStorage.isEncryptionAvailable() };
     }, act);
-  } finally {
-    const child = app.process(); await app.close();
-    result.exits.push({ name, exitCode: child.exitCode, signalCode: child.signalCode });
-  }
+  } finally { await closeApp(app, child, name); }
 }
 
 // Issue #6: Add Provider Save without a Secret Service must reach the keyring
@@ -61,8 +67,9 @@ async function providerSaveWithoutSecretService(name, dialogStyle) {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, name, 'extensions'), '--new-window', '--skip-welcome',
       '--disable-updates', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter',
       ...sandbox, project] });
-  const output = {};
-  let app = await launch();
+  const output = {}; result.checks[name] = output; // filled as the case runs, kept on failure
+  let app = await launch(), child = app.process();
+  child.stderr?.on('data', chunk => { output.stderrTail = ((output.stderrTail ?? '') + chunk).slice(-4096); });
   try {
     const page = await app.firstWindow(); page.setDefaultTimeout(20000);
     // Native style: the main process shows a message box; answer it like a user choosing weaker storage.
@@ -115,19 +122,14 @@ async function providerSaveWithoutSecretService(name, dialogStyle) {
     await panel.getByText('Saved', { exact: true }).waitFor({ timeout: 20000 });
     await panel.locator('option', { hasText: 'No Keyring Provider' }).first().waitFor({ state: 'attached' });
     output.saved = true;
-  } finally {
-    const child = app.process(); await app.close();
-    result.exits.push({ name, exitCode: child.exitCode, signalCode: child.signalCode });
-  }
-  app = await launch();
+  } finally { await closeApp(app, child, name); }
+  app = await launch(); child = app.process();
+  child.stderr?.on('data', chunk => { output.restartStderrTail = ((output.restartStderrTail ?? '') + chunk).slice(-4096); });
   try {
     await (await app.firstWindow()).locator('.monaco-workbench').waitFor({ state: 'attached', timeout: 60000 });
     output.afterRestart = await app.evaluate(({ safeStorage }) => ({ backend: safeStorage.getSelectedStorageBackend(),
       available: safeStorage.isEncryptionAvailable() }));
-  } finally {
-    const child = app.process(); await app.close();
-    result.exits.push({ name: `${name}-restart`, exitCode: child.exitCode, signalCode: child.signalCode });
-  }
+  } finally { await closeApp(app, child, `${name}-restart`); }
   // argv.json is JSONC; record the store the user's choice wrote.
   output.passwordStore = (await readFile(join(profile, 'User/.openvision-local/argv.json'), 'utf8').catch(() => ''))
     .match(/"password-store"\s*:\s*"([^"]*)"/)?.[1] ?? null;

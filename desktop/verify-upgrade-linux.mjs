@@ -411,6 +411,21 @@ try {
   step(`no update-endpoint requests during ${N1} launch`, { inetConnects: launchNetwork.inetConnects, trafficConnects: launchNetwork.trafficConnects.length,
     proxyEvents: record.proxyEvents.length, lookups: launchNetwork.lookups.length });
 
+  // 9a. An older executable never receives a store it cannot open: with N+1's
+  //     profile marked as needing a newer reader, rollback refuses and changes nothing.
+  {
+    const markerPath = join(dataOf(N1), markerName), original = await readFile(markerPath, 'utf8');
+    await writeFile(markerPath, JSON.stringify({ ...JSON.parse(original), format: 2, minimumReader: 2 }, null, 2));
+    const before = await treeDigest(installRoot);
+    const refusedRollback = await runStatus(join(installRoot, 'current/openvision-install'), ['rollback'], { env: installerEnv });
+    assert.equal(refusedRollback.code, 1);
+    assert.match(refusedRollback.stderr, /cannot open the current profile \(format 2\)/);
+    assert.equal((await treeDigest(installRoot)).sha256, before.sha256, 'refused rollback changed nothing');
+    assert.equal(await readlink(join(installRoot, 'current')), `versions/${N1}`);
+    await writeFile(markerPath, original);
+    step('rollback refused for a profile the older version cannot open', { stderr: refusedRollback.stderr.trim().split('\n').at(-1) });
+  }
+
   // 9. Roll back to N carrying the profile N+1 wrote.
   const rolled = await runStatus(join(installRoot, 'current/openvision-install'), ['rollback'], { env: installerEnv });
   assert.equal(rolled.code, 0, rolled.stderr);

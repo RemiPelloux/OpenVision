@@ -1,6 +1,6 @@
 # OpenVision progress, percentages and delivery gates
 
-Updated **19 October 2026**. Start here for the feature backlog, recovery results
+Updated **20 October 2026**. Start here for the feature backlog, recovery results
 and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
@@ -17,13 +17,13 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **18/44 · 40.91%** | **26/44** are not fully verified: 11 Partial, 14 Planned, 1 Unknown |
-| Recorded 80% verification milestone | Requires **36/44** Verified | **18** additional stories must pass |
-| All accepted features | Requires **44/44** Verified | **26** additional stories must pass |
+| Fully verified local-feature stories | **30/44 · 68.18%** | **14/44** are not fully verified: 6 Partial, 7 Planned, 1 Unknown |
+| Recorded 80% verification milestone | Requires **36/44** Verified | **6** additional stories must pass |
+| All accepted features | Requires **44/44** Verified | **14** additional stories must pass |
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
-Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603 and OV-602 are Verified under it. See
+Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501, OV-1005, OV-304, OV-502, OV-503, OV-504, OV-303, OV-904, OV-903, OV-604 (excluded by owner decision) and OV-803 are Verified under it. See
 the [status page](planning/eta-and-definition-of-done.md#re-scope-baseline-v3), which also lists [every story's gap and ETA](planning/eta-and-definition-of-done.md#story-status-and-gaps).
 
 Partial stories include working implementations with unfinished checks. This is

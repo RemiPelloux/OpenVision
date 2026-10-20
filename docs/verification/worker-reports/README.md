@@ -1,4 +1,4 @@
-# Worker reports (18–19 October 2026)
+# Worker reports (18–20 October 2026)
 
 Each Linux worker session wrote one report: tasks, defects fixed, every verification
 command with its run IDs, recommendation, defaults pending owner decision, and its
@@ -18,13 +18,17 @@ story is on the [status page](../../planning/eta-and-definition-of-done.md#story
 | [agent-editing](agent-editing.md) | OV-103 | Checks pass; owner decision |
 | [language-tools](language-tools.md) | OV-402 | Checks pass; owner decision |
 | [agent-context](agent-context.md) | OV-1001 | Checks pass; owner decision |
-| [mcp-safety](mcp-safety.md) | OV-303 | Merged-code regression in progress |
-| [mcp-auth](mcp-auth.md) | OV-304 | Coordinator rerun; #9/#10 follow-ups |
-| [data-telemetry](data-telemetry.md) | OV-501, OV-1005 | One run left |
-| [native-inventory](native-inventory.md) | OV-801 | One rerun left |
-| [release-safety](release-safety.md) | OV-1004 | Native runs left |
-| [linux-completion](linux-completion.md) | OV-903 | Recheck on the merged code |
-| [idle-resources](idle-resources.md) | OV-1003 | Budget overruns to fix |
-| [responsiveness](responsiveness.md) | OV-1002 | Budgets left |
-| [updates-rollback](updates-rollback.md) | OV-904 | Second native run left |
-| [retrieval-index](retrieval-index.md) | OV-502–504 | Hook not wired; native verifiers left |
+| [mcp-safety](mcp-safety.md) | OV-303 | Verified |
+| [mcp-auth](mcp-auth.md) | OV-304 | Verified |
+| [data-telemetry](data-telemetry.md) | OV-501, OV-1005 | Verified |
+| [native-inventory](native-inventory.md) | OV-801 | Verified |
+| [release-safety](release-safety.md) | OV-1004 | Linux gates pass; release gate promoted last |
+| [linux-completion](linux-completion.md) | OV-903 | Verified |
+| [idle-resources](idle-resources.md) | OV-1003 | Traversal and slope pass; idle CPU needs a comparable host or budget decision |
+| [responsiveness](responsiveness.md) | OV-1002 | GPU host or software-rendering budget decision |
+| [updates-rollback](updates-rollback.md) | OV-904 | Verified |
+| [retrieval-index](retrieval-index.md) | OV-502–504 | Verified |
+| [helper-replacement](helper-replacement.md) | OV-803 | Verified |
+| [upstream-host](upstream-host.md) | OV-802 | Checks pass; glibc floor and owner decisions |
+| [modes-inventory](modes-inventory.md) | OV-704, OV-604 | Probe passes; scope and next-edit decisions |
+| [remote-ssh](remote-ssh.md) | OV-703 | SSH to Linux passes; "Agent local-only" decision |

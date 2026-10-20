@@ -501,3 +501,57 @@ The counts were identical at the 1 and 2 minute marks. The static bundle
 counts (agent-exec 17, agent-host 9, …) are occurrences in source, not live
 timers. The extension-host numbering differs between launches; the placement
 lines in each run's renderer log name the extensions per host.
+
+### Round 2 on merged main (19 October 2026, late)
+
+**Method change.** Settled iteration samples now follow a forced renderer
+garbage collection (DevTools `HeapProfiler.collectGarbage`, then a 2 s pause).
+Turn it off with `--no-forced-gc`. Before this, the renderer series alternated
+between two levels, about 70 MiB apart. Odd iterations settled at
+379 → 395 → 412 MiB and even ones at 450 → 466 → 483 MiB. The six-point
+slope therefore depended on which phase the last sample fell in: 13.8, 14.2
+and 15.7 MiB per iteration in the final runs above, with run 3 over the budget.
+With the forced GC, the renderer climbs evenly by about 7 MiB per iteration,
+for example 379, 386, 393, 401, 409 and 415 MiB. That is the retention from
+two new Agent chats per iteration. The budget measures it and is unchanged.
+
+| Run (`logs/idle-memory-round2-*`) | Slope MiB/iter | Explorer cold / warm ms | Peak PSS cold / warm MiB | Idle CPU s/10 min renderer / ext hosts / main | Result |
+| --- | ---: | --- | --- | --- | --- |
+| `1-qqsKOq` | 6.5 | 11,081 / 9,109 | 1,700.3 / 1,649.8 | **17.44 / 24.78** / 0.80 | Fail: idle CPU |
+| `2-yOd4xb` | 9.0 | 11,033 / 9,084 | 1,694.8 / 1,645.8 | **18.59 / 25.66** / 0.87 | Fail: idle CPU |
+| `3-QtPsrT` | 10.2 | 11,251 / 8,383 | 1,691.8 / 1,642.0 | **18.17 / 25.26** / 0.88 | Fail: idle CPU |
+
+Every other budget passed in all three runs:
+
+- process count flat;
+- 0 shells and 0 pty masters;
+- idle growth of at most 3.1 MiB per role;
+- no process-sampling activity.
+
+**Idle CPU on this host (observed A/B).** The renderer and extension-host
+idle CPU rose by about 70% and 50% against the first final runs. Main and the
+watcher rose by smaller factors. A JavaScript CPU profile of the idle
+renderer showed about 0.9 s of JavaScript and "(program)" time per 90 s;
+nothing was polling.
+
+To separate product from host, the pre-merge tree (`fa5f880d`) was rebuilt in
+a separate worktree. It ran interleaved with the current build, with the same
+window (idle marks at 3 and 8 minutes, 1 iteration, no budgets):
+
+| Run | Build | Renderer | Extension hosts | Main |
+| --- | --- | ---: | ---: | ---: |
+| `ab-new1-1f3xoq` | current | 18.50 | 24.48 | 0.80 |
+| `ab-new2-0wTmK2` | current | 17.92 | 24.32 | 0.88 |
+| `ab-old3-VRnMal` | pre-merge `fa5f880d` | 17.66 | 24.12 | 0.90 |
+| `ab-new3-Wfx0CL` | current | 18.04 | 23.58 | 0.90 |
+| `ab-old4-BTxGzV` | pre-merge `fa5f880d` | 17.82 | 24.38 | 0.88 |
+
+**What this shows.** The build that measured 10.5 / 16.7 in the first final
+runs measures the same as the current build on this host now. The idle-CPU
+increase is therefore a change in the host this container runs on, which
+resumed after a long pause. It is not a product regression.
+
+CPU seconds per wall-clock time depend on the host. The idle-CPU limits were
+derived on a host that ran this workload's idle at about 10.5 / 16.7 s. They
+were not raised. A host-normalized CPU budget, for example against a
+calibration workload recorded in the same run, needs an owner decision.

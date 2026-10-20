@@ -8,6 +8,7 @@ Executed tests, platform coverage and explicit limits. Start with [release claim
 - [Import profile ownership and exact restore](import-profile-verification.md)
 - [Linux verification](linux-verification.md)
 - [Upgrade, interruption and rollback on Linux x64 (OV-904)](upgrade-rollback-linux.md)
+- [Remote SSH on Linux x64 (OV-703) — 19 October 2026](remote-ssh-linux-2026-10-19.md)
 - [Linux reliability session — 16 October 2026](linux-session-2026-10-16.md)
 - [Verifier stability on Linux — 18 October 2026](verifier-stability-linux.md)
 - [Linux completion (OV-903) — 19 October 2026](worker-reports/linux-completion.md)

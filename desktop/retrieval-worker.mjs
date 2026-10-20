@@ -1,3 +1,5 @@
+import { rename, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { parentPort, workerData } from 'node:worker_threads';
 import { RetrievalIndex } from './retrieval-index.mjs';
 import { EmbeddingClient, EmbeddingRanker } from './retrieval-embeddings.mjs';
@@ -8,6 +10,16 @@ import { EmbeddingClient, EmbeddingRanker } from './retrieval-embeddings.mjs';
 const log = message => parentPort.postMessage({ type: 'log', message });
 let index, ranker, current, closing = false;
 const queue = [];
+
+// Counters JSON (contract: status.json beside the database), rewritten
+// atomically after every write job so verifiers and users can read it.
+async function record(job, result, error) {
+  if (!index?.store?.database) return;
+  const path = join(workerData.directory, 'status.json'), temporary = `${path}.${process.pid}.tmp`;
+  const value = { at: new Date().toISOString(), job: { type: job.type, elapsedMs: result?.elapsedMs, error: error?.message,
+    code: error?.code }, counters: index.counters, status: index.status, ranking: ranker?.status, counts: index.store.counts() };
+  await writeFile(temporary, JSON.stringify(value, null, 2) + '\n').then(() => rename(temporary, path)).catch(() => {});
+}
 
 async function open(options) {
   index = new RetrievalIndex({ ...options, log });
@@ -53,9 +65,11 @@ async function drain() {
     current = { type: job.type, controller: new AbortController(), settled: settled.promise };
     const started = performance.now();
     try {
-      const result = await jobs[job.type](job, current.controller.signal);
-      parentPort.postMessage({ id: job.id, ok: true, result: { ...result, elapsedMs: Math.round(performance.now() - started) } });
+      const result = { ...await jobs[job.type](job, current.controller.signal), elapsedMs: Math.round(performance.now() - started) };
+      await record(job, result);
+      parentPort.postMessage({ id: job.id, ok: true, result });
     } catch (error) {
+      await record(job, undefined, error);
       parentPort.postMessage({ id: job.id, ok: false, error: { name: error.name, code: error.code, message: error.message } });
     } finally { current = undefined; settled.resolve(); }
   }

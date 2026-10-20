@@ -69,3 +69,30 @@ test('automatic input detection requires both the native executable and applicat
   await writeFile(packagePath, '{}');
   assert.equal(await detectInstallation(process, candidates), candidates[1]);
 });
+
+const emptyScreen = `var Evb = ft('<div><img class=h-[30px] alt="Cursor logo">'),
+  Ivb = ft(
+    '<div class="text-xs text-text-link-foreground">Sign in',
+  );
+function Landing(e) {
+  const Pe = Me(() => Ae() ? "../../../workbench/browser/parts/editor/media/lockup-horizontal-dark.png"
+    : "../../../workbench/browser/parts/editor/media/lockup-horizontal-light.png");
+  return ue(yt, { get when() { return i(); },
+    get fallback() {
+      return (() => { var je = Ivb(); return (je.addEventListener("click", () => { qGd(e.i, wo, (Xe) => { Xe.login(); }); }), je); })();
+    },
+    get children() { return Evb(); } });
+}`;
+
+test('empty editor window shows the OpenVision mark and no hosted sign-in, idempotently', async () => {
+  const { brandEmptyEditorScreen, emptyScreenLogo } = await import('./source-branding.mjs');
+  const branded = brandEmptyEditorScreen(emptyScreen);
+  assert.doesNotMatch(branded, /lockup-horizontal|alt="Cursor logo"|Ivb\(\)/);
+  assert.match(branded, /alt="OpenVision"/);
+  assert.equal(branded.split(emptyScreenLogo).length - 1, 2);
+  assert.match(branded, /get fallback\(\) \{ \/\* OpenVision: local profiles have no hosted sign-in \*\/ return null; \}/);
+  assert.match(branded, /get children\(\) \{ return Evb\(\); \}/);
+  assert.equal(brandEmptyEditorScreen(branded), branded);
+  assert.throws(() => brandEmptyEditorScreen(emptyScreen.replace('Xe.login()', 'Xe.other()')), /sign-in fallback changed/);
+  assert.throws(() => brandEmptyEditorScreen(emptyScreen + emptyScreen), /dark and light|one empty-screen/);
+});

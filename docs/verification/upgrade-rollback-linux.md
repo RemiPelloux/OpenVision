@@ -48,6 +48,8 @@ step is skipped.
 | `upgrade-linux-NghLQr` | `ed7228ae` | Failed (development) | App exited at start: IPC socket path over 107 bytes. Fixed in `ae7452e5`. |
 | `upgrade-linux-GAdDCW` | `ae7452e5` | Failed (development) | Bundled installer saw `node_modules.asar` as a directory at the SIGKILL-at-backup step. Fixed in `fbc84ea7`. |
 | `upgrade-linux-4XxJrW` | `fbc84ea7` | **Passed** (first run of this code) | 13 launches, all steps below. |
+| `upgrade-linux-0tkebc` | `80cf90ec` (merged `main`, clean rebuild) | **Passed**, first run | Adds the refused-rollback check (below). 32 steps, 13 launches. |
+| `upgrade-linux-wApW6A` | `80cf90ec` (same build) | **Passed**, first run | Second independent run of the same head; same 32 steps. |
 
 Observed in `upgrade-linux-4XxJrW`:
 
@@ -75,6 +77,10 @@ Observed in `upgrade-linux-4XxJrW`:
 - The N+1 launch ran under `strace` plus the loopback proxy. There were 0
   traffic connects, 0 proxy requests, 0 lookups and no update URL in renderer
   requests. The one inet connect seen was loopback.
+- From `80cf90ec`: with N+1's profile marked format 2 / minimum reader 2, the
+  bundled `rollback` exits 1 (`cannot open the current profile (format 2)`).
+  The install root's tree digest is unchanged and `current` stays on N+1, so the
+  older executable never receives that store. The marker is then restored.
 - N+1 wrote a new rule. Rollback (with a pre-rollback backup of both profiles)
   made N current, and N showed both the original data and the N+1 rule.
 - Cross-version: the `v0.2.0-preview.7` tag build opened the format-1 profile
@@ -90,7 +96,9 @@ Observed in `upgrade-linux-4XxJrW`:
   removed the launcher entry and icon. `--purge` removed the root.
 
 Limitations: N+1 differs from N only in version. Format migration `0→1` adds
-only the marker, so no store transformation was exercised. The verifier passed
-once (no second run, because of the stop request). Chats were checked in the
+only the marker, so no store transformation was exercised. The format-2 refusal
+uses an injected marker, not a real newer store. Agent edit/review history is
+not seeded (chats, rules, memories, settings, provider key and an extension
+are). Chats were checked in the
 database, not in the chat history UI. Running without a Secret Service means the
 keyring (`v11`) path was not covered here.

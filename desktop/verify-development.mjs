@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, readFile, writeFile, copyFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { fileHash } from './import-files.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
-const root = resolve(import.meta.dirname, '..'), { layout } = await loadRuntime(root);
+const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/development-verification-'));
 const project = join(directory, 'project'), profile = join(directory, 'profile'), driver = join(directory, 'driver');
 await Promise.all([mkdir(project), mkdir(join(profile, 'User'), { recursive: true }), mkdir(driver)]);
@@ -42,9 +42,9 @@ await writeFile(join(driver, 'package.json'), JSON.stringify({ name: 'openvision
   }], taskDefinitions: [{ type: 'openvision-fixture', required: ['task'], properties: { task: { type: 'string' } } }] } }));
 await copyFile(join(root, 'desktop/verify-development-extension.cjs'), join(driver, 'extension.cjs'));
 const result = { directory, platform: process.platform, launcher: process.version, checks: {}, errors: [],
-  main: await fileHash(join(root, 'source/app/out/main.js')),
-  workbench: await fileHash(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')),
-  debugger: await fileHash(join(root, 'source/app/extensions/ms-vscode.js-debug/src/extension.js')),
+  main: await fileHash(join(appRoot, 'out/main.js')),
+  workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+  debugger: await fileHash(join(appRoot, 'extensions/ms-vscode.js-debug/src/extension.js')),
   scope: `Real ${shells.map(shell => shell.name).join('/')} shells, native tasks/problem matcher and shipped Node debugger; declared synthetic workloads; no AI requests.` };
 let app, page;
 async function phase(expected) {

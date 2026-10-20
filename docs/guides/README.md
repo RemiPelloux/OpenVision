@@ -15,6 +15,7 @@ Install, configure and use OpenVision. Start with [Run OpenVision](native-runtim
 - [Import providers from pi and set model capabilities](provider-import.md)
 - [Approved project memories](project-memories.md)
 - [Recover from profile, keyring, crash and update failures](recovery.md)
+- [Remote SSH (Linux x64 hosts)](remote-ssh.md)
 - [OpenVision user guide](user-guide.md)
 
 [Documentation index](../README.md) · [Progress dashboard](../progress.md)

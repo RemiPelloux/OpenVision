@@ -191,7 +191,47 @@ try {
   await page.keyboard.press('Escape');
   await page.getByRole('textbox', { name: 'Repository URL', exact: true }).waitFor({ state: 'hidden' });
   result.checks.clonePromptAndCancel = true;
-  await close(); assert.deepEqual(result.errors, []); result.success = true;
+  await close();
+  // Issue #8: Enter workspace from the Agent (Glass) window, in a fresh profile so no restored
+  // editor window can stand in. Alone it opens an empty editor with OpenVision branding and no
+  // hosted sign-in; with a project it opens an editor window on that project.
+  for (const [label, args] of [['glassEmpty', ['--glass']], ['glassProject', ['--glass', project]]]) {
+    const glassProfile = join(directory, `${label}-profile`);
+    await mkdir(join(glassProfile, 'User'), { recursive: true });
+    await writeFile(join(glassProfile, 'User/settings.json'), JSON.stringify({ ...verificationSettings, 'window.dialogStyle': 'native' }));
+    const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
+    app = await _electron.launch({ executablePath: layout.executable, env, timeout: 60000,
+      args: ['--user-data-dir', glassProfile, '--extensions-dir', join(directory, `${label}-extensions`), '--new-window',
+        '--disable-updates', '--skip-release-notes', ...args] });
+    page = await app.firstWindow(); page.setDefaultTimeout(20000);
+    page.on('pageerror', error => result.errors.push(error.message));
+    const opened = app.waitForEvent('window', { timeout: 30000 });
+    await screen().getByRole('button', { name: 'Enter workspace', exact: true }).click({ timeout: 60000 });
+    const editor = await opened; editor.setDefaultTimeout(20000);
+    editor.on('pageerror', error => result.errors.push(error.message));
+    await editor.locator('.monaco-workbench').waitFor({ state: 'attached', timeout: 60000 });
+    const check = { windows: app.windows().length };
+    if (label === 'glassEmpty') {
+      const logo = editor.locator('img[alt="OpenVision"]').filter({ visible: true }).first();
+      await logo.waitFor({ timeout: 30000 });
+      check.logoLoaded = await logo.evaluate(image => image.complete && image.naturalWidth > 0);
+      assert.equal(check.logoLoaded, true, 'The empty editor window must show the OpenVision mark');
+      assert.equal(await editor.locator('img[alt="Cursor logo"]').count(), 0);
+      check.workspace = await editor.evaluate(() => vscode.context.configuration().workspace ?? null);
+      assert.equal(check.workspace, null, 'Without a project the editor window stays empty');
+    } else {
+      check.workspace = await editor.evaluate(() => JSON.stringify(vscode.context.configuration().workspace ?? null));
+      assert.match(check.workspace, /Aurora Studio/, 'Enter workspace must open the Agent window project');
+      await editor.locator('.openvision-project-home-button').waitFor({ timeout: 60000 });
+    }
+    await editor.waitForTimeout(1500);
+    check.text = (await editor.locator('body').innerText()).slice(0, 2000);
+    assert.doesNotMatch(check.text, /\bSign in\b|\bCursor\b/, 'The editor window must not show hosted sign-in or Cursor branding');
+    await editor.screenshot({ path: join(directory, `${label}-editor.png`) });
+    result.checks[label] = check;
+    await close();
+  }
+  assert.deepEqual(result.errors, []); result.success = true;
 } catch (error) {
   result.error = error.stack;
   if (page) {

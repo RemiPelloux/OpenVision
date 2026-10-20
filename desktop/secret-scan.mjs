@@ -19,11 +19,14 @@ export const canaryKey = (bytes = randomBytes(16)) => `${canaryPrefix}${Buffer.f
 // Ordered: the first rule that matches a span names it.
 export const secretRules = [
   { id: 'canary', pattern: /sk-ovcanary-[0-9a-f]{32}/g },
-  { id: 'private-key', pattern: /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----/g },
+  // A header alone is a constant in TLS/PGP code; a key has a base64 body.
+  { id: 'private-key', pattern: /-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY(?: BLOCK)?-----(?:\r?\n[\w-]+: [^\r\n]*)*\s*[A-Za-z0-9+/]{40,}/g },
   { id: 'authorization-header', pattern: /\bauthorization\b["']?\s*[:=]\s*["']?(?:bearer|basic|token|bot)\s+([A-Za-z0-9._~+/=-]{16,})/gi, value: 1 },
   { id: 'api-key-header', pattern: /\b(?:x-api-key|api-key|x-goog-api-key)\b["']?\s*[:=]\s*["']?([A-Za-z0-9._~+/=-]{20,})/gi, value: 1 },
-  { id: 'anthropic-key', pattern: /sk-ant-[A-Za-z0-9_-]{20,}/g },
-  { id: 'openai-key', pattern: /sk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{32,}/g },
+  // Provider keys start at a token boundary, have a bounded length and a random
+  // (mixed upper/lower/digit) body; identifiers such as "…-ask-question-…" do not.
+  { id: 'anthropic-key', pattern: /(?<![A-Za-z0-9_-])sk-ant-[A-Za-z0-9_-]{20,200}(?![A-Za-z0-9_-])/g, random: true },
+  { id: 'openai-key', pattern: /(?<![A-Za-z0-9_-])sk-(?:proj-|svcacct-|admin-)?[A-Za-z0-9_-]{32,200}(?![A-Za-z0-9_-])/g, random: true },
   { id: 'github-token', pattern: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,})/g },
   { id: 'gitlab-token', pattern: /\bglpat-[A-Za-z0-9_-]{20,}/g },
   { id: 'slack-token', pattern: /\bxox[abposr]-[A-Za-z0-9-]{10,}/g },
@@ -36,6 +39,7 @@ export const secretRules = [
 // these placeholders; they are not credentials.
 const placeholder = /^(?:\[?redacted\]?|x{6,}|\*{3,}|<[^>]*>|\$\{?[A-Z_]+\}?|your[-_]?(?:api[-_]?)?key|fixture[-_a-z]*|example[-_a-z]*|placeholder|dummy|test[-_]?key)$/i;
 const lowEntropy = value => new Set(value).size < 6;
+const randomBody = value => /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value);
 
 export const digest = value => createHash('sha256').update(value, 'utf8').digest('hex');
 export const mask = value => `${value.slice(0, Math.min(6, Math.floor(value.length / 4)))}…(${value.length} chars)`;
@@ -48,6 +52,7 @@ export function matchText(text, encoding, toOffset = index => index) {
     for (const match of text.matchAll(rule.pattern)) {
       const value = rule.value ? match[rule.value] : match[0];
       if (rule.value && (placeholder.test(value) || lowEntropy(value))) continue;
+      if (rule.random && !randomBody(value)) continue;
       const start = match.index, end = start + match[0].length;
       if (covered.some(([a, b]) => start < b && end > a)) continue;
       covered.push([start, end]);
@@ -57,14 +62,19 @@ export function matchText(text, encoding, toOffset = index => index) {
   return findings;
 }
 
+// UTF-16LE text of whole code units from `offset`. Decoding an odd-length
+// subarray aborts Node 24.18.0 ("double free or corruption"), observed on a
+// 5866-byte file in the Linux package, so only an even length is decoded.
+const utf16le = (buffer, offset) => buffer.subarray(offset, offset + ((buffer.length - offset) & ~1)).toString('utf16le');
+
 // Every decoding of one byte window. UTF-16LE is decoded at offsets 0 and 1 so a
 // string starting at an odd byte is still found.
 export function matchBytes(buffer, base = 0) {
   const text = buffer.toString('utf8');
   return [
     ...matchText(text, 'utf8', index => base + Buffer.byteLength(text.slice(0, index))),
-    ...matchText(buffer.toString('utf16le'), 'utf16le', index => base + index * 2),
-    ...matchText(buffer.subarray(1).toString('utf16le'), 'utf16le', index => base + 1 + index * 2),
+    ...matchText(utf16le(buffer, 0), 'utf16le', index => base + index * 2),
+    ...matchText(utf16le(buffer, 1), 'utf16le', index => base + 1 + index * 2),
   ];
 }
 

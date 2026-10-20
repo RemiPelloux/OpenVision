@@ -50,7 +50,7 @@ deduplication change.
 
 | Scanner | Count | Started by | Owner (code) | Why it repeats |
 | --- | ---: | --- | --- | --- |
-| `cursorsandbox --preflight-only` | 5 | Default host ×2; agent-exec, always-local and retrieval hosts ×1 each | `isSandboxHelperSupported` / `primeSandboxHelperSupport` in the shared extension-host runtime (`out/vs/workbench/api/node/extensionHostProcess.js`), which also exists in the agent-exec, agent-host, MCP and local-agent-runtime bundles | The verdict is cached in module state, one per process. It is re-probed when the working directory differs ("cached verdict … measured from a different directory"). Each preflight's sandboxed child (`exe`) walked the workspace: 390 listings in all, about 6 full walks |
+| `cursorsandbox --preflight-only` | 5 | Default host ×2; agent-exec, always-local and retrieval hosts ×1 each | `isSandboxHelperSupported` / `primeSandboxHelperSupport` in the shared extension-host runtime (`out/vs/workbench/api/node/extensionHostProcess.js`), which also exists in the agent-exec, agent-host, MCP and local-agent-runtime bundles | The verdict is cached in module state, one per process. It is re-probed when the working directory differs ("cached verdict … measured from a different directory"). The preflight itself made no fixture directory listings in these traces (correction of 19 October below) |
 | `rg --files -g **/.cursorignore … --no-ignore-parent` | 2 | Default host | Workbench file-search provider (ignore-file discovery), one per root | Once per root. It is a different process from the next row |
 | `rg --files --iglob **/.gitignore --iglob **/.cursorignore` | 2 | Agent-exec host | Agent ignore mapping (`findFilesWithRipgrep`, source `ignore_scan`), one per root | Once per root |
 | `rg --files … --follow` (no include glob) | 2 | Default host | Workbench file index (quick-open cache), one per root | Once per root |
@@ -116,9 +116,8 @@ relaxed.
   in each extension-host process separately. Sharing it needs a cross-process
   cache, for example a verdict file in the profile keyed by helper hash,
   kernel release and directory, with invalidation. That was not done: a wrong
-  shared verdict would disable or wrongly enable command sandboxing. Each
-  preflight's sandboxed child also lists the workspace (about 382–395
-  listings in all). Owner: the shared extension-host runtime.
+  shared verdict would disable or wrongly enable command sandboxing. Owner: the shared
+  extension-host runtime.
 - **`.cursorignore`: 4, target 2.** Two owners in two processes, the workbench
   file-search provider and the agent ignore mapping, each walk once per root.
   Merging them needs a shared ignore-file index across processes. Not
@@ -132,3 +131,63 @@ relaxed.
 Run directories under `logs/` are private (`result.json`, `strace.log`).
 
 [Performance index](README.md) · [Idle memory](idle-memory-linux.md) · [Explorer](../recovery/rea-explorer-linux.md)
+
+## Merged code (19 October 2026, round 2)
+
+**Correction.** The `exec:exe` listings in the first tables are not sandbox
+preflight children. Electron starts its Node utility processes through
+`/proc/self/exe`, and a per-process split by Electron name puts those listings
+in the file watcher's recursive crawl (about 380–400 per run). The sandbox
+preflights made no fixture listings in these traces.
+
+**Regression on main (observed).** On the merged main
+(`3b97df1e`), `verify:startup-traversal` measured 1,394 and 1,398 listings
+(`OLDKis`, `DkWJ9H`), over the 1,300 budget. The split by process showed the
+agent-exec extension host at 396 listings instead of 264: two more full walks,
+one per root. They were in-process `readdir` calls on libuv pool threads, not
+ripgrep.
+
+The owner was the OV-103 startup sweep
+(`desktop/agent-write-durability-customization.mjs`). On every activation it
+walked every open root to find interrupted-write temporaries.
+
+**Fix.** The sweep now runs from session records in the extension's profile
+storage (`globalStorageUri/openvision-agent-write-sessions/`):
+
+- Each Agent execution session writes a record at activation: its pid, plus
+  its process start time on Linux.
+- The agent-exec writer registers its temporary in a process set while the
+  write is in flight.
+- On a clean process exit, the record is removed. If writes are still in
+  flight, the record lists their temporaries instead.
+- A record whose process is gone and that lists no temporaries means the
+  session ended without its exit handler (SIGKILL, crash, power loss). Only
+  that case triggers the existing bounded walk.
+- Listed temporaries are removed by path, with the same 60 s age rule.
+- Records of live windows (same pid and start time) are left alone.
+- A profile with no ended session does no work, so a fresh profile does no
+  walk.
+- An earlier build's v1 schedule is upgraded in place.
+
+| Run (`logs/startup-traversal-*`) | Build | Listings | Result |
+| --- | --- | ---: | --- |
+| `DkWJ9H` | main `3b97df1e` | 1,398 | Fail (budget 1,300) |
+| `jSDLXN` | session records | 1,260 | Pass |
+| `UMdGBr`, `ca7P1K`, `1L0S88` | session records, clean rebuild | 1,242 / 1,256 / 1,254 | **Pass ×3, first attempts** |
+
+The budget is unchanged. `verify:agent-interruption` passed on the same build
+(`agent-interruption-H5f6EY`, all eight cases). That includes SIGKILL and
+graceful-close interruptions, each followed by a restart that must remove the
+aged temporary and keep a recent one. Unit tests in
+`desktop/agent-write-durability.test.mjs` run real child processes covering:
+
+- a fresh profile (no walk);
+- a clean exit with nothing in flight (no record);
+- a clean exit with a temporary in flight (targeted removal, no walk);
+- a SIGKILL (walk on the next start);
+- a live other window (left alone).
+
+**Residual (documented).** Temporaries left by the agent-host or agent-host
+daemon writers are not covered by session records when the agent-exec host
+itself exits cleanly. The same-file sweep on the next write still removes them,
+as before the startup sweep existed.

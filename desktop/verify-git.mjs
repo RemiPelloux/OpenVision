@@ -4,12 +4,12 @@ import { join, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { once } from 'node:events';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { fileHash } from './import-files.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
-const root = resolve(import.meta.dirname, '..'), { layout } = await loadRuntime(root);
+const root = resolve(import.meta.dirname, '..'), { layout, appRoot } = await verificationRuntime(root);
 const directory = await mkdtemp(join(root, 'logs/git-verification-'));
 const abrupt = process.argv.includes('--abrupt');
 const project = join(directory, 'project'), profile = join(directory, 'profile'), driver = join(directory, 'driver');
@@ -36,8 +36,8 @@ await writeFile(join(driver, 'package.json'), JSON.stringify({ name: 'openvision
   version: '0.0.0', engines: { vscode: '^1.90.0' }, main: './extension.cjs', activationEvents: ['onStartupFinished'] }));
 await copyFile(join(root, 'desktop/verify-git-extension.cjs'), join(driver, 'extension.cjs'));
 const result = { directory, abrupt, platform: process.platform, git: git('--version').trim(), checks: {}, hostExits: [], errors: [],
-  workbench: await fileHash(join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')),
-  gitExtension: await fileHash(join(root, 'source/app/extensions/git/dist/main.js')),
+  workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')),
+  gitExtension: await fileHash(join(appRoot, 'extensions/git/dist/main.js')),
   scope: 'Native Git extension API plus real worktree/diff/conflict UI in disposable local repositories; no remote or AI calls.' };
 let app, page;
 async function launch() {

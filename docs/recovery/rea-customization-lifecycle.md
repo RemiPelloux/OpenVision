@@ -167,10 +167,13 @@ fixed skill), which is why the check uses a new chat.
 
 ## Limitations
 
-- The child request of a custom subagent did not contain the subagent's body in
-  any run (`subagentBodyInChild` is empty). Task selects the project definition,
-  but whether its instructions reach the child with a local provider is a
-  separate subagent question, recorded as an open risk.
+- In these runs the child request of a custom subagent did not contain the
+  subagent's body. That was a defect in the renderer's client-side Task path,
+  fixed in the issue #10 follow-up
+  ([subagent-reminder-customization.mjs](../../desktop/subagent-reminder-customization.mjs)).
+  `verify:subagent-reasoning` now requires the body in the custom child request
+  (runs `WKsTUY`, `NxAo8O`); see the
+  [worker report](../verification/worker-reports/mcp-auth.md#follow-up-issues-9-and-10).
 - The shadowed profile subagent and command are not listed, because those
   services keep one item per name.
 - Extension warnings (subagents, plugin manifests) cannot be closed

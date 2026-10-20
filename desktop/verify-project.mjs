@@ -3,13 +3,13 @@ import { mkdir, mkdtemp, writeFile, readFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
 import { enterWorkspace } from './verification-workspace.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { layout } = await loadRuntime(root);
+const { layout } = await verificationRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/project-verification-'));
 const profile = join(directory, 'profile');

@@ -148,7 +148,13 @@ export async function survivors(runId, groups, timeout = 10000) {
 export async function addProvider(page, { name, url, key, model }) {
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   await page.locator('.cursor-settings-sidebar-cell-label').filter({ hasText: /^Models$/ }).locator('..').click();
-  await page.locator('.openvision-model-settings').getByRole('button', { name: 'Add Provider', exact: true }).click();
+  // Let the Models page finish mounting (account rows, model list) before opening
+  // its dialog; a dialog opened during the first render can be replaced by it.
+  const settings = page.locator('.openvision-model-settings');
+  await settings.getByRole('searchbox', { name: 'Search models' }).waitFor({ timeout: 30000 });
+  await page.waitForTimeout(1000);
+  await settings.getByRole('button', { name: 'Add Provider', exact: true }).click();
+  await page.locator('dialog').getByLabel('Provider Name', { exact: true }).waitFor({ timeout: 15000 });
   await page.getByLabel('Provider Name', { exact: true }).fill(name);
   await page.getByLabel('API Base URL', { exact: true }).fill(url);
   await page.getByLabel('API Key', { exact: true }).fill(key);
