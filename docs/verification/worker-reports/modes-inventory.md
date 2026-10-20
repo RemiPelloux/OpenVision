@@ -6,6 +6,12 @@ Branch `ov/modes-inventory`, rebased onto `origin/main` at `eed4f19a` on
 built from source with `npm run prepare:desktop && npm run build:desktop`.
 No live provider, account, Windows or macOS was used.
 
+> **Current status, 20 October 2026.** See the
+> [second follow-up](#follow-up-20-october-2026-image-input-matrix-and-browser-reachability)
+> at the end. All OV-704 Linux checks now pass natively, first time and
+> twice each, on a clean rebuild. Two scope facts changed and go back to the
+> owner. The sections below are kept as the 19 October record.
+
 ## Summary
 
 Done:
@@ -179,3 +185,112 @@ console-only message is also no real explanation for a user.
 **Native rerun still owed.** Run `npm run verify:modes-probe` twice as
 non-root. If it fails again, the printed `computer_use.activation` shows
 whether the extension activated.
+
+## Follow-up (20 October 2026): image-input matrix and browser reachability
+
+The branch was reset to `origin/main` at `c2c28218`, which records the owner
+decisions. It used Node 24.18.0 and `npm ci` in `tooling/`.
+
+**Native runs became possible.**
+- Native runs used the existing unprivileged `ubuntu` user, in a separate,
+  ubuntu-owned copy of the tree. This repo's ownership and permissions were
+  not changed.
+- I installed `gnome-keyring` 46.1-2ubuntu0.2 with apt, to give each run an
+  unlocked throwaway keyring.
+- Each run had its own disposable `HOME` and `XDG_RUNTIME_DIR`, plus
+  `xvfb-run` and `dbus-run-session`.
+- For verifiers that record `git rev-parse HEAD`, the session points `GIT_DIR`
+  read-only at this repo, with an env-scoped `safe.directory`. It resolves the
+  same HEAD as the tree under test.
+- Every check ran on a **clean rebuild**: everything was removed except the
+  pinned AppImage, then re-extracted and rebuilt. Runs went one at a time.
+
+### Results (each new check passed first time, twice)
+
+| Verifier | Runs | Result |
+| --- | --- | --- |
+| `verify:image-input` (new) | `qj32Kz`, `qtQQC9` | pass |
+| `verify:browser-automation` (new) | `PnBN8U`, `LKqHMF` | pass. Earlier passes `jeTh0Z` and `OAIa7U` came before the offered-tool assertion was added. |
+| `verify:modes-probe` | `9MoX5V`, `990bje` | pass. The v2 computer-use explanation was found in `Computer Use.log`, with zero sidecar requests. This closes the `MtcfsB`/`cxZuad` failure. |
+| `verify:provider-import` (regression) | `Ysef0m` | pass |
+| `verify:agent -- --mcp` (regression; the MCP reconnect check changed) | `exWhfY` | pass |
+| `verify:completion -- --next-edit-absent` (regression) | `js4dSq` | pass |
+
+Runs that failed while the verifiers were being developed are listed in
+[rea-specialized-modes](../../recovery/rea-specialized-modes.md#native-verification-20-october-2026).
+None was counted as a pass.
+
+### Defects found and fixed
+
+1. **Browser automation: false reason.**
+   - Symptom: `cursor-ide-browser` was refused with "Server is blocked by team
+     admin" for every local profile.
+   - Root cause: `MCPService.getMcpAdminBlockMessage` requires
+     `isEnterprise === false`, and only a Cursor account's membership refresh
+     sets it.
+   - Owner: `desktop/browser-automation-customization.mjs`. It keeps the block
+     and states the real reason. The reconnect path accepts the new reason.
+   - Commit `5e87e284`.
+2. **Image picker: silent failure.**
+   - Symptom: an unreadable image chosen in the file picker was dropped with
+     no message.
+   - Fix: it now shows the paste/drop message.
+   - Owner: `desktop/image-input-customization.mjs`. Commit `5e87e284`.
+3. **Paste and drop: orphaned files.**
+   - Symptom: a rejected image file stayed in workspace storage.
+   - Fix: it is now deleted on failure.
+   - Owner: `desktop/image-input-customization.mjs`. Commit `5e87e284`.
+
+**Unit tests.** `npm run test:modes` passes 23/23. The new tests cover:
+- the browser block decision, unchanged for every state;
+- reconnect;
+- the picker message;
+- deleting rejected files;
+- the fixture encoders.
+
+### Scope facts that changed; owner decision needed
+
+- **Browser automation.** It is *offered* to the local Agent but *refused*
+  locally. The owner's "only if locally reachable" rule therefore resolves to
+  **explain unavailable**, and that is what is implemented and verified.
+  - Making it usable means relaxing Cursor's team-policy check for local
+    profiles. This session's permission policy refused that change as
+    security-weakening, so it needs the owner's explicit approval.
+  - The reachable verifier branch (navigate, snapshot, type, click,
+    screenshot, with approval) is written but has never run.
+- **Image generation.** It is **not** "no local producer". The local Agent is
+  offered `GenerateImage`, which calls `POST /v1/images/generations` on the
+  configured provider. A provider without that endpoint fails visibly.
+  - The accepted "excluded" decision rested on my wrong 19 October inventory.
+    The owner should choose between two options:
+    1. include it as provider-backed, with live quality moved to a live
+       story;
+    2. hide the tool from the local Agent.
+  - Nothing was changed while that is open.
+
+### Other findings (not fixed)
+
+- **Tool-row labels.** Chat tool rows show fixed past-tense labels built from
+  the arguments, whatever the outcome. A refused navigate reads "Navigated to
+  <url>", and a failed generation reads "Generated image". Fixing this means
+  changing the shared tool-call view model, which is outside OV-704.
+- **Image storage.** Images removed before sending, and sent images, stay in
+  workspace storage. Sent images are re-sent with later turns, which is
+  expected. Bounding this needs a decision about chat deletion.
+- **Unrelated: stale editable build.** An editable build first made from an
+  older `main` (this repo's root tree) cannot be upgraded. It fails in
+  `agent-write-durability-customization.mjs` with "Agent temporary sweep v1
+  contract changed". A clean build succeeds. That file belongs to OV-103 work;
+  it is recorded only.
+
+### Recommendation
+
+**OV-704: promote to Verified on Linux x64.** This assumes the owner accepts
+both changed facts:
+- browser automation stays *explain unavailable* as implemented;
+- image generation gets a decision.
+
+If the owner wants browser automation usable, or image generation hidden,
+hold OV-704 for that change and the reachable-branch native runs.
+
+**OV-604:** unchanged. The owner decision is recorded on `main`.

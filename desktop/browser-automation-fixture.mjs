@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 // Fixture model for verify:browser-automation. Replies are chosen from the
 // request alone (tool schemas, tool results); nothing is inferred.
 export const browserServerName = 'cursor-ide-browser';
@@ -29,7 +31,11 @@ export function fixtureBrowserReply(payload, event, phase, state) {
   if (phase === 'discover') {
     const output = toolResult(payload, 'discover');
     if (output) {
-      state.results.discover = { tools: browserToolNames(output.content), result: text(output.content).slice(0, 6000),
+      // Large results are written to a file and replaced by {note, filePath}.
+      let content = text(output.content);
+      try { const spilled = JSON.parse(content).filePath; if (spilled) content = readFileSync(spilled, 'utf8'); } catch {}
+      const status = /"serverStatus":\s*"([^"]+)"/.exec(content)?.[1];
+      state.results.discover = { tools: browserToolNames(content), serverStatus: status, result: content.slice(0, 6000),
         mentionedInRequest: text(payload.messages).includes(browserServerName), schema: state.discoverSchema };
       return finish(event, 'discover');
     }

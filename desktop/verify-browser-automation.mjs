@@ -144,7 +144,9 @@ try {
   result.reachability = state.results.discover;
   await page.screenshot({ path: join(directory, 'discover.png') });
   assert.ok(result.reachability, 'Discovery produced no result');
-  result.reachable = result.reachability.tools.includes('browser_navigate');
+  // Offered (tools listed) is not the same as usable (server status connected).
+  result.offered = result.reachability.tools.includes('browser_navigate');
+  result.reachable = result.offered && result.reachability.serverStatus !== 'error';
   // What Settings shows for the browser server (status and any error text).
   await page.locator('.part.titlebar a[aria-label$=" Settings"]').click();
   const cells = await page.locator('.cursor-settings-sidebar-cell-label').allInnerTexts();
@@ -157,6 +159,7 @@ try {
     result.settingsPages[name] = await page.locator('body').innerText();
     await page.screenshot({ path: join(directory, `settings-${name.replace(/\W+/g, '-')}.png`) });
   }
+  assert.ok(result.offered, `The local Agent is offered the browser tools: ${JSON.stringify(result.reachability).slice(0, 500)}`);
   if (!result.reachable) {
     // 2a. Not reachable: the Agent's call is refused with the reason, before any page load.
     const refused = await callStep('navigate', 'browser_navigate', { url: siteUrl });
@@ -201,5 +204,5 @@ try {
   await proxy.close();
   result.state = state;
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
-  console.log(JSON.stringify({ success: result.success, directory, reachable: result.reachable, failure: result.failure?.split('\n')[0] }, null, 2));
+  console.log(JSON.stringify({ success: result.success, directory, offered: result.offered, reachable: result.reachable, failure: result.failure?.split('\n')[0] }, null, 2));
 }
