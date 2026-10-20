@@ -103,6 +103,14 @@ const checks = {
     try { createWatcher('OpenVision', { UpdateMode: { type: 'string' } }, () => {}).dispose(); return { watcher: 'created' }; }
     catch (error) { if (!/Unsupported platform/.test(error.message)) throw error; return { watcher: 'Unsupported platform' }; }
   },
+  // `directory` is the .node file itself; the recovered loader package only picks the platform binary.
+  'whichlang-node': async file => {
+    const module = { exports: {} };
+    process.dlopen(module, file);
+    const samples = ['The quick brown fox jumps over the lazy dog.', 'Le renard brun rapide saute par-dessus le chien paresseux.',
+      'Der schnelle braune Fuchs springt über den faulen Hund.', '敏捷的棕色狐狸跳过了懒狗。', 'Быстрая коричневая лиса прыгает через ленивую собаку.'];
+    return { detected: samples.map(text => module.exports.detectLanguage(text)), iso: samples.map(text => module.exports.detectLangISO6391(text)) };
+  },
   'tree-sitter': async () => ({ checked: 'with tree-sitter-bash' }),
   'tree-sitter-bash': async directory => {
     const Parser = require(packages['tree-sitter']);

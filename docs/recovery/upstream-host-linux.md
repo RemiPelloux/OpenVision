@@ -1,6 +1,6 @@
 # Upstream Electron/Node host on Linux x64
 
-19 October 2026 · OV-802 · Linux x64 (Ubuntu 24.04.5, 4 CPUs, 15 GB) · controlled
+19–20 October 2026 · OV-802 · Linux x64 (Ubuntu 24.04.5, 4 CPUs, 15 GB) · controlled
 fixtures only; no live provider, account or paid inference.
 
 ## What was built
@@ -8,8 +8,8 @@ fixtures only; no live provider, account or paid inference.
 `npm run build:desktop -- --upstream-host` runs the normal build, then writes
 `build/upstream-host/OpenVision-linux-x64`: the portable package layout with every
 host binary taken from the official Electron 42.10.0 release and the helper Node from
-the official Node.js 24.18.1 release. `-- --upstream-addons` additionally replaces 13
-addon targets (11 packages) with binaries rebuilt from pinned upstream sources by
+the official Node.js 24.18.1 release. `-- --upstream-addons` additionally replaces 14
+addon targets (12 packages) with binaries rebuilt from pinned upstream sources by
 `npm run build:native:linux`. The default build and `electron-host/` are not modified.
 Each package carries `openvision-upstream-host.json` with the input digests, fuse wire,
 host file comparison and every substitution (path, origin, SHA-256, recovered SHA-256).
@@ -54,18 +54,59 @@ base of 2.5.1-cursor), @vscode/spdlog 0.15.8, native-keymap 3.3.5, native-watchd
 1.4.2, kerberos 2.1.1, @vscode/policy-watcher 1.3.2 (base of 1.3.2-cursor.2),
 tree-sitter 0.21.1, tree-sitter-bash 0.21.0 and node-gyp 12.3.0. Install with
 `npm ci --prefix native/linux-x64 --ignore-scripts --omit=optional`: no install
-script or prebuilt binary is fetched or run. The rebuild refuses a host whose gcc, g++,
-make, Python or Node version differs from `native/linux-x64/toolchain.json`, verifies
-the Electron headers archive and `NODE_MODULE_VERSION 146`, and writes
-`build/native/linux-x64/manifest.json` (sources, command, output digest, ELF ABI facts,
-license, wrapper token diff against the recovered package).
+script or prebuilt binary is fetched or run. whichlang-node 0.2.1 (Rust/napi-rs) is
+built from its pinned git commit with the committed
+`native/linux-x64/whichlang-node/Cargo.lock` (upstream ships none; napi 2.13.2,
+napi-derive 2.13.0, napi-derive-backend 1.0.52, once_cell 1.18.0 and whichlang 0.1.0
+match the recovered binary's strings or declared ranges).
 
-Build deltas, all recorded in the manifest command: `-ffile-prefix-map` for the package
-and header paths, `-static-libstdc++`, `--build-id=sha1`, and `-std=gnu++20` for
-tree-sitter only (its `binding.gyp` pins C++17; Electron 42's V8 headers require C++20).
-Two consecutive builds produced byte-identical output for all eleven packages.
+**Toolchain (20 October, owner decision: glibc 2.28 floor).** The rebuild follows VS
+Code's Linux x64 client recipe: Chromium clang `llvmorg-23-init-5669-g8a0be0bc-4`
+(the revision of Electron 42.10.0's Chromium 148.0.7778.280), Electron 42.10.0's libc++
+headers and objects (`Cr` namespace, ThinLTO, lld) and VS Code's
+`x86_64-linux-gnu-glibc-2.28-gcc-10.5.0` sysroot, plus Rust 1.97.0 for whichlang-node.
+All are downloaded at pinned sizes and digests ([inputs](native-provenance-linux.md#inputs)).
+pkg-config resolves only sysroot packages; the host `libxkbfile-dev` and `libkrb5-dev`
+packages were removed before the clean build to show nothing comes from the host. The
+rebuild refuses a different clang, make, Python, Node or Rust, verifies the Electron
+headers (`NODE_MODULE_VERSION 146`), fails any addon that needs a GLIBC symbol above
+2.28, GLIBCXX symbols or a shared C++ runtime, and writes
+`build/native/linux-x64/manifest.json` (sources, command, output digest, ELF facts,
+license, wrapper token diff).
 
-ABI: ten packages register `napi_register_module_v1` and better-sqlite3 registers
+Build deltas, all recorded in the manifest: prefix maps for package, header and toolchain
+paths; `--build-id=sha1`; `-std=gnu++20` for tree-sitter (its `binding.gyp` pins C++17,
+Electron 42's V8 headers require C++20); and
+`native/linux-x64/patches/tree-sitter-0.21.1-symbol-set.patch`, because Electron's
+libc++ no longer provides `std::char_traits<unsigned short>` for tree-sitter's
+`basic_string<TSSymbol>` symbol set (replaced by a `std::vector` with `std::find`, same
+behaviour). Two consecutive clean builds produced byte-identical output for all twelve
+packages (the Rust target directory is emptied first; the repeat recompiled 30 crates).
+
+Highest required symbol versions (`objdump -T` and `readelf --dyn-syms`, both agree; no
+addon references GLIBCXX or needs libstdc++/libc++):
+
+| Package | Rebuilt SHA-256 (prefix) | Max GLIBC rebuilt | Max GLIBC recovered |
+| --- | --- | --- | --- |
+| node-pty 1.1.0-beta42 | `eda07a377fca7a64` | 2.28 | 2.28 |
+| @vscode/sqlite3 5.1.12-vscode | `517b0fd7f4c071c6` | 2.28 | 2.28 |
+| better-sqlite3 12.11.1 | `ec25084753e0676a` | 2.28 | 2.28 |
+| @parcel/watcher 2.5.1 | `d5562368aef4e06d` | 2.17 | 2.17 |
+| @vscode/spdlog 0.15.8 | `7793c459cf01e765` | 2.17 | 2.17 |
+| native-keymap 3.3.5 | `55f71ddd47a09c79` | 2.16 | 2.16 |
+| native-watchdog 1.4.2 | `d22f41e28ffc677f` | 2.2.5 | 2.2.5 |
+| kerberos 2.1.1 | `8b462a720df4ac74` | 2.16 | 2.16 |
+| @vscode/policy-watcher 1.3.2 | `a4c3c8759f001fba` | 2.16 | 2.16 |
+| tree-sitter 0.21.1 | `aba1c9a9b2095a56` | 2.17 | 2.17 |
+| tree-sitter-bash 0.21.0 | `05d353f003e0ad96` | 2.16 | 2.16 |
+| whichlang-node 0.2.1 | `a3801799e514455a` | 2.28 | 2.14 |
+
+Every node-gyp addon matches its recovered binary's floor exactly, which indicates the
+recovered addons were built with this same recipe. Runtime libraries are the same set as
+the recovered ones (libc, libm, libpthread, libgcc_s, ld-linux; native-keymap also
+libX11 and libxkbfile; node-pty libutil; kerberos resolves GSS-API with `dlopen`).
+
+ABI: eleven packages register `napi_register_module_v1` and better-sqlite3 registers
 `node_register_module_v146`, the same entry point as each recovered binary.
 
 Wrapper delta (JavaScript compared as acorn token streams, so the recovered
@@ -103,18 +144,27 @@ added `profileFormat` and `updates` to `openvision-package.json`, while the veri
 still expects the old object (`desktop/verify-package-linux.mjs`, manifest assertion).
 It is recorded for its owner, not fixed here.
 
+### Round 2 (20 October, glibc 2.28 toolchain)
+
+Clean tree, user `ov`, linux-cell x11 with keyring, host `libxkbfile-dev`/`libkrb5-dev`
+removed. No retries.
+
+| Run | Command | Result |
+| --- | --- | --- |
+| `clean-5`/`clean-6` | `npm run build:native:linux` ×2 | 12/12 byte-identical (after the pkg-config and tree-sitter fixes; the two failed first attempts are not counted) |
+| `native-abi-IZhksV`, `native-abi-v09AQX` | `verify:native-abi` ×2 | Pass, rebuilt = recovered for all 12 |
+| console ×2 | `verify:native-provenance` | Pass: 87 substitutions, 18 records |
+| `upstream-host-zqbgbJ`, `upstream-host-HfohAF` | `verify:upstream-host -- --addons --critical` ×2 | 11/11 first-time pass each (package-linux, welcome, project-home, project, explorer, development, git, agent, completion, extensions, linux-secrets) |
+
 ## Limitations
 
-- **glibc floor.** Rebuilt addons require glibc 2.38 (the build host's libc), against
-  2.16–2.28 for the recovered addons, 2.25 for Electron and 2.28 for the helper Node.
-  A package with them runs on Ubuntu 24.04/Debian 13-class systems, not older ones.
-  VS Code's pinned glibc-2.28 sysroot (`x86_64-linux-gnu-glibc-2.28-gcc-10.5.0`,
-  checksum matched) was tried: its gcc 10.5 lacks `<source_location>` for Electron 42's
-  V8 headers, and host gcc 13 with that sysroot fails on libstdc++/glibc 2.28
-  mismatches. Matching the recovered floor needs VS Code's Chromium clang + Electron
-  libc++ recipe; not done.
-- whichlang-node (Rust), Cursor's ripgrep fork and Cursor-only addons keep recovered
-  binaries ([not substituted](native-provenance-linux.md#not-substituted)).
+- **glibc floor (closed 20 October).** The 19 October rebuild with host gcc 13 needed
+  glibc 2.38; the owner rejected that floor and the clang/libc++/sysroot recipe above
+  replaced it. The highest requirement is now 2.28.
+- The Chromium clang archive has no published SHA-256; its digest is pinned from the
+  first download after the MD5 matched Google Cloud Storage's stored hash.
+- Cursor's ripgrep fork and Cursor-only addons keep recovered binaries
+  ([not substituted](native-provenance-linux.md#not-substituted)).
 - Node's `SHASUMS256.txt.asc` signature was not checked against release keys.
 - Fixtures are local and controlled; no distribution or display cell beyond Ubuntu
   24.04 X11/Xvfb was tested here.

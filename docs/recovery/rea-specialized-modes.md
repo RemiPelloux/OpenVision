@@ -1,23 +1,34 @@
 # Specialized modes: image, browser and computer use (OV-704)
 
-Date: **19 October 2026**. Input: the Cursor **3.21.13** Linux x64 runtime
-input, built from source on this branch (`ov/modes-inventory`). Linux x64 only.
-This is a scope inventory for the owner's sign-off. It does not promote OV-704.
+Dates: inventory **19 October 2026**, native verification **20 October 2026**.
+Input: the Cursor **3.21.13** Linux x64 runtime input, built from source on
+this branch (`ov/modes-inventory`). Linux x64 only.
 
-Everything below comes from static reading of the built `source/app` tree and
-of the original extension `package.json` files. The deterministic inventory
-(`npm run inventory:modes`) reproduces the decision-critical facts and fails if
-any of them changes. The native probe (`npm run verify:modes-probe`) is written
-but was **not executed** in this session: see [Not proved](#not-proved).
+The owner accepted the scope on 20 October 2026; see
+[owner decisions](../planning/owner-decisions.md). The native runs then
+changed two facts, and the owner decided both the same day:
+- **Browser automation** stays *explain unavailable*. The team-policy check
+  is not relaxed.
+- **Image generation** is **hidden** for this release. It will be revisited
+  with live providers in OV-205.
 
-## Proposed scope
+The owner also asked that refused or failed browser tools never show a
+past-tense success in the chat.
+
+The inventory comes from static reading of the built `source/app` tree and the
+original extension `package.json` files. `npm run inventory:modes` reproduces
+the decision-critical facts and fails if any of them changes. The native
+verifiers and their run IDs are listed in
+[Native verification](#native-verification-20-october-2026).
+
+## Scope (owner-decided)
 
 | Mode | Proposal | Why |
 | --- | --- | --- |
 | Image input in Agent chat | **Include** | It runs locally through the configured provider, and the existing image-capability gate already stops images going to text-only models. |
-| Image generation | **Exclude** | The only trace is a server-side Agent tool result type, `generateImageToolCall`. There is no local producer and no provider adapter. |
+| Image generation | **Hidden** (owner decision, 20 October 2026) | The local Agent runtimes offered a `GenerateImage` tool that called the configured provider's `POST /v1/images/generations`. All three bundled runtimes now register it nowhere. A model that calls it anyway gets a tool result saying image generation is not available in this release, and nothing reaches the provider. |
 | In-app browser editor | **Include** | It is an Electron `WebContentsView` with a sandboxed, isolated partition. No vendor service or download is involved. |
-| Agent browser automation | **Include only if locally reachable** | The `cursor-ide-browser` MCP provider has no feature gate and drives the local `WebContentsView`. Whether the local Agent loop is offered these tools is **not yet proved natively**. |
+| Agent browser automation | **Explain unavailable** (owner decision, 20 October 2026) | Proved natively. The local Agent is offered `cursor-ide-browser` and its 16 tools, but Cursor's `MCPService` refuses the server for any profile without a Cursor account. OpenVision keeps the block and states the real reason; it used to say "Server is blocked by team admin". The chat row reads "Failed browser_navigate". Opening the row shows the reason. |
 | Computer use | **Explain unavailable (Linux)** | Backends exist only for macOS and Windows. On Linux the extension returns before it reads any gate, manifest or download. OpenVision now explains why, in a "Computer Use" output channel. |
 | Next-edit prediction (OV-604) | **Decision pending** | See [next-edit decision](next-edit-decision.md). |
 
@@ -30,9 +41,16 @@ but was **not executed** in this session: see [Not proved](#not-proved).
   `workbench.desktop.main.js`. Before sending,
   `getImagesFromImageSelection` → `resizeImage(image, onRemove, 1024)`
   downscales each image to a 1024-pixel bound.
-- **Accepted types.** The bundle references `image/png`, `image/jpeg`,
-  `image/gif`, `image/webp` and `image/svg+xml`. *Inference:* these are the
-  accepted MIME types; a per-type native check is still open.
+- **Accepted types.** PNG, JPEG, WebP and GIF were attached natively, and each
+  was sent with its declared type matching its bytes. The bundle also
+  references `image/svg+xml`, which was not exercised.
+- **Storage.** Paste, drop and attach all write the image to
+  `<user-data>/User/workspaceStorage/<workspace>/images/<name>-<uuid>.<ext>`,
+  then reference it by path.
+  - At send time `generateImageProtos` re-reads the file. Anything over
+    1024 px or 1 MiB is re-encoded as JPEG, shrinking until it fits in 1 MiB.
+  - A 2400×2400 noise PNG (17 MB) was sent as a JPEG of about 572 KB.
+  - The 10 MB limit in the composer applies to documents, not images.
 - **Gate.** `desktop/provider-routing.mjs` (`imageInputGate`) counts the images
   on the message and on queued messages. When the selected model is explicitly
   text-only, it refuses with the non-retryable error "Image input is off for
@@ -47,16 +65,46 @@ but was **not executed** in this session: see [Not proved](#not-proved).
 - **Provider capability.** Vision input on the configured model. Discovery or
   the user can set "Image input" per model.
 - **Network.** Only the configured provider.
+- **Defects fixed** (`desktop/image-input-customization.mjs`):
+  1. An unreadable image chosen in the **file picker** was dropped silently:
+     its `Image.onerror` only revoked the object URL. It now shows "Failed to
+     add image. The image format is not supported.", as paste and drop already
+     did.
+  2. **Paste and drop** wrote an unreadable file into workspace storage before
+     decoding it, and left it there after rejecting it. The file is now
+     deleted on failure.
+- **Retention (observed, unchanged).**
+  - An image removed from the composer before sending stays in workspace
+    storage.
+  - Sent images stay too, because later turns re-send them: after a restart
+    the follow-up request carried all 9 earlier images.
+  - Nothing deletes these files while their conversation exists. Bounding
+    that storage needs an owner decision about chat deletion.
 
 ### Image generation
 
-- **Owner.** `generateImageToolCall` (13 references) is a case of the
-  server-defined Agent tool-call union. It is rendered when a hosted agent
-  returns one.
-- **Gates.** None found on the client.
-- **Provider capability.** A hosted image-generation tool. Neither the local
-  Agent runtime nor the OpenAI-compatible adapter produces this tool call.
-- **Network.** Not reachable without the hosted backend.
+- **Owner.**
+  - `generateImageToolCall` (13 references) is the workbench's rendering of
+    the tool call.
+  - The producer was the local Agent runtime. The registration sites in
+    `cursor-agent-exec`, `cursor-local-agent-runtime` and `cursor-agent-host`
+    added `GenerateImage` whenever `enableGenerateImage` was on, which is the
+    default. It called the configured provider's
+    `POST /v1/images/generations`.
+- **Hidden for this release** (`desktop/image-generation-customization.mjs`).
+  - Both registration sites in each runtime are gated off.
+  - **Defect found while hiding it.** A model that still called
+    `GenerateImage` made the AI SDK throw `AI_NoSuchToolError`. The turn then
+    retried and hung ("Taking longer than expected…", run `7Cg8M6`).
+  - Once the parser let the call through, the runtime's not-found branch
+    answered it but did not read the call's argument stream, and the turn
+    still hung (run `y5G9dQ`).
+  - For hidden tools only, the parser now passes the call through, and the
+    dispatcher drains the arguments and answers: "Image generation is not
+    available in this OpenVision release. Do not call GenerateImage; tell the
+    user that images cannot be generated here."
+  - Other unknown tool names behave as before.
+- **Network.** None: no request reaches the provider's images endpoint.
 
 ### In-app browser
 
@@ -94,6 +142,41 @@ but was **not executed** in this session: see [Not proved](#not-proved).
   (`desktop/autorun-customization.mjs`), so a fresh profile asks.
 - **Network.** No fixed hosts, apart from never-fetched sourcemap comments
   (`http://go/...`). It reaches only the pages the Agent navigates to.
+- **Native result (20 October 2026).**
+  - The local Agent's `GetMcpTools` lists `cursor-ide-browser` with 16 tools,
+    but with status `error`. A `CallMcpTool` → `browser_navigate` is refused
+    before any page load.
+  - **Root cause:** `MCPService.getMcpAdminBlockMessage` allows the browser
+    server only when `isEnterprise === false`, or when an enterprise admin
+    enabled browser features. Only Cursor's membership refresh writes
+    `isEnterprise`, and that needs a signed-in Cursor account. A local
+    profile leaves it `undefined`, which counts as enterprise without
+    permission.
+  - The refusal text was "Server is blocked by team admin", which is false for
+    a profile with no team. `desktop/browser-automation-customization.mjs`
+    keeps every block decision and only replaces the reason, for local
+    profiles with no membership answer:
+
+    > Browser automation is unavailable in OpenVision local profiles: Cursor
+    > allows its built-in browser server only through Cursor account and team
+    > settings, which a local profile does not have.
+
+  - The blocked-server reconnect path compares the error text, so it accepts
+    this reason too. If a later Cursor sign-in clears the block, the server
+    still reconnects.
+  - A unit test runs every combination of local mode, membership, browser
+    feature and `disableAll`, and checks that the block decision is the same
+    before and after.
+- **Tool row fixed** (`desktop/tool-row-status-customization.mjs`).
+  - The browser branch of the chat's tool-row display state used a past-tense
+    summary built from the arguments ("Navigated to <url>"). It ignored the
+    row's error state.
+  - On error the row now reads "Failed <tool>". Running and successful rows
+    are unchanged. Other tools already used their own error labels.
+- **UI caveat (not fixed; outside this story).**
+  - Settings → Browser & Network shows "Browser Automation: Connected to
+    Browser Tab". That describes the browser editor's connection mode, not
+    the MCP server.
 
 ### Computer use
 
@@ -203,21 +286,95 @@ It asserts:
 It also records the palette entries for "Browser" and every refused
 non-loopback request.
 
+## Native verification (20 October 2026)
+
+**Host and setup.**
+- Linux x64 cloud container: Ubuntu 24.04, 4 CPUs, Node 24.18.0.
+- The runs used the existing unprivileged `ubuntu` user, in a separate copy
+  of this branch's tree.
+- That copy was built clean: the pinned AppImage was re-extracted and every
+  customization applied from scratch.
+- Each run used its own disposable `HOME` and `XDG_RUNTIME_DIR`, `xvfb-run`,
+  `dbus-run-session` and an unlocked throwaway gnome-keyring.
+- Runs went one at a time.
+- Every model was a loopback fixture. None of this is live inference.
+
+**Final set**, on a clean build of commit `0a1ea475`. Every run passed first
+time:
+
+| Verifier | Runs | What it proves |
+| --- | --- | --- |
+| `verify:image-input` | `ydTKFr`, `KQysjD` | See the image-input list below. |
+| `verify:browser-automation` | `DpNng4`, `51gTCv` | See the browser-automation list below. |
+| `verify:modes-probe` | `0nOMVF`, `jImPqx` | `exthost.log` shows the computer-use extension activated. The explanation is in `exthost/cursor.cursor-computer-use/Computer Use.log`. No sidecar or `*.cursor.com` request was made. The palette shows no computer-use permission command and no image-generation command. |
+| `verify:agent -- --mcp` (regression) | `67rNvG` | Pass. This covers the MCP reconnect path that the browser-reason change touches. |
+| `verify:provider-import` (regression) | `Rpg3B7` | Pass. This covers the image gate from provider import. |
+
+**`verify:image-input`** checks that:
+- paste, drag and file attach each send their image;
+- four attached formats (PNG, JPEG, WebP, GIF) are sent with matching types;
+- the oversized PNG is sent as a JPEG of about 572 KB;
+- a corrupt file is not sent and is explained, through the picker and through
+  drop, and the rejected file is not left in storage;
+- an image removed before sending is not sent;
+- Stop closes the in-flight image request (206 ms and 252 ms);
+- the text-only model gets **0** requests and "Image input is off for this
+  model" is shown;
+- `GenerateImage` is **not offered**. A call made anyway is answered with the
+  explanation: no image is produced, no request reaches
+  `/v1/images/generations`, and no "Generated image" row appears;
+- after a restart, a follow-up works with the image history;
+- both host exits are 0.
+
+**`verify:browser-automation`** checks that:
+- the local Agent is offered `cursor-ide-browser` (16 tools, status `error`);
+- `browser_navigate` is refused with the explanation;
+- the chat row reads "Failed browser_navigate", with no "Navigated to";
+- opening the row shows the reason;
+- there are 0 page loads and nothing to approve;
+- `GenerateImage` is absent from every Agent request;
+- there is no non-loopback request;
+- the host exits 0.
+
+**Earlier runs, not counted.** All of them are kept in the ubuntu tree's
+ignored `logs/`; none is counted as a pass.
+
+Before the owner decisions:
+- All checks passed twice on the clean build of `5e87e284`: image-input
+  `qj32Kz`, `qtQQC9`; browser `PnBN8U`, `LKqHMF`; probe `9MoX5V`, `990bje`;
+  `exWhfY`; `Ysef0m`.
+
+After the decisions, on the first clean build of `e52cc22f`, two new checks
+failed first time. Both failures are recorded honestly:
+- **`verify:image-input`** (`7Cg8M6`, `v6dmOQ`) found a real defect: a call
+  to the hidden `GenerateImage` hung the turn.
+  - Fixed in `b7b95d08`.
+  - One rerun (`y5G9dQ`) still hung, because the dispatcher left the argument
+    stream undrained. That was fixed in `0a1ea475`.
+  - An in-place check run `h0sANg` passed.
+- **`verify:browser-automation`** (`sMGN6K`, `aSGmOo`) failed on the verifier
+  itself: it read the row's action and details as one element. The product
+  already showed "Failed browser_navigate" and the reason.
+- In the same batch, the modes probe (`fFzwgc`, `5CdjCa`), `verify:agent --
+  --mcp` (`h4vsGm`) and `verify:provider-import` (`olxdMB`) passed.
+
+Getting the verifiers right also took earlier diagnosis runs. Those are listed
+in the worker report.
+
 ## Not proved
 
-- **The v2 probe has not run natively yet.** This worker's container refused
-  a non-root user. The coordinator ran the first scripts natively as non-root
-  on the merged build:
-  - `verify:completion -- --next-edit-absent` passed first time, twice.
-  - `verify:modes-probe` failed twice (`MtcfsB`, `cxZuad`) on the
-    console-only v1 explanation. That failure is fixed above and still needs
-    two native reruns.
-- **The image-input matrix** is not native-verified: paste, drag and attach;
-  each MIME type; oversized and multiple images; queued messages; cancel
-  during send; restart with images in history; temp-file cleanup. The
-  text-only gate itself is native-verified in run `9bMq1n`.
-- **Browser automation** has not been driven through the local Agent loop.
-  It is unknown whether the local Agent is offered `cursor-ide-browser` tools,
-  how approval appears, and whether tabs are cleaned up when a chat closes.
+- **The reachable browser-automation branch.** `verify:browser-automation`
+  contains a navigate → snapshot → type → click → snapshot → screenshot flow,
+  with approval. It never ran, because the server is refused for local
+  profiles. Approval, cancel mid-navigation and tab cleanup would need that
+  branch, so they remain open if the owner chooses to allow the server.
+- **The probe's network view** covers only Chromium (`--proxy-server`) and
+  extension-host traffic that honours `http.proxy`. It saw **0** proxied
+  requests in total. That means nothing was attempted through either route;
+  it does not prove that no raw socket was opened. The process-family capture
+  (`verify:telemetry:extended`) is the stronger check.
+- **SVG input, queued messages with images, and Inline Edit with an image.**
+  Inline Edit rejects images for every model; that is unchanged and was not
+  re-run here.
 - **Image generation, macOS and Windows computer use**, and live image quality
-  are out of Linux scope.
+  belong to platform/live stories.

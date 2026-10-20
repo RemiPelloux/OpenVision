@@ -224,3 +224,74 @@ Everything else this story asked for on Linux is implemented and measured:
   - otherwise one session on a GPU-equipped Linux host.
 - **Earlier stop (19 October, mid-run):** recorded in history. Every item
   listed then as not started was finished after resuming.
+
+## Follow-up, 20 October 2026: profile I/O regression in the stream coalescing
+
+The coordinator reported, from the agent-editing worker, that
+`verify:profile-io-faults` failed on merged `main` (`39nnjr`, `YoEr8w`). With the
+profile disk full, a chat turn was sent and its reply shown. After space was
+freed it was sent again, and the reply appeared twice in one bubble. A control
+build with only the coalescing reverted passed (`LvteOr`).
+
+The branch was brought to `main` by merging `origin/main` (`455bb056`) into it.
+A reset would have dropped the unmerged budget and docs commits `846c2089`,
+`468f79e0` and `fb5ba2e7`. The build was a clean rebuild with Node 24.18.0
+after `npm ci` in `tooling/`.
+
+**Reproduced.** On `main` code, `verify:profile-io-faults` passed once
+(`oUsWtS`) and failed once (`PAzGcx`), so the failure is timing-dependent.
+
+- The chat requests went `reply, chat, chat`.
+- The Agent log shows attempts 0–2 failing about 60 ms into each attempt, before
+  any model request (`SQLITE_FULL` in the extension host).
+- Attempt 3 (09:38:54) failed the same way at 58 ms, yet its model request went
+  out and its reply was shown.
+- Attempt 4, after space was freed, sent the request again.
+- The Agent log on the full volume is cut off at 09:38:54, so attempt 3's own
+  events are lost.
+
+**Cause (observed in code; the exact trigger is inferred).**
+
+The recovered loop pulls the model stream only when it is ready for the next
+event. It sees a cancelled step on its next pull.
+
+The v1 helper differed in two ways:
+
+- it read the stream eagerly from the moment it was wrapped, while the loop was
+  busy and also after the step had failed;
+- it then handed the loop events it had already buffered.
+
+A step that failed on storage could therefore still pull, and show, its model
+response. `consumeStream` swallows non-consumer-side errors, so nothing stopped
+that delivery, and the turn retry streamed the reply a second time.
+
+**Fix (`436c305a`, `desktop/agent-stream-delivery-customization.mjs`, v2
+marker).**
+
+- The stream is read ahead only after a text delta has been handed to the loop,
+  only text deltas are read ahead, and read-ahead stops when the loop leaves or
+  the step is cancelled (`e.canceled` / `e.signal.aborted`).
+- Once the step is cancelled, buffered events are dropped and the next event
+  comes from the stream itself, as in the recovered loop.
+- The coalescing win is kept: deltas that arrive while one is being delivered
+  are still merged.
+- v1 builds are upgraded in place.
+- The contract guard now also requires the loop's `e.canceled` handling.
+- Tests: no read-ahead before or between non-text events; buffered events
+  dropped after cancellation; the v1 → v2 upgrade
+  (`desktop/agent-stream-delivery.test.mjs`, 9/9).
+
+**Verification on the clean rebuild of `436c305a`:**
+
+| Command | Run ID | Result |
+| --- | --- | --- |
+| `verify:profile-io-faults` | `OfRARQ` | Pass, first time; chat requests 0 while full, 1 after freeing |
+| `verify:profile-io-faults` | `1FKdQC` | Pass, first time; 0 / 1 |
+| `verify:profile-io-faults` | `dGnmPd` | Pass; 0 / 1 |
+| `verify:profile-io-faults` | `MMD8pS` | Pass; 0 / 1 |
+| `verify:responsiveness -- --phases=stream` (smoke) | `uvHsFE` | Last chunk 529 ms, so coalescing is still effective (12,219 ms without it). Fails only `stream.latencyP95Ms` 75.1 > 60, the no-GPU host limit recorded above |
+| `verify:agent` | `agent-verification-luGDiv` | Pass |
+| `node --test desktop/agent-stream-delivery.test.mjs` | — | 9/9 |
+
+The failure reproduced in 1 of 2 runs before the fix and 0 of 4 after it. Four
+passes make a recurrence at that rate unlikely, but do not rule it out.
