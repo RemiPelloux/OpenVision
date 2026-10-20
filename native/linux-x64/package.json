@@ -1,0 +1,22 @@
+{
+  "name": "openvision-native-linux-x64",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned upstream sources for the Linux x64 native addons rebuilt against Electron 42.10.0 headers. Install with --ignore-scripts; desktop/native-rebuild.mjs compiles them.",
+  "dependencies": {
+    "@parcel/watcher": "2.5.1",
+    "@vscode/policy-watcher": "1.3.2",
+    "@vscode/spdlog": "0.15.8",
+    "@vscode/sqlite3": "5.1.12-vscode",
+    "better-sqlite3": "12.11.1",
+    "kerberos": "2.1.1",
+    "native-keymap": "3.3.5",
+    "native-watchdog": "1.4.2",
+    "node-pty": "1.1.0-beta42",
+    "tree-sitter": "0.21.1",
+    "tree-sitter-bash": "0.21.0"
+  },
+  "devDependencies": {
+    "node-gyp": "12.3.0"
+  }
+}

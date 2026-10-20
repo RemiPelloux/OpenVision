@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { installLocalProfile } from './local-workbench.mjs';
 import { installProjectWindows } from './project-window-customization.mjs';
 import { installSymlinkCycleListing } from './symlink-cycle-customization.mjs';
+import { installNativeCallLog } from './native-call-log-customization.mjs';
+import { installHelperReplacements } from './helper-replacement-customization.mjs';
+import { installTreeChunkLazyLoad } from './tree-chunk-lazy-customization.mjs';
 import { projectWorkspace } from './project-workspace.mjs';
 import { installModelSettings } from './custom-models.mjs';
 import { installCursorImport } from './install-import.mjs';
@@ -21,6 +24,8 @@ import { installCoreTelemetryPolicy } from './telemetry-customization.mjs';
 import { installExtensionTelemetryPolicy } from './telemetry-extensions.mjs';
 import { installNetworkDefaults } from './network-defaults.mjs';
 import { installIdleServiceDefaults } from './idle-services-customization.mjs';
+import { installComputerUseExplanation } from './computer-use-customization.mjs';
+import { installRemoteSsh } from './remote-ssh-customization.mjs';
 import { installCompletion } from './completion-customization.mjs';
 import { installInlineEdit } from './inline-edit-customization.mjs';
 import { installProfilePathIsolation } from './profile-paths.mjs';
@@ -67,7 +72,7 @@ import { installPtyKillRelease } from './pty-kill-release-customization.mjs';
 import { installIsolatedNotifications } from './notification-customization.mjs';
 import { installLinuxKeyringSelection } from './linux-keyring-customization.mjs';
 import { installApprovalDefault } from './autorun-customization.mjs';
-import { installWindowTitles } from './source-branding.mjs';
+import { installWindowTitles, installEmptyScreenBranding } from './source-branding.mjs';
 import { validateGeneratedArtifacts } from './generated-artifact-integrity.mjs';
 import { installRenameVersionGuard } from './rename-version-customization.mjs';
 import { installNativeAddonGuard } from './native-addon-diagnostics.mjs';
@@ -85,6 +90,7 @@ import { installInterruptedAgentEdits } from './agent-edit-interruption-customiz
 import { installReviewDescriptors } from './review-descriptors-customization.mjs';
 import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
 import { installRetrievalTool } from './retrieval-tool-customization.mjs';
+import { buildUpstreamHost } from './upstream-host-build.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -148,6 +154,8 @@ await installPtyHostOwnership(root);
 await installPtyKillRelease(root);
 await installNetworkDefaults(root);
 await installIdleServiceDefaults(root);
+await installComputerUseExplanation(root);
+await installRemoteSsh(root);
 await installRetrievalOwnership(root);
 await installProjectDataBoundaries(root);
 await installAgentReviewAcceptance(root);
@@ -161,6 +169,9 @@ await installReviewSnapshotGuidance(root);
 await installRetrievalTool(root);
 await installRenameVersionGuard(root);
 await installNativeAddonGuard(root);
+await installNativeCallLog(root);
+await installHelperReplacements(root);
+await installTreeChunkLazyLoad(root);
 await installProtectedExtensions(root);
 await installCompletion(root);
 await installInlineEdit(root);
@@ -181,6 +192,7 @@ await installProfileStorageDurability(root);
 await installProfileWritability(root);
 await installFileWriteRestore(root);
 await installWindowTitles(root);
+await installEmptyScreenBranding(root);
 await installProjectNamespace(root, { afterExtensions: async () => {
   const integrity = await buildExtensionIntegrity(root);
   console.log(`Extension integrity: ${integrity.extensions} extensions, ${integrity.files} protected files`);
@@ -201,3 +213,6 @@ if (manifest) {
   await writeFile(marker, JSON.stringify(manifest, null, 2) + '\n', { flag: 'wx' });
   console.log(`OpenVision source build complete for ${process.platform}/${process.arch}`);
 }
+// Opt-in: package the same application on the official Electron/Node release host.
+if (process.argv.includes('--upstream-host') || process.argv.includes('--upstream-addons'))
+  await buildUpstreamHost(root, { addons: process.argv.includes('--upstream-addons') });

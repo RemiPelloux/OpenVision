@@ -7,7 +7,7 @@ import { mkdir, mkdtemp, writeFile, readFile, readdir, copyFile, access } from '
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { _electron } from '../tooling/browser.mjs';
-import { loadRuntime } from './source-assembly.mjs';
+import { verificationRuntime } from './verification-runtime.mjs';
 import { fileHash } from './import-files.mjs';
 import { verificationSettings } from './verification-profile.mjs';
 import { linuxSandboxArguments } from './platform.mjs';
@@ -16,7 +16,7 @@ import { buildAddons, elfMachine, fixtureCatalogue, phasePlans, translationKey, 
 import { evaluateLifecycle } from './extension-lifecycle-cases.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const { layout } = await loadRuntime(root);
+const { layout, appRoot } = await verificationRuntime(root);
 await mkdir(join(root, 'logs'), { recursive: true });
 const directory = await mkdtemp(join(root, 'logs/extension-lifecycle-'));
 const profile = join(directory, 'profile'), project = join(directory, 'project'), driver = join(directory, 'driver');
@@ -30,7 +30,7 @@ await writeFile(join(driver, 'package.json'), JSON.stringify({ name: 'openvision
   main: './extension.cjs', activationEvents: ['onStartupFinished'] }));
 await copyFile(join(root, 'desktop/verify-extension-lifecycle-extension.cjs'), join(driver, 'extension.cjs'));
 
-const app = join(root, 'source/app');
+const app = appRoot;
 const identityPaths = ['build/source-build.json', 'source/app/out/vs/workbench/workbench.desktop.main.js',
   'source/app/out/vs/workbench/api/node/extensionHostProcess.js', 'source/app/out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js',
   'source/app/out/main.js', 'desktop/extension-lifecycle.mjs', 'desktop/extension-lifecycle-cases.mjs', 'desktop/verify-extension-lifecycle-extension.cjs'];

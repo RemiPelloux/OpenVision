@@ -30,11 +30,25 @@ export function keepApprovalDefault(text) {
     text.slice(match.index + match[0].length));
 }
 
+const unavailableMarker = '/* OpenVision sandbox unavailable message v1 */';
+const allowlistText = `"Only commands you've added to your allowlist will run automatically. Other commands will require user approval. Be cautious of potential prompt injection risks."`;
+export const sandboxUnavailableText = 'The Agent command sandbox is unavailable in OpenVision. Only commands you have added to your allowlist run automatically; every other command waits for your approval. Be cautious of potential prompt injection risks.';
+
+// The Auto-Run setting describes allowlist mode, the mode used when no sandbox
+// is available. State plainly that the sandbox is unavailable, so approval
+// prompts are not mistaken for a sandbox denial.
+export function explainSandboxUnavailable(text) {
+  if (text.includes(unavailableMarker)) return text;
+  const count = text.split(allowlistText).length - 1;
+  if (count !== 1) throw new Error(`Allowlist mode description missing or ambiguous (${count})`);
+  return text.replace(allowlistText, `${unavailableMarker} ${JSON.stringify(sandboxUnavailableText)}`);
+}
+
 export async function installApprovalDefault(root) {
   for (const variant of ['desktop', 'glass']) {
     const relative = `source/app/out/vs/workbench/workbench.${variant}.main.js`;
     const before = await readFile(join(root, relative), 'utf8');
-    const after = keepApprovalDefault(before);
+    const after = explainSandboxUnavailable(keepApprovalDefault(before));
     if (before === after) continue;
     const backup = join(root, 'backups/autorun', `${digest(before)}.js`);
     await mkdir(dirname(backup), { recursive: true });

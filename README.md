@@ -196,19 +196,21 @@ Agent support accepts text/tools; Tab autocomplete uses API connections.
 
 ## Roadmap and honest progress
 
-**26 of 44 acceptance stories fully verified · 59.09%.**
-Another **11 are Partial**, **14 Planned** and **1 Unknown**. Partial stories
+**28 of 44 acceptance stories fully verified · 63.64%.**
+Another **6 are Partial**, **9 Planned** and **1 Unknown**. Partial stories
 already contain working features; this score measures complete acceptance gates,
 not the percentage of code implemented or decompiled. Since 18 October, Windows,
 macOS, other-Linux and live-provider clauses are tracked in dedicated platform/live
 stories, and other stories are judged on Linux x64
 ([re-scope](docs/planning/eta-and-definition-of-done.md#re-scope-baseline-v3)).
 
-The next product target is **36/44 verified stories (at least 80%)**. All worker
-branches are merged into `main` (clean build, 13 unit suites passing). The
+The next product target is **36/44 verified stories (at least 80%)**. Every worker
+branch is merged into `main` (20 October: clean build, unit suites and the Linux
+critical subset pass). The
 [status page](docs/planning/eta-and-definition-of-done.md) lists every remaining story
-with its gap, its gate (Linux work, owner decision or external machine/balance) and the
-ETA: about 3 more worker rounds for the Linux work, with a Linux ceiling of 39/44. Owner
+with its gap, its gate (owner decision or external machine/balance) and the ETA:
+the open Linux work now waits on owner decisions, after which 1–2 more worker rounds
+reach the target; the Linux ceiling is 39/44. Owner
 decisions are tracked in [#5](https://github.com/RemiPelloux/OpenVision/issues/5); the
 Windows, macOS, other-Linux and live-provider stories in issues #1–#4.
 

@@ -1,0 +1,43 @@
+{
+  "description": "Toolchain pinned for desktop/native-rebuild.mjs. The rebuild refuses a host whose reported versions differ.",
+  "host": "Ubuntu 24.04.5 LTS x86_64, GNU libc 2.39-0ubuntu8.9",
+  "cc": {
+    "command": "gcc",
+    "version": "13.3.0",
+    "package": "gcc-13 13.3.0-6ubuntu2~24.04.1"
+  },
+  "cxx": {
+    "command": "g++",
+    "version": "13.3.0",
+    "package": "g++-13 13.3.0-6ubuntu2~24.04.1"
+  },
+  "make": {
+    "command": "make",
+    "version": "4.3",
+    "package": "make 4.3-4.1build2"
+  },
+  "python": {
+    "command": "python3",
+    "version": "3.13.16"
+  },
+  "node": {
+    "version": "24.18.0",
+    "note": "Runs node-gyp only; addons target the Electron headers below."
+  },
+  "nodeGyp": {
+    "version": "12.3.0",
+    "source": "native/linux-x64/package-lock.json"
+  },
+  "electron": {
+    "version": "42.10.0",
+    "nodeModuleVersion": 146,
+    "headers": "node-v42.10.0-headers.tar.gz"
+  },
+  "systemHeaders": {
+    "note": "Ubuntu packages providing headers linked by native-keymap and kerberos; installed with apt-get on the build host.",
+    "packages": [
+      "libxkbfile-dev 1:1.1.0-1build4",
+      "libkrb5-dev 1.20.1-6ubuntu2.10"
+    ]
+  }
+}

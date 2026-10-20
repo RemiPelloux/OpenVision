@@ -5,9 +5,10 @@ Branch `ov/responsiveness`, 18–19 October 2026, based on the coordinator branc
 container with 4 CPUs and 15 GB of RAM, Xvfb at 1920×1080 with **no GPU**
 (software rendering), dbus, and a plaintext gnome-keyring as Secret Service.
 Every model response comes from the verifier's **controlled loopback fixture**;
-there was no live inference. The work **stopped early on an owner stop
-request**, so the [status at stop](#status-at-stop) section is
-authoritative for what remains.
+there was no live inference. The work stopped once on an owner request and
+was resumed to finish. It was rebased onto `main` at `805e6561` (a fast-forward
+of this branch) and finished there. The [final status](#final-status)
+section is authoritative.
 
 ## Summary
 
@@ -32,7 +33,7 @@ three causes, now separated:
    - The model stream is now read as it arrives. Text deltas already waiting
      are merged, so one round trip carries the backlog.
    - Last chunk to paint: **12,219 → 650–847 ms** in smoke (10/10 under the
-     1,000 ms budget) and **44,960 → 470–763 ms** at full size (7/7).
+     1,000 ms budget) and **44,960 → 448–763 ms** at full size (10/10 stream-only runs).
 3. **Fixture defect (fixed).** The fixture project sits under `logs/` inside the
    OpenVision checkout. The Agent's per-turn `git status --short --branch`
    discovered that checkout and walked its 17,000+ files. That added about 6 s
@@ -61,10 +62,10 @@ slower, so rendering cost is concentrated in the stream window.
 
 | # | Task | State |
 | --- | --- | --- |
-| 1 | Explain and stabilize `stream.lastChunkToPaintMs` (10× smoke, 10× full, profile) | **Done for the metric**: explained (three causes above), harness and product fixed, 10/10 smoke and 7/7 full under budget. **Partly done** for the series: 7 of 10 full runs complete (stopped). Profile: `--profile=stream` run `wCe2jp` (renderer main thread 7.1 s native, 5.5 s idle of 18.3 s sampled; no single JS hotspot); the decisive evidence came from `--trace-stream` and strace instead |
-| 2 | Prove incremental edits in the large-file phase | **Partly done.** Measurement code is in: per-key renderer writes, extension-host and tsserver reads/writes, per-role CPU, large/small ratios and per-key share of the file (`editTraffic`, `sizeRatios`, `syncBytesPerKeyFileShare`), unit-tested. **Not done:** no native editor run on this branch yet, so no baseline and no budgets |
-| 3 | Scroll frame p95 49.9 vs 50 ms | **Partly done.** `frameRefreshHistogram` (frames by whole 60 Hz refresh intervals) is in every phase, so a p95 of 49.9 ms can be read as a 3-refresh frame. **Not done:** the ≥5 full scroll runs |
-| 4 | Final reruns | **Not done** (stop request) |
+| 1 | Explain and stabilize `stream.lastChunkToPaintMs` (10× smoke, 10× full, profile) | **Done.** Three causes found and fixed (above). 10/10 smoke stream runs at 650–847 ms and 10/10 full stream runs at 448–763 ms, plus 3+3 all-phase runs at 437–543 ms. Profile: `--profile=stream` run `wCe2jp` had no single JS hotspot (renderer main thread 7.1 s native, 5.5 s idle of 18.3 s); the attribution came from `--trace-stream` and strace |
+| 2 | Prove incremental edits in the large-file phase | **Done.** Per-key bytes and CPU by role, large/small ratios and file share are measured and budgeted. Baselines: `dQjcNM`, `o5bjuB`, `vCBiFW`. Edit sync is O(edit): about 1 KB per key into the TypeScript server, ratio 0.9–1.66. Replies are O(file): tsserver `documentHighlights` returned 4,077,984 bytes listing a keyword on all 50,000 lines. That is recorded, not budgeted, and listed as an owner decision |
+| 3 | Scroll frame p95 49.9 vs 50 ms | **Done (recorded).** On the GPU host 49.9 ms is one 3-refresh frame at p95. On this no-GPU host the cost is real: p95 100–116.7 ms in 5 full runs, with 51–66 frames of 5 or more refreshes. Not fixed (the recovered virtualizer's row measurement and software raster); distributions are in the evidence doc |
+| 4 | Final reruns | **Done.** Results below |
 
 ## Defects found and fixed
 
@@ -73,6 +74,7 @@ slower, so rendering cost is concentrated in the stream window.
 | Last chunk detected only after typing ended (smoke figure was typing time) | `desktop/verify-responsiveness.mjs` | `11491e7b` (detection), `1b315e09` (timing fields), `4b7e1d33` (`--trace-stream` diagnostics) |
 | Agent awaited 2–3 renderer round trips per text delta; delivery throttled to the renderer's pace | `desktop/agent-stream-delivery-customization.mjs` (new, marker-guarded, idempotent, backup in `backups/agent-stream-delivery`, contract guards on the awaited delivery calls; tests run the shipped helper) | `29483a06` |
 | Fixture project inside the host checkout: per-turn `git status` walked the whole repository | `desktop/verify-responsiveness.mjs` (`GIT_CEILING_DIRECTORIES`) | `8ebaf701` |
+| Edit-sync budgets and file-share metric restricted to inbound edit bytes (replies excluded) | `desktop/verify-responsiveness.mjs`, `desktop/responsiveness-budgets.json` | `846c2089` |
 
 ## Verification
 
@@ -119,22 +121,63 @@ Two runs failed setup before the keyring was configured and are not counted:
 | `fullstream-1…7` (`--full --phases=stream`) | `CldXnD uhyjaO 6wqWdW wqUzGq O0VJzT pqsiB9 gJtDNQ` | **624 739 726 763 588 470 558** (7/7 ≤ 1,000) | frame p95 49.9–66.7; frames over 100 ms 4–9; long tasks 1,708–2,542 ms; typing p95 83.4–145.6; first chunk 1,240–1,731 ms; load 2.0–3.3 |
 
 Every run above is a first-time run; none is a retry. `fullstream-7` was
-running at the stop request and was left to finish. Runs 8–10 were not
-started.
+running at the stop request and was left to finish. Runs 8–10 ran after the
+resume, on the rebuilt `main` (see the final reruns).
+
+### Final reruns (build of `main` `805e6561` + `846c2089`)
+
+Load average 1.3–2.6 during these runs.
+
+| Command | Run IDs | Result |
+| --- | --- | --- |
+| `npm run test:desktop` | — | 222/222 pass |
+| `node --test desktop/responsiveness-measure.test.mjs desktop/application-storage-customization.test.mjs desktop/agent-stream-delivery.test.mjs` | — | 24/24 pass |
+| `verify:responsiveness -- --full --phases=editorSmall,editorLarge --no-budgets` ×3 (baselines) | `dQjcNM o5bjuB vCBiFW` | recorded |
+| `verify:responsiveness -- --full` ×3 | `HKUSkP zQbbWT W9CeOx` | **fail** on timing budgets of this host (see below). Last chunk 543/531/478 ms; all edit-sync budgets pass (tsserver input 1,945/860/666 B per key, share 0.00055/0.00024/0.00019) |
+| `verify:responsiveness` (smoke) ×3 | `m69jLf hTqwTq J0q3KU` | **fail**: `stream.latencyP95Ms` 67.3/92.5/65 and `scroll.frameP95Ms` 66.7/66.6/83.2 (plus `picker.latencyP95Ms` 192 in one). Last chunk 525/542/437 ms |
+| `verify:responsiveness -- --full --phases=scroll` ×2 | `Hp2Pzz umLLPW` | **fail**: `scroll.frameP95Ms` 100/100 |
+| `verify:responsiveness -- --full --phases=stream` (runs 8–10) | `EJ07P8 VIZkZw cO9hUo` | last chunk 448/552/531 ms; fail on long tasks (684–1,332 ms) and, in two runs, typing p95 |
+| `npm run verify:model-menu:large` | `large-model-menu-9j8r2d` | **pass**, host exit 0 |
+| `npm run docs:check`, `npm run status:features` | — | pass |
+
+These budgets failed in every full run:
+
+- stream long tasks and typing p95;
+- scroll frame p95 and longest task;
+- turn long tasks and typing p95;
+- `editorLarge.openMs` and `editorLarge.longTaskTotalMs`;
+- `picker.latencyP95Ms` in 2 of 3.
+
+They are timing budgets set on a GPU-accelerated host. The evidence doc has
+the distributions and a derived software-rendering budget proposal.
+
+The closed-chat budgets `markerStringsClosed` (581 > 400) and
+`historyStringsClosed` (224 > 130) failed in all three full runs and pass in
+smoke. That phase and its budgets belong to OV-1001 and were not touched here.
+
+All runs are first-time runs; nothing was retried. The changed verifier ran
+far more than twice: 26 stream runs and 6 all-phase runs.
 
 ## Recommendation per story
 
-**OV-1002: not yet.** The remaining Linux gaps:
+**OV-1002: not yet Verified on Linux x64.** The Linux gaps left:
 
-- Stream typing p95, long tasks, frame p95 and frames over 100 ms fail on this
-  no-GPU host, both before and after the fix. Either:
-  - rerun on a Linux x64 host with GPU acceleration (the budgets' reference
+- **Timing budgets fail on this no-GPU host.** The owner either:
+  - reruns them on a GPU-accelerated Linux x64 host (the budgets' reference
     environment), or
-  - have the owner decide whether software-rendered hosts get their own
-    derived budgets (not done here; budgets were not weakened).
-- The incremental-edit budgets (task 2) need native baselines and then budgets.
-- The ≥5 scroll distributions (task 3).
-- The final reruns (task 4), including `verify:model-menu:large`.
+  - adopts the derived software-rendering budgets proposed in
+    `docs/performance/responsiveness-linux.md`.
+- **Closed-chat string retention** (OV-1001/OV-1003 budgets) fails at full
+  size.
+- **Scroll layout cost and O(file) occurrence highlighting** in large files
+  remain open product issues, not fixed here.
+
+Everything else this story asked for on Linux is implemented and measured:
+
+- the stream last-chunk metric, explained and fixed;
+- incremental-edit proof with budgets;
+- scroll distributions;
+- the final reruns.
 
 ## Moved to platform/live stories
 
@@ -146,6 +189,11 @@ started.
 
 - "Incremental edits" means editor model and language-server synchronisation,
   not Agent multi-edit application (as instructed).
+- Software-rendered hosts: keep the reference budgets, or adopt the derived
+  software-rendering budgets in the evidence doc. Not applied.
+- Occurrence highlighting in large files: tsserver `documentHighlights`
+  returns every occurrence (4 MB for 50,000 lines). Capping or disabling it
+  above a size threshold is a product decision. Not changed.
 - Text-delta coalescing applies in all modes, because the patched loop is
   shared. It only merges deltas that are already waiting. The recovered
   single-message loop detector then sees merged text (the same text, in
@@ -163,27 +211,16 @@ started.
 - The extension-host strace runs perturbed timing. They were used only for
   attribution.
 
-## Status at stop
+## Final status
 
-- **Done:** task 1 cause analysis and both fixes (harness and product), the
-  10× smoke stream series, the measurement code for tasks 2 and 3, and unit
-  tests.
-- **Partly done:**
-  - full stream series: 7 complete (the 7th was in progress at the stop), 3 not started;
-  - task 2 (code only, no native data);
-  - task 3 (histogram only).
-- **Not started:**
-  - editor baselines and incremental-edit budgets;
-  - the ≥5 scroll runs;
-  - final reruns: `test:desktop`, smoke ×3, `--full` ×3,
-    `verify:model-menu:large`, `docs:check`, `status:features`;
-  - the evidence-doc update in `docs/performance/responsiveness-linux.md`.
-- **Last verified run IDs:** smoke `PW61Wx`, full `gJtDNQ` (both on build
-  `29483a06`).
-- **Uncommitted findings:** none. Every finding is in this report.
-- **Estimate for the remainder:** one worker session (about one quota round).
-  - About 1 h 45 min of serialized native runs: 3 full stream runs, 3 editor
-    baselines, 2 scroll runs, 3 smoke, 3 full, the model menu.
-  - Then budgets and documentation.
-  - Plus one more session if the owner wants GPU-host reruns or
-    software-rendering budgets.
+- **Done:** all four tasks.
+- **Remaining for promotion:** owner decisions or other environments only:
+  - GPU-host reruns or software-rendering budgets;
+  - closed-chat retention (other stories);
+  - Windows and macOS.
+- **Estimate:**
+  - one worker session if the owner adopts software-rendering budgets
+    (apply them and rerun 3 smoke and 3 full);
+  - otherwise one session on a GPU-equipped Linux host.
+- **Earlier stop (19 October, mid-run):** recorded in history. Every item
+  listed then as not started was finished after resuming.

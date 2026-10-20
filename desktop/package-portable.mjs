@@ -11,6 +11,10 @@ const args = process.argv.slice(2), versionIndex = args.indexOf('--version');
 const version = versionIndex < 0 ? JSON.parse(await readFile(join(root, 'package.json'), 'utf8')).version : args[versionIndex + 1];
 if (!/^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/.test(version ?? '')) throw Error('Invalid package version.');
 if (versionIndex >= 0) args.splice(versionIndex, 2);
+// The upstream-host build packages official release binaries instead of the build host.
+const nativeHostIndex = args.indexOf('--native-host');
+const nativeHost = nativeHostIndex < 0 ? undefined : resolve(args[nativeHostIndex + 1]);
+if (nativeHostIndex >= 0) args.splice(nativeHostIndex, 2);
 const target = `${process.platform}-${process.arch}`;
 if (!['win32-x64', 'linux-x64', 'linux-arm64'].includes(target)) throw Error('Package on Windows x64 or Linux x64/arm64.');
 const windows = process.platform === 'win32';
@@ -18,19 +22,20 @@ const destination = resolve(args[0] ?? join(root, `build/packages/OpenVision-${t
 try { await lstat(destination); throw Error('Package destination already exists; choose a new directory.'); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
 const { layout } = await loadRuntime(root);
+const source = nativeHost ?? layout.host;
 const host = join(destination, 'electron-host');
 const copyOptions = { recursive: true, errorOnExist: true, filter: async path => {
   if ((await lstat(path)).isSymbolicLink()) throw Error(`Package input contains an external link: ${path}`);
   return true;
 } };
 await mkdir(host, { recursive: true });
-for (const entry of await readdir(layout.host)) {
+for (const entry of await readdir(source)) {
   if (entry === 'resources' || privateDirectories.has(entry) || entry.startsWith('unins')) continue;
-  await cp(join(layout.host, entry), join(host, entry), copyOptions);
+  await cp(join(source, entry), join(host, entry), copyOptions);
 }
-for (const entry of await readdir(join(layout.host, 'resources'))) {
+for (const entry of await readdir(join(source, 'resources')).catch(error => error.code === 'ENOENT' ? [] : Promise.reject(error))) {
   if (privateResources.has(entry)) continue;
-  await cp(join(layout.host, 'resources', entry), join(host, 'resources', entry), copyOptions);
+  await cp(join(source, 'resources', entry), join(host, 'resources', entry), copyOptions);
 }
 await cp(join(root, 'source/app'), join(host, 'resources/app'), copyOptions);
 // Main-process IPC helpers resolve their owned support files three directories

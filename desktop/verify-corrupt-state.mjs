@@ -71,16 +71,21 @@ async function workspaceDatabase(profile) {
 async function buildBaseline() {
   await writeProfile(baseline, { 'openvision.verification.marker': 'unrelated-setting-kept' });
   await writeFile(paths(baseline).mcpUser, JSON.stringify({ mcpServers: { 'user-fixture': { command: 'node', args: ['--version'] } } }, null, 2) + '\n');
-  let session = await launchOwned({ layout, profile: baseline, args: [project, notes], runId, errors });
-  await session.page.waitForTimeout(6000);
-  await addProvider(session.page, { name: 'Corrupt-state fixture', url: fixture.url, key, model: 'fixture-corrupt' });
-  const input = await openChat(session.page);
-  await input.fill('Change answer = 41 to answer = 42 in notes.md.'); await input.press('Enter');
-  await session.page.getByText('OpenVision corrupt-state edit finished.', { exact: true }).first().waitFor({ timeout: 45000 });
-  await session.page.getByText('Keep', { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 15000 }).catch(() => {});
-  await session.page.waitForTimeout(3000);
-  await snapshot(session.page, directory, 'baseline');
-  await closeOwned(session.app, exits, 'baseline');
+  const session = await launchOwned({ layout, profile: baseline, args: [project, notes], runId, errors });
+  // A failed baseline must not leave the owned app running.
+  try {
+    await session.page.waitForTimeout(6000);
+    await addProvider(session.page, { name: 'Corrupt-state fixture', url: fixture.url, key, model: 'fixture-corrupt' });
+    const input = await openChat(session.page);
+    await input.fill('Change answer = 41 to answer = 42 in notes.md.'); await input.press('Enter');
+    await session.page.getByText('OpenVision corrupt-state edit finished.', { exact: true }).first().waitFor({ timeout: 45000 });
+    await session.page.getByText('Keep', { exact: true }).filter({ visible: true }).first().waitFor({ timeout: 15000 }).catch(() => {});
+    await session.page.waitForTimeout(3000);
+    await snapshot(session.page, directory, 'baseline');
+  } catch (error) {
+    await snapshot(session.page, directory, 'baseline-failure');
+    throw error;
+  } finally { await closeOwned(session.app, exits, 'baseline').catch(() => {}); }
   updateDatabase(paths(baseline).global, ruleKeys.map(id => ['INSERT OR REPLACE INTO ItemTable (key, value) VALUES (?, ?)', id, rule(id.split('.').pop())]));
   const argvText = await readFile(paths(baseline).argv, 'utf8');
   // Every cell starts from the project exactly as the baseline left it: the

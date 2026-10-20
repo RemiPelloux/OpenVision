@@ -8,6 +8,7 @@ product changes.
 | Task | Entry point |
 | --- | --- |
 | Prepare native inputs | `prepare-source.mjs` · `npm run prepare:desktop` |
+| Prepare the remote server and SSH resolver (Linux x64) | `prepare-remote.mjs` · `npm run prepare:remote`; verify with `verify-remote-ssh.mjs` · `npm run verify:remote-ssh` ([guide](../docs/guides/remote-ssh.md)) |
 | Build the customized application | `build-source.mjs` · `npm run build:desktop` |
 | Launch | `start.mjs` · `npm start` |
 | Create a portable package | `package-portable.mjs` · `npm run package:windows` or `npm run package:linux`; Linux scripts in `linux-package-scripts.mjs` |

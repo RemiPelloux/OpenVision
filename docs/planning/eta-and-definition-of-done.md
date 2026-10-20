@@ -1,6 +1,6 @@
 # OpenVision status, gaps, ETA and Definition of Done
 
-Updated **19 October 2026**. This page is the single current view. The acceptance
+Updated **20 October 2026**. This page is the single current view. The acceptance
 clauses are in the [ledger](completion-sprints.md); the priority order is in the
 [roadmap](roadmap.md). Dated checkpoints (16–19 October) are archived in
 [planning history](history/checkpoints-2026-10.md). Run `npm run status:features`
@@ -14,10 +14,10 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **26 (59.09%)** |
-| Partial / Planned / Unknown | 7 / 10 / 1 |
-| 80% target | 36 Verified: **10 more** |
-| Code on `main` | All worker branches merged; clean build and 13 unit suites pass with 0 failures |
+| Verified | **28 (63.64%)** |
+| Partial / Planned / Unknown | 6 / 9 / 1 |
+| 80% target | 36 Verified: **8 more** |
+| Code on `main` | Every worker branch merged (20 October); clean build, unit suites and the Linux critical subset pass |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
 ## Re-scope (baseline v3)
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)) |
 | X | External: a machine, balance or account |
 
-### Verified (26)
+### Verified (28)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–19 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303.
+- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -60,16 +60,14 @@ merged code. "Gate" is what blocks promotion:
 | OV-103 Agent editing | All native checks pass | Owner accepts the residuals: unproducible faults, review returning as pending, untracked early-exit command, restore-save failure, untested Stop cases | D | Decision only |
 | OV-402 Language tools | New checks pass | Large-file symbols 13.0 s > 10 s; renderer p95 259 > 250 ms on 4 CPUs; Python/Go/Rust syntax-only | D | Decision, or an optimization session |
 | OV-1001 Agent context | Budgets pass | Long closed chats keep about half their history (React/Solid retainers) | D | Decision, or work under OV-1003 |
-| OV-1004 Release safety | Merged; 6 fixes, 3 verifiers written | Corrupt-state baseline fix; assertion runs ×2; evidence | L | Round 1 (running) |
-| OV-903 Linux completion | Merged; keyring hang (#6) fixed | Explorer budget and `mcp-session` on the merged code; branding #8 | L | Round 2 |
-| OV-1003 Idle resources | Merged | Startup traversal 1,394 > 1,300 listings; slope 15.7 > 15 MiB in 1 of 3 runs | L | Round 2 |
-| OV-1002 Responsiveness | Merged; stream defect fixed | Incremental-edit and scroll budgets; frame budgets on a no-GPU host | L, D | Round 2 |
-| OV-904 Updates and rollback | Merged; signed releases, installer | Second `verify:upgrade:linux` run | L | Round 2 |
-| OV-704 Specialized modes | Not started | Scope inventory, probe, image input, browser automation | L, D | Round 3 |
-| OV-604 Next-edit prediction | Not started | Support it or exclude it | D | Decision paper in round 3 |
-| OV-703 Remote (SSH) | Not started | Pinned and branded server, SSH verifier | L | Round 3 |
-| OV-802 Buildable host | Not started | Upstream Electron host option, rebuilt addons | L | Round 3 |
-| OV-803 Replaceable helpers | Not started | Measured ranking, sandbox and grep replacements | L | Round 3 |
+| OV-1004 Release safety | All Linux gates pass (corrupt state, crash recovery, authority, utility listeners, secrets scan 0 findings) | Release gate: promote last, on the same build as every other story | L | Final rerun once the others are Verified |
+| OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU 17–18 % renderer / 24–26 % extension hosts against 15 / 20; an A/B run shows the pre-merge build measures the same on this host | D, X | A comparable host, or a host-normalized CPU budget |
+| OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Smoke/full frame budgets and scroll fail on a no-GPU host | D, X | A GPU host, or adopt the proposed software-rendering budgets (then one session) |
+| OV-704 Specialized modes | Inventory, computer-use explanation and probe pass natively (`oxnQvd`, `tizi1z`) | Image-input matrix; whether browser tools reach the local Agent; scope sign-off | L, D | One session after the scope decision |
+| OV-604 Next-edit prediction | Absence check passes ×2 | Support (adapter) or exclude: [decision paper](../recovery/next-edit-decision.md) recommends excluding | D | Decision only if excluded |
+| OV-703 Remote (SSH) | SSH to Linux x64 passes 18/18 and 22/22 ×2 (pinned branded server, strict host keys) | Accept "Agent local-only" in remote windows; or remote Agent relay, remote profile isolation; containers deferred | D, L | Decision, or one session |
+| OV-802 Buildable host | Upstream Electron 42.10.0 host passes the critical subset; 11 addons rebuilt reproducibly | Rebuilt addons need glibc 2.38 (recovered: 2.28); whichlang and ripgrep fork not rebuilt | D, L | Accept the floor, or a clang/libc++ sysroot session |
+| OV-803 Replaceable helpers | Ranking measured; Landlock and none sandbox options pass; tree-chunk lazy | Indexed grep (GrepClient + crepectl) replace-or-remove; hosted contracts; defaults | D, L | Decision, then one session |
 | OV-804 Independent build | Not started | Where the application JavaScript comes from (distribution rights) | D | Decision first |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
 | OV-901 Windows | — | Windows x64 host; exit 134 and worker crash | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
@@ -78,26 +76,26 @@ merged code. "Gate" is what blocks promotion:
 
 ### Open defects
 
-- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)** and [#10](https://github.com/RemiPelloux/OpenVision/issues/10): fixed on `main` (19 October, OV-304 reruns); issues can be closed.
-- `npm run check:secrets` aborts under Node 24.18.0 with "double free or corruption" (exit 134), reproducible on one Markdown file; Node 22.22.0 scans cleanly. Details in the [mcp-auth report](../verification/worker-reports/mcp-auth.md).
-- [#8](https://github.com/RemiPelloux/OpenVision/issues/8): Cursor branding after a `--glass` start.
+- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)**, [#10](https://github.com/RemiPelloux/OpenVision/issues/10), [#8](https://github.com/RemiPelloux/OpenVision/issues/8) and [#6](https://github.com/RemiPelloux/OpenVision/issues/6): fixed on `main`; the issues can be closed.
+- `check:secrets` Node 24.18.0 abort (odd-length UTF-16LE decode): fixed by release-safety.
 - [#7](https://github.com/RemiPelloux/OpenVision/issues/7): Quick Edit Ctrl+A.
+- The client queries the Marketplace gallery when a non-built-in extension is installed in a remote window (remote-ssh report; OV-1005 follow-up).
 
 ## ETA
 
-| Round | Work | Effect if it passes |
-| --- | --- | --- |
-| 1 (running) | Release safety (OV-303, 304, 501, 1005, 801 done: +5) | Up to +1: OV-1004 |
-| 2 (running) | Linux completion; idle resources; responsiveness; upgrade rerun (retrieval done: +3) | Up to +4: OV-903, 1003, 1002, 904 |
-| 3 | The four never-started groups (may need a second session each) | Up to +4: OV-704, 703, 802, 803 |
-| Owner decisions (#5) | OV-103, 402, 1001, 604 | Up to +4 |
+All worker rounds are finished (19–20 October). What remains is decisions and
+hardware, not open Linux work:
 
-**Linux ceiling: 39/44.** The 36 target is reachable on Linux alone, but only with
-the owner decisions. It takes about **3 quota rounds** of 5 worker sessions, plus a
-coordinator rerun after each merge. The account's weekly usage limit is near its
-warning level and may stretch this. The last 5 stories (OV-205, 901, 902, 905, 804)
-need the owner: balance, a Windows host, a Mac, other Linux machines and the
-source-distribution decision.
+| Step | Work | Effect if it passes |
+| --- | --- | --- |
+| Owner decisions (#5) | OV-103, 402, 1001, 604 (decision only); OV-703, 802, 803, 704 (decision, then at most one session each) | Up to +8 |
+| Host or budget decision | OV-1002 and OV-1003: a GPU/comparable host, or host-normalized budgets | Up to +2 |
+| Release gate | OV-1004 last, on the same build | +1 |
+| External | OV-205 balance, OV-901 Windows, OV-902 Mac, OV-905 other Linux, OV-804 distribution decision | Up to +5 |
+
+**Linux ceiling: 39/44.** The 36 target needs owner decisions: with the four
+decision-only stories and two of the decision-then-session groups it is reached
+in about **1–2 more quota rounds**.
 
 ## Working setup
 
@@ -110,6 +108,7 @@ These lessons from 18–19 October apply to every Linux run:
   - host tools: `xdotool`, `imagemagick`, `sqlite3`, `iproute2`, `openssh-client`.
 - **Workers:** at most 5 sessions at once, pushing after every task. 25 at once exhausted the quota in under an hour.
 - **Merges:** rerun after merging. Two regressions appeared only once branches were combined.
+- **Coordinator runner:** set `XDG_RUNTIME_DIR` (otherwise the main IPC socket lands in the profile and deep test paths exceed 107 characters), install `x11-utils` (`xprop`), point `OPENVISION_BROWSER_PATH` at Chromium, run `npm ci` in `tooling/` after merges, and keep 4 GiB free (`logs/` is ignored and grows by ~1 GiB per package run).
 
 ## Definition of Done
 

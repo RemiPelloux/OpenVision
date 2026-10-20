@@ -175,15 +175,107 @@ Chromium logs `login1` and system-bus errors; they did not affect results. The p
 CA bundle under `/root` is unreadable to `ov`; a readable copy was used for `npm ci`
 and the AppImage download.
 
+## Follow-up on merged main — 19 October 2026
+
+Branch reset to `origin/main` `3b97df1e` (all earlier work merged), clean `npm ci` and
+rebuild with Node 24.18.0, same host and cells as above.
+
+**Remaining gaps re-checked on merged code** (`critical-suite-nZebdO`, X11, before any
+change in this follow-up):
+
+| Verifier | Result |
+| --- | --- |
+| `verify:explorer` `explorer-verification-VxxBiU` | **Pass** first time. External-edit rate is now 2.33 probes per root per second (idle 1.66, small edit 1.33; budget 4). The measurement was corrected on main in `756833a4` (rate over whole poll periods); the budget is unchanged |
+| `verify:mcp-session` `mcp-session-verification-ZAPEEB` | **Pass** first time; second pass `utqwkh` |
+
+**Issue #8 fixed** (`836903c1`):
+
+- *Branding.* The empty editor window is Cursor's landing screen. The build now
+  replaces its lockup image with the OpenVision mark (`openvision-lockup.png`), sets
+  the alternative text to "OpenVision" and removes the hosted **Sign in** fallback in
+  both workbenches. The transform is AST-guarded, idempotent and backed up
+  (`desktop/source-branding.mjs`).
+- *Enter workspace.* In the Agent (Glass) window, Project Home **Enter workspace**
+  asked the main process for any editor window, or an empty one. It now focuses an
+  editor already on the caller's folder or workspace, or opens one on it. Without a
+  project the earlier behaviour is kept (`desktop/welcome-customization.mjs`, main
+  `cursorFocusOrOpenEditorWindow`).
+- *Regression.* `verify:project-home` adds two fresh-profile Glass cases. With `--glass`
+  alone, the new editor window shows the loaded OpenVision mark, has no
+  `alt="Cursor logo"` and no "Sign in" or "Cursor" text, and stays empty. With
+  `--glass <project>`, the new editor window's workspace is that project. Both passed
+  in `project-home-verification-OTPZtf`, `S7LmKZ` (suite `pFuiup`) and `6vHRS6`. Unit
+  tests cover both transforms with negative cases (`branding.test.mjs`,
+  `welcome-customization.test.mjs`). `verify:project-home` is now in the
+  `linux-critical` subset.
+
+**Package verifier contract.** The merged update/rollback work added `profileFormat`
+and `updates: "manual"` to `openvision-package.json`; `verify:package:linux` failed on
+its exact-match assertion in suite `pFuiup` (both attempts, recorded as fail). The
+assertion now requires those fields (`c9d1030e`); passes `emz4SG`, `uGviMS`.
+
+| Run | Cell | Result |
+| --- | --- | --- |
+| `critical-suite-pFuiup` (`59d8fa7e`, retries 1) | X11 | 10/11 first time; package-linux failed both attempts (stale manifest assertion, fixed after) |
+| `critical-suite-T5ONAK` (retries 0) | X11 | 3/3: package-linux `uGviMS`, project-home `6vHRS6`, mcp-session `utqwkh` |
+| `critical-suite-g2keFJ` (retries 1) | Wayland headless Weston | 5/5 first time: welcome `QqOuge`, project `OhAkSM`, development `GvCv9X`, agent `R4X7FG`, linux-secrets `NfH5km` |
+| Unit: `test:portable` 39 + 1 Windows skip, `test:welcome` 3, `test:project-home` 11, `test:critical-suite` 4, `test:build-integrity` 26, `test:desktop` 222; `docs:check` clean; `status:features` 21 Verified (47.73%) | | Pass |
+
+Every entry of the Linux x64 critical subset has now passed first time on this host
+on the final code or on code differing only by the package-manifest assertion fix,
+which was then rerun twice.
+
+## Follow-up after the coordinator rerun — 19 October 2026
+
+The coordinator's merged-build run (suite `P95enb`, commit `de80baac`) failed 2/11:
+`verify:package:linux` ("No matching workbench window", no window targets on the
+first launch) and `verify:linux-secrets` (Playwright `TypeError ... '_object'` from
+`app.process()` after the app had disconnected, run `dWZMzI`). Restarted from
+`origin/ccr-a39d6f13-jurmdv` `d94e6e32` with Node 24.18.0 and a clean `npm ci` and
+rebuild.
+
+Observations on this host:
+
+- Neither failure reproduced: `package-linux-verification-aqodck` and
+  `linux-secrets-verification-DUr8wT` passed on the unmodified merged build.
+- The first reproduction attempt failed with `ENOSPC`: every package run kept a
+  1.1 GiB package copy, and earlier runs had filled the volume. The coordinator
+  run's logs were not available here, so whether disk space caused its missing
+  window is an inference, not an observation.
+- The `linux-secrets` failure mode hid its cause: the first error is lost because
+  `app.process()` throws on a disconnected app.
+
+Fixes (`b132c19e`, verifier-only):
+
+- `verify:package:linux` refuses to start with less than 4 GiB free under `logs/`,
+  removes its package copy after a passing run (`--keep` retains it; failing runs
+  keep it), and on a missing window records the CDP targets, live package
+  processes, free space and the tail of the host's `main.log`.
+- `verify:linux-secrets` takes each process handle at launch and closes through one
+  helper that records close errors, exit code and signal, so a crash reports the
+  real failure. The no-service case keeps its partial record and host stderr.
+
+Clean rebuild of `b132c19e`, then the full subset twice in a row (X11 Xvfb, non-root,
+D-Bus session, plaintext gnome-keyring, retries 1):
+
+| Run | Result |
+| --- | --- |
+| `critical-suite-u0QmwJ` | **11/11 first-time pass**, 0 flaky: package-linux `GJySPj`, welcome `tt1hjr`, project-home `ImNnrS`, project `8qMbwm`, explorer `ROgkTg`, development `ratbJt`, git `IQnxgQ`, agent `dknfej`, completion `n1GqXs`, extensions `VWM46T`, linux-secrets `qzeupQ` |
+| `critical-suite-vMDMzw` | **11/11 first-time pass**, 0 flaky: package-linux `2N6zhC`, welcome `K2ith2`, project-home `uwYwWB`, project `ajWe5G`, explorer `TWQIYU`, development `hAIeOo`, git `CjW11E`, agent `LLTB3E`, completion `KPrOXE`, extensions `kyBP3E`, linux-secrets `51BpRZ` |
+
+Disk use across both runs grew by about 2 GiB instead of 2.2 GiB per run for the
+package copies alone.
+
 ## Recommendation per story
 
-- **OV-903: not yet** Verified on Linux x64. Remaining Linux x64 gaps: `verify:explorer`
-  budget on this host (Git probe rate, owner OV-401) and `verify:mcp-session` failing
-  here (owner OV-303); a decision on the Glass **Enter workspace** behaviour and the
-  CURSOR watermark in empty editor windows; C/C++ only if the OV-402 session claims it.
-  Everything else in the Linux critical subset, the Wayland smoke subset, the package
-  verifier and the never-run verifiers passes first time in this session.
-- **Issue #6:** fixed and covered natively; can be closed once merged.
+- **OV-903: promote to Verified on Linux x64** (two consecutive 11/11 first-time runs on
+  `b132c19e`), subject to the owner decisions below
+  (claimed matrix, `--glass` as a supported entry point, OV-804 not blocking). The
+  earlier Linux gaps (explorer budget, `verify:mcp-session`, Glass Enter workspace and
+  the CURSOR/Sign in empty window) are closed on merged code plus this branch. Remaining
+  items are platform/live only (next section).
+- **Issue #6:** fixed and merged; can be closed.
+- **Issue #8:** fixed on this branch; close once merged.
 
 ## Moved to platform/live stories
 
@@ -206,6 +298,8 @@ Windows and macOS.
   `X-OpenVision-Entry=portable` marker (entries from older packages must be removed by
   hand).
 - C/C++ is outside the Linux suite unless the OV-402 session claims it.
+- `--glass` (Agent window start, the package launcher's no-argument default) is treated as
+  supported; Enter workspace without a project still opens an empty editor window.
 - OV-804 is recorded as not blocking OV-903 Linux x64 promotion.
 - `desktop/critical-suite.json` maps account verifiers to OV-903 and local-startup to
   OV-401, local-metadata to OV-501; shared with OV-1004, adjust when merging.
