@@ -638,7 +638,9 @@ function judgeCancel(record) {
       if (state.state !== expected) fail(`${label}: ${file} is ${state.state}, expected ${expected}`);
       if (label === 'after restart' && state.temporary.length) fail(`temporary remains after restart: ${state.temporary}`);
     }
-  const reviewed = record.afterRestart.ui.controls.includes('Review') || ['Keep', 'Undo'].every(control => record.afterRestart.ui.controls.includes(control));
+  // A two-file review offers Keep All/Undo All; one file offers Keep/Undo.
+  const controls = record.afterRestart.ui.controls;
+  const reviewed = controls.includes('Review') || ['Keep', 'Undo'].every(label => controls.some(control => control.startsWith(label)));
   if (kind === 'multi') {
     if (!reviewed) fail('the applied files have no restorable review after restart');
     if (!record.recovery || Object.values(record.recovery.files).some(file => file.state !== 'original') ||
