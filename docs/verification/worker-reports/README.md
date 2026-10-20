@@ -16,7 +16,7 @@ story is on the [status page](../../planning/eta-and-definition-of-done.md#story
 | [autocomplete-safety](autocomplete-safety.md) | OV-603 | Verified |
 | [autocomplete-quality](autocomplete-quality.md) | OV-602 | Verified |
 | [agent-editing](agent-editing.md) | OV-103 | Checks pass; owner decision |
-| [language-tools](language-tools.md) | OV-402 | Checks pass; owner decision |
+| [language-tools](language-tools.md) | OV-402 | Verified |
 | [agent-context](agent-context.md) | OV-1001 | Checks pass; owner decision |
 | [mcp-safety](mcp-safety.md) | OV-303 | Verified |
 | [mcp-auth](mcp-auth.md) | OV-304 | Verified |
