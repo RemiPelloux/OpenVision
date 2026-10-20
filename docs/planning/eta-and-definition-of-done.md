@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **31 (70.45%)** |
-| Partial / Planned / Unknown | 5 / 7 / 1 |
-| 80% target | 36 Verified: **5 more** |
+| Verified | **32 (72.73%)** |
+| Partial / Planned / Unknown | 4 / 7 / 1 |
+| 80% target | 36 Verified: **4 more** |
 | Code on `main` | Every worker branch merged (20 October); clean build, unit suites and the Linux critical subset pass |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,10 +47,10 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)); settled 20 October in [owner decisions](owner-decisions.md) |
 | X | External: a machine, balance or account |
 
-### Verified (31)
+### Verified (32)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision), 803, 402.
+- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision), 803, 402, 1001.
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -58,12 +58,11 @@ merged code. "Gate" is what blocks promotion:
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
 | --- | --- | --- | --- | --- |
 | OV-103 Agent editing | All 14 interruption cases pass ×2; residuals decided | A regression in OV-1002 stream coalescing duplicates a reply after a disk-full retry (`verify:profile-io-faults`) | L | Fix in progress (responsiveness worker) |
-| OV-1001 Agent context | Budgets pass except closed chats | A closed long chat keeps about half its history: a leak to fix | L | Worker running |
 | OV-1004 Release safety | All Linux gates pass (corrupt state, crash recovery, authority, utility listeners, secrets scan 0 findings) | Release gate: promote last, on the same build as every other story | L | Final rerun once the others are Verified |
 | OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU over budget on this host (the pre-merge build measures the same); absolute budgets stay | X | A reference-class host |
 | OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Frame and scroll budgets fail without a GPU; software-rendering budgets not adopted | X | A reference-class host with a GPU |
 | OV-704 Specialized modes | Scope decided; probe passes natively (`oxnQvd`, `tizi1z`) | Image-input matrix; browser reachability for the local Agent | L | Next worker slot |
-| OV-703 Remote (SSH) | Matrix decided (SSH to Linux x64, Agent local-only); SSH verifier passes | Remote host writes to `~/.cursor`: remote profile isolation | L | Worker running |
+| OV-703 Remote (SSH) | Profile isolation fixed; base SSH check passes ×2 | Remote server outlives its last window under the reconnection grace (`--agent` failed ×2) | L | Worker fixing |
 | OV-802 Buildable host | Upstream host passes the critical subset; defaults decided | Rebuilt add-ons need glibc 2.38; must build on the 2.28 sysroot | L | Next worker slot |
 | OV-804 Independent build | Not started | Distribution rights of the recovered source: owner and legal advice | D | Owner only; outside the 36/44 plan |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
@@ -84,14 +83,14 @@ Owner decisions were made on 20 October ([record](owner-decisions.md)). What rem
 
 | Step | Work | Effect if it passes |
 | --- | --- | --- |
-| Worker round (finishing) | OV-1001 and OV-703 under coordinator rerun; OV-103 after the coalescing fix (OV-803, 402 done) | Up to +3 |
-| Next round | OV-704 image and browser runs (running), OV-802 glibc 2.28 rebuild | Up to +2 |
+| Worker round (finishing) | OV-103 (coalescing fix under rerun), OV-703 (server shutdown fix); OV-803, 402, 1001 done | Up to +2 |
+| Next round | OV-704 (hide image generation, tool labels), OV-802 (glibc 2.28 rebuild done; coordinator rerun) | Up to +2 |
 | Reference host | OV-1002 and OV-1003 on a GPU, reference-class machine | Up to +2 |
 | Release gate | OV-1004 last, on the same build | +1 |
 | External | OV-205 balance, OV-901 Windows, OV-902 Mac, OV-905 other Linux; OV-804 owner/legal | Up to +5 |
 
-**36/44 needs 5 more:** the running round plus the next round can supply them
-(5 stories) on Linux alone, in about **2 quota rounds**; every remaining gap is
+**36/44 needs 4 more:** the running round plus the next round can supply them
+(4 stories) on Linux alone, in about **2 quota rounds**; every remaining gap is
 now plain engineering work with no decision pending. The Linux ceiling is
 39/44: those 36, then OV-1002 and OV-1003 on a reference host, then OV-1004.
 

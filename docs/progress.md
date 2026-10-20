@@ -17,13 +17,13 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **31/44 · 70.45%** | **13/44** are not fully verified: 5 Partial, 7 Planned, 1 Unknown |
-| Recorded 80% verification milestone | Requires **36/44** Verified | **5** additional stories must pass |
-| All accepted features | Requires **44/44** Verified | **13** additional stories must pass |
+| Fully verified local-feature stories | **32/44 · 72.73%** | **12/44** are not fully verified: 4 Partial, 7 Planned, 1 Unknown |
+| Recorded 80% verification milestone | Requires **36/44** Verified | **4** additional stories must pass |
+| All accepted features | Requires **44/44** Verified | **12** additional stories must pass |
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
-Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501, OV-1005, OV-304, OV-502, OV-503, OV-504, OV-303, OV-904, OV-903, OV-604 (excluded by owner decision), OV-803 and OV-402 are Verified under it. See
+Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501, OV-1005, OV-304, OV-502, OV-503, OV-504, OV-303, OV-904, OV-903, OV-604 (excluded by owner decision), OV-803, OV-402 and OV-1001 are Verified under it. See
 the [status page](planning/eta-and-definition-of-done.md#re-scope-baseline-v3), which also lists [every story's gap and ETA](planning/eta-and-definition-of-done.md#story-status-and-gaps).
 
 Partial stories include working implementations with unfinished checks. This is
