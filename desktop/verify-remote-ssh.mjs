@@ -12,7 +12,7 @@
 // that the key reaches neither the remote home nor the server data.
 import assert from 'node:assert/strict';
 import { execFile, spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { chmod, mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
@@ -38,7 +38,7 @@ const product = JSON.parse(await readFile(join(appRoot, 'product.json'), 'utf8')
 if (!product.openvisionRemoteServer) throw new Error('This build has no prepared remote server; run npm run prepare:remote and npm run build:desktop.');
 const commit = product.commit, serverName = product.serverApplicationName, dataFolder = product.serverDataFolderName;
 const directory = await mkdtemp(join(root, `logs/remote-ssh-${agentMode ? 'agent-' : ''}`));
-const profile = join(directory, 'profile'), sshDir = join(directory, 'ssh');
+const profile = join(directory, 'profile'), secondProfile = join(directory, 'profile-2'), sshDir = join(directory, 'ssh');
 await mkdir(join(profile, 'User'), { recursive: true }); await mkdir(sshDir, { mode: 0o700 });
 const tag = randomBytes(5).toString('hex');
 const result = { checkedAt: new Date().toISOString(), platform: `${process.platform}-${process.arch}`, mode: agentMode ? 'agent' : 'base',
@@ -91,7 +91,10 @@ const upload = (path, data) => new Promise((done, fail) => {
 });
 await writeFile(join(sshDir, 'config.cli'), sshConfig(knownHosts));
 const home = status.home, project = `${home}/project`, fixture = `${home}/.ov-fixture`;
-await remote(`set -e; rm -rf ${project} ${fixture}; mkdir -p ${project} ${fixture}
+// The resolver keys the remote profile home on the local profile directory.
+const remoteProfileHome = userData => `${home}/${dataFolder}/profiles/${createHash('sha256').update(join(userData, 'User')).digest('hex').slice(0, 16)}`;
+// The fixture account starts without any upstream data folder.
+await remote(`set -e; rm -rf ${project} ${fixture} ${home}/.cursor; mkdir -p ${project} ${fixture}
 printf 'Hello remote ${tag}\\n' > ${project}/hello.txt; printf 'console.log(1);\\n' > ${project}/main.js`);
 
 await writeFile(join(profile, 'User/settings.json'), JSON.stringify({ ...verificationSettings,
@@ -108,15 +111,16 @@ await writeFile(join(profile, 'argv.json'), '{"enable-crash-reporter":false}');
 // --- Client process family under strace --------------------------------------
 const clientTrace = join(directory, 'client-trace.log');
 const traced = join(directory, 'traced-host.sh');
-await writeFile(traced, `#!/bin/sh\nexec strace -f -qq -ttt -yy -e trace=execve,connect,sendto,sendmsg,sendmmsg -e signal=none -s 200 -o '${clientTrace}' '${layout.executable}' "$@"\n`);
+await writeFile(traced, `#!/bin/sh\nexec strace -f -qq -ttt -yy -e trace=execve,connect,sendto,sendmsg,sendmmsg -e signal=none -s 200 -A -o '${clientTrace}' '${layout.executable}' "$@"\n`);
 await chmod(traced, 0o755);
 result.observations.removedProxyVariables = removedProxyVariables(process.env);
 const env = captureEnvironment(process.env); delete env.SSH_AUTH_SOCK; delete env.SSH_AGENT_PID;
 const folderUri = `vscode-remote://ssh-remote+ovfixture${project}`;
-let app, page;
-async function launch(name) {
+let app, page, launches = 0;
+async function launch(name, userData = profile) {
+  launches += 1;
   app = await _electron.launch({ executablePath: traced, env, timeout: 90000,
-    args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
+    args: ['--user-data-dir', userData, '--extensions-dir', join(directory, 'extensions'), '--new-window',
       // No Secret Service under Xvfb; the disposable profile stores the fixture key with basic encryption.
       '--password-store=basic',
       '--disable-updates', '--skip-welcome', '--skip-release-notes', '--disable-telemetry', '--disable-crash-reporter', '--log', 'trace',
@@ -152,6 +156,18 @@ async function editAndSave(file, text) {
   await until(`remote ${file} saved`, async () => (await remoteFile(`${project}/${file}`)).includes(text) ? true : { error: 'not saved' }, 30000);
 }
 // Remote file search answers once the server's search service is ready.
+// A command round-trip proves the workbench reaches the remote extension host
+// (its connection is restored), not only the file system.
+async function pingRemoteHost(label) {
+  const before = (await remote(`ls ${fixture} | grep -c '^ping-' || true`)).trim();
+  await page.keyboard.press('F1');
+  await page.locator('.quick-input-widget input[type="text"]').fill('>OpenVision Remote Fixture: Ping');
+  await page.locator('.quick-input-list .monaco-list-row').filter({ hasText: 'OpenVision Remote Fixture: Ping' }).first().click();
+  return until(`${label}: remote extension host answers`, async () => {
+    const [count, newest] = (await remote(`ls ${fixture} | grep -c '^ping-' || true; ls -t ${fixture}/ping-* 2>/dev/null | head -n 1`)).trim().split('\n');
+    return Number(count) > Number(before) ? JSON.parse(await remoteFile(newest)) : { error: 'no ping' };
+  }, 120000, 500);
+}
 async function quickOpen(file) {
   const started = Date.now();
   await page.keyboard.press('ControlOrMeta+p');
@@ -198,15 +214,22 @@ const fixtureVsix = zip([
   ['extension.vsixmanifest', `<?xml version="1.0" encoding="utf-8"?><PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011"><Metadata><Identity Language="en-US" Id="remote-fixture" Version="0.0.1" Publisher="openvision-local-verification"/><DisplayName>OpenVision remote fixture</DisplayName><Description xml:space="preserve">Verification fixture</Description></Metadata><Installation><InstallationTarget Id="Microsoft.VisualStudio.Code"/></Installation><Dependencies/><Assets><Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true"/></Assets></PackageManifest>`],
   ['[Content_Types].xml', '<?xml version="1.0" encoding="utf-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension=".json" ContentType="application/json"/><Default Extension=".js" ContentType="application/javascript"/><Default Extension=".vsixmanifest" ContentType="text/xml"/></Types>'],
   ['extension/package.json', JSON.stringify({ name: 'remote-fixture', publisher: 'openvision-local-verification', version: '0.0.1',
-    engines: { vscode: '^1.90.0' }, main: './extension.js', activationEvents: ['*'], extensionKind: ['workspace'] })],
+    engines: { vscode: '^1.90.0' }, main: './extension.js', activationEvents: ['*'], extensionKind: ['workspace'],
+    contributes: { commands: [{ command: 'openvisionRemoteFixture.ping', title: 'OpenVision Remote Fixture: Ping' }] } })],
   ['extension/extension.js', `const vscode = require('vscode'), fs = require('fs'), os = require('os'), path = require('path');
 exports.activate = context => {
   const dir = path.join(os.homedir(), '.ov-fixture'); fs.mkdirSync(dir, { recursive: true });
   const record = { pid: process.pid, ppid: process.ppid, uid: process.getuid(), remoteName: vscode.env.remoteName,
+    profileHome: process.env.VSCODE_OPENVISION_PROFILE_HOME ?? null,
     extensionKind: context.extension.extensionKind, execPath: process.execPath, at: Date.now() };
   fs.writeFileSync(path.join(dir, 'activation-' + process.pid + '.json'), JSON.stringify(record));
-  const beat = () => fs.writeFileSync(path.join(dir, 'heartbeat.json'), JSON.stringify({ pid: process.pid, at: Date.now() }));
+  const beat = () => { const file = path.join(dir, 'heartbeat.json'), partial = file + '.' + process.pid;
+    fs.writeFileSync(partial, JSON.stringify({ pid: process.pid, at: Date.now() })); fs.renameSync(partial, file); };
   beat(); const timer = setInterval(beat, 500); context.subscriptions.push({ dispose: () => clearInterval(timer) });
+  // Runs only when the workbench reaches this extension host over its connection.
+  let pings = 0;
+  context.subscriptions.push(vscode.commands.registerCommand('openvisionRemoteFixture.ping', () =>
+    fs.writeFileSync(path.join(dir, 'ping-' + process.pid + '-' + (++pings) + '.json'), JSON.stringify({ pid: process.pid, at: Date.now() }))));
 };
 `],
 ]);
@@ -321,6 +344,7 @@ try {
   assert.equal(activation.uid, status.uid, 'The fixture runs as the remote account');
   assert.equal(activation.remoteName, 'ssh-remote');
   assert.equal(activation.extensionKind, 2, 'ExtensionKind.Workspace');
+  assert.equal(activation.profileHome, remoteProfileHome(profile), 'The remote extension host gets this profile\'s remote home');
   assert.match(activation.execPath, new RegExp(`/${dataFolder.replace('.', '\\.')}/bin/${commit}/node$`));
   result.observations.fixtureActivation = activation;
   result.checks.remoteExtensionHostActivation = true;
@@ -339,7 +363,10 @@ try {
   result.checks.reloadReconnects = true;
 
   enter('reconnect-killed-connection');
-  const heartbeat = async () => JSON.parse((await remoteFile(`${fixture}/heartbeat.json`)) || '{}');
+  const heartbeat = () => until('fixture heartbeat', async () => {
+    const beat = JSON.parse((await remoteFile(`${fixture}/heartbeat.json`)) || '{}');
+    return beat.pid ? beat : { error: 'no heartbeat' };
+  }, 10000);
   result.observations.beforeKill = (await host('processes')).rows.filter(row => row.kind !== 'other').map(row => `${row.kind}:${row.argv.slice(0, 80)}`);
   const killed = await host('kill-sessions');
   assert.ok(killed.sessions.length >= 1, 'At least one SSH session was killed');
@@ -348,6 +375,7 @@ try {
   await editAndSave('renamed.txt', ` reconnected-${tag}`);
   const beat = await heartbeat();
   assert.equal(beat.pid, reloaded.pid, 'The remote extension host survives the dropped connection');
+  assert.equal((await pingRemoteHost('after the killed connection')).pid, reloaded.pid, 'The same extension host reconnects');
   assert.ok(Date.now() - beat.at < 5000);
   result.checks.reconnectAfterKilledConnection = true;
 
@@ -359,6 +387,7 @@ try {
   await until('session after sshd restart', async () => (await remoteRows(['ssh-session'])).length ? true : { error: 'no session' }, 180000, 500);
   await editAndSave('renamed.txt', ` restarted-${tag}`);
   assert.equal((await heartbeat()).pid, reloaded.pid);
+  assert.equal((await pingRemoteHost('after the sshd restart')).pid, reloaded.pid, 'The same extension host reconnects');
   result.checks.reconnectAfterSshdRestart = true;
 
   if (agentMode) {
@@ -401,6 +430,32 @@ try {
     return rows.length ? { error: rows.map(row => `${row.kind}:${row.argv.slice(0, 80)}`).join(' | ') } : [];
   }, 60000, 500);
   result.checks.windowCloseReleasesRemote = leftovers.length === 0;
+
+  enter('second-profile');
+  // A second local profile on the same host gets its own remote profile home.
+  await mkdir(join(secondProfile, 'User'), { recursive: true });
+  await writeFile(join(secondProfile, 'User/settings.json'), await readFile(join(profile, 'User/settings.json')));
+  const known = new Set((await activations()).map(item => item.pid));
+  await launch('second-profile', secondProfile);
+  await explorerRow('renamed.txt').waitFor({ timeout: 180000 });
+  const second = await until('fixture active for the second profile', async () =>
+    (await activations()).find(item => !known.has(item.pid)) ?? { error: 'no activation' }, 120000, 500);
+  assert.equal(second.profileHome, remoteProfileHome(secondProfile));
+  assert.notEqual(second.profileHome, activation.profileHome);
+  await close('second-profile');
+  await until('remote processes released after the second profile', async () =>
+    (await remoteRows(['remote-server', 'ssh-session'])).length ? { error: 'remaining' } : true, 60000, 500);
+  result.observations.profileHomes = [activation.profileHome, second.profileHome];
+  result.checks.separateRemoteProfileHomes = true;
+
+  // Remote extensions wrote their data inside OpenVision's server folder, per
+  // profile, and nothing under the upstream ~/.cursor.
+  const remoteLayout = (await remote(`cd ${home} && ls -A; echo ---; for d in ${activation.profileHome} ${second.profileHome}; do echo "$d $(find "$d" -mindepth 1 2>/dev/null | wc -l)"; done; ` +
+    `echo ---; find ${home}/${dataFolder}/profiles -mindepth 1 -maxdepth 3 2>/dev/null | sed "s|${home}/||" | sort | head -40`)).trim().split('---\n');
+  const entries = remoteLayout[0].trim().split('\n'), counts = remoteLayout[1].trim().split('\n').map(line => Number(line.split(' ').pop()));
+  result.observations.remoteHome = { entries, profileEntries: counts, profileTree: remoteLayout[2]?.trim().split('\n') };
+  result.checks.noUpstreamDataFolderOnRemote = !entries.includes('.cursor');
+  result.checks.remoteProfileDataNamespaced = counts.length === 2 && counts[0] > 0;
   // Every session accepted by the final sshd instance (after the restart) must
   // be logged as ended; sessions killed earlier on purpose end without a line.
   const journal = (await host('journal')).text;
@@ -425,7 +480,6 @@ try {
   await host('stop').catch(error => result.errors.push(`stop: ${error.message}`));
   // Every connect and lookup is attributed to the verifier phase it fell in.
   const phaseAt = ms => result.phases.reduce((current, item) => Date.parse(item.at) <= ms ? item.phase : current, 'setup');
-  const gallery = new URL(product.extensionsGallery?.serviceUrl ?? 'http://none.invalid').hostname;
   for (const [name, text] of [['client', await readFile(clientTrace, 'utf8').catch(() => '')], ['remote', remoteTrace]]) {
     const parsed = parseSyscallTrace(text);
     const external = trafficConnects(parsed).filter(item => item.port !== 53)
@@ -444,19 +498,15 @@ try {
         names: [...new Set(payload.match(/[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi) ?? [])].map(host => host.replace(/^\.+/, '')) });
     }
     const downloaders = [...text.matchAll(/execve\("([^"]*\/(?:wget|curl|fetch))"/g)].map(match => match[1]);
-    // A remote extension that is not built in makes the client look it up in
-    // the configured gallery (on install and at each workbench start). Those
-    // lookups are reported; nothing else may leave either machine.
-    const afterInstall = item => result.phases.findIndex(entry => entry.phase === item.phase) >=
-      result.phases.findIndex(entry => entry.phase === 'remote-extension') && result.phases.some(entry => entry.phase === 'remote-extension');
-    const galleryLookups = name === 'client' ? lookups.filter(item => afterInstall(item) && item.names.length &&
-      item.names.every(host => host.toLowerCase() === gallery)) : [];
-    const galleryProcesses = new Set(galleryLookups.map(item => item.pid));
-    const tolerated = item => afterInstall(item) && galleryProcesses.has(item.pid);
-    const unexpected = [...external.filter(item => !tolerated(item)), ...lookups.filter(item => !galleryLookups.includes(item))];
+    // Nothing may leave either machine, in any phase.
+    const unexpected = [...external, ...lookups];
     result.observations[`${name}Network`] = { traced: text.length > 0, connects: parsed.connects.length, external, lookups, downloaders,
-      galleryLookups: galleryLookups.length, unexpected };
-    result.checks[`${name}NoServerFetchOrExternalTraffic`] = text.length > 0 && unexpected.length === 0 && downloaders.length === 0;
+      unexpected };
+    // The client trace must cover every launch (the wrapper appends).
+    const traced = name === 'client' ? text.split('\n').filter(line => line.includes(`execve("${layout.executable}"`) && line.includes('"--user-data-dir"')).length : undefined;
+    if (name === 'client') result.observations.clientTracedLaunches = { traced, launches };
+    result.checks[`${name}NoServerFetchOrExternalTraffic`] = text.length > 0 && unexpected.length === 0 && downloaders.length === 0 &&
+      (name !== 'client' || traced === launches);
     if (agentMode) result.observations[`${name}ProviderConnects`] = parsed.connects.filter(item => item.port === providerPort && /^127\./.test(item.ip ?? '')).length;
   }
   if (agentMode) result.checks.providerRequestsOriginateLocally = result.observations.clientProviderConnects > 0 && result.observations.remoteProviderConnects === 0;

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { disableSpellcheckDownloads, removeControlUrl, controlManifestGuard, setContributedDefaults, extensionDefaults,
   disableWorkbenchHostedReports, refuseAnonymousHostedCalls, transportTargets, disableDeviceIdFile,
   localGateDefaults, setLocalGateDefaults, emptyAnonymousTeamSettings, ignoreCachedStatsigBootstrap,
-  skipVsixGalleryMetadata, skipVsixGalleryMatch, vsixInstallTargets } from './network-defaults.mjs';
+  skipVsixGalleryMetadata, skipVsixGalleryMatch, skipVsixUpdateCheck, vsixInstallTargets } from './network-defaults.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const app = join(root, 'source/app');
@@ -187,6 +187,31 @@ test('installed local VSIX extensions are not matched with the Marketplace', () 
     });
 });
 
+test('installed local VSIX extensions are left out of the Marketplace update check', () => {
+  const service = `class X {
+    async checkForUpdates(e, t) {
+      const i = [];
+      for (const r of this.local)
+        (t && !r.isBuiltin) ||
+          (r.isBuiltin && !r.local?.pinned && (r.type === 0 || !r.local?.identifier.uuid)) ||
+          (r.local?.source !== "resource" &&
+            i.push({ ...r.identifier, preRelease: this.shouldPreferPreReleaseForExtension(r) }));
+      return i.map((item) => item.id);
+    }
+    shouldPreferPreReleaseForExtension() { return !1; }
+  }`;
+  const once = skipVsixUpdateCheck(service);
+  assert.equal(skipVsixUpdateCheck(once), once);
+  const X = new Function(`${once}\nreturn X;`)();
+  const instance = new X();
+  instance.local = [{ identifier: { id: 'vsix' }, local: { source: 'vsix' } }, { identifier: { id: 'gallery' }, local: { source: 'gallery' } },
+    { identifier: { id: 'resource' }, local: { source: 'resource' } }];
+  return instance.checkForUpdates().then(ids => {
+    assert.deepEqual(ids, ['gallery']);
+    assert.throws(() => skipVsixUpdateCheck(service.replace('source !== "resource"', 'source !== "other"')), /update check owner/);
+  });
+});
+
 test('anonymous-call guard refuses a changed transport contract', () => {
   assert.throws(() => refuseAnonymousHostedCalls(minified.replace('Authorization header omitted', 'changed')), /authorization owner/);
 });
@@ -258,6 +283,7 @@ test('built source carries every network-default owner change', { skip: !built &
     assert.ok(setLocalGateDefaults(text) === text, `${relative} local gate defaults`);
     assert.ok(ignoreCachedStatsigBootstrap(text) === text, `${relative} cached Statsig bootstrap`);
     assert.ok(skipVsixGalleryMatch(text) === text, `${relative} VSIX gallery match`);
+    assert.ok(skipVsixUpdateCheck(text) === text, `${relative} VSIX update check`);
     assert.ok(emptyAnonymousTeamSettings(text) === text, `${relative} anonymous team settings`);
   }
   for (const relative of vsixInstallTargets) {

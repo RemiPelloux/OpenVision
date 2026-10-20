@@ -12,6 +12,7 @@ import { fileHash } from './import-files.mjs';
 import { exists } from './source-assembly.mjs';
 import { localServerTemplate, remoteSshExtension, serverNames } from './remote-server.mjs';
 import { setContributedDefaults } from './network-defaults.mjs';
+import { variable } from './profile-home-paths.mjs';
 
 export const marker = '/* OpenVision local remote-server upload v1 */';
 export const extensionDirectory = 'extensions/open-remote-ssh';
@@ -179,6 +180,37 @@ export function verifyHostKeys(text) {
   return result;
 }
 
+// Each local profile gets its own remote profile home inside the server data
+// folder: <remote home>/<serverDataFolderName>/profiles/<key>, where <key> is
+// derived from the local profile directory. The remote extension host receives
+// it as VSCODE_OPENVISION_PROFILE_HOME (not the terminal environment), so remote
+// extensions never write ~/.cursor and two local profiles never share data.
+export const profileMarker = '/* OpenVision remote profile home v1 */';
+const profileHelper = `${profileMarker}
+async function openvisionRemoteProfileHome(connection, installPath, context) {
+  const vscode = require("vscode"), fs = require("fs"), path = require("path"), crypto = require("crypto");
+  const product = JSON.parse(await fs.promises.readFile(path.join(vscode.env.appRoot, "product.json"), "utf8"));
+  const profile = path.dirname(path.dirname(context.globalStorageUri.fsPath));
+  const key = crypto.createHash("sha256").update(profile).digest("hex").slice(0, 16);
+  const home = (await connection.exec('printf %s "$HOME"')).stdout;
+  if (!home.startsWith("/")) throw new Error("The remote home directory could not be resolved");
+  const data = installPath ? installPath.replace(/^~(?=\\/|$)/, home) : home + "/" + product.serverDataFolderName;
+  if (!data.startsWith("/") || /[\\r\\n\\0]/.test(data)) throw new Error("The remote server data folder could not be resolved");
+  return data + "/profiles/" + key;
+}
+`;
+
+export function remoteProfileHome(text) {
+  if (text.includes(profileMarker)) return text;
+  const install = unique(text, /const ([\w$]+)=\(0,[\w$]+\.findServerInstallPath\)\([\w$]+\.hostname,[\w$]+\),[\w$]+=await\(0,[\w$]+\.installCodeServer\)\(this\.sshConnection,/g, 'install path');
+  const resolved = unique(text, /const ([\w$]+)=new ([\w$]+)\.ResolvedAuthority\("127\.0\.0\.1",[\w$]+\.localPort,[\w$]+\.connectionToken\);return \1\.extensionHostEnv=([\w$]+),\1/g, 'resolved authority');
+  if (resolved.index < install.index) throw new Error('Remote-SSH resolved authority precedes the install');
+  const call = `${resolved[3]}.${variable}=await openvisionRemoteProfileHome(this.sshConnection,${install[1]},this.context);`;
+  const result = profileHelper + text.slice(0, resolved.index) + call + text.slice(resolved.index);
+  parseJavaScript(result, { ecmaVersion: 'latest', sourceType: 'script' });
+  return result;
+}
+
 const scriptMarker = '# OpenVision: the client uploaded the pinned server archive over this connection.';
 export function localServerScript(text) {
   if (text.includes(scriptMarker)) return text;
@@ -209,7 +241,7 @@ async function installExtension(root, vsix, app) {
       throw new Error('Pinned open-remote-ssh VSIX has an unexpected identity');
     const manifestFile = join(extension, 'package.json');
     await writeFile(manifestFile, JSON.stringify(setContributedDefaults(manifest, resolverDefaults), null, 2) + '\n');
-    for (const [relative, transform] of [['lib/extension.js', text => verifyHostKeys(localServerUpload(text))], ['src/scripts/server-setup.sh', localServerScript]])
+    for (const [relative, transform] of [['lib/extension.js', text => remoteProfileHome(verifyHostKeys(localServerUpload(text)))], ['src/scripts/server-setup.sh', localServerScript]])
       await writeFile(join(extension, relative), transform(await readFile(join(extension, relative), 'utf8')));
     await rm(target, { recursive: true, force: true });
     await rename(extension, target);

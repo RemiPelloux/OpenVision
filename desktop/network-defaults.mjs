@@ -237,6 +237,19 @@ export function skipVsixGalleryMatch(text) {
   const [filter] = filters, at = filter.index + filter[1].length, item = filter[3];
   return text.slice(0, at) + ` && ${item}.local.source !== "vsix" ${vsixMatchMarker}` + text.slice(at);
 }
+// The startup and periodic extension update check (checkForUpdates, with
+// extensions.autoCheckUpdates) queries the Marketplace for every installed
+// extension that is not a resource, which sends the identifiers of local VSIX
+// installs (OV-703: a VSIX installed on an SSH host, seen from a fresh profile).
+// Local VSIX installs are left out of that query as well.
+const vsixUpdateMarker = '/* OpenVision local VSIX installs skip the Marketplace update check v1 */';
+export function skipVsixUpdateCheck(text) {
+  if (text.includes(vsixUpdateMarker)) return text;
+  const sites = [...text.matchAll(/async checkForUpdates\([\w$]+, [\w$]+\) \{[\s\S]{0,1200}?\(([\w$]+)\.local\?\.source !== "resource"( &&\s*[\w$]+\.push\(\{ \.\.\.\1\.identifier, preRelease:)/g)];
+  if (sites.length !== 1) throw new Error('Extension update check owner missing or changed');
+  const [site] = sites, at = site.index + site[0].length - site[2].length;
+  return text.slice(0, at) + ` && ${site[1]}.local?.source !== "vsix" ${vsixUpdateMarker}` + text.slice(at);
+}
 export const vsixInstallTargets = ['out/vs/code/electron-utility/sharedProcess/sharedProcessMain.js', 'out/vs/code/node/cliProcessMain.js'];
 
 export const transportTargets = ['extensions/cursor-always-local/dist/main.js', 'extensions/cursor-agent-host/dist/main.js',
@@ -263,7 +276,7 @@ export async function installNetworkDefaults(root) {
   for (const relative of ['out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js']) {
     const text = await readFile(join(root, app, relative), 'utf8');
     await backedWrite(root, `${app}/${relative}`, text,
-      skipVsixGalleryMatch(ignoreCachedStatsigBootstrap(emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text))))));
+      skipVsixUpdateCheck(skipVsixGalleryMatch(ignoreCachedStatsigBootstrap(emptyAnonymousTeamSettings(setLocalGateDefaults(disableWorkbenchHostedReports(text)))))));
   }
   for (const relative of vsixInstallTargets) {
     const text = await readFile(join(root, app, relative), 'utf8');
@@ -287,5 +300,5 @@ export async function installNetworkDefaults(root) {
     const after = JSON.stringify(setContributedDefaults(JSON.parse(text), defaults), null, 2) + '\n';
     if (JSON.stringify(JSON.parse(text)) !== JSON.stringify(JSON.parse(after))) await backedWrite(root, path, text, after);
   }
-  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally; cached Statsig bootstrap ignored; local VSIX installs make no Marketplace lookup`);
+  console.log(`Automatic network fetches disabled: spellcheck dictionaries, extension control manifest, experiment refresh, Cursor Tab fate, machine-wide device id file, anonymous Cursor RPCs in ${transportTargets.length} transports, ${extensionDefaults.length} bundled-extension defaults, ${Object.keys(localGateDefaults).length} local gate defaults; experiments initialize locally; cached Statsig bootstrap ignored; local VSIX installs make no Marketplace lookup or update check`);
 }

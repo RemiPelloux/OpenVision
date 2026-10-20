@@ -83,3 +83,26 @@ test('remote process classification separates sessions, server and fixture', () 
   assert.equal(classify(row('/opt/node desktop/remote-ssh-host.mjs logs/remote-ssh-control')), 'fixture-controller');
   assert.equal(classify(row('bash -l')), 'other');
 });
+
+test('remote launcher supplies a default profile home inside the server data folder', async () => {
+  const { remoteLauncher, launcherMarker } = await import('./remote-server.mjs');
+  const shipped = '#!/usr/bin/env sh\ncase "$1" in\n\t--inspect*) INSPECT="$1"; shift;;\nesac\n\nROOT="$(dirname "$(dirname "$(readlink -f "$0")")")"\n\n"$ROOT/node" ${INSPECT:-} "$ROOT/out/server-main.js" "$@"\n';
+  const result = remoteLauncher(shipped);
+  assert.ok(result.includes(launcherMarker));
+  assert.ok(result.includes('export VSCODE_OPENVISION_PROFILE_HOME="${VSCODE_OPENVISION_PROFILE_HOME:-$(dirname "$(dirname "$ROOT")")/profiles/default}"\n'));
+  assert.ok(result.indexOf('export VSCODE_OPENVISION_PROFILE_HOME') < result.indexOf('"$ROOT/node"'));
+  assert.equal(remoteLauncher(result), result);
+  assert.throws(() => remoteLauncher(shipped.replace('server-main.js', 'main.js')), /launcher contract changed/);
+});
+
+test('server transforms cover the remote profile owners and the VSIX metadata lookup', async () => {
+  const { serverTransforms } = await import('./remote-server.mjs');
+  const { nodeTargets } = await import('./profile-home-paths.mjs');
+  const targets = new Set(serverTransforms.map(([relative]) => relative));
+  for (const relative of Object.keys(nodeTargets).filter(relative => !relative.includes('/electron-utility/')))
+    assert.ok(targets.has(relative), relative);
+  assert.ok(!targets.has('out/vs/code/electron-utility/mcpProcess/mcpProcessMain.js'), 'not shipped in the server');
+  assert.ok(targets.has('out/vs/platform/terminal/node/ptyHostMain.js'));
+  const main = serverTransforms.filter(([relative]) => relative === 'out/server-main.js').map(([, transform]) => String(transform)).join('\n');
+  assert.match(main, /skipVsixGalleryMetadata/);
+});

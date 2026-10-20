@@ -17,7 +17,8 @@ import { disableCoreTelemetry } from './telemetry-core.mjs';
 import { telemetryProduct } from './telemetry-settings.mjs';
 import { disableAgentTelemetry, disableCodebaseTelemetry, disableCompletionTelemetry, disableDebuggerTelemetry,
   disableExtensionHostTelemetry } from './telemetry-extensions.mjs';
-import { disableDeviceIdFile, extensionDefaults, refuseAnonymousHostedCalls, setContributedDefaults,
+import { isolateEnvironmentProfileHome, isolateNodeProfileHome, nodeTargets, variable as profileHomeVariable } from './profile-home-paths.mjs';
+import { disableDeviceIdFile, extensionDefaults, refuseAnonymousHostedCalls, setContributedDefaults, skipVsixGalleryMetadata,
   transportTargets } from './network-defaults.mjs';
 import { downloadPinned } from './linux-input.mjs';
 import { fileHash } from './import-files.mjs';
@@ -82,8 +83,16 @@ const inlineProductTargets = ['out/server-main.js', 'out/vs/workbench/api/node/e
   'out/vs/platform/terminal/node/ptyHostMain.js'];
 // Every transform is one the client build applies to the same owner; the drift
 // guards stay in the shared functions. Unlisted owners do not exist on the server.
+// Remote profile isolation: remote extensions resolve their data (agent
+// projects, MCP state, plugins, sandbox policies) from
+// VSCODE_OPENVISION_PROFILE_HOME instead of ~/.cursor. The resolver sets it per
+// local profile; the launcher supplies a default (remoteLauncher). The counts
+// are the client's: the server copies of these bundles match them exactly.
+const remoteProfileTargets = Object.entries(nodeTargets).filter(([relative]) => !relative.includes('/electron-utility/'));
 export const serverTransforms = [
-  ['out/server-main.js', text => disableDeviceIdFile(disableCoreTelemetry(text).text)],
+  ...remoteProfileTargets.map(([relative, expected]) => [relative, text => isolateNodeProfileHome(text, expected)]),
+  ['out/server-main.js', text => skipVsixGalleryMetadata(isolateEnvironmentProfileHome(disableDeviceIdFile(disableCoreTelemetry(text).text)))],
+  ['out/vs/platform/terminal/node/ptyHostMain.js', isolateEnvironmentProfileHome],
   ['out/vs/workbench/api/node/extensionHostProcess.js',
     text => disableExtensionHostTelemetry(disableCoreTelemetry(text, { requireSentry: true }).text)],
   ['extensions/cursor-always-local/dist/main.js', text => disableCompletionTelemetry(disableAgentTelemetry(text))],
@@ -93,6 +102,18 @@ export const serverTransforms = [
   ['extensions/ms-vscode.js-debug/src/extension.js', disableDebuggerTelemetry],
   ...transportTargets.map(target => [target, refuseAnonymousHostedCalls]),
 ];
+
+// The server launcher supplies a profile home inside the server data folder
+// (bin/<commit>/../../profiles/default) when no window set one.
+export const launcherMarker = '# OpenVision remote profile home v1';
+export function remoteLauncher(text) {
+  if (text.includes(launcherMarker)) return text;
+  const anchor = 'ROOT="$(dirname "$(dirname "$(readlink -f "$0")")")"\n';
+  if (text.split(anchor).length !== 2 || !text.includes('"$ROOT/node" ${INSPECT:-} "$ROOT/out/server-main.js" "$@"'))
+    throw new Error('Remote server launcher contract changed');
+  return text.replace(anchor, `${anchor}\n${launcherMarker}\n` +
+    `export ${profileHomeVariable}="\${${profileHomeVariable}:-$(dirname "$(dirname "$ROOT")")/profiles/default}"\n`);
+}
 
 export function remoteCli(text) {
   if (text.includes('APP_NAME="openvision"')) return text;
@@ -155,7 +176,10 @@ export async function prepareRemoteServer(root, { platform = `${process.platform
     const path = join(server, relative);
     await writeFile(path, JSON.stringify(setContributedDefaults(JSON.parse(await readFile(path, 'utf8')), defaults), null, 2) + '\n');
   }
-  await rename(join(server, 'bin/cursor-server'), join(server, `bin/${serverNames.serverApplicationName}`));
+  const launcher = join(server, `bin/${serverNames.serverApplicationName}`);
+  await rename(join(server, 'bin/cursor-server'), launcher);
+  await writeFile(launcher, remoteLauncher(await readFile(launcher, 'utf8')));
+  await chmod(launcher, 0o755);
   const cli = join(server, 'bin/remote-cli/openvision');
   await rename(join(server, 'bin/remote-cli/cursor'), cli);
   await writeFile(cli, remoteCli(await readFile(cli, 'utf8')));
