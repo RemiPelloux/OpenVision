@@ -172,9 +172,13 @@ try {
     result.unavailable = { toolResult: refused.result, uiShowsReason: (await page.locator('body').innerText()).includes(browserUnavailableMessage) };
     assert.ok(refused.result.includes(browserUnavailableMessage), `Unavailable browser server explained: ${refused.result.slice(0, 500)}`);
     // The tool row states the failure instead of a past-tense success.
-    result.unavailable.toolRow = await page.getByText(/Failed browser_navigate|Navigated to/).allInnerTexts();
-    assert.ok(result.unavailable.toolRow.some(row => /Failed browser_navigate/.test(row)), `failed tool row: ${JSON.stringify(result.unavailable.toolRow)}`);
-    assert.ok(!result.unavailable.toolRow.some(row => /Navigated to/.test(row)), 'no "Navigated to" for a refused call');
+    // The row's action and details are separate elements; read the chat as text.
+    const chat = await page.locator('.part.auxiliarybar').first().innerText().catch(() => page.locator('body').innerText());
+    result.unavailable.toolRow = { failed: /Failed\s+browser_navigate/.test(chat), navigatedTo: /Navigated to/.test(chat) };
+    assert.ok(result.unavailable.toolRow.failed, 'the refused call\'s row reads "Failed browser_navigate"');
+    assert.ok(!result.unavailable.toolRow.navigatedTo, 'no "Navigated to" for a refused call');
+    // Opening the row shows the reason to the user.
+    assert.ok(result.unavailable.uiShowsReason, 'the opened tool row shows the explanation');
     assert.doesNotMatch(refused.result, /blocked by team admin/i, 'No false team-admin reason for a local profile');
     assert.deepEqual(pageHits, [], 'A refused browser call must not load the page');
     assert.equal(result.steps.navigate.approval.requested, false, 'Nothing to approve for a refused server');
