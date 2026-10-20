@@ -371,6 +371,30 @@ async function conflictRename(context) {
   }
 }
 
+// Owner decision (OV-402): Python, Go and Rust are syntax-only, and the UI must
+// say that a user-installed language server enables full features. The launcher
+// reads the native language status hover for each file; TypeScript is the
+// negative control.
+async function syntaxOnly() {
+  for (const [language, name] of [['python', 'syntax.py'], ['go', 'syntax.go'], ['rust', 'syntax.rs'], ['typescript', 'lib.ts']]) {
+    await caseRun('syntax_only', language === 'typescript' ? 'typescript_control' : language, async () => {
+      const doc = await open(name);
+      assert.equal(doc.languageId, language);
+      const answer = path.join(directory, `language-status-${language}.json`);
+      await publish('phase', { mode: `language-status-${language}` });
+      const seen = await until(async () => JSON.parse(await fsp.readFile(answer, 'utf8').catch(() => 'null')),
+        `${language} language status read by the launcher`, 30000);
+      if (language === 'typescript') assert.doesNotMatch(seen.text, /Syntax highlighting only/);
+      else {
+        assert.match(seen.text, /Syntax highlighting only/);
+        assert.match(seen.text, new RegExp(`Install a ${{ python: 'Python', go: 'Go', rust: 'Rust' }[language]} language server extension`));
+      }
+      await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+      return seen;
+    });
+  }
+}
+
 // Same-document edits while a language request is in flight. Each delayed probe
 // provider for the private `.ovinflight` fixture snapshots the text when it is
 // called, waits until the driver has typed into that document through the native
@@ -663,7 +687,7 @@ async function run(context) {
       result.scan_windows = await scanWindows();
       await publish('scan-complete', {});
       // `only` is a development filter; acceptance runs execute every suite.
-      const suites = { typescript, javascript, json, css, html, markdown, conflict: conflictRename, inflight: inflightEdits };
+      const suites = { typescript, javascript, json, css, html, markdown, conflict: conflictRename, inflight: inflightEdits, syntax: syntaxOnly };
       for (const [name, suite] of Object.entries(suites)) if (!mode.only || mode.only.includes(name)) await suite(context);
     }
     const failures = Object.entries(result.cases).filter(([, value]) => value.status === 'fail').map(([key]) => key);
