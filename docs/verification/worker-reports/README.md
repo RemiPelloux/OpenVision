@@ -28,7 +28,7 @@ story is on the [status page](../../planning/eta-and-definition-of-done.md#story
 | [responsiveness](responsiveness.md) | OV-1002 | GPU host or software-rendering budget decision |
 | [updates-rollback](updates-rollback.md) | OV-904 | Verified |
 | [retrieval-index](retrieval-index.md) | OV-502–504 | Verified |
-| [helper-replacement](helper-replacement.md) | OV-803 | Helper clauses pass on Linux; hold (hosted contracts, owner defaults) |
+| [helper-replacement](helper-replacement.md) | OV-803 | Round 2: helper contracts 20/20 twice; promote recommended |
 | [upstream-host](upstream-host.md) | OV-802 | Checks pass; glibc floor and owner decisions |
 | [modes-inventory](modes-inventory.md) | OV-704, OV-604 | Probe passes; scope and next-edit decisions |
 | [remote-ssh](remote-ssh.md) | OV-703 | SSH to Linux passes; "Agent local-only" decision |

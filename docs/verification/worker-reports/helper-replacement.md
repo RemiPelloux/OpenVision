@@ -4,6 +4,12 @@ Branch `ov/helper-replacement`, restarted from `origin/main` `eed4f19a` on 19
 October 2026 at the coordinator's request. The work in progress from 18 October
 was carried over. Linux x64 only.
 
+**Round 2 (20 October 2026).** The branch was reset to `origin/main` `95dd887d`
+after the owner decisions ([owner-decisions.md](../../planning/owner-decisions.md)).
+Under those defaults, every helper the ranking shows as loaded now has native
+authority, malformed-input, process-identity and cleanup checks. See
+[round 2](#round-2-native-helper-contracts-under-the-decided-defaults).
+
 ## Summary
 
 - **Measured dependency ranking.** An env-gated logging proxy around the
@@ -148,27 +154,98 @@ owner (OV-1003). Main's report attributes about 390 listings to the sandbox
 preflight children; the `none` run here shows those listings come from Electron
 `NodeService` utility processes instead. The budget was not changed.
 
+## Round 2: native helper contracts under the decided defaults
+
+The owner decided:
+
+- Defaults stay on the original helpers. `none` and `landlock` for the sandbox
+  and `none` for crepectl remain build options.
+- `tree-chunk-napi` loads lazily.
+- Sandboxed auto-run stays off.
+- Indexed grep (`GrepClient` and crepectl) stays for this release.
+
+The remaining clause was to confirm authority, malformed-input,
+process-identity and cleanup tests for every loaded helper.
+
+**Added.** `npm run verify:helper-contracts` (`desktop/verify-helper-contracts.mjs`):
+
+- It runs 20 checks: 4 dimensions × 5 helpers (`cursorsandbox`, `crepectl`,
+  `file-service` `GrepClient`, `cursor-proclist`, `tree-chunk-napi`).
+- It uses the shipped default binaries, as an unprivileged user.
+- The sandbox matrix moves to `desktop/sandbox-contract.mjs`, shared with the
+  Landlock unit tests.
+- `desktop/helper-contracts.test.mjs` guards the trace analysis.
+
+Results and observations are in
+[rea-helper-replacement-linux.md](../../recovery/rea-helper-replacement-linux.md#native-contract-checks-under-the-decided-defaults-20-october-2026).
+
+**Verifier defects found while iterating, fixed before the counted runs:**
+
+- Trace windows were looked up under the wrong key, so three authority checks
+  passed without evidence (iteration run `helper-contracts-uxfuCF`). A missing
+  window now fails, and a unit test covers the naming.
+- strace truncated paths at 32 characters.
+- Rename destinations were not counted as writes.
+- Construct/dispose cycles under strace showed thread growth caused by strace,
+  and default glibc arenas showed retention, not a leak. Cycles now run
+  untraced with `MALLOC_ARENA_MAX=2`; the default-arena plateau is recorded
+  (iteration runs `nTz97Z`, `UrUQPh`).
+
+**No product defect** was found under the decided defaults.
+
+**Observations of the original binaries**, recorded and not changed:
+
+- **`GrepClient` callbacks after `dispose()`.** It keeps its callback references,
+  so Node does not exit on its own. The extension host exits explicitly.
+- **glibc arena retention.** Repeated `GrepClient` construct/dispose grows RSS
+  under default arenas; it plateaus at about 245 MiB after 90 clients on a
+  40,000-file repository. With `MALLOC_ARENA_MAX=2` it is flat.
+- **crepectl spill leftover.** A build killed through its parent leaves an empty
+  `crepe-spill-*` directory, which the next build does not remove. This only
+  happens with indexed grep on; `instant_grep_indexing` is off by default.
+- **crepectl exit codes.** Some failures exit 0 with an error in the stdout JSON.
+- **`cursorsandbox` leniency.** It accepts a relative `cwd`, a 4 MiB policy and a
+  symlinked policy file. Callers never produce these.
+
+**Host:**
+
+- A clean rebuild: `source/`, `electron-host/`, `backups/`, the build marker and
+  the namespace journal were moved aside.
+- `npm ci --prefix tooling` was run again as root: the new main adds
+  `@electron/fuses`.
+- The first batch attempt failed at the build for that reason, before any
+  verifier ran (`logs/batch-contracts-setup-failed`). It is not counted.
+- Native runs used user `ubuntu`, `env -i` with `XDG_RUNTIME_DIR` set,
+  `xvfb-run`, `dbus-run-session` and a disposable gnome-keyring.
+
+| Command (clean rebuild of `95dd887d` + this branch) | Run ID | Result | First-time pass? |
+| --- | --- | --- | --- |
+| `npm run build:desktop` | `logs/batch-contracts/build.log` | pass; defaults: `cursorsandbox` `80fcddbf…`, `crepectl` `a145cdb8…` | yes |
+| `npm run test:helper-replacement` | console | 31/31 pass | yes |
+| `npm run verify:helper-contracts` | `helper-contracts-8pjCC2` | **20/20** | yes |
+| `npm run verify:helper-contracts` | `helper-contracts-oMGQI1` | **20/20** | yes |
+| `npm run verify:native-calls` | `native-calls-oOUr3D`, `native-calls-CItpOX` | pass, pass. Ranking unchanged: only `cursorsandbox` used (5); `cursor-proclist` and `file-service` loaded, no calls; `tree-chunk-napi` not loaded | yes, yes |
+| `npm run verify:agent` | `agent-verification-IgfpAh`, `…-j1TUTd` | pass, pass | yes, yes |
+| `npm run verify:helper-contracts` (iterations) | `uxfuCF`, `nTz97Z`, `UrUQPh` | verifier development, not counted | — |
+
 ## Recommendation
 
-**OV-803: hold, not yet Verified on Linux x64.** The helper clauses this branch
-was given pass on Linux:
+**OV-803: promote to Verified on Linux x64.** Every clause now has Linux
+evidence under the decided defaults:
 
-- the measured priority;
-- the recovered interfaces;
-- a replacement with authority, malformed-input, identity and cleanup tests.
+- **Measured priority.** `verify:native-calls`, two counted runs in each round.
+- **Interfaces recovered or replacements implemented:**
+  - `cursorsandbox`: contract recovered, plus Landlock and removal build options.
+  - `crepectl` and `file-service`: contracts recovered, plus the harness and a
+    removal option. Indexed grep stays, by owner decision.
+  - `tree-chunk-napi`: lazy.
+  - `cursor-proclist`: disabled by OV-1003.
+- **Authority, malformed input, process identity and cleanup.** Tested natively
+  for all five loaded helpers, 20/20 twice on a clean rebuild.
 
-Remaining Linux gaps:
-
-1. **Hosted contracts.** These are named in the story ("…helpers and hosted
-   contracts are replaceable") but were not among this branch's tasks. They are
-   not addressed here.
-2. **Indexed grep.** File-service `GrepClient` and crepectl are not replaced.
-   This branch provides the harness and a removal option; the owner should
-   decide between replacement and removal.
-3. **`tree-chunk-napi`.** No replacement. It is not loaded in the workload; a
-   tree-sitter port is needed only if semantic search should survive without it.
-4. **Defaults.** Every replacement is behind a build option whose default is the
-   original, pending owner approval.
+**Caveat for the coordinator.** The story names "hosted contracts". Neither
+this branch's tasks nor the owner's remaining-work line for OV-803 lists them.
+If the ledger treats them as part of OV-803, that clause has no evidence here.
 
 ## Moved to platform/live stories
 
@@ -178,15 +255,16 @@ Remaining Linux gaps:
 
 ## Defaults pending owner decision
 
-- `OPENVISION_SANDBOX_HELPER` defaults to `original`. `none` removes the five
-  startup preflights; `landlock` ships the OpenVision helper. The renderer
-  still reports the sandbox as unsupported in every mode, so Agent commands
-  stay approval-first. Enabling sandboxed auto-run is a separate decision.
-- `OPENVISION_CREPECTL` defaults to `original`. `none` disables indexed grep
-  permanently.
-- `tree-chunk-napi` lazy load is on by default: a timing-only change.
-- Unchanged here: `cursor-proclist` (OV-1003), the tunnels (OV-703) and the
-  AppImage updater (OV-904).
+None remain for OV-803. The owner decided all of them on 20 October:
+
+- original helpers by default;
+- `none` and `landlock` (sandbox) and `none` (crepectl) remain build options;
+- `tree-chunk-napi` lazy;
+- sandboxed auto-run off;
+- indexed grep kept.
+
+`cursor-proclist` (OV-1003), the tunnels (OV-703) and the AppImage updater
+(OV-904) belong to other stories.
 
 ## Open risks
 
@@ -198,5 +276,13 @@ Remaining Linux gaps:
   - It is built with the host C compiler and links glibc dynamically.
 - **The call log covers three addon files.** A gate served by an account (for
   example `instant_grep_indexing`) would change the ranking.
-- **The startup-traversal listing budget fails on this host for `origin/main`
-  too** (see above). It is reported to OV-1003, not changed here.
+- **The startup-traversal listing budget failed on this host for `origin/main`
+  too** in round 1 (see above). It was reported to OV-1003 and not changed here;
+  it was not rerun in round 2.
+- **Indexed grep stays for this release.** If `instant_grep_indexing` is turned
+  on, the original `GrepClient` behaviors recorded above apply: 0 results for a
+  match at the end of a 4 MiB file, constructor excludes ignored, spill
+  leftovers, and callbacks kept after dispose.
+- **Addon checks run in Node 24.18.0 workers, not inside Electron.** The
+  in-app evidence for the same addons comes from `verify:native-calls` and
+  `verify:agent`.
