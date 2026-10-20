@@ -14,9 +14,9 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **28 (63.64%)** |
-| Partial / Planned / Unknown | 6 / 9 / 1 |
-| 80% target | 36 Verified: **8 more** |
+| Verified | **29 (65.91%)** |
+| Partial / Planned / Unknown | 6 / 8 / 1 |
+| 80% target | 36 Verified: **7 more** |
 | Code on `main` | Every worker branch merged (20 October); clean build, unit suites and the Linux critical subset pass |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -47,28 +47,27 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)); settled 20 October in [owner decisions](owner-decisions.md) |
 | X | External: a machine, balance or account |
 
-### Verified (28)
+### Verified (29)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
-- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903.
+- **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision).
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
 
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
 | --- | --- | --- | --- | --- |
-| OV-103 Agent editing | All native checks pass | Owner accepts the residuals: unproducible faults, review returning as pending, untracked early-exit command, restore-save failure, untested Stop cases | D | Decision only |
-| OV-402 Language tools | New checks pass | Large-file symbols 13.0 s > 10 s; renderer p95 259 > 250 ms on 4 CPUs; Python/Go/Rust syntax-only | D | Decision, or an optimization session |
-| OV-1001 Agent context | Budgets pass | Long closed chats keep about half their history (React/Solid retainers) | D | Decision, or work under OV-1003 |
+| OV-103 Agent editing | All native checks pass; residuals 1–4 and 6 accepted | Stop/close during argument streaming, MCP tool calls and between multi-file edit files are untested | L | Worker running |
+| OV-402 Language tools | New checks pass; syntax-only default accepted | Large-file symbols 13.0 s > 10 s; renderer p95 259 > 250 ms (budgets kept) | L | Worker optimizing |
+| OV-1001 Agent context | Budgets pass except closed chats | A closed long chat keeps about half its history: a leak to fix | L | Worker running |
 | OV-1004 Release safety | All Linux gates pass (corrupt state, crash recovery, authority, utility listeners, secrets scan 0 findings) | Release gate: promote last, on the same build as every other story | L | Final rerun once the others are Verified |
-| OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU 17–18 % renderer / 24–26 % extension hosts against 15 / 20; an A/B run shows the pre-merge build measures the same on this host | D, X | A comparable host, or a host-normalized CPU budget |
-| OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Smoke/full frame budgets and scroll fail on a no-GPU host | D, X | A GPU host, or adopt the proposed software-rendering budgets (then one session) |
-| OV-704 Specialized modes | Inventory, computer-use explanation and probe pass natively (`oxnQvd`, `tizi1z`) | Image-input matrix; whether browser tools reach the local Agent; scope sign-off | L, D | One session after the scope decision |
-| OV-604 Next-edit prediction | Absence check passes ×2 | Support (adapter) or exclude: [decision paper](../recovery/next-edit-decision.md) recommends excluding | D | Decision only if excluded |
-| OV-703 Remote (SSH) | SSH to Linux x64 passes 18/18 and 22/22 ×2 (pinned branded server, strict host keys) | Accept "Agent local-only" in remote windows; or remote Agent relay, remote profile isolation; containers deferred | D, L | Decision, or one session |
-| OV-802 Buildable host | Upstream Electron 42.10.0 host passes the critical subset; 11 addons rebuilt reproducibly | Rebuilt addons need glibc 2.38 (recovered: 2.28); whichlang and ripgrep fork not rebuilt | D, L | Accept the floor, or a clang/libc++ sysroot session |
-| OV-803 Replaceable helpers | Ranking measured; Landlock and none sandbox options pass; tree-chunk lazy | Indexed grep (GrepClient + crepectl) replace-or-remove; hosted contracts; defaults | D, L | Decision, then one session |
-| OV-804 Independent build | Not started | Where the application JavaScript comes from (distribution rights) | D | Decision first |
+| OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU over budget on this host (the pre-merge build measures the same); absolute budgets stay | X | A reference-class host |
+| OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Frame and scroll budgets fail without a GPU; software-rendering budgets not adopted | X | A reference-class host with a GPU |
+| OV-704 Specialized modes | Scope decided; probe passes natively (`oxnQvd`, `tizi1z`) | Image-input matrix; browser reachability for the local Agent | L | Next worker slot |
+| OV-703 Remote (SSH) | Matrix decided (SSH to Linux x64, Agent local-only); SSH verifier passes | Remote host writes to `~/.cursor`: remote profile isolation | L | Worker running |
+| OV-802 Buildable host | Upstream host passes the critical subset; defaults decided | Rebuilt add-ons need glibc 2.38; must build on the 2.28 sysroot | L | Next worker slot |
+| OV-803 Replaceable helpers | Defaults decided (original helpers, options kept) | Authority, malformed-input, identity and cleanup tests for every loaded helper | L | Worker running |
+| OV-804 Independent build | Not started | Distribution rights of the recovered source: owner and legal advice | D | Owner only; outside the 36/44 plan |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
 | OV-901 Windows | — | Windows x64 host; exit 134 and worker crash | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
 | OV-902 macOS | — | A Mac, or drop the claim | X, D | [#2](https://github.com/RemiPelloux/OpenVision/issues/2) |
@@ -83,19 +82,20 @@ merged code. "Gate" is what blocks promotion:
 
 ## ETA
 
-All worker rounds are finished (19–20 October). What remains is decisions and
-hardware, not open Linux work:
+Owner decisions were made on 20 October ([record](owner-decisions.md)). What remains:
 
 | Step | Work | Effect if it passes |
 | --- | --- | --- |
-| Owner decisions (#5) | OV-103, 402, 1001, 604 (decision only); OV-703, 802, 803, 704 (decision, then at most one session each) | Up to +8 |
-| Host or budget decision | OV-1002 and OV-1003: a GPU/comparable host, or host-normalized budgets | Up to +2 |
+| Worker round (running) | OV-103 Stop cases, OV-402 optimization, OV-1001 leak, OV-703 remote isolation, OV-803 helper clauses | Up to +5 |
+| Next round | OV-704 image and browser runs, OV-802 glibc 2.28 rebuild | Up to +2 |
+| Reference host | OV-1002 and OV-1003 on a GPU, reference-class machine | Up to +2 |
 | Release gate | OV-1004 last, on the same build | +1 |
-| External | OV-205 balance, OV-901 Windows, OV-902 Mac, OV-905 other Linux, OV-804 distribution decision | Up to +5 |
+| External | OV-205 balance, OV-901 Windows, OV-902 Mac, OV-905 other Linux; OV-804 owner/legal | Up to +5 |
 
-**Linux ceiling: 39/44.** The 36 target needs owner decisions: with the four
-decision-only stories and two of the decision-then-session groups it is reached
-in about **1–2 more quota rounds**.
+**36/44 needs 7 more:** the running round plus the next round can supply them
+(7 stories) on Linux alone, in about **2 quota rounds**; every remaining gap is
+now plain engineering work with no decision pending. The Linux ceiling is
+39/44: those 36, then OV-1002 and OV-1003 on a reference host, then OV-1004.
 
 ## Working setup
 
