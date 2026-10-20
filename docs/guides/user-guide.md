@@ -51,10 +51,16 @@ your project with **File > Open Folder**. Editable application files live under
 `electron-host/resources/app/` in the extracted package. Close the app before
 changing those files and restart to load the changes.
 
-C/C++ support is available on Windows x64 through `npm run setup:cpp`. It installs
-pinned clangd tools into OpenVision's own folders and preserves existing settings.
-See [C/C++ setup and verified workflows](cpp-support.md) for project compiler
-configuration and remaining limits. Global **Save All** also saves modified files
+C/C++ support is available on Windows x64 and Linux x64 through `npm run setup:cpp`.
+It installs pinned clangd tools into OpenVision's own folders and preserves existing
+settings. See [C/C++ setup and verified workflows](cpp-support.md) for project
+compiler configuration and remaining limits.
+
+Python, Go and Rust files get syntax highlighting only: no language server ships for
+them. The language status in the status bar (the `{}` entry next to the language
+name) says **Syntax highlighting only** and offers **Find a language server**.
+Installing a language server extension for that language enables completion,
+diagnostics, navigation and rename, and the notice disappears. Global **Save All** also saves modified files
 without editor tabs; [native verification](../verification/save-all-verification.md) covers
 extension edits, untitled choices and conflicting disk changes.
 
