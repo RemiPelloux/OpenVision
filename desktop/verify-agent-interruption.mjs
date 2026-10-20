@@ -15,6 +15,7 @@ import { linuxSandboxArguments } from './platform.mjs';
 import { fileHash } from './import-files.mjs';
 import { enterWorkspace, openChat } from './verification-workspace.mjs';
 import { agentWriteHelpers, instrumentAgentWrite } from './verify-agent-interruption-overlay.mjs';
+import { createMcpStdioFixture } from './verify-mcp-stdio.mjs';
 
 // Interruption while Agent writes or tools are outstanding. Controlled local
 // HTTP model fixture; real Agent tools, filesystem, review and restart.
@@ -122,9 +123,23 @@ const cases = {
   'approval-kill': { kind: 'approval', interrupt: 'kill' },
   'shell-close': { kind: 'shell', interrupt: 'close' },
   'shell-kill': { kind: 'shell', interrupt: 'kill' },
+  // Cancellation points without an outstanding write: each must leave the expected
+  // files, no owned process and a chat that accepts the next prompt.
+  'stream-stop': { kind: 'stream', interrupt: 'stop' },
+  'stream-close': { kind: 'stream', interrupt: 'close' },
+  'mcp-stop': { kind: 'mcp', interrupt: 'stop' },
+  'mcp-close': { kind: 'mcp', interrupt: 'close' },
+  'multi-stop': { kind: 'multi', interrupt: 'stop' },
+  'multi-close': { kind: 'multi', interrupt: 'close' },
 };
+const cancelKinds = new Set(['stream', 'mcp', 'multi']);
 for (const name of only ?? []) assert.ok(cases[name], `Unknown case ${name}`);
 const selected = Object.entries(cases).filter(([name]) => !only || only.includes(name));
+// A real STDIO MCP server whose slow call stays pending until cancelled.
+const mcpFixture = selected.some(([, spec]) => spec.kind === 'mcp') ? await createMcpStdioFixture() : undefined;
+const mcpCalls = () => mcpFixture?.requests.filter(request => request.method === 'tools/call') ?? [];
+const streamHeld = new Set();
+const messageText = message => typeof message?.content === 'string' ? message.content : JSON.stringify(message?.content ?? '');
 
 const server = createServer(async (request, response) => {
   if (request.url === '/v1/models') {
@@ -144,6 +159,32 @@ const server = createServer(async (request, response) => {
   const spec = cases[phase];
   if (!spec) return finish('OpenVision interruption fixture reply.');
   const id = `ov_interrupt_${phase.replaceAll('-', '_')}`;
+  // The follow-up prompt that shows the interrupted chat is still usable.
+  if (/Resume interruption fixture/.test(messageText(payload.messages?.findLast(message => message.role === 'user'))))
+    return finish(`OpenVision ${phase} resumed.`);
+  if (spec.kind === 'stream') {
+    // Tool arguments start streaming and the response is held: the call is never complete.
+    event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function', function: { name: 'StrReplace',
+      arguments: `{"path": ${JSON.stringify(fileFor(phase))}, "old_string": "\\"before ` } }] });
+    held.add(response); response.on('close', () => held.delete(response)); streamHeld.add(phase);
+    return;
+  }
+  if (spec.kind === 'mcp') {
+    if (toolResults.includes(id)) return finish(`OpenVision ${phase} finished.`);
+    event({ role: 'assistant', tool_calls: [{ index: 0, id, type: 'function', function: { name: 'CallMcpTool',
+      arguments: JSON.stringify({ server: 'user-openvision-verify', toolName: 'memory_probe',
+        description: `OpenVision ${phase} probe`, arguments: { mode: 'slow' } }) } }] });
+    event({}, 'tool_calls'); return response.end('data: [DONE]\n\n');
+  }
+  if (spec.kind === 'multi') {
+    // One assistant turn edits two files; the second write is held by the probe.
+    const second = `${id}_b`;
+    if (toolResults.includes(id) && toolResults.includes(second)) return finish(`OpenVision ${phase} finished.`);
+    for (const [index, [call, file]] of [[id, phase], [second, `${phase}-b`]].entries())
+      event({ role: 'assistant', tool_calls: [{ index, id: call, type: 'function', function: { name: 'StrReplace',
+        arguments: JSON.stringify({ path: fileFor(file), old_string: `"before ${file}"`, new_string: `"after ${file}"` }) } }] });
+    event({}, 'tool_calls'); return response.end('data: [DONE]\n\n');
+  }
   if (toolResults.includes(id)) {
     if (spec.kind === 'continuation' && !continuationHeld.has(phase)) {
       held.add(response); response.on('close', () => held.delete(response));
@@ -463,6 +504,164 @@ async function runCase(name, spec) {
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
 }
 
+// Stop or close while tool arguments stream, while an MCP call runs, or between the
+// two files of one multi-file edit. Each case then sends a follow-up prompt into
+// the same chat (after Stop in the same session; after close, after restart).
+const cancelPrompt = (name, kind) => kind === 'mcp'
+  ? `Probe ${name} with memory_probe on user-openvision-verify in slow mode. I approve it.`
+  : kind === 'multi' ? `Change ${name}: "before ${name}" to "after ${name}" in interrupt-${name}.js and "before ${name}-b" to "after ${name}-b" in interrupt-${name}-b.js.`
+    : `Change ${name}: "before ${name}" to "after ${name}" in interrupt-${name}.js.`;
+const cancelFiles = (name, kind) => kind === 'multi' ? [name, `${name}-b`] : kind === 'stream' ? [name] : [];
+async function filesState(name, kind) {
+  return Object.fromEntries(await Promise.all(cancelFiles(name, kind).map(async file => [file, await fileState(file)])));
+}
+async function mcpChildrenExited(connections) {
+  // The STDIO child holds its fixture control connection until it exits; the PID
+  // probe (signal 0) only reads existence, it never signals the process.
+  const deadline = Date.now() + 15000;
+  const alive = record => { try { process.kill(record.pid, 0); return true; } catch (error) { return error.code !== 'ESRCH'; } };
+  while (connections.some(record => !record.closedAt || alive(record)) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 100));
+  return connections.map(record => ({ pid: record.pid, closed: !!record.closedAt, exited: !alive(record) }));
+}
+async function resumeChat(name, record) {
+  const requestsBefore = requests.length;
+  let composer = await visibleComposerId().catch(() => undefined), history;
+  if (composer !== record.composerId) {
+    history = await openChatFromHistory(new RegExp(name, 'i'));
+    composer = await visibleComposerId().catch(() => undefined);
+  }
+  const outcome = { history, composer, sameChat: composer === record.composerId };
+  if (!outcome.sameChat) return outcome;
+  const input = await openChat(page);
+  await input.fill(`Resume interruption fixture ${name}. Reply only.`); await input.press('Enter');
+  outcome.replied = await page.getByText(`OpenVision ${name} resumed.`, { exact: true }).first().waitFor({ timeout: 45000 }).then(() => true, () => false);
+  await page.locator('.stop-button').filter({ visible: true }).waitFor({ state: 'hidden', timeout: 30000 }).catch(() => {});
+  outcome.requests = requests.length - requestsBefore;
+  await snapshot(name, 'after-resume');
+  return outcome;
+}
+async function runCancelCase(name, spec) {
+  const record = { name, ...spec, stages: [], violations: [] };
+  caseResults.push(record);
+  await freshProfile(name);
+  const connectionsBefore = mcpFixture?.connections.length ?? 0, listsBefore = mcpFixture?.requests.length ?? 0;
+  if (spec.kind === 'mcp') await writeFile(join(profile, 'User/mcp.json'), JSON.stringify({ mcpServers: {
+    'openvision-verify': mcpFixture.configuration } }, null, 2));
+  await launch(); phase = 'configure'; await configure();
+  phase = name;
+  const requestsBefore = requests.length, groupLeader = app.process().pid, callsBefore = mcpCalls().length;
+  for (const file of cancelFiles(name, spec.kind)) await writeFile(fileFor(file), original(file));
+  if (spec.kind === 'multi') await writeFile(join(probeDirectory, `pause-interrupt-${name}-b.js`), '');
+  if (spec.kind === 'mcp')
+    await waitFor(() => mcpFixture.requests.slice(listsBefore).some(request => request.method === 'tools/list'), 'MCP server was not discovered');
+  await newChat(cancelPrompt(name, spec.kind));
+  if (spec.kind === 'stream') {
+    await waitFor(() => streamHeld.has(name), 'Tool-argument stream was not held');
+    await page.waitForTimeout(1500);
+  } else if (spec.kind === 'mcp') {
+    await page.getByText('Pending approval', { exact: true }).filter({ visible: true }).waitFor({ timeout: 30000 });
+    await page.locator('[data-tool-approval-gate]').filter({ visible: true }).getByRole('button', { name: /^Run(?:\s|$)/ }).click();
+    await waitFor(() => mcpCalls().length > callsBefore, 'The MCP call did not start');
+    record.call = { id: mcpCalls().at(-1).id, instance: mcpCalls().at(-1).instance };
+  } else {
+    await waitFor(async () => (await probeEvents(fileFor(`${name}-b`))).some(entry => entry.event === 'paused'), 'Second write did not pause');
+    await waitFor(async () => (await fileState(name)).state === 'changed', 'First file was not written before the second');
+  }
+  record.composerId = await visibleComposerId().catch(() => undefined);
+  record.before = { files: await filesState(name, spec.kind), ui: await snapshot(name, 'before-interrupt') };
+  record.requestsBeforeInterrupt = requests.length - requestsBefore;
+  if (spec.interrupt === 'stop') {
+    await page.locator('.stop-button').filter({ visible: true }).first().click();
+    await page.waitForTimeout(1500);
+    const stopped = await snapshot(name, 'after-stop');
+    record.stages.push({ stage: 'after Stop', files: await filesState(name, spec.kind), ui: stopped, transcript: transcript(stopped.text) });
+    if (spec.kind === 'multi') {
+      await writeFile(join(probeDirectory, `release-interrupt-${name}-b.js`), '');
+      await page.waitForTimeout(3000);
+      record.stages.push({ stage: 'after Stop and second write release', files: await filesState(name, spec.kind), ui: await snapshot(name, 'after-release') });
+    }
+    if (spec.kind === 'mcp') {
+      record.mcpCancelled = await waitFor(() => mcpFixture.cancellations.some(event => event.requestId === record.call.id &&
+        event.instance === record.call.instance), 'Stop did not cancel the MCP call', 10000).then(() => true, () => false);
+    }
+    record.resume = await resumeChat(name, record);
+    await closeOwnedApp(`${name} after stop`);
+  } else await closeOwnedApp(name);
+  record.afterExit = { files: await filesState(name, spec.kind), survivors: await survivors([groupLeader]) };
+  if (spec.kind === 'mcp') record.afterExit.mcpChildren = await mcpChildrenExited(mcpFixture.connections.slice(connectionsBefore));
+  const aged = new Date(Date.now() - 120000);
+  for (const file of Object.values(record.afterExit.files)) for (const entry of file.temporary) await utimes(join(project, entry), aged, aged);
+  const requestsAtRestart = requests.length;
+  await launch(); await openChat(page); await page.waitForTimeout(4000);
+  await waitFor(async () => Object.values(await filesState(name, spec.kind)).every(file => !file.temporary.length),
+    'Startup sweep left an aged temporary', 15000).catch(() => {});
+  const restartedUi = await snapshot(name, 'after-restart');
+  record.afterRestart = { files: await filesState(name, spec.kind), ui: restartedUi, transcript: transcript(restartedUi.text),
+    restartRequests: requests.length - requestsAtRestart, mcpCalls: mcpCalls().length - callsBefore,
+    writes: Object.fromEntries(await Promise.all(cancelFiles(name, spec.kind).map(async file =>
+      [file, (await probeEvents(fileFor(file))).filter(entry => entry.event === 'write').length]))) };
+  if (spec.interrupt === 'close') record.resume = await resumeChat(name, record);
+  // A changed file must still be reviewable: Undo restores every file of the turn.
+  if (Object.values(record.afterRestart.files).some(file => file.state === 'changed')) {
+    const controls = await reviewControls();
+    record.recovery = { controls };
+    const undo = page.getByText(/^Undo( All)?$/).filter({ visible: true });
+    if (await undo.count()) {
+      await undo.first().click(); await page.waitForTimeout(500);
+      await page.getByText('Confirm', { exact: true }).filter({ visible: true }).click({ timeout: 3000 }).catch(() => {});
+      await waitFor(async () => Object.values(await filesState(name, spec.kind)).every(file => file.state === 'original'),
+        'Undo did not restore the original files', 10000).catch(() => {});
+    }
+    record.recovery.files = await filesState(name, spec.kind);
+    record.recovery.controlsAfter = await reviewControls();
+  }
+  record.requestsTotal = requests.length - requestsBefore;
+  await closeOwnedApp(`${name} after inspection`);
+  record.finalSurvivors = await survivors([]);
+  if (spec.kind === 'mcp') record.mcpChildrenAtEnd = await mcpChildrenExited(mcpFixture.connections.slice(connectionsBefore));
+  judgeCancel(record);
+  await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
+}
+
+function judgeCancel(record) {
+  const fail = message => record.violations.push(message);
+  const { name, kind, interrupt } = record;
+  if (record.afterExit.survivors.length) fail(`${record.afterExit.survivors.length} owned processes survived the interruption`);
+  if (record.afterRestart.restartRequests !== 0) fail('restart issued inference');
+  if (!record.resume?.sameChat || !record.resume.replied || record.resume.requests !== 1)
+    fail(`interrupted chat is not resumable: ${JSON.stringify(record.resume)}`);
+  if (record.requestsTotal !== 2) fail(`unexpected request count ${record.requestsTotal}`);
+  for (const [label, files] of [['after exit', record.afterExit.files], ['after restart', record.afterRestart.files]])
+    for (const [file, state] of Object.entries(files)) {
+      // The held second write of a stopped multi-file edit completes after Stop; elsewhere nothing is written.
+      const expected = kind === 'multi' && (file === name || interrupt === 'stop') ? 'changed' : 'original';
+      if (state.state !== expected) fail(`${label}: ${file} is ${state.state}, expected ${expected}`);
+      if (label === 'after restart' && state.temporary.length) fail(`temporary remains after restart: ${state.temporary}`);
+    }
+  const reviewed = record.afterRestart.ui.controls.includes('Review') || ['Keep', 'Undo'].every(control => record.afterRestart.ui.controls.includes(control));
+  if (kind === 'multi') {
+    if (!reviewed) fail('the applied files have no restorable review after restart');
+    if (!record.recovery || Object.values(record.recovery.files).some(file => file.state !== 'original') ||
+        record.recovery.controlsAfter.some(control => /^(Keep|Undo)( All| File)?$/.test(control)))
+      fail(`Undo after restart did not restore every file: ${JSON.stringify(record.recovery)}`);
+  } else if (reviewed) fail('review shown although nothing was written');
+  for (const [file, writes] of Object.entries(record.afterRestart.writes)) {
+    const expected = kind === 'multi' ? 1 : 0;
+    if (writes !== expected) fail(`write helper ran ${writes} times for ${file}, expected ${expected}`);
+  }
+  if (kind === 'stream') {
+    if (record.afterRestart.transcript.edited) fail('incomplete tool call is shown as "Edited"');
+  }
+  if (kind === 'mcp') {
+    if (record.afterRestart.mcpCalls !== 1) fail(`MCP tool ran ${record.afterRestart.mcpCalls} times`);
+    if (interrupt === 'stop' && !record.mcpCancelled) fail('Stop did not reach the MCP server');
+    const children = record.afterExit.mcpChildren ?? [];
+    if (!children.length || children.some(child => !child.closed || !child.exited)) fail(`MCP server outlived the application: ${JSON.stringify(children)}`);
+  }
+  if (record.finalSurvivors?.length) fail('owned processes remain after the case');
+  if ((record.mcpChildrenAtEnd ?? []).some(child => !child.closed || !child.exited)) fail('an MCP server outlived the restarted application');
+}
+
 // The same edit after restart: it must apply once with a review, and an interrupted
 // write's temporary sibling (aged past the sweep threshold here) must be removed.
 async function retryAfterInterruption(name, interruptedComposerId) {
@@ -563,7 +762,7 @@ function judge(record) {
 }
 
 try {
-  for (const [name, spec] of selected) await runCase(name, spec);
+  for (const [name, spec] of selected) await (cancelKinds.has(spec.kind) ? runCancelCase : runCase)(name, spec);
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized), 'Every inference uses the authenticated fixture');
   assert.deepEqual(errors, []);
   const violations = caseResults.flatMap(entry => entry.violations.map(message => `${entry.name}: ${message}`));
@@ -581,6 +780,7 @@ try {
   await closeOwnedApp('final').catch(error => { result.cleanupFailure = error.stack; });
   result.finalSurvivors = await ownedProcesses([]);
   server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+  await mcpFixture?.dispose().catch(error => { result.mcpCleanupFailure = error.stack; });
   await new Promise(resolve => shellServer.close(resolve));
   await writeFile(join(directory, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify({ directory, success: result.success, cases: caseResults.map(entry => ({ name: entry.name,
