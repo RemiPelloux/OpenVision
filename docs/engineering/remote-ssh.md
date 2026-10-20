@@ -1,6 +1,6 @@
 # Remote SSH: server input, resolver and key boundary
 
-OV-703, SSH-to-Linux part. Written 19 October 2026 for the 3.21.13 runtime
+OV-703, SSH-to-Linux part. Written 19 October 2026, updated 20 October after the owner decisions, for the 3.21.13 runtime
 input, Linux x64 client and Linux x64 host. User steps are in the
 [Remote SSH guide](../guides/remote-ssh.md). Native evidence is in
 [Remote SSH on Linux x64](../verification/remote-ssh-linux-2026-10-19.md).
@@ -9,11 +9,11 @@ input, Linux x64 client and Linux x64 host. User steps are in the
 
 | Environment | State |
 | --- | --- |
-| SSH, Linux x64 client → Linux x64 host | Implemented and natively verified with a controlled local host |
+| SSH, Linux x64 client → Linux x64 host | The declared matrix (owner decision, 20 October). Implemented and natively verified with a controlled local host |
 | SSH from Windows or macOS clients, or to non-x64 hosts | Not covered. The resolver refuses hosts other than `Linux x86_64` |
-| WSL | Windows only; moved to the Windows platform story |
-| Dev containers | Not attempted: no container daemon in the Linux verification host, and no licence-compatible container resolver chosen |
-| Agent in remote windows | Refused by design until local provider routing exists (see [Provider keys](#provider-keys-stay-local)) |
+| WSL | Moved to OV-901 (owner decision) |
+| Dev containers | Excluded from this release (owner decision): no supported daemon path |
+| Agent in remote windows | Local only (owner decision): refused in remote windows so keys never leave the client (see [Provider keys](#provider-keys-stay-local)) |
 
 ## Why the server is the editor's own build
 
@@ -47,27 +47,55 @@ customizations use) and transformed:
 | --- | --- |
 | `product.json` | Branding (`OpenVision Server`, `openvision`), `serverApplicationName` `openvision-server`, `serverDataFolderName` `.openvision-server`, `tunnelApplicationName` `openvision-tunnel`, local-only `serverDownloadUrlTemplate`, telemetry product keys (`telemetryProduct`), extension-control URL removed. Update, download, release-notes, issue and tip URLs removed |
 | Inline product literal in `out/server-main.js`, `out/vs/workbench/api/node/extensionHostProcess.js`, `out/vs/platform/terminal/node/ptyHostMain.js` | Replaced by the customized product (`inlineServerProduct`; exactly one literal per bundle carrying the pinned commit) |
-| `out/server-main.js` | Core telemetry (`disableCoreTelemetry`), machine-wide device id file (`disableDeviceIdFile`) |
+| `out/server-main.js` | Core telemetry (`disableCoreTelemetry`), machine-wide device id file (`disableDeviceIdFile`), argv.json in the server data folder (`isolateEnvironmentProfileHome`), no Marketplace metadata lookup for VSIX installs (`skipVsixGalleryMetadata`) |
+| `out/vs/platform/terminal/node/ptyHostMain.js` | argv.json in the server data folder |
+| The remote extension bundles in `nodeTargets` (agent exec and host, daemon, local agent runtime, retrieval, MCP, browser automation, NDJSON ingest, extension host) | Profile home (`isolateNodeProfileHome`); the server copies match the client drift counts exactly |
 | `out/vs/workbench/api/node/extensionHostProcess.js` | Core telemetry with the Sentry owner, extension-host telemetry |
 | `extensions/cursor-always-local/dist/main.js` | Agent and completion telemetry, anonymous hosted calls refused |
 | `extensions/cursor-agent-host/dist/main.js`, `…/agent-host-daemon/dist/bin/daemon.cjs` | Agent telemetry, anonymous hosted calls refused |
 | `extensions/cursor-retrieval/dist/main.js`, `extensions/ms-vscode.js-debug/src/extension.js` | Codebase and debugger telemetry |
 | `extensions/typescript-language-features`, `extensions/npm` manifests | Automatic type acquisition and npm package lookups off |
-| `bin/cursor-server`, `bin/remote-cli/cursor` | Renamed to `bin/openvision-server` and `bin/remote-cli/openvision` |
+| `bin/cursor-server`, `bin/remote-cli/cursor` | Renamed to `bin/openvision-server` and `bin/remote-cli/openvision`. The launcher sets a default `VSCODE_OPENVISION_PROFILE_HOME` of `<server data>/profiles/default` (`remoteLauncher`) |
 
 The result is packed with sorted names, fixed owner and the input build date,
-and gzip without a name or time. Two runs gave the same SHA-256
-(`df3f62d1…4a3ff25`), before and after the 19 October `main` update.
+and gzip without a name or time. Repeated runs give the same SHA-256. With
+the profile isolation (20 October) it is `01e1a243…3e11acf`, 121,069,938
+bytes; before it, `df3f62d1…4a3ff25`.
 `build/remote/manifest.json` records the input, the output hash and the
 customized files.
 
-The client profile-home isolation (`profile-home-paths.mjs`,
-`global-paths.mjs`) and the Agent provider patches are **not** applied to the
-server. They depend on `VSCODE_OPENVISION_PROFILE_HOME` and workbench commands
-that a remote extension host does not have, and fail closed without them.
-Remote extensions therefore keep their upstream data paths under the remote
-user's home (for example `~/.cursor`). See Open risks in the
-[worker report](../verification/worker-reports/remote-ssh.md).
+### Remote profile isolation
+
+On the client, agent data, MCP state, plugins and sandbox policies resolve
+from the profile home, `<user-data-dir>/User` (`profile-home-paths.mjs`), not
+`~/.cursor`. The remote extension host runs the same extensions on the host,
+where they wrote `~/.cursor` under the remote account. Separate local profiles
+also shared it there.
+
+Now:
+
+- The server copies of the `nodeTargets` bundles get the same
+  `isolateNodeProfileHome` transform. They read `VSCODE_OPENVISION_PROFILE_HOME`
+  and fail closed without an absolute path.
+- The resolver (`remoteProfileHome`) computes
+  `<remote home>/<serverDataFolderName>/profiles/<key>` per window. `<key>` is
+  the first 16 hex digits of the SHA-256 of the local profile directory, taken
+  from the resolver's own `globalStorageUri`, so each local user-data folder
+  or named profile gets its own key. It is passed through the resolved
+  authority's `extensionHostEnv`, after the loop that exports the forwarded
+  agent socket to terminals, so it reaches only the remote extension host.
+- The launcher default (`profiles/default`) covers a server started without
+  it (for example by `remote.SSH.serverDownloadUrlTemplate` set by the user).
+- The workbench-command-based global-path patches (`global-paths.mjs`,
+  `subagent-paths.mjs`) are not applied on the server. They would resolve the
+  client's path. Their readers fall back to the `.cursor`-joined paths that
+  the transform above already redirects (`.cursor` and `.claude` joins).
+  Reads of other tools' roots on the host (for example `~/.codex`) are
+  unchanged.
+
+Verified: the host starts without `~/.cursor` and ends without it; two local
+profiles get two different remote profile homes, matching the computed keys,
+and the remote extension host reports its own.
 
 ## Resolver choice
 
@@ -123,6 +151,34 @@ process holds the key and injects it, the remote extension host gets only a
 per-session token, and the route is an SSH reverse forward (`forwardIn`) on
 the resolver's connection. Agent tools must also keep running remotely
 (read/edit/command with approval and Stop). Neither is built.
+
+## No Marketplace query for VSIX installs
+
+OV-1005's decision is that local VSIX installs make no Marketplace lookup.
+`main` already skipped the install-time metadata lookup and the
+installed-extension match for VSIX installs (`skipVsixGalleryMetadata`,
+`skipVsixGalleryMatch`). A third path remained, shown by a fresh local profile
+opening a host where a VSIX is installed: the startup and periodic update
+check (`checkForUpdates`, `extensions.autoCheckUpdates`) POSTed the
+extension's identifier to `marketplace.cursorapi.com/_apis/public/gallery/extensionquery`.
+The stack, captured in the renderer, is `checkForUpdates` →
+`galleryService.getExtensions`. `skipVsixUpdateCheck`
+(`desktop/network-defaults.mjs`) leaves `source === "vsix"` out of that list in
+both workbenches, and the server skips the metadata lookup for VSIX installs.
+Extensions installed from the Marketplace are still checked. The verifier
+now fails on any connect or lookup that leaves either machine, in every phase.
+
+## Reconnection grace
+
+The server keeps a disconnected extension host for 3 hours
+(`reconnectionGraceTime`), shortened to 5 minutes only when another client
+connects, so that a laptop can sleep and resume. A window closed while its
+extension-host connection is still reconnecting cannot send a graceful
+disconnect. The same applies to a window reloaded in the first seconds of a
+connection. In both cases the server then stays up for that grace period (seen
+in development runs). Closing an established window stops it at once. The
+verifier waits for a command round-trip to the same remote extension host
+after each reconnect before closing.
 
 ## Verification hooks
 

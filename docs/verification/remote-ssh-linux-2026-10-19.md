@@ -6,6 +6,49 @@ committed in the evidence commit. The design is in
 [Remote SSH engineering](../engineering/remote-ssh.md); user steps are in the
 [guide](../guides/remote-ssh.md).
 
+## Round 2 — 20 October 2026
+
+These changes follow the owner decisions ([worker report](worker-reports/remote-ssh.md#round-2--20-october-2026-owner-decisions)):
+
+- Remote profile isolation.
+- No Marketplace query for VSIX installs in any phase.
+- Stricter capture and reconnect checks.
+
+Clean rebuild of `fdc5164a` on `main` `95dd887d`; verifier `4904e8d3`.
+Archive `01e1a24325d4dab44de289c3edd1ccedd02497eb24985e4133715bf1e3e11acf`
+(121,069,938 bytes), reproduced exactly by the clean `prepare:remote`. Built
+hashes: workbench `3c9bee267c03…`, resolver `b2f7004c7f44…`. Each run had its
+own `XDG_RUNTIME_DIR`.
+
+| Run | Mode | Result |
+| --- | --- | --- |
+| `remote-ssh-6QqiYI` | base | **Pass 21/21**, first attempt |
+| `remote-ssh-pduyIw` | base | **Pass 21/21**, first attempt |
+| `remote-ssh-agent-kkUoYa` | `--agent` | **Pass 25/25**, first attempt |
+| `remote-ssh-agent-3aUnmD` | `--agent` | **Pass 25/25**, first attempt |
+| `remote-ssh-jpVlBD` | base, previous verifier | Fail: heartbeat age measured after the reconnect round-trip (verifier ordering bug, fixed) |
+
+New or changed checks in round 2:
+
+| Check | What is required |
+| --- | --- |
+| `remoteExtensionHostActivation` | Also: the remote extension host's `VSCODE_OPENVISION_PROFILE_HOME` equals `~/.openvision-server/profiles/<sha256(local profile User directory)[0:16]>` |
+| `reconnectAfterKilledConnection`, `reconnectAfterSshdRestart` | Also: a command run from the palette reaches the same remote extension host (pid), and that host beats after the drop |
+| `separateRemoteProfileHomes` | A second local profile opening the same host gets a different remote profile home, reported by its own remote extension host |
+| `noUpstreamDataFolderOnRemote` | The host starts without `~/.cursor` and ends without it. Home entries at the end: `.bash_history`, `.bash_logout`, `.bashrc`, `.openvision-fixture`, `.openvision-server`, `.ov-fixture`, `.profile`, `project` |
+| `remoteProfileDataNamespaced` | The first profile's folder holds the remote extensions' data (57 entries: `.cursor/projects`, `plugins`, `sandbox-policies`, …) |
+| `clientNoServerFetchOrExternalTraffic`, `remoteNoServerFetchOrExternalTraffic` | No external connect or DNS lookup in **any** phase; no tolerance for gallery lookups. The client trace must cover every launch (3 of 3) |
+
+Observed across the four runs:
+
+- **Remote traffic:** 219–232 traced connects, 0 external; client 0 external.
+- **Sessions:** 16–18 accepted, all closed.
+- **Heartbeat:** 160–432 ms behind after the killed connection.
+- **Timings:** Quick Open ready in 2.8–4.6 s; connect 54.8–61.0 s under
+  strace on both machines.
+
+The sections below describe round 1 (19 October).
+
 ## Host and inputs
 
 | Item | Value |
