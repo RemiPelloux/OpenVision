@@ -22,8 +22,9 @@ and [responsiveness-linux.md](../../performance/responsiveness-linux.md).
   removes tiptap's write-only `child` back reference. Verifier chat: reply
   strings 75 s after close 0 (2–27 before), all marker occurrences 12 (45
   before), every one owned by bounded prompt history or the chat list.
-  Long 110-turn chat: partial (364/670 marker strings, previously 642–647),
-  the rest held by React DOM and Solid internals.
+  Long 110-turn chat (round 2, 20 October): 74/670 marker and 3/310 reply
+  strings after also detaching MCPService's Solid roots and clearing React
+  DOM's nested-update root (was 642–647 marker strings).
 - **Usage capture**: the live relay records provider-reported prompt,
   completion, cached and reasoning tokens; `--live --model` and a labelled
   `--live-dry-run` were added. Finding: Agent requests do not ask for
@@ -95,19 +96,64 @@ in the final runs: Stop → socket close ≤ 89 ms, chat close → socket close
 90 ms, window close 255–256 ms (budgets 250 / 250 / 900 ms). Run IDs are
 `logs/<id>/` folders of this container; logs are not published.
 
+## Round 2: long closed chats (20 October 2026)
+
+Owner decision (`docs/planning/owner-decisions.md`, OV-1001): the long-chat
+remainder is a leak, not a framework limit. The branch was reset to
+`origin/main` (`95dd887d`) and rebuilt cleanly
+(`rm -rf source electron-host backups/bundle-customizations build/source-build.json build/namespace-journal.json build/cache && npm run build:desktop`;
+`prepare:desktop` is not needed once `build/recovery` exists and refuses to
+run then). Native runs as `ov` with `XDG_RUNTIME_DIR=/run/user/<uid>`, Xvfb,
+`dbus-run-session` and an unlocked gnome-keyring Secret Service.
+
+**Owners found** (heap-snapshot retaining paths with closure source
+positions, `responsiveness-6i5Fng`: 412/669 marker and 142/309 reply strings
+kept on the clean main build):
+
+| Owner | Fix (commit `87534dde`) |
+| --- | --- |
+| `MCPService` constructor creates three Solid roots; `createRoot` copies the current owner's context, and the service is created while a chat view renders, so the roots and an effect observing the settings signal kept that view's context (props, conversation proxies) for the window's life | Those three roots pass `detachedOwner = null` (exact pattern: `const { dispose } = createRoot(...)` registered on the service; 3 in each variant) |
+| React DOM `rootWithNestedUpdates` keeps the last root with nested sync updates; its container held the closed transcript's DOM and listeners | Cleared whenever React resets the nested-update count; consecutive nested commits still counted |
+
+**Budget accounting** (commit after `87534dde`): on `main`, the owner-decided
+`CodebaseSearch` tool (OV-502) adds exactly 4,675 schema bytes and 1,302
+estimated tokens per request, so `fork` and warm `single` exceeded their byte
+budgets (`agent-context-B0ISB4`). Each byte/token budget now includes exactly
+that cost per request; a new `maxToolSchemaBytes` budget pins the 20-tool
+schema at 60,790 bytes per request.
+
+Round 2 verification (all first-time passes; no retries):
+
+| Command | Run | Result |
+| --- | --- | --- |
+| Diagnostic, clean main build: `verify:responsiveness -- --full --phases=closedChat --save-closed-snapshot` | `responsiveness-6i5Fng` | 412 marker / 142 reply strings (fails 400/130) |
+| After the fix: same command | `responsiveness-1sgNdr` | 74 / 3 |
+| **Clean rebuild of `87534dde`**, `npm run verify:responsiveness -- --full --phases=closedChat` ×3 | `responsiveness-9WablJ`, `-qLP3nu`, `-diY3Wa` | all budgets pass, 74 / 3 each, reopen restores turn 110 |
+| `npm run verify:responsiveness -- --full` (all phases) | `responsiveness-YqoF5E` | closedChat 74 / 3, reopen 1. Fails two OV-1002 timing budgets on this GPU-less host (`scroll.frameP95Ms` 83.3 > 50, `editorLarge.longTaskTotalMs` 396 > 300), owned by OV-1002's reference-host rerun |
+| `npm run verify:agent-context-budget` (before the schema accounting) | `agent-context-B0ISB4` | session and heap budgets pass; byte budgets fail on `fork`, warm `single` (CodebaseSearch) |
+| `npm run verify:agent-context-budget` | `agent-context-YKBanZ` | all budgets pass; 12 / 0 after release, reopen 1, forks reopen after restart |
+| `npm run verify:agent-context-budget -- --heap-strings` | `agent-context-j5O0jj` | all budgets pass; 12 / 0 |
+| `npm run verify:agent` | `agent-verification-mHn17l` | success |
+| `npm run test:agent-context` / `test:agent-retry` | — | 39/39, 40/40 |
+| `npm run docs:check`, `npm run status:features` | — | no failures, exit 0 |
+
+The 74 occurrences left in the 110-turn chat are prompt text in bounded
+owners: the app-wide 50-entry generation cache, the 10-entry prompt-input
+history and its two persisted copies, the chat title, subtitle and Chat
+History header, and the markdown lexer's last input. The closedChat budget is
+now absolute: ≤ 5 reply strings and ≤ 90 marker occurrences.
+
 ## Recommendation per story
 
-**OV-1001: not yet Verified on Linux x64.** Every Linux clause listed for
-this branch now has a native verifier with budgets that pass twice, except
-the closed-chat release in long chats: the 110-turn chat keeps 118 of 309
-reply strings 75 s after close (held by React DOM's nested-update root and a
-Solid observer), so the ≤ 5 absolute target holds only for the verifier's
-three-turn chat. Remaining Linux gaps: (1) release or bound the long-chat
-remainder and decide whether the Solid observer accumulates per closed chat
-(multi-chat close test); (2) owner decision on `stream_options.include_usage`.
-The live, Windows and macOS clauses are moved out (below). If the owner
-accepts the long-chat remainder as framework-bounded under OV-1003, OV-1001's
-Linux scope could be promoted on this evidence.
+**OV-1001: promote to Verified on Linux x64.** Every Linux clause listed for
+this branch has a native verifier with budgets. On a clean rebuild of
+`87534dde` the closed-chat budgets passed 3/3 first time on the 110-turn chat
+(≤ 5 reply strings, measured 3; ≤ 90 marker occurrences, measured 74, all
+bounded prompt owners; reopen restores the transcript). The other OV-1001
+budgets passed twice (`YKBanZ`, `j5O0jj`), including fork, retry/loop,
+tool-call and reasoning-replay pins, and `verify:agent` passed. Pending owner
+decision only: `stream_options.include_usage` (live usage capture). Live,
+Windows and macOS clauses are moved out (below).
 
 ## Moved to platform/live stories
 
@@ -131,9 +177,15 @@ Linux scope could be promoted on this evidence.
 
 ## Open risks
 
-- Long chats keep part of their history after close (React DOM's
-  nested-update root reference, a Solid observer of a module-level signal).
-  Whether the Solid observer accumulates per closed chat was not measured.
+- Other service constructors that create Solid roots while a view renders
+  (for example `_availableDefaultModels`, `_disposeReactive`,
+  `_isBlockingUserDecision`) were not changed: they did not appear as owners
+  in the closed-chat snapshots and use a different pattern.
+- Closing several long chats in one session was not measured; each closed
+  chat is released by the same path, but accumulation was not tested.
+- The React DOM change clears a reference React itself only replaces; it was
+  verified by unit tests on the recovered code and by the native runs above,
+  not by React's own test suite.
 - Reply-string retention on the unchanged build varied between runs (2–27);
   the absolute budget rests on runs with the release, which measured 0.
 - Unrelated defect (not fixed): with Electron `safeStorage` unavailable,

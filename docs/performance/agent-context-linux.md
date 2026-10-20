@@ -320,20 +320,63 @@ subtitle (the in-flight partial) and the Chat History header. Reply-string
 retention before the change varied between runs (2–27), consistent with
 handles that are only sometimes still referenced; with the release it is 0.
 
-In the long chat of `verify:responsiveness -- --phases=closedChat` the release
-is partial: smoke `N68nJK` → `E8Ehcc` 203 → 126 marker and 93 → 40 reply
-strings; full `responsiveness-Av9fiJ` 364 of 670 marker and 118 of 309 reply
-strings (previous evidence: 642–647 marker strings retained). The remainder is
-held by React DOM's nested-update root reference (`rootWithNestedUpdates`,
-which keeps the last root with nested updates and its container, the closed
-transcript) and by a Solid computation still observing a module-level
-settings signal. Both are framework internals and were not changed; whether
-the Solid observer accumulates per closed chat was not measured.
+In the long chat of `verify:responsiveness -- --phases=closedChat` the
+19 October release was partial: smoke `N68nJK` → `E8Ehcc` 203 → 126 marker and
+93 → 40 reply strings; full `responsiveness-Av9fiJ` 364 of 670 marker and 118
+of 309 reply strings (previous evidence: 642–647 marker strings retained). The
+owner did not accept this as a framework limit (20 October).
+
+### Long chats (20 October 2026)
+
+On a clean rebuild of `main` (`95dd887d`), the full 110-turn chat kept 412 of
+669 marker and 142 of 309 reply strings 75 s after closing
+(`responsiveness-6i5Fng`). The heap-retainer report now prints closure source
+positions, which named two owners:
+
+- **`MCPService`'s Solid roots.** Its constructor creates three roots and
+  disposes them with the service. Solid's `createRoot` copies the current
+  owner's context when no detached owner is given, and the service is created
+  lazily while a chat view renders. Those roots, and an effect in them still
+  observing the module-level settings signal, therefore kept that view's
+  context (its `agentRef` memo, props and conversation-map proxies) for the
+  life of the window. They now pass `detachedOwner = null` (no owner, no
+  context); they belong to the service. Exactly these three roots match the
+  pattern `const { dispose } = createRoot(...)` followed by
+  `this._register({ dispose })` in both workbench variants.
+- **React DOM's `rootWithNestedUpdates`.** React keeps the last root that had
+  nested synchronous updates until another root has some; that root's
+  container held the closed transcript's DOM, whose listeners close over the
+  view (headers memo, row model). It is now cleared whenever React resets the
+  nested-update count (`react-runtime/react-dom/esm-client-production.js`);
+  consecutive nested commits of one root are still counted, so the
+  infinite-update guard is unchanged.
+
+Result on a clean rebuild of `87534dde`, full dataset, three consecutive runs:
+`responsiveness-9WablJ`, `-qLP3nu`, `-diY3Wa` each kept **74 of 669–671 marker
+and 3 of 309–310 reply strings**, and each reopened the chat with its 110th
+reply. The 74 occurrences are prompt text in bounded owners: the app-wide
+50-entry generation cache (`generationCache`, prompt descriptions only), the
+10-entry prompt-input history and two persisted copies of it, the chat title,
+subtitle and Chat History header, and the markdown lexer's last input.
 
 Budgets: `verify:agent-context-budget` ≤ 5 reply strings and ≤ 14 marker
 occurrences 75 s after close, and the reopened chat must show every prompt and
-reply (absolute); `verify:responsiveness` closed chat ≤ 400 marker and ≤ 130
-reply strings (full run +10%) and the chat must reopen with its last reply.
+reply; `verify:responsiveness` closed chat ≤ 5 reply strings and ≤ 90 marker
+occurrences (the bounded owners above: 50 + 10 + 2 × 10 + about 5), and the
+chat must reopen with its last reply. Both are absolute.
+
+### CodebaseSearch schema in the byte budgets (20 October 2026)
+
+On `main`, the owner-decided `CodebaseSearch` tool (OV-502, retrieval) is sent
+with every Agent request. It adds exactly 4,675 schema bytes and 1,302
+estimated tokens per request (`agent-context-B0ISB4` against `-DO8srr`); the
+other parts did not grow. `fork` and warm `single` therefore exceeded their
+byte budgets. Each byte and token budget now includes exactly that cost per
+request (the largest-request budget, one schema), and a new
+`maxToolSchemaBytes` budget pins the 20-tool schema at 60,790 bytes per
+request, so any further tool or schema change fails until it is accounted
+for. Tool schemas are now 77% of a single-question request (60,790 of
+78,739 bytes).
 
 ## Reasoning replay (19 October 2026)
 
@@ -380,11 +423,11 @@ history and Stop latency; numeric budgets with a native verifier; upstream
 cancellation on Stop, chat close and window close; retry and tool-call history
 preserved; fork requests carry the source history once with tool calls and
 leave the source unchanged across restart (19 October); closed-chat history is
-released from the renderer for the verifier's chat (19 October); reasoning
+released from the renderer for the verifier's chat (19 October) and for the
+110-turn chat (20 October); reasoning
 replay behaviour pinned; usage capture proven on a labelled dry run. Open:
 live provider token and request measurements (tokenizer and prompt caching),
-live fork/history and reasoning-provider checks, the long-chat retention held
-by framework internals (OV-1003), the unreachable Agent host path, and
-Windows/macOS runs.
+live fork/history and reasoning-provider checks, the unreachable Agent host
+path, and Windows/macOS runs.
 This is **source-build evidence**; the preview.7 portable package does not
 contain these changes.

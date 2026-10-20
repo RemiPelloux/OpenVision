@@ -97,6 +97,7 @@ export function summarizeWorkload(entries) {
     fileContextBytes: sum('fileContextBytes'), otherBytes: sum('otherBytes'),
     repeatedFileOccurrences: repeatedFile,
     maxRequestBytes: Math.max(0, ...entries.map(entry => entry.analysis.bodyBytes)),
+    maxToolSchemaBytes: Math.max(0, ...entries.map(entry => entry.analysis.toolSchemaBytes)),
     lastRequestBytes: last?.bodyBytes ?? 0, lastHistoryBytes: last?.historyBytes ?? 0,
     lastMessageCount: last?.messageCount ?? 0,
     reasoningReplayed: Math.max(0, ...entries.map(entry => entry.analysis.reasoningReplayed)),

@@ -24,7 +24,7 @@ import { customInlineEdit } from './inline-edit-customization.mjs';
 import { customizeProjectHome } from './project-home-customization.mjs';
 import { customizeThemes } from './theme-customization.mjs';
 import { cancelClosedRunningChat } from './chat-close-cancellation.mjs';
-import { releaseClosedChats } from './closed-chat-release.mjs';
+import { releaseClosedChats, releaseNestedUpdateRoot } from './closed-chat-release.mjs';
 import { customizeApplicationStorage } from './application-storage-customization.mjs';
 
 async function customize(root, variant) {
@@ -47,6 +47,18 @@ async function customize(root, variant) {
     before_sha256: digest(before), after_sha256: digest(after),
     patches: [...local.patches, ...cloud.patches, ...stream.patches].map(({ reason, start, end }) => ({ reason, start, end })),
     changed_at: new Date().toISOString() }, null, 2) + '\n');
+}
+
+// The workbench's React DOM runtime (rootWithNestedUpdates release, OV-1001).
+const reactDom = 'out/vs/workbench/react-runtime/react-dom/esm-client-production.js';
+async function customizeReactDom(root) {
+  const path = join(root, 'source/app', reactDom);
+  const before = await readFile(path, 'utf8'), after = releaseNestedUpdateRoot(before);
+  if (before === after) return;
+  const backup = join(root, 'backups/bundle-customizations', reactDom);
+  await mkdir(dirname(backup), { recursive: true });
+  await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
+  await writeFile(path, after);
 }
 
 export async function customizeBundles(root) {
@@ -91,4 +103,7 @@ export async function customizeBundles(root) {
     }, () => customize(root, variant));
     console.log(`${variant} customizations: ${rebuilt ? 'verified' : 'unchanged (cached)'}`);
   }
+  const reactRebuilt = await cachedFile({ path: join(root, 'source/app', reactDom), marker: join(root, 'build/cache/react-dom.json'), recipe },
+    () => customizeReactDom(root));
+  console.log(`React DOM customizations: ${reactRebuilt ? 'verified' : 'unchanged (cached)'}`);
 }
