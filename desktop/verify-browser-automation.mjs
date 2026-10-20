@@ -171,6 +171,10 @@ try {
     await page.screenshot({ path: join(directory, 'refused-expanded.png') });
     result.unavailable = { toolResult: refused.result, uiShowsReason: (await page.locator('body').innerText()).includes(browserUnavailableMessage) };
     assert.ok(refused.result.includes(browserUnavailableMessage), `Unavailable browser server explained: ${refused.result.slice(0, 500)}`);
+    // The tool row states the failure instead of a past-tense success.
+    result.unavailable.toolRow = await page.getByText(/Failed browser_navigate|Navigated to/).allInnerTexts();
+    assert.ok(result.unavailable.toolRow.some(row => /Failed browser_navigate/.test(row)), `failed tool row: ${JSON.stringify(result.unavailable.toolRow)}`);
+    assert.ok(!result.unavailable.toolRow.some(row => /Navigated to/.test(row)), 'no "Navigated to" for a refused call');
     assert.doesNotMatch(refused.result, /blocked by team admin/i, 'No false team-admin reason for a local profile');
     assert.deepEqual(pageHits, [], 'A refused browser call must not load the page');
     assert.equal(result.steps.navigate.approval.requested, false, 'Nothing to approve for a refused server');
@@ -189,6 +193,9 @@ try {
   }
   result.external = proxy.events.filter(event => !event.allowed).map(({ method, host, port, url }) => ({ method, host, port, url }));
   assert.ok(requests.every(request => request.model === 'fixture-agent' && request.authorized));
+  // Owner decision: image generation is hidden from the local Agent.
+  assert.ok(requests.every(request => !request.tools?.includes('GenerateImage')), 'GenerateImage is not offered');
+  result.generateImageOffered = false;
   assert.deepEqual(errors, []);
   result.success = true;
 } catch (error) {

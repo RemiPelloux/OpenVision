@@ -269,10 +269,17 @@ try {
   await composer().fill('Generate an image of a plain red square.'); await composer().press('Enter');
   await settle();
   result.cases.generate = requests.slice(generateBefore).map(({ generateAdvertised, generateResult }) => ({ generateAdvertised, generateResult }));
-  // GenerateImage goes to the configured provider only; a provider without it fails visibly, not as success.
+  // Image generation is hidden: GenerateImage is not offered; a model that calls it
+  // anyway gets an error result, nothing reaches the provider's images endpoint, and
+  // the chat does not claim an image was generated.
   const generated = result.cases.generate.find(entry => entry.generateResult)?.generateResult ?? '';
   result.cases.generateProviderRequests = (result.otherRequests ?? []).filter(entry => entry.phase === 'generate');
-  assert.match(generated, /Failed to generate image/, `image generation failure reported: ${generated}`);
+  result.cases.generateRow = await page.locator('body').innerText().then(body => /Generated image/.test(body));
+  assert.equal(result.cases.generate[0]?.generateAdvertised, false, 'GenerateImage is not offered to the local Agent');
+  assert.ok(generated, 'a GenerateImage call made anyway gets a tool result');
+  assert.doesNotMatch(generated, /file_path|image_data/, `no image produced: ${generated}`);
+  assert.deepEqual(result.cases.generateProviderRequests, [], 'no request reaches the provider images endpoint');
+  assert.equal(result.cases.generateRow, false, 'the chat does not claim an image was generated');
   await page.screenshot({ path: join(directory, 'generate.png') });
   // Restart: history with images survives and a follow-up works.
   const storedBeforeRestart = await storedImages();

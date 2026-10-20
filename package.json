@@ -94,7 +94,7 @@
     "verify:modes-probe": "node desktop/verify-modes-probe.mjs",
     "verify:browser-automation": "node desktop/verify-browser-automation.mjs",
     "verify:image-input": "node desktop/verify-image-input.mjs",
-    "test:modes": "node --test desktop/specialized-modes.test.mjs desktop/computer-use-customization.test.mjs desktop/next-edit-absence.test.mjs desktop/image-input-fixture.test.mjs desktop/image-input-customization.test.mjs desktop/browser-automation-customization.test.mjs",
+    "test:modes": "node --test desktop/specialized-modes.test.mjs desktop/computer-use-customization.test.mjs desktop/next-edit-absence.test.mjs desktop/image-input-fixture.test.mjs desktop/image-input-customization.test.mjs desktop/browser-automation-customization.test.mjs desktop/image-generation-customization.test.mjs desktop/tool-row-status-customization.test.mjs",
     "test:inline-edit": "node --test desktop/inline-edit.test.mjs desktop/inline-edit-context.test.mjs desktop/completion-response.test.mjs",
     "verify:inline-edit": "node desktop/verify-inline-edit.mjs",
     "status:features": "node desktop/feature-status.mjs",

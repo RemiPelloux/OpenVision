@@ -23,10 +23,11 @@ export const modes = [
     symbols: [[workbench, 'selectedImages'], [workbench, 'doesModelSupportImages'],
       [workbench, 'OpenVision image input capability gate'], [workbench, 'OpenVision picker image failure explained v1'],
       [workbench, 'OpenVision rejected image file removed v1']] },
-  { id: 'image-generation', name: 'Image generation tool (GenerateImage)', proposal: 'provider-backed (owner decision)',
-    reason: 'The local Agent is offered GenerateImage; it calls the configured provider at /v1/images/generations (native run). Not the hosted backend.',
+  { id: 'image-generation', name: 'Image generation tool (GenerateImage)', proposal: 'hidden (owner decision)',
+    reason: 'GenerateImage called the configured provider at /v1/images/generations; hidden for this release, revisit with live providers (OV-205).',
     gates: [], configs: [],
-    symbols: [[workbench, 'generateImageToolCall'], [agentExec, 'images/generations']] },
+    symbols: [[workbench, 'generateImageToolCall'], [agentExec, 'images/generations'],
+      [agentExec, 'OpenVision image generation hidden v1']] },
   { id: 'in-app-browser', name: 'In-app browser editor (simple-browser opener, WebContentsView)', proposal: 'include',
     reason: 'Runs inside Electron with a sandboxed WebContentsView; no vendor service or download.',
     gates: [], configs: [],
@@ -38,7 +39,8 @@ export const modes = [
     symbols: [[browserAutomation, '"cursor-ide-browser"'], [browserAutomation, '"browser_navigate"'],
       [browserAutomation, '"browser_snapshot"'], [browserAutomation, '"browser_click"'], [browserAutomation, '"browser_type"'],
       [browserAutomation, '"browser_take_screenshot"'], [browserAutomation, '"browser_cdp"'],
-      [workbench, 'cursor.browserView.takeScreenshot'], [workbench, 'OpenVision local browser server explanation v1']],
+      [workbench, 'cursor.browserView.takeScreenshot'], [workbench, 'OpenVision local browser server explanation v1'],
+      [workbench, 'OpenVision failed browser tool row v1']],
     extensions: ['cursor-browser-automation'] },
   { id: 'computer-use', name: 'Computer use (cursor-computer-use MCP provider)', proposal: 'explain-unavailable',
     reason: 'Backends exist for macOS and Windows only; Linux returns before any gate, manifest or download. OpenVision logs why.',
@@ -118,7 +120,9 @@ export function decisionFailures(inventory) {
   expect(symbol('image-generation', 'images/generations') > 0, 'image generation no longer calls the provider images endpoint; re-inventory');
   expect(symbol('image-input', 'OpenVision picker image failure explained v1') === 1 &&
     symbol('image-input', 'OpenVision rejected image file removed v1') === 1, 'image input fixes are not installed');
-  expect(symbol('browser-automation', 'OpenVision local browser server explanation v1') === 1, 'browser automation explanation is not installed');
+  expect(symbol('browser-automation', 'OpenVision local browser server explanation v1') === 1 &&
+    symbol('browser-automation', 'OpenVision failed browser tool row v1') === 1, 'browser automation explanation is not installed');
+  expect(symbol('image-generation', 'OpenVision image generation hidden v1') > 0, 'GenerateImage is not hidden from the local Agent');
   const browser = mode('browser-automation').extensions['cursor-browser-automation'];
   expect(browser.hosts.every(host => host === 'go'), 'browser automation references a fixed network host');
   expect(inventory.glassGatesAgree, 'desktop and glass gate defaults differ');
