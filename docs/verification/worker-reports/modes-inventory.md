@@ -77,7 +77,7 @@ Native runs still owed, one at a time, as a non-root user under
 - **OV-704: not yet.** Remaining Linux gaps:
   1. Run `verify:modes-probe` twice.
   2. Owner sign-off on the scope table in
-     [rea-specialized-modes](../../recovery/rea-specialized-modes.md#proposed-scope).
+     [rea-specialized-modes](../../recovery/rea-specialized-modes.md#scope-owner-decided).
   3. Build and run `verify:image-input`, covering paste, drag and attach;
      MIME types; oversized and multiple images; queued messages; cancel during
      send; restart with history; temp cleanup.
