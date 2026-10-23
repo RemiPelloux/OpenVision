@@ -220,3 +220,87 @@ time, on a clean rebuild, and the other OV-103 checks pass once. The hold is for
 the `verify:profile-io-faults` regression introduced by the merged OV-1002
 stream-delivery change. Once that owner fixes it (or the owner accepts it),
 OV-103 has no remaining Linux x64 gap from this branch.
+
+## Follow-up, 23 October 2026: local Agent retry reset (owner option A)
+
+The `verify:profile-io-faults` blocker above was diagnosed by the responsiveness
+worker as a recovered local-Agent retry defect (see
+`docs/verification/worker-reports/responsiveness.md`, last section, on
+`ov/responsiveness` `6d6ef6ac`), not the stream coalescing. The local retry loop in
+the Agent exec extension awaits `runOptions.onRetryStarting` before every replay,
+but the local run options never supplied it. The renderer reset
+(`replayCurrentAction`: delete every bubble after the last human message) never
+ran, so a reply shown by an attempt that then failed on `SQLITE_FULL` was
+appended to by the replay. The owner chose option A: route the hook so every
+local replay starts from a clean turn, as on the hosted path; auto-retry stays.
+
+### Fix
+
+[`local-agent-retry-reset-customization.mjs`](../../../desktop/local-agent-retry-reset-customization.mjs),
+marker `/* OpenVision local Agent retry reset v1 */`, four guarded edits:
+
+1. **Agent exec** `runLocalAgent`: the local run options gain `onRetryStarting`,
+   which calls the run's callback object with plain values only (attempt, action
+   case, resume flag, attempt request id). An older host without the route is
+   unchanged.
+2. **Extension host** `$startLocalAgentRun`: the callback object forwards
+   `retryStarting` to the main thread (`$localAgentRetryStarting`).
+3. **Main thread**: `$localAgentRetryStarting` reaches the run's renderer callbacks
+   (normal and dedicated local runtime) and rejects an unknown run like its
+   sibling methods.
+4. **Renderer** `runLocalAgentInExtensionHost`: the local run callbacks call the
+   turn's own `onRetryStarting` (with the turn's conversation state). That is the
+   hosted hook, which runs `replayCurrentAction` unless the attempt resumes a
+   checkpoint.
+
+The loop already awaits the hook before sending the replay, so the turn is reset
+before any replayed text arrives. Producer tests
+([`local-agent-retry-reset.test.mjs`](../../../desktop/local-agent-retry-reset.test.mjs),
+6 tests) execute each edited object or method from the patched bundles, with
+recovered-text controls that lack the hook. The glass workbench is not changed.
+
+### Verification (branch `ov/agent-editing` from `origin/main` `5053a05d`, commit `e19ec6e8`)
+
+Clean rebuild (`npm ci` in `tooling/`, `build:desktop` with its 6 GiB heap): 251
+scripts, 125 manifests, 36 local main-process modules. SHA-256: workbench
+`99971b03d423ea4942169cc8de12254f15debc7645226d53f94232c570fdfd66`, extension
+host `317b0c6411ccea2248230c1dc214d4486431a14009c52a5ad8906c7063c75bec`, Agent
+exec `da9915d69bae1b2c8fe396f24a04065d85d02e76124de6a083b2705077c5e360`. Native
+runs as non-root `ov`, `xvfb-run` + `dbus-run-session`, `XDG_RUNTIME_DIR` set,
+unlocked `gnome-keyring`, one at a time. Load was `stress-ng --cpu $(nproc)` for
+the whole run (package `stress-ng` installed).
+
+| Run | Load | Result | Chat requests (while full / after freeing) |
+| --- | --- | --- | --- |
+| `profile-io-fault-verification-3h5S0v` | stress-ng | **Pass**, first time | 1 / 2: the retry path, reply once |
+| `profile-io-fault-verification-jgputB` | stress-ng | **Pass**, first time | 0 / 1 |
+| `profile-io-fault-verification-d9Oxnm` | stress-ng | **Pass**, first time | 1 / 2 |
+| `profile-io-fault-verification-EjClfm` | stress-ng | **Pass**, first time | 1 / 2 |
+| `profile-io-fault-verification-HXphZz` | stress-ng | **Pass**, first time | 1 / 2 |
+| `profile-io-fault-verification-s3Xt74` | none | **Pass**, first time | 2 requests in total |
+| `profile-io-fault-verification-TB5SwA` | none | **Pass**, first time | 1 request in total |
+| `agent-interruption-Jv6HGg` (14 cases) | none | **Pass**, first time | 24 authenticated requests, no owned process left |
+| `agent-verification-CBdxmy` (`verify:agent`) | none | **Pass**, first time | 20 requests, 2 clean exits |
+| `agent-verification-GBJgwF` (`--review-recovery`) | none | **Pass**, first time | 29 requests, 5 clean exits |
+
+Five of the seven profile runs went through exactly the failing sequence: a
+first attempt sent while the profile was full, then a replay after space was
+freed. Before the fix, `main` failed this way in 2 of 2 runs here (`39nnjr`,
+`YoEr8w`), and the responsiveness worker saw 4 of 5 loaded series fail.
+Afterwards every run shows the reply once and passes "A chat reply finished after
+freeing space survives restart". All profile runs also kept the review-snapshot
+results: Undo while full restored the bytes, and 0 review rows remained.
+
+Unit and static checks: `test:agent-review` **120/120** (includes the 6 new tests),
+`check:desktop` pass, `test:build-integrity` 26/26.
+
+### Recommendation
+
+**Promote OV-103 (Verified on Linux x64).**
+- Every Linux-doable clause now passes natively.
+- The owner accepted residuals 1–4 and 6.
+- Item 5 (cancel paths) passed twice in the 20 October follow-up.
+- The last blocker is fixed: 5 of 5 loaded and 2 of 2 unloaded first-time passes,
+  plus interruption, `verify:agent` and review recovery on the same clean build.
+
+Windows, macOS and live-provider runs remain in their platform/live stories.
