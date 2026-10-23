@@ -218,6 +218,66 @@ loopback-only namespace). **It did not reproduce here:**
 Not established: the original environment (Wayland, strace, network namespace).
 No provider-connectivity defect is confirmed, so nothing was changed.
 
+## 23 October follow-up: tool calls the Agent cannot run
+
+Linux x64, clean source build of the merged `main` (`c6d747c3`) plus this
+branch at `f29f5a8f`. Controlled fixture responses only.
+
+**Defect (OV-102/OV-204).** A model call to a tool that was not offered raised
+`AI_NoSuchToolError` in the recovered AI SDK parser. The Agent retried the
+stream and never drained the call's argument stream. Native run
+`agent-fixture-verification-fLqRa3` (pre-fix build) sent **five identical
+requests in 60 s** for one prompt, and the turn never finished. A call whose
+arguments never parse as JSON was worse in a different way: the Chat
+Completions stream adapter only emits a call once its arguments parse, so the
+call vanished. The Agent then re-sent the turn as empty and ended silently
+(`dvcCxy`, `qO98O8`). An earlier owner fix (modes-inventory) covered only the
+hidden `GenerateImage` tool.
+
+**Correction** (`desktop/agent-tool-call-customization.mjs`, every bundled Agent
+runtime; it supersedes the GenerateImage-only handling, which is removed in
+place):
+
+- The stream adapter's `flush` emits a call whose arguments never parsed, at
+  the end of a completed stream.
+- The parser turns an unavailable tool, or invalid arguments, into a call
+  carrying an OpenVision sentinel instead of throwing.
+- The dispatcher checks the sentinel before looking the tool up, so a tool that
+  is registered but not offered never runs. It drains the argument stream and
+  answers `Tool <name> is not available. Available tools: …` as a tool error.
+  `GenerateImage` keeps its specific reason.
+- Tools that start from their streamed arguments use the runtime's own
+  argument parser. That parser now refuses the sentinel with its existing
+  wording, `Tool call arguments were not valid JSON (…). Re-issue the call …`.
+  This also renders the failed **Read attempted** row.
+
+Two intermediate builds failed natively, which is how the last two owners were
+found. In `2lEup1` and `ieAo1x`, Read validated the sentinel itself and
+answered `path: Required`.
+
+**Native results** (`npm run verify:agent-tool-calls`, clean rebuild, first
+time):
+
+| Run | Unavailable tool | Malformed `Read` arguments | Then |
+| --- | --- | --- | --- |
+| `RCRkrN` | 2 requests (call and one continuation with the tool error), finished in 10.2 s | 2 requests, the runtime's not-valid-JSON error, failed **Read attempted** row, finished in 7.1 s | A normal Read roundtrip in the same chat passes; 6 requests in total; owned exit 0 |
+| `2wHfix` | Same, 10.1 s | Same, 7.1 s | Same |
+
+In both cases the continuation's last two roles are `assistant, tool`. The tool
+message answers the actual call id, and the fixture's final reply quotes the
+error. There are 0 automatic requests after the turn ends.
+
+On the same build, `verify:agent` (`agent-verification-qUudMZ`) passed, and
+`verify:image-input` (`image-input-IsI3hG`) passed: GenerateImage was not
+offered, a call made anyway got its specific reason, and no request reached the
+images endpoint.
+
+**Not done: no tool row for an invented tool.** A call to a tool name the
+Agent has never heard of produces no tool row; only the model's reply explains
+it. Tool rows are emitted per tool type, and an invented name has none.
+Rendering one would mean fabricating a tool-call UI record, for example as an
+MCP-style row. That is left for an owner decision.
+
 ## Not covered here
 
 - Live GPT, DeepSeek and Grok runs (`verify:agent:live`,
