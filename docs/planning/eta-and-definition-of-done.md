@@ -14,10 +14,10 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **33 (75.00%)** |
-| Partial / Planned / Unknown | 4 / 7 / 0 |
-| 80% target | 36 Verified: **3 more** |
-| Code on `main` | Every remote worker branch merged (integration merge `52c46dec`, 20 October). The fixes for OV-103, OV-703, OV-704 and OV-802 are on `main` and await the coordinator's clean rebuild and first-time native passes on the merged code |
+| Verified | **34 (77.27%)** |
+| Partial / Planned / Unknown | 4 / 6 / 0 |
+| 80% target | 36 Verified: **2 more** |
+| Code on `main` | Every remote worker branch merged (integration merge `52c46dec`, 20 October). The fixes for OV-103 and OV-802 are on `main` and await the coordinator's clean rebuild and first-time native passes on the merged code |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
 ## Re-scope (baseline v3)
@@ -47,11 +47,11 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)); settled 20 October in [owner decisions](owner-decisions.md) |
 | X | External: a machine, balance or account |
 
-### Verified (33)
+### Verified (34)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
 - **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision), 803, 402, 1001.
-- **Verified on Linux x64, 23 October:** OV-704 (coordinator rerun on the integrated `main`).
+- **Verified on Linux x64, 23 October:** OV-704 and OV-703 (coordinator reruns on the integrated `main`).
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
@@ -62,7 +62,6 @@ merged code. "Gate" is what blocks promotion:
 | OV-1004 Release safety | All Linux gates pass (corrupt state, crash recovery, authority, utility listeners, secrets scan 0 findings) | Release gate: promote last, on the same build as every other story | L | Final rerun once the others are Verified |
 | OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU over budget on this host (the pre-merge build measures the same); absolute budgets stay | X | A reference-class host |
 | OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Frame and scroll budgets fail without a GPU; software-rendering budgets not adopted | X | A reference-class host with a GPU |
-| OV-703 Remote (SSH) | Profile isolation fixed; base SSH check passes ×2. Fix merged (`42724971`): a closing window ends its own remote extension hosts, and the server stops when its last window closes | Coordinator rerun of the SSH checks including `--agent`; needs `npm run prepare:remote` and a rebuild on the coordinator checkout | L | Coordinator rerun |
 | OV-802 Buildable host | Add-ons rebuilt on the glibc 2.28 sysroot with Chromium clang/libc++ (`92e50f73`); on the worker's clean rebuild, repeat builds were byte-identical and `verify:native-abi`, `verify:native-provenance` and `verify:upstream-host --addons --critical` passed ×2 (`89299409`) | Coordinator rerun; needs the rebuilt addons (`build/native/linux-x64`) and the upstream host build on the coordinator checkout | L | Coordinator rerun |
 | OV-804 Independent build | Not started | Distribution rights of the recovered source: owner and legal advice | D | Owner only; outside the 36/44 plan |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
@@ -84,13 +83,13 @@ been pushed since the integration merge of 20 October. What remains:
 
 | Step | Work | Effect if it passes |
 | --- | --- | --- |
-| **Next: coordinator rerun** | OV-704 passed on 23 October. Still to rerun first time: OV-103 (after fixing the `profile-io-faults` verifier crash), OV-703 (after `prepare:remote`) and OV-802 (after the addon and upstream-host builds) | Up to +3: **36/44 (81.8%)** |
+| **Next: coordinator rerun** | OV-704 and OV-703 passed on 23 October. Still to rerun first time: OV-103 (after the local retry-reset fix, owner decision A) and OV-802 (after the addon and upstream-host builds) | Up to +2: **36/44 (81.8%)** |
 | Reference host | OV-1002 (frame/scroll budgets need a GPU) and OV-1003 (idle CPU budget) on a reference-class machine | Up to +2 |
 | Release gate | OV-1004 last, on the same build as every other story | +1 |
 | External | OV-205 Codex Easy balance, OV-901 Windows, OV-902 Mac (or drop the claim), OV-905 other Linux; OV-804 owner/legal | Up to +5 |
 
-**36/44 needs 3 more:** OV-703 and OV-802 need only their build prerequisites and a
-rerun; OV-103 needs its `profile-io-faults` verifier crash diagnosed first. The **Linux ceiling is
+**36/44 needs 2 more:** OV-802 needs only its build prerequisites and a rerun; OV-103
+needs the local Agent retry to reset the turn before each replay (worker running). The **Linux ceiling is
 39/44**: the 36, then OV-1002 and OV-1003 on a reference host, then OV-1004. The
 last 5 need a machine, a balance or an owner/legal decision.
 
