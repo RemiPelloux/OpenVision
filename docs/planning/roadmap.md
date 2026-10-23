@@ -6,8 +6,8 @@
 Updated 18 October 2026; latest portable release **0.2.0-preview.7**, with Linux x64 source support. The verified-coverage target is **80%**.
 Baseline v3 (18 October re-scope) moves platform and live clauses into OV-901,
 OV-902, OV-905 and OV-205, so the denominator is **44 acceptance stories** and **36
-must be fully Verified**. Current ledger: **34 Verified, 4 Partial, 6 Planned**,
-or **77.27%**. Two additional stories must pass to reach the
+must be fully Verified**. Current ledger: **35 Verified, 4 Partial, 5 Planned**,
+or **79.55%**. One additional story must pass to reach the
 numeric target. See [status page](eta-and-definition-of-done.md#re-scope-baseline-v3).
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
@@ -136,7 +136,7 @@ Server-facing file-sync contracts are mapped, but actual data destinations and
 native index behavior remain unverified. The acceptance count and backlog points
 are unchanged.
 
-> **Current status (23 October 2026):** 34/44 Verified under baseline v3. The 10
+> **Current status (23 October 2026):** 35/44 Verified under baseline v3. The 9
 > remaining stories, their gaps and the ETA are on the
 > [status page](eta-and-definition-of-done.md#remaining-stories). The ranked tables
 > below are the 16 October baseline-v2 ordering, kept for history and point sizes.
