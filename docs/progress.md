@@ -17,9 +17,9 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **32/44 · 72.73%** | **12/44** are not fully verified: 4 Partial, 7 Planned, 1 Unknown |
-| Recorded 80% verification milestone | Requires **36/44** Verified | **4** additional stories must pass |
-| All accepted features | Requires **44/44** Verified | **12** additional stories must pass |
+| Fully verified local-feature stories | **33/44 · 75%** | **11/44** are not fully verified: 4 Partial, 7 Planned |
+| Recorded 80% verification milestone | Requires **36/44** Verified | **3** additional stories must pass |
+| All accepted features | Requires **44/44** Verified | **11** additional stories must pass |
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
@@ -36,9 +36,8 @@ accounts, billing and cloud agents are excluded from this ledger.
 
 The [status, gaps, ETA and Definition of Done](planning/eta-and-definition-of-done.md)
 page lists every story with its gate (Linux work, owner decision or external), the
-finishing rounds and the Linux ceiling (39/44). As of 23 October the fixes for
-OV-103, OV-703, OV-704 and OV-802 are merged and await one coordinator rerun on the
-merged code, which can reach 36/44. The dated 16–19 October delivery
+finishing rounds and the Linux ceiling (39/44). On 23 October OV-704 passed its coordinator
+rerun (33/44); OV-103, OV-703 and OV-802 still need theirs to reach 36/44. The dated 16–19 October delivery
 log that used to be here is archived in
 [planning history](planning/history/checkpoints-2026-10.md#progress-delivery-log-1619-october-2026).
 

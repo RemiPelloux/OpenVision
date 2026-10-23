@@ -196,8 +196,8 @@ Agent support accepts text/tools; Tab autocomplete uses API connections.
 
 ## Roadmap and honest progress
 
-**32 of 44 acceptance stories fully verified · 72.73%.**
-Another **4 are Partial**, **7 Planned** and **1 Unknown**. Partial stories
+**33 of 44 acceptance stories fully verified · 75%.**
+Another **4 are Partial** and **7 Planned**. Partial stories
 already contain working features; this score measures complete acceptance gates,
 not the percentage of code implemented or decompiled. Since 18 October, Windows,
 macOS, other-Linux and live-provider clauses are tracked in dedicated platform/live
@@ -209,16 +209,16 @@ branch is merged into `main` (20 October: clean build, unit suites and the Linux
 critical subset pass). The
 [status page](docs/planning/eta-and-definition-of-done.md) lists every remaining story
 with its gap, its gate (Linux work, owner decision or external machine/balance) and
-the ETA. Owner decisions were settled on 20 October. The fixes for OV-103, OV-703,
-OV-704 and OV-802 are merged and await one coordinator rerun on the merged code,
-which can reach the target with no new code; the Linux ceiling is 39/44. The
+the ETA. Owner decisions were settled on 20 October. OV-704 passed its coordinator
+rerun on 23 October; OV-103, OV-703 and OV-802 still need theirs (see the status
+page) to reach the target; the Linux ceiling is 39/44. The
 Windows, macOS, other-Linux and live-provider stories are tracked in issues #1–#4.
 
 The [feature roadmap](docs/planning/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
 The [critical-first queue](docs/planning/roadmap.md#critical-first-backlog-and-eta)
 is the historical 16 October ordering (36 stories / 322 points under baseline v2); the
-current 12 remaining stories are on the [status page](docs/planning/eta-and-definition-of-done.md#remaining-stories).
+current 11 remaining stories are on the [status page](docs/planning/eta-and-definition-of-done.md#remaining-stories).
 It ordered the work as safety and privacy,
 RAM/request efficiency and daily workflows, independent builds, retrieval,
 distribution/platform completion, then broader modes. Estimates describe scope;
