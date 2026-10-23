@@ -14,7 +14,8 @@
 import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-const marker = '/* OpenVision unavailable or invalid tool call answered v4 */';
+const marker = '/* OpenVision unavailable or invalid tool call answered v5 */';
+const previousMarker = '/* OpenVision unavailable or invalid tool call answered v4 */';
 export const toolCallTargets = ['extensions/cursor-agent-exec/dist/main.js',
   'extensions/cursor-local-agent-runtime/dist/main.js', 'extensions/cursor-agent-host/dist/main.js'];
 export const sentinel = 'openvisionToolCallError';
@@ -44,7 +45,17 @@ function removeHiddenToolHandling(text) {
   return text;
 }
 
+// Runtimes that build calls from raw stream parts keep unparsable arguments as a string.
+const guardLine = args => `const openvisionCallError = ${args}?.${sentinel} ?? ("string" == typeof ${args} ? { kind: "invalid-arguments",
+            detail: (() => { try { JSON.parse(${args}); return "the arguments are not a JSON object"; } catch (openvisionError) { return String(openvisionError?.message ?? openvisionError).slice(0, ${detailLimit}); } })() } : void 0);`;
+
 export function answerToolCallErrors(text) {
+  // v4 differed only in its dispatcher guard, which missed raw string arguments.
+  if (text.includes(previousMarker)) {
+    const guard = /const openvisionCallError = ([\w$]+)\?\.openvisionToolCallError;/g;
+    if (text.split(previousMarker).length !== 5 || (text.match(guard) ?? []).length !== 1) throw new Error('Tool call error handling v4 changed');
+    text = text.replace(guard, (_match, args) => guardLine(args)).replaceAll(previousMarker, marker);
+  }
   if (text.includes(marker)) {
     if (text.split(marker).length !== 5) throw new Error('Tool call error handling changed');
     return text;
@@ -66,7 +77,7 @@ export function answerToolCallErrors(text) {
     throw new Error('Tool-call not-found result changed');
   const helper = helperSource;
   const guard = ` ${marker}
-          const openvisionCallError = ${args}?.${sentinel};
+          ${guardLine(args)}
           if ((openvisionCallError || void 0 === ${registry}[${called}]) && ${argsStream}) try { for await (const openvisionChunk of ${argsStream}); } catch {}
           if (openvisionCallError) return { role: "tool", id: ${toolCall}.toolCallId, content: [{ type: "tool-result", toolName: ${toolCall}.toolName,
             toolCallId: ${toolCall}.toolCallId, isError: !0, result: ${helper}(${called}, openvisionCallError, Object.keys(${registry})) }] };`;

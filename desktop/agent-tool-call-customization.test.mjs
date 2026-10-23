@@ -118,6 +118,11 @@ test('the dispatcher drains, answers with a tool error and never runs a flagged 
   assert.match(hidden.content[0].result, /^Tool Hidden is not available/);
   const invalid = await after.v9({}, { toolName: 'Read', toolCallId: 'c3', args: { openvisionToolCallError: { kind: 'invalid-arguments', detail: 'path: Required' } } }, registry, 0, {}, 0, 0, argsStream());
   assert.match(invalid.content[0].result, /^Tool Read was called with invalid arguments: path: Required\. Call it again/);
+  // Raw stream arguments that never parsed reach the dispatcher as a string.
+  const raw = await after.v9({}, { toolName: 'Read', toolCallId: 'c5', args: '{"path": "probe.txt"' }, registry, 0, {}, 0, 0, argsStream());
+  assert.match(raw.content[0].result, /^Tool Read was called with invalid arguments: .*JSON/);
+  assert.equal(raw.content[0].isError, true);
+  assert.match((await after.v9({}, { toolName: 'Read', toolCallId: 'c6', args: '[1]' }, registry, 0, {}, 0, 0, argsStream())).content[0].result, /not a JSON object/);
   // Offered but missing from the runtime: drained, clearer answer, no error flag change needed.
   const missing = argsStream();
   assert.match((await after.v9({}, { toolName: 'Gone', args: {} }, registry, 0, {}, 0, 0, missing)).content[0].result, /^Tool Gone is not available/);
@@ -133,16 +138,19 @@ test('hidden-tool handling v1/v2 is replaced in place; a changed owner is refuse
     .replace('if (void 0 === p) {', 'if (void 0 === p) { /* OpenVision hidden tool call answered v2 */ if (["GenerateImage"].includes(u) && a) try { for await (const openvisionChunk of a); } catch {}')
     .replace('result: `Tool not found', 'result: /* OpenVision hidden tool call answered v2 */ ["GenerateImage"].includes(u) ? "Image generation is not available." : `Tool not found');
   assert.equal(answerToolCallErrors(v2), patched);
+  const v4 = patched.replaceAll('answered v5', 'answered v4').replace(/const openvisionCallError = d\?\.openvisionToolCallError \?\? [^\n]*\n[^\n]*\n/, 'const openvisionCallError = d?.openvisionToolCallError;\n');
+  assert.notEqual(v4, patched.replaceAll('answered v5', 'answered v4'));
+  assert.equal(answerToolCallErrors(v4), patched, 'v4 builds are upgraded in place');
   assert.throws(() => answerToolCallErrors(calls.replace('availableTools: Object.keys(t)', 'available: 1')), /parse owner/);
   assert.throws(() => answerToolCallErrors(calls.replace('Tool not found: ', 'Missing: ')), /not-found result/);
-  assert.throws(() => answerToolCallErrors(patched.replace('/* OpenVision unavailable or invalid tool call answered v4 */', '')), /handling changed/);
+  assert.throws(() => answerToolCallErrors(patched.replace('/* OpenVision unavailable or invalid tool call answered v5 */', '')), /handling changed/);
 });
 
 for (const relative of toolCallTargets) {
   const path = join(root, 'source/app', relative);
   test(`built ${relative} answers unavailable and invalid tool calls`, { skip: !existsSync(path) }, async () => {
     const text = answerToolCallErrors(await readFile(path, 'utf8'));
-    assert.equal(text.split('OpenVision unavailable or invalid tool call answered v4').length, 5);
+    assert.equal(text.split('OpenVision unavailable or invalid tool call answered v5').length, 5);
     assert.doesNotMatch(text, /hidden tool call answered/);
   });
 }
