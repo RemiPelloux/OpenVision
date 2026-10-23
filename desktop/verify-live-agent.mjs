@@ -25,6 +25,7 @@ import { retryNativeTimeout, timeoutLimit } from './verify-live-timeout.mjs';
 import { createLiveEditFixture } from './verify-live-edits.mjs';
 import { createAgentFixtureProvider, fixtureModel } from './agent-fixture-provider.mjs';
 import { createLoopbackProxy } from './network-capture.mjs';
+import { verifyToolCallErrors } from './verify-agent-tool-calls.mjs';
 
 const fixture = process.argv.includes('--fixture');
 if (!process.argv.includes('--live') && !fixture) {
@@ -42,6 +43,7 @@ const paste = process.argv.includes('--paste');
 const rules = process.argv.includes('--rules');
 const memory = process.argv.includes('--memory');
 const edit = process.argv.includes('--edit');
+const toolCallErrors = process.argv.includes('--tool-call-errors');
 const stop = process.argv.includes('--stop');
 const failureRestart = process.argv.includes('--failure-restart');
 const timeoutIndex = process.argv.indexOf('--timeout');
@@ -61,8 +63,9 @@ assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to
 assert.ok(!rules || (!paste && !history && !subagent), '--rules is a separate persisted-rules probe');
 assert.ok(!edit || (!rules && !paste && !history && !subagent && !stop && !retryAuth && !timeoutPhase && !memory), '--edit is a separate live multi-file editing probe');
 assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
-assert.ok(!fixture || ((history || timeoutPhase) && !subagent && !edit && !stop && !retryAuth && !paste && !rules && !memory && reasoning === 'default'),
-  '--fixture covers only the history/Fork Chat and timeout cells');
+assert.ok(!toolCallErrors || (fixture && !history && !timeoutPhase), '--tool-call-errors is a separate fixture probe');
+assert.ok(!fixture || ((history || timeoutPhase || toolCallErrors) && !subagent && !edit && !stop && !retryAuth && !paste && !rules && !memory && reasoning === 'default'),
+  '--fixture covers only the history/Fork Chat, timeout and tool-call error cells');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 let provider, encrypted;
 if (!fixture) {
@@ -126,6 +129,7 @@ const result = { checkedAt: new Date().toISOString(), fixture, model, reasoning,
     ['workbench', join(root, 'source/app/out/vs/workbench/workbench.desktop.main.js')],
     ['verifier', fileURLToPath(import.meta.url)], ['relay', join(root, 'desktop/live-agent-relay.mjs')],
     ...(fixture ? [['fixtureProvider', join(root, 'desktop/agent-fixture-provider.mjs')]] : []),
+    ...(toolCallErrors ? [['toolCallVerifier', join(root, 'desktop/verify-agent-tool-calls.mjs')]] : []),
     ...(edit ? [['editVerifier', join(root, 'desktop/verify-live-edits.mjs')], ['editFixtureBase', join(root, 'desktop/verify-agent-edits.mjs')]] : []),
     ...(stop ? [['stopVerifier', join(root, 'desktop/verify-live-stop.mjs')]] : []),
     ...(retryAuth ? [['retryVerifier', join(root, 'desktop/verify-live-retry.mjs')]] : []),
@@ -175,6 +179,8 @@ const relay = await createLiveAgentRelay({ provider, model, marker, captureReque
   if (historyFailure) result.forkFailure.promptOccurrences.push(JSON.parse(body).messages
     .filter(message => message.role === 'user')
     .reduce((count, message) => count + JSON.stringify(message.content).split(forkRecallPrompt).length - 1, 0));
+  // Private evidence for tool-call errors: the fixture bodies carry no credential.
+  if (toolCallErrors) writeFile(join(directory, `request-${relay.requests.length}.json`), body).catch(() => {});
   if (inspectMemoryRetrieval) {
     inspectLiveMemoryContext(body, { filename: ruleFilename, marker }, result.memory);
     inspectMemoryRetrieval = false;
@@ -341,6 +347,10 @@ try {
     };
   } else {
     let pasted;
+    if (toolCallErrors) {
+      result.scope = 'Native Agent tool calls it cannot run (a tool that was never offered; Read with malformed JSON arguments) from a deterministic loopback fixture, then an ordinary Read roundtrip in the same chat. Controlled fixture responses, not live inference.';
+      await verifyToolCallErrors({ page, relay, input, result, directory });
+    }
     if (paste) pasted = await prepareLivePaste({ app, input, project, marker });
     else {
       await input.fill(memory
