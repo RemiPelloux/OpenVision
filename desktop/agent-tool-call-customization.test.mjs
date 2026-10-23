@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { answerToolCallErrors, toolCallTargets, toolCallErrorResult, hiddenToolMessages } from './agent-tool-call-customization.mjs';
+import { answerToolCallErrors, refuseStreamedSentinel, toolCallTargets, toolCallErrorResult, hiddenToolMessages } from './agent-tool-call-customization.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 // Shape of the AI SDK tool-call parser and the runtime's dispatcher (3.21.13).
@@ -146,10 +146,43 @@ test('hidden-tool handling v1/v2 is replaced in place; a changed owner is refuse
   assert.throws(() => answerToolCallErrors(patched.replace('/* OpenVision unavailable or invalid tool call answered v5 */', '')), /handling changed/);
 });
 
+// Shape of the runtime's streamed tool-argument parser (3.21.13).
+const streamed = `
+class mL extends Error {}
+        function bL(e, t, r) {
+          let n;
+          try {
+            n = JSON.parse(e);
+          } catch (t) {
+            const n = t instanceof Error ? t.message : "Invalid arguments",
+              s = "";
+            throw new mL(
+              \`Tool call arguments were not valid JSON (\${n}). Re-issue the call with arguments as a single well-formed JSON object.\${s}\`,
+            );
+          }
+          const s = t.safeParse(n);
+          if (!s.success) throw new mL("Invalid arguments:\\npath: Required");
+          return s.data;
+        }
+return bL;`;
+test('the streamed argument parser refuses a flagged call with the runtime wording', () => {
+  const patched = refuseStreamedSentinel(streamed);
+  assert.equal(refuseStreamedSentinel(patched), patched, 'idempotent');
+  const before = new Function(streamed)(), after = new Function(patched)();
+  const schema = { safeParse: value => typeof value?.path === 'string' ? { success: true, data: value } : { success: false } };
+  const flagged = JSON.stringify({ openvisionToolCallError: { kind: 'invalid-arguments', detail: "Expected ',' or '}'" } });
+  assert.throws(() => before(flagged, schema), /path: Required/, 'the original ran the schema on the sentinel');
+  assert.throws(() => after(flagged, schema), /^Error: Tool call arguments were not valid JSON \(Expected ',' or '}'\)\. Re-issue the call/);
+  assert.deepEqual(after('{"path":"a"}', schema), { path: 'a' });
+  assert.throws(() => after('{"path":', schema), /not valid JSON/);
+  assert.throws(() => refuseStreamedSentinel(streamed.replace('Re-issue the call', 'Retry')), /parser missing/);
+});
+
 for (const relative of toolCallTargets) {
   const path = join(root, 'source/app', relative);
   test(`built ${relative} answers unavailable and invalid tool calls`, { skip: !existsSync(path) }, async () => {
-    const text = answerToolCallErrors(await readFile(path, 'utf8'));
+    const text = refuseStreamedSentinel(answerToolCallErrors(await readFile(path, 'utf8')));
+    assert.equal(text.split('OpenVision streamed tool arguments refuse the error sentinel v1').length, 2);
     assert.equal(text.split('OpenVision unavailable or invalid tool call answered v5').length, 5);
     assert.doesNotMatch(text, /hidden tool call answered/);
   });

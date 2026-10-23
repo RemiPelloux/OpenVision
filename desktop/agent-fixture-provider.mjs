@@ -29,7 +29,7 @@ export function fixtureReply(payload, { project }) {
   const prompt = text(messages.findLast(message => message.role === 'user')?.content);
   if (last?.role === 'tool') {
     if (Object.values(toolCallErrorPrompts).some(value => prompt.includes(value)))
-      return { content: toolResultPrefix + text(last.content).replace(/\s+/g, ' ').slice(0, 300) };
+      return { content: toolResultPrefix + text(last.content).replace(/\s+/g, ' ').slice(0, 600) };
     const marker = text(last.content).match(markerPattern)?.[0];
     return { content: marker ?? 'FIXTURE_TOOL_RESULT_WITHOUT_MARKER' };
   }

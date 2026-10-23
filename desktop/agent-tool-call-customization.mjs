@@ -105,11 +105,33 @@ export function answerToolCallErrors(text) {
   return text;
 }
 
+// Tools start executing as soon as a call begins and read their arguments from the
+// call's argument stream, so the dispatcher never sees the sentinel for them. The
+// runtime's own argument parser already turns non-JSON arguments into a tool error
+// ("Tool call arguments were not valid JSON ..."); make it do the same for a call
+// the parser above flagged as invalid.
+const streamedMarker = '/* OpenVision streamed tool arguments refuse the error sentinel v1 */';
+export function refuseStreamedSentinel(text) {
+  if (text.includes(streamedMarker)) {
+    if (text.split(streamedMarker).length !== 2) throw new Error('Streamed tool argument handling changed');
+    return text;
+  }
+  const parsers = [...text.matchAll(/function [\w$]+\(([\w$]+), [\w$]+, [\w$]+\) \{\s*let ([\w$]+);\s*try \{\s*\2 = JSON\.parse\(\1\);\s*\} catch \([\w$]+\) \{[\s\S]{0,500}?throw new ([\w$]+)\(\s*`Tool call arguments were not valid JSON \(\$\{[\w$]+\}\)\. Re-issue the call with arguments as a single well-formed JSON object\.\$\{[\w$]+\}`,\s*\);\s*\}/g)];
+  if (parsers.length !== 1) throw new Error('Streamed tool argument parser missing or ambiguous');
+  const [match, , value, error] = parsers[0];
+  const refusal = `
+          ${streamedMarker}
+          if (${value}?.${sentinel}?.kind === "invalid-arguments")
+            throw new ${error}(\`Tool call arguments were not valid JSON (\${String(${value}.${sentinel}.detail ?? "").slice(0, ${detailLimit})}). Re-issue the call with arguments as a single well-formed JSON object.\`);`;
+  const at = parsers[0].index + match.length;
+  return text.slice(0, at) + refusal + text.slice(at);
+}
+
 export async function installToolCallErrors(root) {
   for (const relative of toolCallTargets) {
     const path = join(root, 'source/app', relative);
     const before = await readFile(path, 'utf8');
-    const after = answerToolCallErrors(before);
+    const after = refuseStreamedSentinel(answerToolCallErrors(before));
     if (before === after) continue;
     const backup = join(root, 'backups/agent-tool-calls', relative);
     await mkdir(dirname(backup), { recursive: true });

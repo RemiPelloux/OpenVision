@@ -5,13 +5,15 @@ import { toolCallErrorPrompts, toolResultPrefix, unavailableToolName } from './a
 // The fixture emits the call; the Agent must answer it with a tool error, without
 // retrying the stream, and the fixture then quotes that error as its final reply.
 const cases = {
-  unavailable: { tool: unavailableToolName, expected: new RegExp(`Tool ${unavailableToolName} is not available\\.`) },
-  invalid: { tool: 'Read', expected: /Tool Read was called with invalid arguments: / },
+  // An invented tool has no tool type, so no tool row exists for it (recorded, not asserted).
+  unavailable: { tool: unavailableToolName, expected: new RegExp(`Tool ${unavailableToolName} is not available\\.`), failedRow: undefined },
+  // Read starts from its streamed arguments, so the runtime's own parser answers.
+  invalid: { tool: 'Read', expected: /Tool call arguments were not valid JSON \(.*\)\. Re-issue the call/, failedRow: true },
 };
 
 export async function verifyToolCallErrors({ page, relay, input, result, directory }) {
   result.toolCallErrors = {};
-  for (const [name, { tool, expected }] of Object.entries(cases)) {
+  for (const [name, { tool, expected, failedRow }] of Object.entries(cases)) {
     const record = result.toolCallErrors[name] = {}, before = relay.requests.length;
     const replies = page.getByText(toolResultPrefix, { exact: false }).filter({ visible: true });
     const seen = await replies.count();
@@ -30,9 +32,9 @@ export async function verifyToolCallErrors({ page, relay, input, result, directo
     const call = requests[0]?.responseToolCalls?.[0];
     const body = await page.locator('body').innerText();
     const quoted = body.split('\n').filter(line => line.includes(toolResultPrefix)).at(-1) ?? '';
-    Object.assign(record, { requests: requests.length, calledTool: call?.name, quoted: quoted.slice(0, 300),
+    Object.assign(record, { requests: requests.length, calledTool: call?.name, quoted: quoted.slice(0, 600),
       continuationRoles: requests[1]?.roles?.slice(-2), toolResultForCall: requests[1]?.toolResults?.some(entry => entry.callId === call?.id) ?? false,
-      statuses: requests.map(request => request.httpStatus) });
+      statuses: requests.map(request => request.httpStatus), failedRowVisible: new RegExp(`${tool}\\s*attempted`).test(body) });
     await page.screenshot({ path: `${directory}/tool-call-${name}.png` });
     assert.equal(record.calledTool, tool, `${name}: the fixture called ${tool}`);
     assert.equal(record.requests, 2, `${name}: one call and one continuation; no stream retry`);
@@ -40,5 +42,6 @@ export async function verifyToolCallErrors({ page, relay, input, result, directo
     assert.equal(record.toolResultForCall, true, `${name}: the tool error answers the actual call`);
     assert.match(record.quoted, expected, `${name}: the model was told why the call failed`);
     assert.deepEqual(record.statuses, [200, 200]);
+    if (failedRow !== undefined) assert.equal(record.failedRowVisible, failedRow, `${name}: the failed tool row is shown`);
   }
 }
