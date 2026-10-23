@@ -176,16 +176,17 @@ test('remote extension host gets a profile home per local profile', async () => 
   const { remoteProfileHome, profileMarker } = await import('./remote-ssh-customization.mjs');
   const resolverTail = 'async function r(){const x={};const H=(0,w.findServerInstallPath)(s.hostname,B),M=await(0,w.installCodeServer)(this.sshConnection,l,f);' +
     'for(const[e,t]of Object.entries(x))t&&this.context.environmentVariableCollection.replace(e,t);const F=await this.openTunnel(0,M.listeningOn);' +
-    'const $=new d.ResolvedAuthority("127.0.0.1",F.localPort,M.connectionToken);return $.extensionHostEnv=x,$}';
+    'const $=new d.ResolvedAuthority("127.0.0.1",F.localPort,M.connectionToken);return $.extensionHostEnv=x,$}t.deactivate=function(){};';
   const result = remoteProfileHome(resolverTail);
   assert.ok(result.startsWith(profileMarker));
-  assert.ok(result.includes('x.VSCODE_OPENVISION_PROFILE_HOME=await openvisionRemoteProfileHome(this.sshConnection,H,this.context);const $=new d.ResolvedAuthority'));
+  assert.ok(result.includes('x.VSCODE_OPENVISION_PROFILE_HOME=await openvisionRemoteProfileHome(this.sshConnection,H,this.context,this);' +
+    'x.OPENVISION_REMOTE_WINDOW=openvisionRemoteWindow.id;const $=new d.ResolvedAuthority'));
   assert.ok(result.indexOf('environmentVariableCollection.replace') < result.indexOf('x.VSCODE_OPENVISION_PROFILE_HOME='), 'not exported to terminals');
   assert.equal(remoteProfileHome(result), result);
   assert.throws(() => remoteProfileHome(resolverTail.replace('findServerInstallPath', 'serverPath')), /install path contract/);
 
   // The helper derives a stable key from the local profile directory.
-  const helper = new Function('require', `${result}; return openvisionRemoteProfileHome;`)(name => name === 'vscode'
+  const helper = new Function('require', `const t = {}; ${result}; return openvisionRemoteProfileHome;`)(name => name === 'vscode'
     ? { env: { appRoot: '/app' } } : name === 'fs' ? { promises: { readFile: async () => '{"serverDataFolderName":".openvision-server"}' } } : process.getBuiltinModule(name));
   const connection = { exec: async () => ({ stdout: '/home/remote' }) };
   const context = path => ({ globalStorageUri: { fsPath: `${path}/User/globalStorage/jeanp413.open-remote-ssh` } });
@@ -197,4 +198,45 @@ test('remote extension host gets a profile home per local profile', async () => 
   assert.notEqual(first, second);
   assert.equal(await helper(connection, '~/custom-server', context('/profiles/a')), `/home/remote/custom-server/profiles/${first.split('/').pop()}`);
   await assert.rejects(helper({ exec: async () => ({ stdout: '' }) }, undefined, context('/profiles/a')), /remote home/);
+});
+
+test('closing a window ends only its own remote extension hosts', { skip: process.platform !== 'linux' && 'uses /proc' }, async () => {
+  const { remoteProfileHome, windowVariable } = await import('./remote-ssh-customization.mjs');
+  const { spawn, execFile } = await import('node:child_process');
+  const { mkdtemp, mkdir, symlink } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const resolverTail = 'async function r(){const x={};const H=(0,w.findServerInstallPath)(s.hostname,B),M=await(0,w.installCodeServer)(this.sshConnection,l,f);' +
+    'const F=await this.openTunnel(0,M.listeningOn);const $=new d.ResolvedAuthority("127.0.0.1",F.localPort,M.connectionToken);return $.extensionHostEnv=x,$}' +
+    't.deactivate=function(){};';
+  const result = remoteProfileHome(resolverTail);
+  assert.ok(result.includes(`x.${windowVariable}=openvisionRemoteWindow.id;`));
+  assert.ok(result.includes('t.deactivate=function(){return openvisionReleaseRemoteWindow()}'));
+  assert.throws(() => remoteProfileHome(resolverTail.replace('t.deactivate=function(){};', '')), /deactivate contract/);
+
+  // A fake remote: extension-host-like processes under <home>/.openvision-server/bin/.
+  const home = await mkdtemp(join(tmpdir(), 'ov-remote-home-'));
+  await mkdir(join(home, '.openvision-server/bin/c'), { recursive: true });
+  const node = join(home, '.openvision-server/bin/c/node');
+  await symlink(process.execPath, node);
+  const exports = new Function('require', `const t = {}; ${result}; return { openvisionRemoteProfileHome, openvisionReleaseRemoteWindow, openvisionRemoteWindow };`)(name => name === 'vscode'
+    ? { env: { appRoot: '/app' } } : name === 'fs' ? { promises: { readFile: async () => '{"serverDataFolderName":".openvision-server"}' } } : process.getBuiltinModule(name));
+  const run = command => new Promise(done => execFile('bash', ['-c', command], { env: { ...process.env, HOME: home } }, (error, stdout) => done({ stdout })));
+  const connection = { exec: run };
+  // The release uses the resolver's current connection, not the one from the last resolve.
+  const previous = { exec: run }, resolver = { sshConnection: previous };
+  await exports.openvisionRemoteProfileHome(previous, undefined, { globalStorageUri: { fsPath: '/p/User/globalStorage/x' } }, resolver);
+  previous.exec = async () => { throw new Error('closed'); };
+  resolver.sshConnection = connection;
+  const host = (id, type = '--type=extensionHost') => spawn(node, ['-e', 'setInterval(() => {}, 1000)', '--', type],
+    { env: { ...process.env, [windowVariable]: id }, stdio: 'ignore' });
+  const mine = host(exports.openvisionRemoteWindow.id), other = host('another-window'), helper = host(exports.openvisionRemoteWindow.id, '--type=ptyHost');
+  await new Promise(done => setTimeout(done, 300));
+  for (const child of [mine, other, helper]) assert.equal(child.exitCode, null, 'fixture processes are running');
+  const exited = child => new Promise(done => child.exitCode !== null || child.signalCode ? done(true) : child.once('exit', () => done(true)));
+  await exports.openvisionReleaseRemoteWindow();
+  assert.equal(await Promise.race([exited(mine), new Promise(done => setTimeout(() => done(false), 3000))]), true, 'this window\'s extension host ends');
+  assert.equal(other.exitCode, null); assert.equal(other.signalCode, null);
+  assert.equal(helper.exitCode, null); assert.equal(helper.signalCode, null);
+  other.kill(); helper.kill();
 });

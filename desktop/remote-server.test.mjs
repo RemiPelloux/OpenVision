@@ -106,3 +106,97 @@ test('server transforms cover the remote profile owners and the VSIX metadata lo
   const main = serverTransforms.filter(([relative]) => relative === 'out/server-main.js').map(([, transform]) => String(transform)).join('\n');
   assert.match(main, /skipVsixGalleryMetadata/);
 });
+
+test('server bounds reconnection grace and orphans extension hosts after the last window', async () => {
+  const { serverLifecycle, reconnectionGrace } = await import('./remote-server.mjs');
+  const server = `class Management { constructor() {
+      (this._reconnectionGraceTime = 108e5),
+      (this._reconnectionShortGraceTime = 3e5),
+      (this.x = 1);
+  } }
+  const terminal = { graceTime: 108e5, shortGraceTime: 3e5, scrollback: 100 };
+  class Connection {
+    constructor(sent) { this._extensionHostProcess = { connected: !0, send: (m) => sent.push(m.type) }; }
+    shortenReconnectionGraceTimeIfNecessary() {
+      if (!this._extensionHostProcess || !this._extensionHostProcess.connected) return;
+      const e = { type: "VSCODE_EXTHOST_IPC_REDUCE_GRACE_TIME" };
+      this._extensionHostProcess.send(e);
+    }
+  }
+  class Server {
+    constructor(sent) { this._managementConnections = {}; this._extHostConnections = { a: new Connection(sent), b: new Connection(sent) };
+      this._logService = { info() {} }; this.closers = {}; }
+    add(n) { const c = { onClose: (f) => { this.closers[n] = f; } }; this._managementConnections[n] = c;
+      c.onClose(() => {
+                    delete this._managementConnections[n];
+                  }); }
+  }
+  return { Server, Management, terminal };`;
+  const result = serverLifecycle(server);
+  assert.equal(serverLifecycle(result), result);
+  const { Server, Management, terminal } = new Function(result)();
+  const management = new Management();
+  assert.equal(management._reconnectionGraceTime, reconnectionGrace.graceMs);
+  assert.equal(management._reconnectionShortGraceTime, reconnectionGrace.shortGraceMs);
+  assert.equal(terminal.graceTime, reconnectionGrace.graceMs);
+  assert.ok(reconnectionGrace.graceMs <= 5 * 60 * 1000, 'bounded to minutes');
+  const sent = [], instance = new Server(sent);
+  instance.add('first'); instance.add('second');
+  instance.closers.first();
+  assert.deepEqual(sent, [], 'another window remains');
+  instance.closers.second();
+  assert.deepEqual(sent, ['OPENVISION_EXTHOST_IPC_ORPHANED', 'OPENVISION_EXTHOST_IPC_ORPHANED']);
+  assert.throws(() => serverLifecycle(server.replace('108e5),', '36e5),')), /management grace/);
+});
+
+test('an orphaned extension host exits once its connection is gone', async () => {
+  const { extensionHostLifecycle } = await import('./remote-server.mjs');
+  const host = `return (exits, Timer, protocol) => {
+      const s = 0,
+        o = 108e5,
+        i = 3e5,
+        l = new Timer(() => Hs("renderer disconnected for too long (1)"), o),
+        c = new Timer(() => Hs("renderer disconnected for too long (2)"), i);
+      function Hs(reason) { exits.push(reason); }
+      const handlers = [];
+      const process = { on: (name, f) => handlers.push(f) };
+      process.on("message", (u, p) => {
+        if (u && u.type === "VSCODE_EXTHOST_IPC_SOCKET") {
+          protocol.onSocketClose(() => {
+                l.schedule();
+              });
+        }
+        if (u && u.type === "VSCODE_EXTHOST_IPC_REDUCE_GRACE_TIME") {
+          if (c.isScheduled()) return;
+          l.isScheduled() && c.schedule();
+        }
+      });
+      return { send: (type) => handlers.forEach(f => f({ type })), l };
+    };`;
+  const result = extensionHostLifecycle(host);
+  assert.equal(extensionHostLifecycle(result), result);
+  class Timer { constructor(run, ms) { this.ms = ms; this.scheduled = !1; } schedule() { this.scheduled = !0; } isScheduled() { return this.scheduled; } }
+  const make = new Function(result)();
+  // Orphaned while waiting for reconnection: exits at once.
+  let exits = [], closers = [];
+  let ext = make(exits, Timer, { onSocketClose: f => closers.push(f) });
+  ext.send('VSCODE_EXTHOST_IPC_SOCKET'); closers[0]();
+  assert.equal(ext.l.ms, 300000);
+  assert.deepEqual(exits, []);
+  ext.send('OPENVISION_EXTHOST_IPC_ORPHANED');
+  assert.deepEqual(exits, ['renderer window closed']);
+  // Orphaned while still connected: exits when the connection closes.
+  exits = []; closers = [];
+  ext = make(exits, Timer, { onSocketClose: f => closers.push(f) });
+  ext.send('VSCODE_EXTHOST_IPC_SOCKET'); ext.send('OPENVISION_EXTHOST_IPC_ORPHANED');
+  assert.deepEqual(exits, []);
+  closers[0]();
+  assert.deepEqual(exits, ['renderer window closed']);
+  assert.equal(ext.l.isScheduled(), false);
+  // Not orphaned: a dropped connection waits for the bounded grace.
+  exits = []; closers = [];
+  ext = make(exits, Timer, { onSocketClose: f => closers.push(f) });
+  ext.send('VSCODE_EXTHOST_IPC_SOCKET'); closers[0]();
+  assert.deepEqual(exits, []);
+  assert.equal(ext.l.isScheduled(), true);
+});

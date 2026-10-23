@@ -83,6 +83,71 @@ const inlineProductTargets = ['out/server-main.js', 'out/vs/workbench/api/node/e
   'out/vs/platform/terminal/node/ptyHostMain.js'];
 // Every transform is one the client build applies to the same owner; the drift
 // guards stay in the shared functions. Unlisted owners do not exist on the server.
+// Remote connection lifecycle (owner decision, 20 October). Upstream keeps a
+// disconnected window's connections and extension host for 3 hours (5 minutes
+// once another client connects). OpenVision bounds that grace to
+// `reconnectionGrace` for genuine network loss, and stops promptly after a
+// clean close: when the last client window's management connection closes,
+// every extension host is told it is orphaned and exits as soon as its own
+// connection is gone, so the server (started with
+// --remote-auto-shutdown-without-delay) stops with it.
+export const reconnectionGrace = { graceMs: 300000, shortGraceMs: 60000 };
+const lifecycleMarker = '/* OpenVision bounded reconnection grace and orphaned extension hosts v1 */';
+const orphanMessage = 'OPENVISION_EXTHOST_IPC_ORPHANED';
+function once(text, pattern, label) {
+  const matches = [...text.matchAll(pattern)];
+  if (matches.length !== 1) throw new Error(`Remote lifecycle ${label} owner missing or ambiguous (${matches.length})`);
+  return matches[0];
+}
+const splice = (text, match, after) => text.slice(0, match.index) + after + text.slice(match.index + match[0].length);
+
+export function serverLifecycle(text) {
+  if (text.includes(lifecycleMarker)) return text;
+  const { graceMs, shortGraceMs } = reconnectionGrace;
+  let match = once(text, /\(this\._reconnectionGraceTime = 108e5\),(\s*)\(this\._reconnectionShortGraceTime = 3e5\),/g, 'management grace');
+  text = splice(text, match, `(this._reconnectionGraceTime = ${graceMs}),${match[1]}(this._reconnectionShortGraceTime = ${shortGraceMs}),`);
+  match = once(text, /graceTime: 108e5,(\s*)shortGraceTime: 3e5,/g, 'terminal grace');
+  text = splice(text, match, `graceTime: ${graceMs},${match[1]}shortGraceTime: ${shortGraceMs},`);
+  match = once(text, /shortenReconnectionGraceTimeIfNecessary\(\) \{\s*if \(!this\._extensionHostProcess \|\| !this\._extensionHostProcess\.connected\) return;\s*const ([\w$]+) = \{ type: "VSCODE_EXTHOST_IPC_REDUCE_GRACE_TIME" \};\s*this\._extensionHostProcess\.send\(\1\);\s*\}/g, 'extension host connection');
+  text = splice(text, match, `${match[0]}
+          openvisionOrphaned() {
+            if (!this._extensionHostProcess || !this._extensionHostProcess.connected) return;
+            this._extensionHostProcess.send({ type: "${orphanMessage}" });
+          }`);
+  match = once(text, /([\w$]+)\.onClose\(\(\) => \{\s*delete this\._managementConnections\[([\w$]+)\];\s*\}\)/g, 'management close');
+  text = splice(text, match, `${match[1]}.onClose(() => {
+                    delete this._managementConnections[${match[2]}];
+                    ${lifecycleMarker}
+                    if (Object.keys(this._managementConnections).length) return;
+                    this._logService.info("No client window remains; extension hosts without a connection stop now.");
+                    for (const openvisionToken in this._extHostConnections) this._extHostConnections[openvisionToken].openvisionOrphaned();
+                  })`);
+  return text;
+}
+
+export function extensionHostLifecycle(text) {
+  if (text.includes(lifecycleMarker)) return text;
+  const { graceMs, shortGraceMs } = reconnectionGrace;
+  let match = once(text, /([\w$]+) = 108e5,(\s*)([\w$]+) = 3e5,(\s*)([\w$]+) = new ([\w$]+)\(\(\) => ([\w$]+)\("renderer disconnected for too long \(1\)"\), \1\),(\s*)([\w$]+) = new \6\(\(\) => \7\("renderer disconnected for too long \(2\)"\), \3\);/g, 'extension host grace');
+  const [, , , , , grace, , exit] = match;
+  text = splice(text, match, match[0]
+    .replace(`${match[1]} = 108e5,`, `${match[1]} = ${graceMs},`).replace(`${match[3]} = 3e5,`, `${match[3]} = ${shortGraceMs},`)
+    .replace(/;$/, `, openvisionLifecycle = { orphaned: !1 }; ${lifecycleMarker}`));
+  match = once(text, new RegExp(`([\\w$]+)\\.onSocketClose\\(\\(\\) => \\{\\s*${grace.replace('$', '\\$')}\\.schedule\\(\\);\\s*\\}\\)`, 'g'), 'extension host socket close');
+  text = splice(text, match, `${match[1]}.onSocketClose(() => {
+                if (openvisionLifecycle.orphaned) return ${exit}("renderer window closed");
+                ${grace}.schedule();
+              })`);
+  match = once(text, /if \(([\w$]+) && \1\.type === "VSCODE_EXTHOST_IPC_REDUCE_GRACE_TIME"\) \{/g, 'extension host messages');
+  text = splice(text, match, `if (${match[1]} && ${match[1]}.type === "${orphanMessage}") {
+          openvisionLifecycle.orphaned = !0;
+          if (${grace}.isScheduled()) ${exit}("renderer window closed");
+          return;
+        }
+        ${match[0]}`);
+  return text;
+}
+
 // Remote profile isolation: remote extensions resolve their data (agent
 // projects, MCP state, plugins, sandbox policies) from
 // VSCODE_OPENVISION_PROFILE_HOME instead of ~/.cursor. The resolver sets it per
@@ -91,7 +156,8 @@ const inlineProductTargets = ['out/server-main.js', 'out/vs/workbench/api/node/e
 const remoteProfileTargets = Object.entries(nodeTargets).filter(([relative]) => !relative.includes('/electron-utility/'));
 export const serverTransforms = [
   ...remoteProfileTargets.map(([relative, expected]) => [relative, text => isolateNodeProfileHome(text, expected)]),
-  ['out/server-main.js', text => skipVsixGalleryMetadata(isolateEnvironmentProfileHome(disableDeviceIdFile(disableCoreTelemetry(text).text)))],
+  ['out/server-main.js', text => serverLifecycle(skipVsixGalleryMetadata(isolateEnvironmentProfileHome(disableDeviceIdFile(disableCoreTelemetry(text).text))))],
+  ['out/vs/workbench/api/node/extensionHostProcess.js', extensionHostLifecycle],
   ['out/vs/platform/terminal/node/ptyHostMain.js', isolateEnvironmentProfileHome],
   ['out/vs/workbench/api/node/extensionHostProcess.js',
     text => disableExtensionHostTelemetry(disableCoreTelemetry(text, { requireSentry: true }).text)],

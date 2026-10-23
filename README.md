@@ -196,8 +196,8 @@ Agent support accepts text/tools; Tab autocomplete uses API connections.
 
 ## Roadmap and honest progress
 
-**32 of 44 acceptance stories fully verified · 72.73%.**
-Another **4 are Partial**, **7 Planned** and **1 Unknown**. Partial stories
+**33 of 44 acceptance stories fully verified · 75%.**
+Another **4 are Partial** and **7 Planned**. Partial stories
 already contain working features; this score measures complete acceptance gates,
 not the percentage of code implemented or decompiled. Since 18 October, Windows,
 macOS, other-Linux and live-provider clauses are tracked in dedicated platform/live
@@ -208,16 +208,18 @@ The next product target is **36/44 verified stories (at least 80%)**. Every work
 branch is merged into `main` (20 October: clean build, unit suites and the Linux
 critical subset pass). The
 [status page](docs/planning/eta-and-definition-of-done.md) lists every remaining story
-with its gap, its gate (owner decision or external machine/balance) and the ETA:
-the open Linux work now waits on owner decisions, after which 1–2 more worker rounds
-reach the target; the Linux ceiling is 39/44. Owner
-decisions are tracked in [#5](https://github.com/RemiPelloux/OpenVision/issues/5); the
-Windows, macOS, other-Linux and live-provider stories in issues #1–#4.
+with its gap, its gate (Linux work, owner decision or external machine/balance) and
+the ETA. Owner decisions were settled on 20 October. OV-704 passed its coordinator
+rerun on 23 October; OV-103, OV-703 and OV-802 still need theirs (see the status
+page) to reach the target; the Linux ceiling is 39/44. The
+Windows, macOS, other-Linux and live-provider stories are tracked in issues #1–#4.
 
 The [feature roadmap](docs/planning/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
-The [critical-first queue and ETA](docs/planning/roadmap.md#critical-first-backlog-and-eta)
-orders **36 unfinished stories / 322 provisional points**: safety and privacy,
+The [critical-first queue](docs/planning/roadmap.md#critical-first-backlog-and-eta)
+is the historical 16 October ordering (36 stories / 322 points under baseline v2); the
+current 11 remaining stories are on the [status page](docs/planning/eta-and-definition-of-done.md#remaining-stories).
+It ordered the work as safety and privacy,
 RAM/request efficiency and daily workflows, independent builds, retrieval,
 distribution/platform completion, then broader modes. Estimates describe scope;
 release readiness requires the named checks. Latest source work includes

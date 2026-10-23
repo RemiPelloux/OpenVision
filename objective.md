@@ -6,7 +6,7 @@ Continue REA investigation and implementation until every accepted local OpenVis
 Read applicable AGENTS.md and skills; inspect Git status, branch, recent commits and existing changes. Preserve unrelated work.
 Read [progress](docs/progress.md), [roadmap](docs/planning/roadmap.md), [acceptance](docs/planning/feature-acceptance.json), [gaps](docs/recovery/feature-gap-audit.md), [recovery](docs/recovery/recovery-status.md) and [release claims](docs/verification/release-claims.md). Run `npm run status:features`. Trace relevant owners through [source index](curs_source/modules/3.24.18/README.md). Revalidate this checkpoint.
 
-Checkpoint, 16 October 2026: 42 stories; 6 Verified, 23 Partial, 12 Planned, 1 Unknown; 14.29% fully verified; 36 unfinished/322 provisional points. 80% requires 34 Verified; completion requires all features. Reference: 3.24.18; runtime input: 3.21.13; release: 0.2.0-preview.7. Later source fixes, e.g. [Linux session](docs/verification/linux-session-2026-10-16.md), are absent from that package. Independent native rebuilding remains unfinished. These figures do not measure code porting or original-source completeness.
+Checkpoint, 23 October 2026: 44 stories (baseline v3); 33 Verified, 4 Partial, 7 Planned; 75%. 80% needs 36: OV-103/703/802 await a coordinator rerun. Linux ceiling 39; OV-205/901/902/905/804 are external. See [status](docs/planning/eta-and-definition-of-done.md). Reference: 3.24.18; runtime input: 3.21.13; release: 0.2.0-preview.7, which lacks the October fixes. These figures do not measure code porting or original-source completeness.
 
 ## Priority
 Agent editing reliability first: OV-103 and OV-102, before retrieval/indexing. Read [latest review ownership evidence](docs/recovery/rea-agent-review-removal.md).

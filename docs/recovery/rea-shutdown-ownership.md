@@ -169,8 +169,16 @@ Measurements, one run on this host:
 | Peak summed RSS | 7,401 MiB | 3,283–3,628 MiB |
 | Launch to workspace | 9.6 s | 6.9–8.9 s |
 
-The warm process count includes one retained user-detached fixture per cycle and
-an accumulating number of revived terminals. The pty exec wrapper adds a median
+The cold peak is a verifier artifact, not a representative cold start. The
+following comes from the parallel OV-1003 memory investigation and was not
+reproduced here. The debuggee program (`fixture.cjs`) sits outside the project, so
+js-debug's breakpoint predictor falls back to the repository root and globs
+`**/*.js` across the whole worktree. Its result is cached in `bp-predict.json`,
+which is why only the first start pays for it. Skipping the debug step, the same
+cycle peaked at 1,659 MiB PSS. Moving the debuggee into the project, or setting
+`outFiles`/`resolveSourceMapLocations`, is a follow-up for the verifier. The warm
+process count includes one retained user-detached fixture per cycle and an
+accumulating number of revived terminals. The pty exec wrapper adds a median
 **39.8 ms** (first 38.4 ms) per terminal start, against 1.3 ms for a direct
 `/bin/sh -c true` (7 runs). There was no full-scenario pre-fix control; no memory
 gain is claimed.
