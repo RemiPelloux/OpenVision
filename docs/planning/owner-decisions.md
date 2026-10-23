@@ -40,6 +40,7 @@ Every decision is reversible here. The [ledger](completion-sprints.md) and the
 | OV-303 | Shared-process MCP transports are on, project MCP approvals are asked again once, and approvals are scoped by workspace folder. |
 | OV-304 | Supported auth: OAuth 2.1 with PKCE and dynamic registration, pre-registered clients and static headers. Other defaults: denied consent needs Authenticate again, a rejected refresh never reopens the browser by itself, the precedence is project, then profile, then plugin, and unknown MCP transports are reported and skipped. |
 | OV-302 | Named VS Code profiles inside one user-data folder share customizations. This is documented as a known limit; separate user-data folders stay fully isolated. |
+| OV-103 retry | Local Agent auto-retry must start every replay from a clean turn, as on the hosted path (option A, 23 October): the local retry loop calls the renderer reset before each replay. Auto-retry is kept; a reply shown by a failed attempt is never appended to. |
 
 ## Sent back to work
 
