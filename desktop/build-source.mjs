@@ -93,6 +93,7 @@ import { installReviewSnapshotGuidance } from './review-snapshot-guidance-custom
 import { installAutomaticTasksOff } from './automatic-tasks-customization.mjs';
 import { installAgentReviewPersistence } from './agent-review-persist-customization.mjs';
 import { installInterruptedAgentEdits } from './agent-edit-interruption-customization.mjs';
+import { installLocalRetryReset } from './local-agent-retry-reset-customization.mjs';
 import { installReviewDescriptors } from './review-descriptors-customization.mjs';
 import { installAgentWriteDurability } from './agent-write-durability-customization.mjs';
 import { installRetrievalTool } from './retrieval-tool-customization.mjs';
@@ -172,6 +173,7 @@ await installAgentReviewAcceptance(root);
 await installUnopenedAgentUndo(root);
 await installAgentReviewPersistence(root);
 await installInterruptedAgentEdits(root);
+await installLocalRetryReset(root);
 await installReviewDescriptors(root);
 await installAgentReviewRecovery(root);
 await installAgentWriteDurability(root);
