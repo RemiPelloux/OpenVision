@@ -1,6 +1,6 @@
 # OpenVision status, gaps, ETA and Definition of Done
 
-Updated **20 October 2026**. This page is the single current view. The acceptance
+Updated **23 October 2026** (`main` at `52c46dec`, last merge 20 October 14:47). This page is the single current view. The acceptance
 clauses are in the [ledger](completion-sprints.md); the priority order is in the
 [roadmap](roadmap.md). Dated checkpoints (16–19 October) are archived in
 [planning history](history/checkpoints-2026-10.md). Run `npm run status:features`
@@ -17,7 +17,7 @@ calendar or engineer time.
 | Verified | **32 (72.73%)** |
 | Partial / Planned / Unknown | 4 / 7 / 1 |
 | 80% target | 36 Verified: **4 more** |
-| Code on `main` | Every worker branch merged (20 October); clean build, unit suites and the Linux critical subset pass |
+| Code on `main` | Every remote worker branch merged (integration merge `52c46dec`, 20 October). The fixes for OV-103, OV-703, OV-704 and OV-802 are on `main` and await the coordinator's clean rebuild and first-time native passes on the merged code |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
 ## Re-scope (baseline v3)
@@ -57,13 +57,13 @@ merged code. "Gate" is what blocks promotion:
 
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
 | --- | --- | --- | --- | --- |
-| OV-103 Agent editing | All 14 interruption cases pass ×2; residuals decided | A regression in OV-1002 stream coalescing duplicates a reply after a disk-full retry (`verify:profile-io-faults`) | L | Fix in progress (responsiveness worker) |
+| OV-103 Agent editing | All 14 interruption cases pass ×2; residuals decided. The stream-coalescing regression fix (`436c305a`: read-ahead only while text is delivered, buffered events dropped on cancel) is merged | Coordinator rerun of `verify:profile-io-faults` and the OV-103 matrix on merged `main` | L | Coordinator rerun |
 | OV-1004 Release safety | All Linux gates pass (corrupt state, crash recovery, authority, utility listeners, secrets scan 0 findings) | Release gate: promote last, on the same build as every other story | L | Final rerun once the others are Verified |
 | OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU over budget on this host (the pre-merge build measures the same); absolute budgets stay | X | A reference-class host |
 | OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Frame and scroll budgets fail without a GPU; software-rendering budgets not adopted | X | A reference-class host with a GPU |
-| OV-704 Specialized modes | Scope decided; probe passes natively (`oxnQvd`, `tizi1z`) | Image-input matrix; browser reachability for the local Agent | L | Next worker slot |
-| OV-703 Remote (SSH) | Profile isolation fixed; base SSH check passes ×2 | Remote server outlives its last window under the reconnection grace (`--agent` failed ×2) | L | Worker fixing |
-| OV-802 Buildable host | Upstream host passes the critical subset; defaults decided | Rebuilt add-ons need glibc 2.38; must build on the 2.28 sysroot | L | Next worker slot |
+| OV-704 Specialized modes | Scope decided; GenerateImage hidden and answered (`0a1ea475`); on the worker's clean rebuild `verify:image-input`, `verify:browser-automation` and `verify:modes-probe` each passed first time twice (`1d17df4b`) | Coordinator rerun on merged `main` | L | Coordinator rerun |
+| OV-703 Remote (SSH) | Profile isolation fixed; base SSH check passes ×2. Fix merged (`42724971`): a closing window ends its own remote extension hosts, and the server stops when its last window closes | Coordinator rerun of the SSH checks including `--agent` | L | Coordinator rerun |
+| OV-802 Buildable host | Add-ons rebuilt on the glibc 2.28 sysroot with Chromium clang/libc++ (`92e50f73`); on the worker's clean rebuild, repeat builds were byte-identical and `verify:native-abi`, `verify:native-provenance` and `verify:upstream-host --addons --critical` passed ×2 (`89299409`) | Coordinator rerun on merged `main` | L | Coordinator rerun |
 | OV-804 Independent build | Not started | Distribution rights of the recovered source: owner and legal advice | D | Owner only; outside the 36/44 plan |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
 | OV-901 Windows | — | Windows x64 host; exit 134 and worker crash | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
@@ -79,20 +79,25 @@ merged code. "Gate" is what blocks promotion:
 
 ## ETA
 
-Owner decisions were made on 20 October ([record](owner-decisions.md)). What remains:
+Owner decisions were made on 20 October ([record](owner-decisions.md)). Nothing has
+been pushed since the integration merge of 20 October. What remains:
 
 | Step | Work | Effect if it passes |
 | --- | --- | --- |
-| Worker round (finishing) | OV-103 (coalescing fix under rerun), OV-703 (server shutdown fix); OV-803, 402, 1001 done | Up to +2 |
-| Next round | OV-704 (hide image generation, tool labels), OV-802 (glibc 2.28 rebuild done; coordinator rerun) | Up to +2 |
-| Reference host | OV-1002 and OV-1003 on a GPU, reference-class machine | Up to +2 |
-| Release gate | OV-1004 last, on the same build | +1 |
-| External | OV-205 balance, OV-901 Windows, OV-902 Mac, OV-905 other Linux; OV-804 owner/legal | Up to +5 |
+| **Next: coordinator rerun** | Clean rebuild of `main`, then first-time native passes for OV-103, OV-703, OV-704 and OV-802. All four fixes are merged; the workers' own clean rebuilds passed | Up to +4: **36/44 (81.8%)** |
+| Reference host | OV-1002 (frame/scroll budgets need a GPU) and OV-1003 (idle CPU budget) on a reference-class machine | Up to +2 |
+| Release gate | OV-1004 last, on the same build as every other story | +1 |
+| External | OV-205 Codex Easy balance, OV-901 Windows, OV-902 Mac (or drop the claim), OV-905 other Linux; OV-804 owner/legal | Up to +5 |
 
-**36/44 needs 4 more:** the running round plus the next round can supply them
-(4 stories) on Linux alone, in about **2 quota rounds**; every remaining gap is
-now plain engineering work with no decision pending. The Linux ceiling is
-39/44: those 36, then OV-1002 and OV-1003 on a reference host, then OV-1004.
+**36/44 needs no new code:** one coordinator round (clean rebuild plus the native
+reruns) can reach it, unless a rerun exposes a regression. The **Linux ceiling is
+39/44**: the 36, then OV-1002 and OV-1003 on a reference host, then OV-1004. The
+last 5 need a machine, a balance or an owner/legal decision.
+
+For reference, the 16 October baseline sized 10 of the remaining 12 stories at
+**105 provisional points** (OV-103 8, OV-703 13, OV-704 13, OV-802 13, OV-1002 8,
+OV-1003 8, OV-1004 13, OV-804 8, OV-901 8, OV-902 13). OV-205 and OV-905 were
+created by the re-scope and have no size.
 
 ## Working setup
 

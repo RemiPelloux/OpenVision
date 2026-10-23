@@ -1,6 +1,6 @@
 # OpenVision progress, percentages and delivery gates
 
-Updated **20 October 2026**. Start here for the feature backlog, recovery results
+Updated **23 October 2026**. Start here for the feature backlog, recovery results
 and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
@@ -36,7 +36,9 @@ accounts, billing and cloud agents are excluded from this ledger.
 
 The [status, gaps, ETA and Definition of Done](planning/eta-and-definition-of-done.md)
 page lists every story with its gate (Linux work, owner decision or external), the
-finishing rounds and the Linux ceiling (39/44). The dated 16–19 October delivery
+finishing rounds and the Linux ceiling (39/44). As of 23 October the fixes for
+OV-103, OV-703, OV-704 and OV-802 are merged and await one coordinator rerun on the
+merged code, which can reach 36/44. The dated 16–19 October delivery
 log that used to be here is archived in
 [planning history](planning/history/checkpoints-2026-10.md#progress-delivery-log-1619-october-2026).
 

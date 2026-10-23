@@ -136,7 +136,12 @@ Server-facing file-sync contracts are mapped, but actual data destinations and
 native index behavior remain unverified. The acceptance count and backlog points
 are unchanged.
 
-**36 unfinished stories · 322 provisional complexity points.** The order below
+> **Current status (23 October 2026):** 32/44 Verified under baseline v3. The 12
+> remaining stories, their gaps and the ETA are on the
+> [status page](eta-and-definition-of-done.md#remaining-stories). The ranked tables
+> below are the 16 October baseline-v2 ordering, kept for history and point sizes.
+
+**16 October baseline: 36 unfinished stories · 322 provisional complexity points.** The order below
 owns execution priority; the later area tables hold the detailed acceptance
 requirements. Priority reflects impact and dependencies, not a claim that every
 listed risk is a reproduced defect. Start available investigations immediately;
@@ -230,8 +235,9 @@ requires real target systems. Release-hardening checks begin under P0 and run
 again after downstream changes. P4 is full distribution acceptance; a scoped
 Windows preview refresh can ship earlier once its declared gates pass.
 
-The ETA is **gate-based, using the points above**. The 80% target still needs
-**28 additional fully verified stories**. There is no defensible fixed point
+The ETA is **gate-based, using the points above**. On 16 October the 80% target
+needed **28 additional fully verified stories**; for the current count see the
+[status page](eta-and-definition-of-done.md#eta). There is no defensible fixed point
 estimate for that subset until its stories and required dependencies are chosen;
 322 points sizes the entire current unfinished acceptance backlog. Scores are
 provisional and must be revised when investigations reveal changed scope.

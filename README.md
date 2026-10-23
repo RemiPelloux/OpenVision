@@ -208,16 +208,18 @@ The next product target is **36/44 verified stories (at least 80%)**. Every work
 branch is merged into `main` (20 October: clean build, unit suites and the Linux
 critical subset pass). The
 [status page](docs/planning/eta-and-definition-of-done.md) lists every remaining story
-with its gap, its gate (owner decision or external machine/balance) and the ETA:
-the open Linux work now waits on owner decisions, after which 1–2 more worker rounds
-reach the target; the Linux ceiling is 39/44. Owner
-decisions are tracked in [#5](https://github.com/RemiPelloux/OpenVision/issues/5); the
-Windows, macOS, other-Linux and live-provider stories in issues #1–#4.
+with its gap, its gate (Linux work, owner decision or external machine/balance) and
+the ETA. Owner decisions were settled on 20 October. The fixes for OV-103, OV-703,
+OV-704 and OV-802 are merged and await one coordinator rerun on the merged code,
+which can reach the target with no new code; the Linux ceiling is 39/44. The
+Windows, macOS, other-Linux and live-provider stories are tracked in issues #1–#4.
 
 The [feature roadmap](docs/planning/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
-The [critical-first queue and ETA](docs/planning/roadmap.md#critical-first-backlog-and-eta)
-orders **36 unfinished stories / 322 provisional points**: safety and privacy,
+The [critical-first queue](docs/planning/roadmap.md#critical-first-backlog-and-eta)
+is the historical 16 October ordering (36 stories / 322 points under baseline v2); the
+current 12 remaining stories are on the [status page](docs/planning/eta-and-definition-of-done.md#remaining-stories).
+It ordered the work as safety and privacy,
 RAM/request efficiency and daily workflows, independent builds, retrieval,
 distribution/platform completion, then broader modes. Estimates describe scope;
 release readiness requires the named checks. Latest source work includes

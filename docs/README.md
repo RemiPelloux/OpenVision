@@ -35,7 +35,7 @@ filename-label input and the verification limits.
 | Resume, pin and search projects | [Project home](guides/project-home.md) |
 | Change themes, colors, fonts and icons | [Appearance](guides/appearance.md) |
 | See every missing feature and its complexity | [Feature roadmap](planning/roadmap.md) |
-| Decide what to investigate and implement first | [All 36 unfinished stories ranked by importance](planning/roadmap.md#ranked-rea-implementation-and-verification-work) |
+| Decide what to investigate and implement first | [The 12 remaining stories, their gaps and the ETA](planning/eta-and-definition-of-done.md#remaining-stories); [16 October ranked baseline](planning/roadmap.md#ranked-rea-implementation-and-verification-work) |
 | Plan the Rust rewrite and its priorities | [36 packages, points and migration gates](planning/rust/rust-roadmap.md) |
 | See what moves to Rust and what stays | [Component rewrite/retain audit](planning/rust/rust-component-audit.md) |
 | Track every existing feature through the Rust rewrite | [42-story replacement acceptance map](planning/rust/rust-acceptance-map.md) |
