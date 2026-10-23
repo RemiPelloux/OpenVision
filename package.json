@@ -18,7 +18,7 @@
     "install:linux": "node desktop/linux-install.mjs",
     "test:updates": "node --test desktop/linux-release.test.mjs desktop/linux-install.test.mjs desktop/profile-format.test.mjs desktop/branding.test.mjs",
     "verify:upgrade:linux": "node desktop/verify-upgrade-linux.mjs",
-    "build:desktop": "node desktop/build-source.mjs",
+    "build:desktop": "node --max-old-space-size=6144 desktop/build-source.mjs",
     "build:native:linux": "node desktop/native-rebuild.mjs",
     "test:upstream-host": "node --test desktop/upstream-host.test.mjs",
     "verify:upstream-host": "node desktop/verify-upstream-host.mjs",
