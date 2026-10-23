@@ -28,6 +28,7 @@ import { installComputerUseExplanation } from './computer-use-customization.mjs'
 import { installBrowserAutomationExplanation } from './browser-automation-customization.mjs';
 import { installImageInputExplanations } from './image-input-customization.mjs';
 import { installImageGenerationHidden } from './image-generation-customization.mjs';
+import { installToolCallErrors } from './agent-tool-call-customization.mjs';
 import { installToolRowStatus } from './tool-row-status-customization.mjs';
 import { installRemoteSsh } from './remote-ssh-customization.mjs';
 import { installCompletion } from './completion-customization.mjs';
@@ -164,6 +165,7 @@ await installComputerUseExplanation(root);
 await installBrowserAutomationExplanation(root);
 await installImageInputExplanations(root);
 await installImageGenerationHidden(root);
+await installToolCallErrors(root);
 await installToolRowStatus(root);
 await installRemoteSsh(root);
 await installRetrievalOwnership(root);

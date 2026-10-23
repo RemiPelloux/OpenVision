@@ -4,6 +4,25 @@ Branch `ov/agent-chat-failures`, 18–19 October 2026. Linux x64 only, with
 controlled loopback fixtures; no live inference. The full evidence is in
 [Agent history, Fork Chat, timeouts and provider failures on Linux](../../recovery/rea-agent-chat-failures-linux.md).
 
+## 23 October follow-up: tool calls the Agent cannot run
+
+At the coordinator's request, the GenerateImage-only fix from modes-inventory
+is generalised. See [the follow-up section](../../recovery/rea-agent-chat-failures-linux.md#23-october-follow-up-tool-calls-the-agent-cannot-run).
+The branch is `main` (`c6d747c3`) merged into this branch; the final head is
+reported to the coordinator.
+
+| Item | Result |
+| --- | --- |
+| Defect | An unavailable tool call retried and hung (`fLqRa3`: 5 requests in 60 s). A malformed-JSON call vanished and the turn was re-sent and ended silently (`dvcCxy`) |
+| Owner fix | `desktop/agent-tool-call-customization.mjs` in all 3 Agent runtimes: adapter flush, parser sentinel, dispatcher guard with drain and tool error, and the runtime's streamed-argument parser. Supersedes `answerHiddenToolCalls` |
+| Commits | `20164e01`, `eaf4f029`, `f29f5a8f` |
+| Unit tests | `test:agent-retry` 48/48 (adds `agent-tool-call-customization.test.mjs`), `test:modes` 32/32, `test:agent-timeout` 45/45, `test:provider-errors` 53/53, `test:build-integrity` 26/26 |
+| New native case | `npm run verify:agent-tool-calls`: `RCRkrN`, `2wHfix`, both pass first time, consecutive, on a clean rebuild |
+| Regression | `verify:agent` `qUudMZ` pass; `verify:image-input` `IsI3hG` pass |
+| Intermediate failures (kept) | `2lEup1`, `ieAo1x`: Read validated the sentinel itself |
+| Not done | No tool row for an invented tool name (no tool type to render); the malformed call does show **Read attempted** |
+| Build note | The clean build ran out of memory at Node's default 2 GB heap after `main`'s new customizations. It was rebuilt with `NODE_OPTIONS=--max-old-space-size=6144`. This was not investigated; it may affect other workers |
+
 ## Summary
 
 All four audit gaps are implemented and pass natively on Linux:

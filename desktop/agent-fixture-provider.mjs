@@ -8,6 +8,15 @@ import { randomBytes } from 'node:crypto';
 const markerPattern = /OPENVISION_READ_[0-9a-f]{32}/;
 const recallPattern = /reply with (\S+:) followed immediately by the exact single line you read earlier/;
 export const fixtureModel = 'openvision-agent-fixture';
+// Tool calls the Agent cannot run: a tool that was never offered, and an offered
+// tool with arguments that are not valid JSON. The fixture answers the resulting
+// tool message by quoting it, so the verifier sees what the model was told.
+export const unavailableToolName = 'OpenVisionInventedTool';
+export const toolCallErrorPrompts = {
+  unavailable: `Call the tool named ${unavailableToolName} once, then report its result.`,
+  invalid: 'Call Read with malformed arguments once, then report its result.',
+};
+export const toolResultPrefix = 'FIXTURE_TOOL_RESULT: ';
 
 const text = value => typeof value === 'string' ? value : JSON.stringify(value ?? '');
 const pathKeys = ['path', 'file_path', 'target_file', 'filePath', 'targetFile'];
@@ -17,11 +26,17 @@ const pathKeys = ['path', 'file_path', 'target_file', 'filePath', 'targetFile'];
 export function fixtureReply(payload, { project }) {
   const messages = Array.isArray(payload?.messages) ? payload.messages : [];
   const last = messages.at(-1);
+  const prompt = text(messages.findLast(message => message.role === 'user')?.content);
   if (last?.role === 'tool') {
+    if (Object.values(toolCallErrorPrompts).some(value => prompt.includes(value)))
+      return { content: toolResultPrefix + text(last.content).replace(/\s+/g, ' ').slice(0, 600) };
     const marker = text(last.content).match(markerPattern)?.[0];
     return { content: marker ?? 'FIXTURE_TOOL_RESULT_WITHOUT_MARKER' };
   }
-  const prompt = text(messages.findLast(message => message.role === 'user')?.content);
+  if (prompt.includes(toolCallErrorPrompts.unavailable))
+    return { toolCall: { id: `call_${randomBytes(8).toString('hex')}`, name: unavailableToolName, arguments: '{"reason":"fixture"}' } };
+  if (prompt.includes(toolCallErrorPrompts.invalid))
+    return { toolCall: { id: `call_${randomBytes(8).toString('hex')}`, name: 'Read', arguments: '{"path": "probe.txt"' } };
   const recall = prompt.match(recallPattern);
   if (recall) {
     // The marker must come from the conversation history the app actually sent.
