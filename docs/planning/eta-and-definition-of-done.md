@@ -14,10 +14,10 @@ calendar or engineer time.
 | Measure | Value |
 | --- | --- |
 | Accepted stories (baseline v3) | **44** |
-| Verified | **35 (79.55%)** |
-| Partial / Planned / Unknown | 4 / 5 / 0 |
-| 80% target | 36 Verified: **1 more** |
-| Code on `main` | Every remote worker branch merged (integration merge `52c46dec`, 20 October). The OV-103 fix is in progress and awaits the coordinator's clean rebuild and first-time native passes on the merged code |
+| Verified | **36 (81.82%)** |
+| Partial / Planned / Unknown | 3 / 5 / 0 |
+| 80% target | 36 Verified: **reached** |
+| Code on `main` | Every remote worker branch merged (integration merge `52c46dec`, 20 October). Every Linux story that needs no reference host, release gate or external input is Verified on the coordinator's clean rebuild (23 October) |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
 ## Re-scope (baseline v3)
@@ -47,18 +47,17 @@ merged code. "Gate" is what blocks promotion:
 | D | Owner decision ([#5](https://github.com/RemiPelloux/OpenVision/issues/5)); settled 20 October in [owner decisions](owner-decisions.md) |
 | X | External: a machine, balance or account |
 
-### Verified (35)
+### Verified (36)
 
 - **Verified before the re-scope:** OV-101, 105, 201, 202, 404, 601.
 - **Verified on Linux x64, 18–20 October:** OV-702, 401, 403, 104, 203, 301, 302, 102, 204, 701, 603, 602, 801, 501, 1005, 304, 502, 503, 504, 303, 904, 903, 604 (excluded by owner decision), 803, 402, 1001.
-- **Verified on Linux x64, 23 October:** OV-704, OV-703 and OV-802 (coordinator reruns on the integrated `main`).
+- **Verified on Linux x64, 23 October:** OV-704, OV-703, OV-802 and OV-103 (coordinator reruns on the integrated `main`).
 - Evidence and run IDs are in each ledger row.
 
 ### Remaining stories
 
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
 | --- | --- | --- | --- | --- |
-| OV-103 Agent editing | All 14 interruption cases pass ×2; the stream-coalescing fix (`436c305a`) is merged; 23 October coordinator rerun: `verify:agent-interruption` passed first time (`5AyLlA`) | `verify:profile-io-faults` failed first time on the merged build (`DBeFRw`): the verifier threw `TypeError` reading `trim` | L | Diagnose the verifier crash, then rerun |
 | OV-1004 Release safety | All Linux gates pass (corrupt state, crash recovery, authority, utility listeners, secrets scan 0 findings) | Release gate: promote last, on the same build as every other story | L | Final rerun once the others are Verified |
 | OV-1003 Idle resources | Startup traversal (~1,250 / 1,300) and memory slope pass 3/3 | Idle CPU over budget on this host (the pre-merge build measures the same); absolute budgets stay | X | A reference-class host |
 | OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Frame and scroll budgets fail without a GPU; software-rendering budgets not adopted | X | A reference-class host with a GPU |
@@ -82,13 +81,11 @@ been pushed since the integration merge of 20 October. What remains:
 
 | Step | Work | Effect if it passes |
 | --- | --- | --- |
-| **Next: coordinator rerun** | OV-704, OV-703 and OV-802 passed on 23 October. Still to rerun first time: OV-103 (after the local retry-reset fix, owner decision A) | +1: **36/44 (81.8%)** |
 | Reference host | OV-1002 (frame/scroll budgets need a GPU) and OV-1003 (idle CPU budget) on a reference-class machine | Up to +2 |
 | Release gate | OV-1004 last, on the same build as every other story | +1 |
 | External | OV-205 Codex Easy balance, OV-901 Windows, OV-902 Mac (or drop the claim), OV-905 other Linux; OV-804 owner/legal | Up to +5 |
 
-**36/44 needs 1 more:** OV-103, once the local Agent retry resets the turn before each
-replay (worker running) and its checks pass on the coordinator's clean rebuild. The **Linux ceiling is
+**36/44 is reached** (23 October). The **Linux ceiling is
 39/44**: the 36, then OV-1002 and OV-1003 on a reference host, then OV-1004. The
 last 5 need a machine, a balance or an owner/legal decision.
 
