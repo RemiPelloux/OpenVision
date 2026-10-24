@@ -29,9 +29,19 @@ async function fixture(files = 3000) {
   const directory = await mkdtemp(join(tmpdir(), 'ov-retrieval-service-'));
   const root = join(directory, 'project'), profile = join(directory, 'profile');
   await createScaleFixture(root, { files });
-  return { directory, root, profile, cleanup: () => rm(directory, { recursive: true, force: true }) };
+  // Services are disposed even when an assertion fails, so a failed test cannot
+  // leave a worker thread (and its message port) keeping the test file alive.
+  const services = [];
+  return { directory, root, profile, services, cleanup: async () => {
+    await Promise.all(services.map(owner => owner.dispose().catch(() => {})));
+    await rm(directory, { recursive: true, force: true });
+  } };
 }
-const service = (fx, options = {}) => new RetrievalService({ userDataDirectory: fx.profile, root: fx.root, ...runtime, ...options });
+const service = (fx, options = {}) => {
+  const owner = new RetrievalService({ userDataDirectory: fx.profile, root: fx.root, ...runtime, ...options });
+  fx.services.push(owner);
+  return owner;
+};
 const committed = path => { const database = new DatabaseSync(path, { readOnly: true }); try { return database.prepare('SELECT count(*) AS n FROM files').get().n; } finally { database.close(); } };
 const quickCheck = path => { const database = new DatabaseSync(path); try { return database.prepare('PRAGMA quick_check').get().quick_check; } finally { database.close(); } };
 
@@ -84,7 +94,9 @@ test('pause holds the worker between batches and resume completes', async () => 
     await owner.activate();
     await until(async () => (await owner.status()).counters?.batches >= 1);
     await owner.pause();
-    await wait(200);
+    // Pause takes effect at the worker's next checkpoint, after the batch in
+    // flight; a fixed delay is not enough when the CPUs are saturated.
+    await until(async () => (await owner.status()).status.paused === true);
     const held = (await owner.status()).counters.reads;
     await wait(400);
     assert.equal((await owner.status()).counters.reads, held, 'no reads while paused');
