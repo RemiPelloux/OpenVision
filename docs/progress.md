@@ -1,6 +1,6 @@
 # OpenVision progress, percentages and delivery gates
 
-Updated **23 October 2026**. Start here for the feature backlog, recovery results
+Updated **24 October 2026**. Start here for the feature backlog, recovery results
 and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
@@ -23,7 +23,7 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
-Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501, OV-1005, OV-304, OV-502, OV-503, OV-504, OV-303, OV-904, OV-903, OV-604 (excluded by owner decision), OV-803, OV-402 and OV-1001 are Verified under it. See
+Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501, OV-1005, OV-304, OV-502, OV-503, OV-504, OV-303, OV-904, OV-903, OV-604 (excluded by owner decision), OV-803, OV-402, OV-1001, OV-704, OV-703, OV-802 and OV-103 are Verified under it. See
 the [status page](planning/eta-and-definition-of-done.md#re-scope-baseline-v3), which also lists [every story's gap and ETA](planning/eta-and-definition-of-done.md#story-status-and-gaps).
 
 Partial stories include working implementations with unfinished checks. This is
@@ -37,7 +37,11 @@ accounts, billing and cloud agents are excluded from this ledger.
 The [status, gaps, ETA and Definition of Done](planning/eta-and-definition-of-done.md)
 page lists every story with its gate (Linux work, owner decision or external), the
 finishing rounds and the Linux ceiling (39/44). On 23 October OV-704 passed its coordinator
-rerun (33/44); OV-703, OV-802 and OV-103 passed theirs, reaching **36/44, the 80 % target**. The dated 16–19 October delivery
+rerun (33/44); OV-703, OV-802 and OV-103 passed theirs, reaching **36/44, the 80 % target**. On 24 October
+the build was optimized (clean build 575 s → 132 s with a warm cache) and releases moved to
+zstd archives ([build performance](performance/build-performance.md)). The
+[next sprint](planning/next-sprint.md) validates Windows first and prepares the preview.8
+release. The dated 16–19 October delivery
 log that used to be here is archived in
 [planning history](planning/history/checkpoints-2026-10.md#progress-delivery-log-1619-october-2026).
 

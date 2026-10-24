@@ -573,6 +573,8 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+24 October 2026: no status change (36/44). Build and release infrastructure: 6 GiB build heap, parallel source assembly, restorable zstd build cache (clean build 132 s warm, byte-identical trees), `.tar.zst` release archives (`verify:upgrade:linux` `0pCpVD` passes). Next sprint: [platform validation, Windows first, and preview.8](next-sprint.md).
+
 23 October 2026, OV-103: merged `ov/agent-editing` (Stop cases and the local retry reset); the disk-full retry passes 5/5 under CPU load and 2/2 without, with the interruption, Agent and review-recovery checks. Verified on Linux x64: **36/44 — the 80 % target**. Also merged: `ov/agent-chat-failures` (unknown and malformed tool calls no longer hang a turn; `verify:agent-tool-calls` ×2, Agent and image input pass).
 
 23 October 2026, OV-802: coordinator rebuild of the glibc-2.28 addons and the upstream-host package; provenance ×2, ABI and the critical subset on the upstream host pass first time. Verified on Linux x64: **35/44**.

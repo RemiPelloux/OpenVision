@@ -1,9 +1,10 @@
 # OpenVision status, gaps, ETA and Definition of Done
 
-Updated **23 October 2026** (`main` at `52c46dec`, last merge 20 October 14:47). This page is the single current view. The acceptance
+Updated **24 October 2026** (`main` at `b64873ba`). This page is the single current view. The acceptance
 clauses are in the [ledger](completion-sprints.md); the priority order is in the
 [roadmap](roadmap.md). Dated checkpoints (16–19 October) are archived in
-[planning history](history/checkpoints-2026-10.md). Run `npm run status:features`
+[planning history](history/checkpoints-2026-10.md). The next sprint is planned in
+[next sprint](next-sprint.md). Run `npm run status:features`
 for the authoritative count.
 
 The ETA is given as acceptance stories, worker sessions and blocking gates, never
@@ -17,7 +18,8 @@ calendar or engineer time.
 | Verified | **36 (81.82%)** |
 | Partial / Planned / Unknown | 3 / 5 / 0 |
 | 80% target | 36 Verified: **reached** |
-| Code on `main` | Every remote worker branch merged (integration merge `52c46dec`, 20 October). Every Linux story that needs no reference host, release gate or external input is Verified on the coordinator's clean rebuild (23 October) |
+| Code on `main` | Every worker branch merged. Every Linux story that needs no reference host, release gate or external input is Verified on the coordinator's clean rebuild (23 October). Build and release infrastructure optimized on 24 October |
+| Next sprint | [Platform validation (Windows first) and the preview.8 release candidate](next-sprint.md) |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
 ## Re-scope (baseline v3)
@@ -54,6 +56,28 @@ merged code. "Gate" is what blocks promotion:
 - **Verified on Linux x64, 23 October:** OV-704, OV-703, OV-802 and OV-103 (coordinator reruns on the integrated `main`).
 - Evidence and run IDs are in each ledger row.
 
+### Done 21–24 October
+
+- **Stories Verified:** OV-704, OV-703, OV-802 and OV-103, each on a coordinator
+  clean rebuild with first-time native passes (run IDs in the ledger).
+- **Defects fixed:**
+  - the local Agent retry now resets the turn before each replay, so a reply shown by
+    a failed attempt is never duplicated (owner decision A; passes 5/5 under full CPU
+    load);
+  - unknown or malformed tool calls return a tool error and the turn finishes, instead
+    of retrying and hanging (`verify:agent-tool-calls`);
+  - the remote server stops when its last window closes (grace bounded to 5 minutes
+    for genuine network loss);
+  - image generation is hidden and refused tools never show a success label.
+- **Build and release:**
+  - `build:desktop` runs with a 6 GiB V8 heap (the default ran out of memory);
+  - parallel source assembly and a restorable, zstd-compressed build cache: clean
+    build 575 s → 459 s cold, **132 s** warm, byte-identical trees;
+  - release archives are `.tar.zst`: 18 % smaller than gzip -9, compressed 2.4× faster,
+    `.tar.gz` still installable; `verify:upgrade:linux` passes with them.
+  - Details: [build performance](../performance/build-performance.md).
+- **Workers:** all 25 worker sessions finished and were archived.
+
 ### Remaining stories
 
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
@@ -69,30 +93,34 @@ merged code. "Gate" is what blocks promotion:
 
 ### Open defects
 
-- [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)**, [#10](https://github.com/RemiPelloux/OpenVision/issues/10), [#8](https://github.com/RemiPelloux/OpenVision/issues/8) and [#6](https://github.com/RemiPelloux/OpenVision/issues/6): fixed on `main`; the issues can be closed.
-- `check:secrets` Node 24.18.0 abort (odd-length UTF-16LE decode): fixed by release-safety.
 - [#7](https://github.com/RemiPelloux/OpenVision/issues/7): Quick Edit Ctrl+A.
-- The client queries the Marketplace gallery when a non-built-in extension is installed in a remote window (remote-ssh report; OV-1005 follow-up).
+- A retrieval unit test failed once while the host's four CPUs were saturated by a
+  compression benchmark; it passes on reruns. To be made deterministic (next sprint,
+  Track G).
+- Fixed on `main`, issues still open on GitHub: [#6](https://github.com/RemiPelloux/OpenVision/issues/6),
+  [#8](https://github.com/RemiPelloux/OpenVision/issues/8), [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)**
+  and [#10](https://github.com/RemiPelloux/OpenVision/issues/10).
+- Fixed on `main`: the `check:secrets` Node 24 abort, the remote-window Marketplace
+  lookup, the duplicated reply on retry and the unknown-tool hang.
 
-## ETA
+## ETA and next sprint
 
-Owner decisions were made on 20 October ([record](owner-decisions.md)). Nothing has
-been pushed since the integration merge of 20 October. What remains:
+**36/44 is reached** (23 October). The next sprint is
+[platform validation (Windows first) and the preview.8 release candidate](next-sprint.md):
 
-| Step | Work | Effect if it passes |
+| If the owner provides | Stories | Count |
 | --- | --- | --- |
-| Reference host | OV-1002 (frame/scroll budgets need a GPU) and OV-1003 (idle CPU budget) on a reference-class machine | Up to +2 |
-| Release gate | OV-1004 last, on the same build as every other story | +1 |
-| External | OV-205 Codex Easy balance, OV-901 Windows, OV-902 Mac (or drop the claim), OV-905 other Linux; OV-804 owner/legal | Up to +5 |
+| Nothing new | Signed 0.2.0-preview.8 Linux release; build and test follow-ups | 36/44 |
+| + GPU reference host | + OV-1002, OV-1003, then OV-1004 | 39/44 (Linux ceiling) |
+| + Windows x64 host | + OV-901 | 40/44 |
+| + provider balance and Linux matrix machines | + OV-205, OV-905 | 42/44 |
+| + Mac, or the decision to drop it | + OV-902 | 43/44 (or 43/43) |
+| + OV-804 rights decision | + OV-804 | 44/44 |
 
-**36/44 is reached** (23 October). The **Linux ceiling is
-39/44**: the 36, then OV-1002 and OV-1003 on a reference host, then OV-1004. The
-last 5 need a machine, a balance or an owner/legal decision.
-
-For reference, the 16 October baseline sized 9 of the remaining 11 stories at
+For reference, the 16 October baseline sized 9 of the remaining stories at
 **92 provisional points** (OV-103 8, OV-703 13, OV-802 13, OV-1002 8,
-OV-1003 8, OV-1004 13, OV-804 8, OV-901 8, OV-902 13). OV-205 and OV-905 were
-created by the re-scope and have no size.
+OV-1003 8, OV-1004 13, OV-804 8, OV-901 8, OV-902 13); OV-103, OV-703 and OV-802
+are now Verified.
 
 ## Working setup
 
@@ -105,6 +133,8 @@ These lessons from 18–19 October apply to every Linux run:
   - host tools: `xdotool`, `imagemagick`, `sqlite3`, `iproute2`, `openssh-client`.
 - **Workers:** at most 5 sessions at once, pushing after every task. 25 at once exhausted the quota in under an hour.
 - **Merges:** rerun after merging. Two regressions appeared only once branches were combined.
+- **Race-prone paths:** run retry, cancel and persistence-fault checks under `stress-ng --cpu $(nproc)` as well as unloaded; two defects appeared only under load.
+- **Proxy CA:** a non-root runner needs a readable copy of the proxy CA bundle in `NODE_EXTRA_CA_CERTS` for verifiers that download pinned inputs.
 - **Coordinator runner:** set `XDG_RUNTIME_DIR` (otherwise the main IPC socket lands in the profile and deep test paths exceed 107 characters), install `x11-utils` (`xprop`), point `OPENVISION_BROWSER_PATH` at Chromium, run `npm ci` in `tooling/` after merges, and keep 4 GiB free (`logs/` is ignored and grows by ~1 GiB per package run).
 
 ## Definition of Done
@@ -124,14 +154,19 @@ These lessons from 18–19 October apply to every Linux run:
    accepted in the ledger.
 6. Performance-related stories meet numeric budgets that were set from baselines
    before any optimization.
-7. Ledger, roadmap, progress and README are updated; `status:features` and
+7. The coordinator reproduces the passes: a clean build of the merged commit, then
+   first-time native passes (a worker's own runs do not promote a story; a retry is
+   never a first-time pass).
+8. Retry, cancellation and persistence-fault paths also pass under full CPU load.
+9. Ledger, roadmap, progress and README are updated; `status:features` and
    `docs:check` pass; the change is committed, pushed and the remote hash is
    confirmed.
 
 ### Release DoD (a downloadable version)
 
-1. Built from the commit being released, with a clean rebuild; after OV-804, built
-   without the prepared recovery input.
+1. Built from the commit being released, with a clean rebuild and
+   `OPENVISION_NO_BUILD_CACHE=1` (no restored outputs); after OV-804, built without
+   the prepared recovery input.
 2. Packaged artifacts pass the critical native suite on each claimed
    platform/architecture.
 3. Zero automatic outbound destinations in the extended telemetry capture.
@@ -142,7 +177,8 @@ These lessons from 18–19 October apply to every Linux run:
    exactly which fixes are packaged and which are source-only; checksums are
    published.
 6. Install, upgrade, rollback and uninstall keep user data (OV-904); signed where
-   advertised.
+   advertised. Linux releases are reproducible `.tar.zst` archives with a signed
+   manifest; the signing key stays offline with the owner.
 7. No GitHub Actions or hosted CI; local packaging is reproducible.
 
 ### Project DoD ("perfect")

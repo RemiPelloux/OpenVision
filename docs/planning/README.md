@@ -7,6 +7,7 @@ The [Rust plan](rust/README.md) is a separate migration scope; its points are no
 ## Documents
 
 - [Status, gaps, ETA and Definition of Done](eta-and-definition-of-done.md) — **start here**
+- [Next sprint: platform validation (Windows first) and preview.8](next-sprint.md)
 - [Owner decisions (#5)](owner-decisions.md)
 - [Acceptance gate ownership](acceptance-gate-ownership.md)
 - [OpenVision completion sprints and user stories](completion-sprints.md)

@@ -3,7 +3,7 @@
 [Progress, percentages and gate-based ETA](../progress.md) ·
 [Recovery archive](../../curs_source/README.md) · [Recovery limits](../recovery/recovery-status.md)
 
-Updated 18 October 2026; latest portable release **0.2.0-preview.7**, with Linux x64 source support. The verified-coverage target is **80%**.
+Updated 24 October 2026; latest portable release **0.2.0-preview.7** (preview.8 is the next sprint's release candidate), with Linux x64 source support. The verified-coverage target is **80%**.
 Baseline v3 (18 October re-scope) moves platform and live clauses into OV-901,
 OV-902, OV-905 and OV-205, so the denominator is **44 acceptance stories** and **36
 must be fully Verified**. Current ledger: **36 Verified, 3 Partial, 5 Planned**,
@@ -136,9 +136,11 @@ Server-facing file-sync contracts are mapped, but actual data destinations and
 native index behavior remain unverified. The acceptance count and backlog points
 are unchanged.
 
-> **Current status (23 October 2026):** 36/44 Verified under baseline v3. The 8
+> **Current status (24 October 2026):** 36/44 Verified under baseline v3. The 8
 > remaining stories, their gaps and the ETA are on the
-> [status page](eta-and-definition-of-done.md#remaining-stories). The ranked tables
+> [status page](eta-and-definition-of-done.md#remaining-stories); the
+> [next sprint](next-sprint.md) runs Windows first, then the reference host, the
+> release gate and preview.8. The ranked tables
 > below are the 16 October baseline-v2 ordering, kept for history and point sizes.
 
 **16 October baseline: 36 unfinished stories · 322 provisional complexity points.** The order below
@@ -237,7 +239,7 @@ Windows preview refresh can ship earlier once its declared gates pass.
 
 The ETA is **gate-based, using the points above**. On 16 October the 80% target
 needed **28 additional fully verified stories**; for the current count see the
-[status page](eta-and-definition-of-done.md#eta). There is no defensible fixed point
+[status page](eta-and-definition-of-done.md#eta-and-next-sprint). There is no defensible fixed point
 estimate for that subset until its stories and required dependencies are chosen;
 322 points sizes the entire current unfinished acceptance backlog. Scores are
 provisional and must be revised when investigations reveal changed scope.

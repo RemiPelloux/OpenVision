@@ -1,6 +1,7 @@
 # Platform and live test plan (baseline v3)
 
-Created 18 October 2026 with the [baseline v3 re-scope](eta-and-definition-of-done.md#re-scope-baseline-v3).
+Created 18 October 2026 with the [baseline v3 re-scope](eta-and-definition-of-done.md#re-scope-baseline-v3); updated 24 October 2026 for the
+[next sprint](next-sprint.md), which runs this plan Windows first.
 Every clause below was moved out of a Linux-judged story into one of four stories in
 the [ledger](completion-sprints.md). Each one needs a real machine, a funded
 provider or an official account, so it cannot be closed from the Linux host.
@@ -13,7 +14,7 @@ version before they can run.
 
 ## Tracking tickets
 
-GitHub issues: [#1 OV-901 Windows](https://github.com/RemiPelloux/OpenVision/issues/1), [#2 OV-902 macOS](https://github.com/RemiPelloux/OpenVision/issues/2), [#3 OV-905 Linux matrix](https://github.com/RemiPelloux/OpenVision/issues/3), [#4 OV-205 live providers](https://github.com/RemiPelloux/OpenVision/issues/4), [#5 owner decisions](https://github.com/RemiPelloux/OpenVision/issues/5), plus defects [#6 keyring-less provider save hang](https://github.com/RemiPelloux/OpenVision/issues/6) and [#7 Quick Edit Ctrl+A](https://github.com/RemiPelloux/OpenVision/issues/7).
+GitHub issues: [#1 OV-901 Windows](https://github.com/RemiPelloux/OpenVision/issues/1), [#2 OV-902 macOS](https://github.com/RemiPelloux/OpenVision/issues/2), [#3 OV-905 Linux matrix](https://github.com/RemiPelloux/OpenVision/issues/3), [#4 OV-205 live providers](https://github.com/RemiPelloux/OpenVision/issues/4), [#5 owner decisions](https://github.com/RemiPelloux/OpenVision/issues/5), plus defects [#6 keyring-less provider save hang](https://github.com/RemiPelloux/OpenVision/issues/6) (fixed on `main`) and [#7 Quick Edit Ctrl+A](https://github.com/RemiPelloux/OpenVision/issues/7) (open).
 
 ## OV-205 — live providers and official accounts
 
@@ -41,8 +42,16 @@ Run each item on Linux first, then on every claimed platform.
 
 ## OV-901 — Windows x64
 
-Prerequisite: the Windows x64 test host recorded in earlier evidence. Build from the
-current source, then run in order (critical crashes first):
+Prerequisite: the Windows x64 test host recorded in earlier evidence, with Node
+24.18.0, Git, Python 3, the MSVC Build Tools and PowerShell 7. Build from the current
+source, then run in order (critical crashes first). The [next sprint](next-sprint.md#track-a--windows-x64-ov-901)
+groups these steps into phases W0–W6 with exit criteria.
+
+0. Build: `npm ci` (root and `tooling/`), `npm run prepare:desktop`, then
+   `npm run build:desktop` twice; the second run must report bundles "restored from
+   build cache" (this checks the zstd cache and atomic renames on NTFS). Then
+   `npm run package:windows`, `npm run test:desktop`, and `npm run verify:critical`
+   with the 18 entries that list `win32-x64` in `desktop/critical-suite.json`, twice.
 
 1. Diagnose the intermittent host exit 134 (`AYXW1r`) and the `UtilityProcessWorker`
    `0xC0000005` with native stderr captured.
@@ -53,7 +62,8 @@ current source, then run in order (critical crashes first):
    - Rules and MCP: `verify:local-rules`, `verify:rules:windows`, `verify:memory`, `verify:memory:filesystem`, `verify:legacy-memory` (`:stale`, `:windows`), `verify:inline-edit`, `verify:mcp-ownership`, `verify:mcp-cleanup` (`--persistent`), `verify:mcp-session` (`--direct`), `verify:mcp-http-cleanup` (`--pending`), `verify:agent -- --mcp`/`--mcp-stdio` (`--mcp-failures`).
    - Project and language: `verify:project:lifecycle`, `verify:project:scale`, `verify:development`, `verify:language-matrix`, `verify:language`, `verify:language-ui`, `verify:rename-race`, `setup:cpp` + `verify:cpp`, `verify:import`, `test:import`, `verify:extensions` (needs MSVC; add PE-header architecture diagnostics).
    - Autocomplete and performance: `verify:completion` (default, `--editing`, `--acceptance`), `verify:telemetry`, `verify:utility-listeners`, `benchmark:native`, `verify:local-startup`.
-4. **Port** and run: `verify:explorer`, `verify:shutdown-cycles` (Windows close/kill cycles), `verify:global-paths` (USERPROFILE/APPDATA/LOCALAPPDATA), `verify:mcp-config-ownership` (no `/proc`), `verify:data-destinations` and `verify:telemetry:extended` (owned proxy plus ETW/netsh), `verify:idle-memory` (private working set, ConPTY release), the `verify:responsiveness --full` filesystem probe, `verify:profile-io-faults` (VHD-based full and read-only volume).
+   - Added in October (Linux-verified, never run on Windows): `verify:agent-tool-calls`, `verify:agent-timeout`, `verify:agent-history`, `verify:image-input`, `verify:browser-automation`, `verify:modes-probe`, `verify:customization-lifecycle` (`--precedence`, `--invalid`, `--watchers`), `verify:mcp-auth` (and `--secrets`, against DPAPI), `verify:retrieval`, `verify:retrieval-incremental`, `verify:retrieval-recovery`, `verify:corrupt-state`, `verify:crash-recovery`, `verify:authority`, `verify:import-faults`, `verify:save-all`, `verify:paste`, `verify:project-clone`, `verify:project-themes`, `verify:project-home`, `verify:welcome`, `verify:onboarding`, `verify:rules-isolation`, `verify:statsig-cache`, `verify:provider-identity`, `verify:catalog-retention`, `verify:model-discovery`, `verify:account-switch`, `verify:account-picker`.
+4. **Port** and run: `verify:explorer`, `verify:shutdown-cycles` (Windows close/kill cycles), `verify:global-paths` (USERPROFILE/APPDATA/LOCALAPPDATA), `verify:mcp-config-ownership` (no `/proc`), `verify:data-destinations` and `verify:telemetry:extended` (owned proxy plus ETW/netsh), `verify:idle-memory` (private working set, ConPTY release), the `verify:responsiveness --full` filesystem probe, `verify:profile-io-faults` (VHD-based full and read-only volume), `verify:startup-traversal`, `verify:helper-contracts`, `verify:native-inventory` and `verify:native-loaded` (PE images).
 5. Windows installer upgrade, rollback and uninstall cells (OV-904); WSL (OV-703);
    computer-use sidecar (OV-704); retrieval verifiers (OV-502–OV-504); Windows helper
    variants (OV-803); MSVC rebuilds (OV-802); independent Windows build (OV-804);

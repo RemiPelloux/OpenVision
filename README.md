@@ -204,15 +204,16 @@ macOS, other-Linux and live-provider clauses are tracked in dedicated platform/l
 stories, and other stories are judged on Linux x64
 ([re-scope](docs/planning/eta-and-definition-of-done.md#re-scope-baseline-v3)).
 
-The next product target is **36/44 verified stories (at least 80%)**. Every worker
-branch is merged into `main` (20 October: clean build, unit suites and the Linux
-critical subset pass). The
-[status page](docs/planning/eta-and-definition-of-done.md) lists every remaining story
-with its gap, its gate (Linux work, owner decision or external machine/balance) and
-the ETA. Owner decisions were settled on 20 October. OV-704 passed its coordinator
-rerun on 23 October; OV-103, OV-703 and OV-802 still need theirs (see the status
-page) to reach the target; the Linux ceiling is 39/44. The
-Windows, macOS, other-Linux and live-provider stories are tracked in issues #1–#4.
+The 80 % target was reached on 23 October. The
+[status page](docs/planning/eta-and-definition-of-done.md) lists the 8 remaining stories
+with their gaps and gates, and the Definition of Done. The
+[next sprint](docs/planning/next-sprint.md) validates **Windows first**, then runs the GPU
+reference-host budgets (OV-1002, OV-1003), the release gate (OV-1004), live providers,
+the Linux matrix and macOS, and prepares a signed **0.2.0-preview.8** Linux release; the
+Linux ceiling is 39/44. Builds are faster since 24 October (clean build 132 s with a warm
+cache; releases are zstd archives): see
+[build performance](docs/performance/build-performance.md). Platform and live-provider
+stories are tracked in issues #1–#4.
 
 The [feature roadmap](docs/planning/roadmap.md) covers every unfinished story using
 **complexity points, dependencies and acceptance gates**.
