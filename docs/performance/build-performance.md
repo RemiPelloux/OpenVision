@@ -36,3 +36,22 @@ Measured 24 October 2026 on the coordinator host (4 CPUs, 15 GiB, Node 24.18.0),
 
 A warm build spends its time in ~60 smaller customizations that do not use `cachedFile`
 yet (2–11 s each, `installNetworkDefaults` the largest) and in assembly I/O.
+
+## Release archive compression
+
+Release archives are `.tar.zst` (Node's bundled libzstd, level 12, 128 MiB
+long-distance window, frame checksum). Measured on the 1.1 GiB Linux package:
+
+| Codec | Size | Compress | Decompress |
+| --- | --- | --- | --- |
+| gzip -9 (previous) | 396 MB | 131 s | 7.9 s |
+| **zstd 12, long window (current)** | **325 MB** | **55 s** | ~2 s |
+| xz -6 (rejected) | 308 MB | 133 s | 4.4 s |
+| zstd 19, long window | 304 MB | 215 s | 1.8 s |
+
+xz was rejected because its output differs between single- and multi-threaded runs,
+which would break reproducible releases; zstd output does not depend on the thread
+count. The installer and `release:verify` pick the decoder from the archive's magic
+bytes, so `.tar.gz` releases still install, and no system zstd is required.
+Native check: `verify:upgrade:linux` (`0pCpVD`) passes with zstd releases (install,
+SIGKILL at every phase, upgrade, rollback, uninstall, purge).
