@@ -2,11 +2,10 @@
 // Fail-closed check of a Linux release before anything is installed: signature
 // over the manifest, manifest structure, archive size and SHA-256. --deep also
 // extracts into a private temporary directory and compares every file.
-import { spawnSync } from 'node:child_process';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { verifyRelease, verifyTree } from './linux-release.mjs';
+import { extractArchive, verifyRelease, verifyTree } from './linux-release.mjs';
 
 const args = process.argv.slice(2);
 const option = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
@@ -19,8 +18,7 @@ try {
   if (args.includes('--deep')) {
     const directory = await mkdtemp(join(tmpdir(), 'openvision-release-verify-'));
     try {
-      const result = spawnSync('tar', ['-xzf', archive, '-C', directory, '--no-same-owner', '--no-same-permissions'], { encoding: 'utf8' });
-      if (result.status !== 0) throw Error(`Extraction failed: ${result.stderr.trim()}`);
+      await extractArchive({ archive, directory }).catch(error => { throw Error(`Extraction failed: ${error.message}`); });
       await verifyTree(join(directory, manifest.prefix), manifest);
     } finally { await rm(directory, { recursive: true, force: true }); }
   }

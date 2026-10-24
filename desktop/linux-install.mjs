@@ -10,14 +10,12 @@
 // Every step before the switch works on copies, so an interruption at any point
 // leaves the installed version and its profile untouched. No updater, no
 // network: the archive, manifest and signature are local files.
-import { spawn } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { createReadStream } from 'node:fs';
 import { copyFile, lstat, mkdir, open, readdir, readFile, readlink, rename, rm, symlink, unlink, writeFile } from 'node:fs/promises';
 import { homedir, hostname } from 'node:os';
 import { basename, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verifyRelease, verifyTree } from './linux-release.mjs';
+import { extractArchive, verifyRelease, verifyTree } from './linux-release.mjs';
 import { canOpen, migrateProfile, readProfileFormat } from './profile-format.mjs';
 
 export const stateName = 'openvision-install.json';
@@ -195,21 +193,15 @@ async function backup(root, reason, sources, hooks) {
 }
 
 async function extract(archive, staging, manifest, hooks) {
-  const child = spawn('tar', ['-xzf', '-', '-C', staging, '--no-same-owner', '--no-same-permissions'], { stdio: ['pipe', 'ignore', 'pipe'] });
-  let stderr = '';
-  child.stderr.on('data', chunk => { stderr += chunk; });
-  const exit = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', resolve); });
   const hash = createHash('sha256');
   let written = 0, held = false;
-  for await (const chunk of createReadStream(archive)) {
-    hash.update(chunk);
-    if (!child.stdin.write(chunk)) await new Promise(resolve => child.stdin.once('drain', resolve));
-    written += chunk.length;
-    if (!held && written * 2 >= manifest.archive.bytes) { held = true; await hooks.hold('extract'); }
-  }
-  child.stdin.end();
-  const code = await exit;
-  if (code !== 0) throw Error(`Release extraction failed: ${stderr.trim()}`);
+  try {
+    await extractArchive({ archive, directory: staging, onChunk: async chunk => {
+      hash.update(chunk);
+      written += chunk.length;
+      if (!held && written * 2 >= manifest.archive.bytes) { held = true; await hooks.hold('extract'); }
+    } });
+  } catch (error) { throw Error(`Release extraction failed: ${error.message}`); }
   if (hash.digest('hex') !== manifest.archive.sha256) throw Error('Release archive changed after verification.');
   const extracted = join(staging, manifest.prefix);
   const entries = await readdir(staging);

@@ -5,7 +5,7 @@ import { appendFile, copyFile, mkdir, mkdtemp, readFile, rm, symlink, truncate, 
 import { tmpdir } from 'node:os';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { createArchive, packageTree, safeRelativePath, signManifest, validateManifest, verifyRelease, verifyTree } from './linux-release.mjs';
+import { createArchive, decompressorFor, extractArchive, packageTree, safeRelativePath, signManifest, validateManifest, verifyRelease, verifyTree } from './linux-release.mjs';
 import { createRelease, createSigner } from './linux-release-fixture.mjs';
 
 const root = resolve(import.meta.dirname, '..');
@@ -25,13 +25,13 @@ test('a signed release verifies and extracts to exactly the signed tree', linux,
   assert.equal(manifest.version, '1.0.0');
   assert.ok(manifest.files.some(entry => entry.path === 'electron-host/openvision' && entry.mode === 0o755));
   const out = await mkdtemp(join(directory, 'extract-'));
-  assert.equal(spawnSync('tar', ['-xzf', release.archive, '-C', out]).status, 0);
+  await extractArchive({ archive: release.archive, directory: out });
   await verifyTree(join(out, manifest.prefix), manifest);
 });
 
 test('archives are reproducible from the same tree', linux, async () => {
   const release = await fresh('1.0.1');
-  const again = join(directory, 'again.tar.gz');
+  const again = join(directory, 'again.tar.zst');
   await createArchive({ packageDirectory: release.packageDirectory, prefix: 'OpenVision-1.0.1-linux-x64', archive: again, mtime: 1 });
   assert.deepEqual(await readFile(again), await readFile(release.archive));
 });
@@ -80,7 +80,7 @@ test('a validly signed manifest for another archive is rejected (mismatch)', lin
   await copyFile(second.archive, first.archive);
   await assert.rejects(verifyRelease({ ...first, allowedSigners: signer.allowedSigners }), /does not match/);
   // Renamed archive: the signed name binds the version.
-  const renamed = join(directory, 'OpenVision-9.9.9-linux-x64.tar.gz');
+  const renamed = join(directory, 'OpenVision-9.9.9-linux-x64.tar.zst');
   await copyFile(second.archive, renamed);
   await assert.rejects(verifyRelease({ archive: renamed, manifest: second.manifest, signature: second.signature, allowedSigners: signer.allowedSigners }), /is not OpenVision-2.0.1/);
 });
@@ -103,7 +103,7 @@ test('extracted trees with extra, missing, changed or linked files are rejected'
   const manifest = await verifyRelease({ ...release, allowedSigners: signer.allowedSigners });
   const extract = async () => {
     const out = await mkdtemp(join(directory, 'tree-'));
-    spawnSync('tar', ['-xzf', release.archive, '-C', out]);
+    await extractArchive({ archive: release.archive, directory: out });
     return join(out, manifest.prefix);
   };
   let tree = await extract(); await writeFile(join(tree, 'extra'), 'x');
@@ -166,4 +166,31 @@ test('the packaged runtime (ELECTRON_RUN_AS_NODE) hashes .asar archives as files
   const listed = JSON.parse(result.stdout.trim().split('\n').at(-1));
   assert.deepEqual(listed.directories, []);
   assert.deepEqual(listed.files.map(entry => entry.path), ['node_modules.asar']);
+});
+
+test('releases are zstd archives, and older gzip archives still extract to the same tree', linux, async () => {
+  const release = await fresh('3.0.0');
+  assert.match(release.archive, /\.tar\.zst$/);
+  const head = (await readFile(release.archive)).subarray(0, 4);
+  assert.deepEqual([...head], [0x28, 0xb5, 0x2f, 0xfd]);
+  const legacy = join(directory, 'legacy.tar.gz');
+  await createArchive({ packageDirectory: release.packageDirectory, prefix: 'OpenVision-3.0.0-linux-x64', archive: legacy, mtime: 1 });
+  assert.deepEqual([...(await readFile(legacy)).subarray(0, 2)], [0x1f, 0x8b]);
+  for (const archive of [release.archive, legacy]) {
+    const out = await mkdtemp(join(directory, 'extract-'));
+    let seen = 0;
+    await extractArchive({ archive, directory: out, onChunk: async chunk => { seen += chunk.length; } });
+    assert.equal(seen, (await readFile(archive)).length, 'onChunk sees every compressed byte');
+    const manifest = JSON.parse(await readFile(release.manifest, 'utf8'));
+    await verifyTree(join(out, manifest.prefix), manifest);
+  }
+});
+
+test('unknown or corrupt archives are rejected before extraction succeeds', linux, async () => {
+  assert.throws(() => decompressorFor(Buffer.from('PK\x03\x04')), /neither zstd nor gzip/);
+  const release = await fresh('3.0.1');
+  const bytes = await readFile(release.archive);
+  const corrupt = join(directory, 'corrupt.tar.zst');
+  await writeFile(corrupt, Buffer.concat([bytes.subarray(0, 64), Buffer.alloc(4096, 0xab)]));
+  await assert.rejects(extractArchive({ archive: corrupt, directory: await mkdtemp(join(directory, 'bad-')) }));
 });

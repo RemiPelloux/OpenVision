@@ -6,10 +6,11 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { lstat, readdir, readFile, stat } from 'node:fs/promises';
+import { lstat, open, readdir, readFile, stat } from 'node:fs/promises';
 import { basename, join, posix } from 'node:path';
+import { Writable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { createGzip } from 'node:zlib';
+import { constants, createGunzip, createGzip, createZstdCompress, createZstdDecompress } from 'node:zlib';
 
 // Under OpenVision's own runtime (ELECTRON_RUN_AS_NODE, the packaged
 // openvision-install), Electron's fs presents .asar files as directories; a
@@ -27,7 +28,7 @@ const privatePrefixes = ['electron-host/data/', 'electron-host/backups/', 'elect
 export const releaseName = (version, arch = 'x64') => `OpenVision-${version}-linux-${arch}`;
 export const releaseFiles = (version, arch = 'x64') => {
   const name = releaseName(version, arch);
-  return { prefix: name, archive: `${name}.tar.gz`, manifest: `${name}.manifest.json`, signature: `${name}.manifest.json.sig` };
+  return { prefix: name, archive: `${name}.tar.zst`, manifest: `${name}.manifest.json`, signature: `${name}.manifest.json.sig` };
 };
 
 export async function fileSha256(path, { onChunk } = {}) {
@@ -63,6 +64,56 @@ function run(command, args, options = {}) {
 
 // Deterministic archive: sorted names, numeric root ownership, normalized modes,
 // a fixed modification time and a gzip header without name or time.
+// zstd level 12 with a 128 MiB long-distance window: on the 1.1 GiB Linux package it is 18 %
+// smaller than gzip -9 (325 vs 396 MB), compresses in 55 s instead of 131 s and decompresses
+// about 4x faster. Node's bundled libzstd (pinned with Node) keeps the bytes reproducible;
+// `.tar.gz` stays readable for older releases.
+const zstdWindowLog = 27;
+const zstdParams = { [constants.ZSTD_c_compressionLevel]: 12, [constants.ZSTD_c_windowLog]: zstdWindowLog,
+  [constants.ZSTD_c_enableLongDistanceMatching]: 1, [constants.ZSTD_c_checksumFlag]: 1 };
+const compressorFor = archive => archive.endsWith('.tar.gz') ? createGzip({ level: 9 }) : createZstdCompress({ params: zstdParams });
+
+// Chooses the decoder from the archive's magic bytes, so the installer and verifier accept
+// both current (.tar.zst) and older (.tar.gz) releases without a system zstd.
+export function decompressorFor(head) {
+  if (head[0] === 0x1f && head[1] === 0x8b) return createGunzip();
+  if (head[0] === 0x28 && head[1] === 0xb5 && head[2] === 0x2f && head[3] === 0xfd)
+    return createZstdDecompress({ params: { [constants.ZSTD_d_windowLogMax]: zstdWindowLog } });
+  throw Error('Release archive is neither zstd nor gzip.');
+}
+
+// Streams `archive` through its decoder into `tar -x` in `directory`; `onChunk` sees the
+// compressed bytes (for hashing and progress) before they are decoded.
+export async function extractArchive({ archive, directory, onChunk = async () => {} }) {
+  const handle = await open(archive, 'r');
+  const head = Buffer.alloc(4);
+  try { await handle.read(head, 0, 4, 0); } finally { await handle.close(); }
+  const decoder = decompressorFor(head);
+  const child = spawn('tar', ['-xf', '-', '-C', directory, '--no-same-owner', '--no-same-permissions'], { stdio: ['pipe', 'ignore', 'pipe'] });
+  let stderr = '';
+  child.stderr.on('data', chunk => { stderr += chunk; });
+  const exit = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', resolve); });
+  const tap = async function* (source) { for await (const chunk of source) { await onChunk(chunk); yield chunk; } };
+  // GNU tar stops reading at the end-of-archive marker, before the decoder has delivered
+  // the trailing padding. Once tar has closed its stdin the rest is discarded, but the whole
+  // archive is still read (and hashed by onChunk); tar's exit status decides the outcome.
+  let closed = false, pending;
+  const release = () => { closed = true; const callback = pending; pending = undefined; callback?.(); };
+  child.stdin.on('error', release);
+  child.stdin.on('close', release);
+  const sink = new Writable({
+    write(chunk, encoding, callback) {
+      if (closed || child.stdin.write(chunk)) return callback();
+      pending = callback;
+      child.stdin.once('drain', () => { if (pending === callback) { pending = undefined; callback(); } });
+    },
+    final(callback) { if (!closed) child.stdin.end(); callback(); },
+  });
+  const streamed = pipeline(createReadStream(archive), tap, decoder, sink);
+  const [code] = await Promise.all([exit, streamed.catch(error => { child.kill(); throw error; })]);
+  if (code !== 0) throw Error(`tar failed (${code}): ${stderr.trim()}`);
+}
+
 export async function createArchive({ packageDirectory, prefix, archive, mtime = 0 }) {
   const parent = join(packageDirectory, '..'), name = basename(packageDirectory);
   const args = ['--sort=name', '--format=pax', '--pax-option=exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime',
@@ -72,7 +123,7 @@ export async function createArchive({ packageDirectory, prefix, archive, mtime =
   let stderr = '';
   child.stderr.on('data', chunk => { stderr += chunk; });
   const exit = new Promise((resolve, reject) => { child.on('error', reject); child.on('close', resolve); });
-  await pipeline(child.stdout, createGzip({ level: 9 }), createWriteStream(archive, { flags: 'wx' }));
+  await pipeline(child.stdout, compressorFor(archive), createWriteStream(archive, { flags: 'wx' }));
   const code = await exit;
   if (code !== 0) throw Error(`tar failed (${code}): ${stderr.trim()}`);
 }
@@ -145,7 +196,7 @@ export function validateManifest(manifest, { arch = process.arch, archiveName } 
 // Fail-closed release check: signature over the exact manifest bytes first,
 // then structure, then the archive's size and digest. Nothing is extracted.
 export async function verifyRelease({ archive, manifest, signature, allowedSigners, identity, arch = process.arch, onArchiveChunk }) {
-  manifest ??= archive.replace(/\.tar\.gz$/, '.manifest.json');
+  manifest ??= archive.replace(/\.tar\.(gz|zst)$/, '.manifest.json');
   signature ??= `${manifest}.sig`;
   const manifestBytes = await readFile(manifest);
   await stat(signature);
