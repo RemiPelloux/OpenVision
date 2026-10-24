@@ -1,0 +1,67 @@
+# GitHub Pages site for the OpenVision documentation.
+# Settings → Pages → Build and deployment: "Deploy from a branch", branch `main`, folder `/docs`.
+# Every Markdown page in docs/ is rendered as is; the plugins below are GitHub Pages defaults.
+title: OpenVision
+description: An AI coding workspace that runs on your machine, with the models you choose.
+url: https://remipelloux.github.io
+baseurl: /OpenVision
+repository: RemiPelloux/OpenVision
+repo_url: https://github.com/RemiPelloux/OpenVision
+logo: /assets/img/openvision.svg
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+  auto_ids: true
+
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-titles-from-headings
+  - jekyll-default-layout
+  - jekyll-readme-index
+  - jekyll-seo-tag
+
+relative_links:
+  enabled: true
+  collections: false
+titles_from_headings:
+  enabled: true
+  strip_title: true
+  collections: false
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
+
+# Sidebar sections, in order (folder → label).
+sections:
+  - dir: /guides/
+    label: Guides
+  - dir: /engineering/
+    label: Engineering
+  - dir: /performance/
+    label: Performance
+  - dir: /verification/
+    label: Verification
+  - dir: /verification/worker-reports/
+    label: Worker reports
+  - dir: /recovery/
+    label: Recovery
+  - dir: /planning/
+    label: Planning
+  - dir: /planning/rust/
+    label: Rust plan
+  - dir: /planning/history/
+    label: History
+  - dir: /releases/
+    label: Releases
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor

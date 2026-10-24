@@ -1,0 +1,42 @@
+name: Platform or live-provider run report
+description: Results of a run from the next sprint (Windows, macOS, other Linux, GPU reference host or live providers).
+labels: [verification]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow the [next sprint](https://remipelloux.github.io/OpenVision/planning/next-sprint.html) and the
+        [platform test plan](https://remipelloux.github.io/OpenVision/planning/platform-and-live-test-plan.html).
+        A retry is recorded as a retry, not as a first-time pass. Never attach profiles, keys or full logs.
+  - type: dropdown
+    id: story
+    attributes:
+      label: Story
+      options: [OV-901 Windows x64, OV-902 macOS, OV-905 Linux matrix, OV-1002/OV-1003 reference host, OV-205 live providers, OV-1004 release gate]
+    validations:
+      required: true
+  - type: input
+    id: phase
+    attributes:
+      label: Phase
+      description: e.g. W2 critical suite.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit and machine
+      description: Commit hash, OS build, CPU/GPU and architecture.
+    validations:
+      required: true
+  - type: textarea
+    id: runs
+    attributes:
+      label: Commands and run IDs
+      description: One line per command, with its result (pass, fail, retry) and run ID.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: failures
+    attributes:
+      label: Failures and diagnostics
+      description: For each failure, the assertion message and the relevant redacted output.

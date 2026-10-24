@@ -1,0 +1,100 @@
+---
+layout: home
+title: OpenVision — your workspace, your models
+description: An AI coding workspace that runs on your machine, with the models you choose. Agent, Tab completion, MCP, Git and terminals, with no OpenVision account and no telemetry.
+---
+<section class="hero">
+  <div class="hero-copy reveal">
+    <p class="eyebrow"><span class="pulse-dot"></span> Development preview · 36/44 stories verified</p>
+    <h1>Your workspace.<br><span class="gradient-text">Your models.</span></h1>
+    <p class="lead">OpenVision is an AI coding workspace that runs on your machine. Connect any
+      OpenAI-compatible API, your own server or a local model — keys stay in your OS keyring,
+      and nothing is sent anywhere you did not configure.</p>
+    <div class="cta">
+      <a class="button primary" href="{{ '/guides/user-guide.html' | relative_url }}">Get started</a>
+      <a class="button" href="https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7">Download preview.7</a>
+      <a class="button ghost" href="https://github.com/RemiPelloux/OpenVision">View on GitHub</a>
+    </div>
+  </div>
+  <div class="hero-art reveal">
+    <img src="{{ '/assets/img/openvision-editor.svg' | relative_url }}" alt="An animated OpenVision editor: code types itself, Tab completes a line, the Agent proposes a change and applies it, while the model picker cycles through providers.">
+  </div>
+</section>
+
+<section class="features">
+  <h2 class="section-title reveal">Everything you need to code with AI — on your terms</h2>
+  <div class="grid">
+    <article class="card reveal"><div class="card-icon">🔑</div><h3>Your models, your keys</h3><p>Any OpenAI-compatible API, your own server or a local model. Models are discovered; keys stay in the OS keyring.</p></article>
+    <article class="card reveal"><div class="card-icon">🤖</div><h3>An Agent that asks first</h3><p>Multi-file edits you review and undo, tools that run only after approval, and Stop that leaves your files intact.</p></article>
+    <article class="card reveal"><div class="card-icon">⚡</div><h3>Tab completion</h3><p>A separate completion model, accepted with Tab, undoable and cancellable. Off until you pick a model.</p></article>
+    <article class="card reveal"><div class="card-icon">🧩</div><h3>MCP, rules and memories</h3><p>HTTP and STDIO MCP servers with OAuth, project rules and agents under <code>.openvision/</code>, memories you approve.</p></article>
+    <article class="card reveal"><div class="card-icon">🛡️</div><h3>Local by default</h3><p>No sign-up. Built-in analytics and crash upload are disabled by the build, and verified by network captures.</p></article>
+    <article class="card reveal"><div class="card-icon">🔎</div><h3>Search, Git and remote</h3><p>Local code search, Git and worktrees, terminals and debugging, Project Home and SSH remote windows.</p></article>
+  </div>
+</section>
+
+<section class="flow reveal">
+  <img src="{{ '/assets/img/openvision-flow.svg' | relative_url }}" alt="Your project stays on your machine; OpenVision runs locally and keeps keys in the OS keyring; requests go only to the provider you configure.">
+</section>
+
+<section class="quickstart">
+  <h2 class="section-title reveal">Start in minutes</h2>
+  <div class="tabs reveal" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="linux">Linux x64</button>
+    <button role="tab" aria-selected="false" data-tab="windows">Windows x64</button>
+  </div>
+  <div class="tab-panel reveal" data-panel="linux">
+<pre><code><span class="c"># build locally from a pinned, checksum-verified input</span>
+git clone https://github.com/RemiPelloux/OpenVision.git &amp;&amp; cd OpenVision
+npm ci --prefix tooling
+npm run prepare:desktop
+npm start</code></pre>
+    <p>Keys use gnome-keyring, KWallet or KeePassXC. <a href="{{ '/guides/linux.html' | relative_url }}">Linux guide →</a></p>
+  </div>
+  <div class="tab-panel reveal" data-panel="windows" hidden>
+<pre><code><span class="c"># portable app, no Node.js needed</span>
+1. Download OpenVision-0.2.0-preview.7-win32-x64.zip
+2. Extract it
+3. Double-click OpenVision.cmd</code></pre>
+    <p>preview.7 predates the October fixes; preview.8 is the next release candidate. <a href="{{ '/guides/native-runtime.html' | relative_url }}">Install and update →</a></p>
+  </div>
+</section>
+
+<section class="status">
+  <h2 class="section-title reveal">Honest progress</h2>
+  <div class="status-grid">
+    <div class="status-card reveal">
+      <div class="ring" style="--value: 81.8"><span>36<small>/44</small></span></div>
+      <h3>Acceptance stories verified</h3>
+      <p>Every story Linux x64 can close today. The count measures complete acceptance gates, not lines of code.</p>
+      <a href="{{ '/planning/eta-and-definition-of-done.html' | relative_url }}">Status and Definition of Done →</a>
+    </div>
+    <div class="status-card reveal">
+      <h3>Platforms</h3>
+      <ul class="platforms">
+        <li><span class="badge ok">verified</span> Linux x64 — critical suite 11/11</li>
+        <li><span class="badge mid">preview</span> Windows x64 — portable preview.7</li>
+        <li><span class="badge plan">planned</span> Other Linux, ARM64</li>
+        <li><span class="badge plan">planned</span> macOS</li>
+      </ul>
+      <a href="{{ '/planning/next-sprint.html' | relative_url }}">Next sprint: Windows first →</a>
+    </div>
+    <div class="status-card reveal">
+      <h3>Fast, reproducible builds</h3>
+      <p><strong>132 s</strong> clean build with a warm cache (from 575 s), byte-identical trees, and <strong>18 % smaller</strong> zstd release archives.</p>
+      <a href="{{ '/performance/build-performance.html' | relative_url }}">Build performance →</a>
+    </div>
+  </div>
+</section>
+
+<section class="explore">
+  <h2 class="section-title reveal">Explore the documentation</h2>
+  <div class="grid">
+    <a class="card link reveal" href="{{ '/guides/' | relative_url }}"><h3>Guides</h3><p>Install, configure providers, Linux, remote SSH, project configuration and memories.</p></a>
+    <a class="card link reveal" href="{{ '/engineering/' | relative_url }}"><h3>Engineering</h3><p>How OpenVision customizes the runtime, owns processes and persists state.</p></a>
+    <a class="card link reveal" href="{{ '/verification/' | relative_url }}"><h3>Verification</h3><p>Native evidence, run IDs, worker reports and release claims.</p></a>
+    <a class="card link reveal" href="{{ '/planning/' | relative_url }}"><h3>Planning</h3><p>Acceptance ledger, roadmap, owner decisions and the next sprint.</p></a>
+    <a class="card link reveal" href="{{ '/performance/' | relative_url }}"><h3>Performance</h3><p>Memory, responsiveness, build time and compression measurements.</p></a>
+    <a class="card link reveal" href="{{ '/recovery/' | relative_url }}"><h3>Recovery</h3><p>What was recovered, its provenance and the remaining gaps.</p></a>
+  </div>
+</section>

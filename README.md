@@ -1,317 +1,218 @@
 <p align="center">
-  <img src="assets/openvision-banner.svg" alt="OpenVision — your workspace, your models. Animated blinking eye." width="100%">
+  <img src="assets/openvision-hero.svg" alt="OpenVision — your workspace, your models. An animated editor where code types itself, Tab completes a line and the Agent proposes and applies a change while the model picker cycles through providers." width="100%">
 </p>
 
-# OpenVision · AI coding workspace
+<p align="center">
+  <a href="https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7"><img alt="Release" src="https://img.shields.io/badge/release-0.2.0--preview.7-57dfca?style=flat-square&labelColor=0b171d"></a>
+  <a href="docs/planning/eta-and-definition-of-done.md"><img alt="Verified stories" src="https://img.shields.io/badge/verified-36%2F44%20stories-57dfca?style=flat-square&labelColor=0b171d"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/platforms-Linux%20x64%20%C2%B7%20Windows%20x64-8fb0b3?style=flat-square&labelColor=0b171d">
+  <img alt="Node" src="https://img.shields.io/badge/node-24.18.0-8fb0b3?style=flat-square&labelColor=0b171d">
+  <a href="https://remipelloux.github.io/OpenVision/"><img alt="Documentation" src="https://img.shields.io/badge/docs-remipelloux.github.io-57dfca?style=flat-square&labelColor=0b171d"></a>
+</p>
 
-**Your projects. Your models. Your workflow.**
+<p align="center">
+  <b>An AI coding workspace that runs on your machine, with the models you choose.</b><br>
+  Agent · Tab completion · MCP tools · Git · terminals — no OpenVision account, no telemetry.
+</p>
 
-OpenVision is a desktop AI coding workspace combining a local
-profile, project explorer, code editing, AI agents, Tab autocomplete, terminals,
-Git and custom AI providers. Connect an OpenAI-compatible API or your own server
-with a base URL, model name and API key. Discover models and choose reasoning
-options without an OpenVision account.
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#bring-your-own-ai">Bring your own AI</a> ·
+  <a href="https://remipelloux.github.io/OpenVision/">Documentation</a> ·
+  <a href="#status">Status</a> ·
+  <a href="#build-from-source">Build from source</a> ·
+  <a href="https://github.com/RemiPelloux/OpenVision/releases">Releases</a>
+</p>
 
-**Development preview · Windows x64 and Linux x64 tested · macOS unverified**
+---
 
-[Get started](#get-started) · [Configure AI](#bring-your-own-ai) ·
-[Prioritized feature roadmap](docs/planning/roadmap.md#ranked-rea-implementation-and-verification-work) ·
-[Releases](https://github.com/RemiPelloux/OpenVision/releases) ·
-[Documentation](docs/README.md) ·
-[Repository layout](docs/engineering/repository-layout.md)
+## Why OpenVision
 
-[Progress, percentages and gate-based ETA](docs/progress.md) ·
-[Recovery coverage and missing layers](docs/recovery/recovery-status.md) ·
-[Rust rewrite plan](docs/planning/rust/rust-roadmap.md)
+<table>
+<tr>
+<td width="50%" valign="top">
 
-**Source availability:** The full original source has not been recovered.
-[`curs_source`](curs_source/README.md) contains actual readable application code,
-extracted modules, native pseudocode and provenance, alongside OpenVision's own
-customization source. Recovery versions and missing layers are documented there;
-the archive is not an independently buildable original-source checkout.
-The [source-to-gap map](docs/recovery/feature-gap-audit.md#source-index-to-implementation-gaps)
-connects the versioned source index to implementation evidence and remaining
-acceptance gates. All 237 selected JavaScript inputs have extraction results;
-that count is separate from verified feature coverage.
+### 🔑 Your models, your keys
+Connect any **OpenAI-compatible API**, your own server or a **local model** with a
+base URL and a key. Models are discovered automatically; keys live in your OS keyring,
+never in project files.
 
-> **Ready to run on Windows x64.** Download the complete portable app from
-> [Releases](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7),
-> extract it, and double-click **OpenVision.cmd**. The complete app payload is
-> also included in this Git repository. No separate editor, Node.js or npm setup.
->
-> **Runs natively on Linux x64.** Build it locally from a pinned, checksum-verified
-> input with `npm run prepare:desktop && npm start`, or package it with
-> `npm run package:linux`. See the [Linux guide](docs/guides/linux.md).
+</td>
+<td width="50%" valign="top">
 
-## A workspace built around your choices
+### 🤖 An Agent that asks first
+The Agent reads your project, proposes multi-file edits you review and undo, and runs
+tools only after approval. Stop, retry and restart are covered by native tests.
 
-| Capability | What you can do today | Evidence and limits |
-| --- | --- | --- |
-| Custom AI providers | Save URLs and keys, discover models, add manual IDs, search grouped model lists | [Provider setup and persistence](docs/engineering/provider-selection-lifecycle.md) |
-| Account models | Select signed-in Claude or eligible GPT-6 Codex accounts in Agent; inspect reported usage in the bottom bar | [Account setup and real test limits](docs/guides/account-integrations.md); experimental, included in preview.7 |
-| Resource use | Release completed utility listeners, reuse unchanged account routes, bound failed-host retries and avoid duplicate stream retention | [Native cleanup](docs/engineering/utility-process-ownership.md) · [Request/heap measurements](docs/performance/account-performance.md); whole-app savings remain unmeasured |
-| Project Home | Open projects in the current window, search recent work, pin favorites and resume saved workspaces | [Dashboard and measured scope](docs/guides/project-home.md); included in the portable app |
-| Appearance | Choose dark, light or high-contrast themes and customize colors, fonts and icons | [Appearance guide](docs/guides/appearance.md) |
-| AI Agent | Read files, propose edits and run approved tools through your selected provider | [Native and live-provider checks](docs/recovery/rea-agent-runtime.md); broader workflow coverage remains open |
-| Code autocomplete | Select a separate completion model, accept with Tab, undo, cancel pending work | [Windows editing checks](docs/recovery/rea-custom-autocomplete.md); predictive navigation is unfinished |
-| Project development | Explore projects, search, edit, Save All, run terminals/tasks and debug Node | [Development workflows](docs/engineering/development-workflows.md); one intermittent launcher-exit issue remains under investigation |
-| Language tools | Bundled JavaScript/TypeScript tooling and optional pinned clangd for C/C++ | [Language checks](docs/recovery/rea-language-workflows.md) · [C/C++ setup](docs/guides/cpp-support.md) |
-| Git and worktrees | Create branches/worktrees, review diffs, resolve conflicts and recover across restart | [Verified Windows scope](docs/engineering/git-workflows.md) |
-| Local customization | Project rules, plans, skills, agents and MCP configuration under `.openvision/` | [Project configuration](docs/guides/project-configuration.md); some global paths still need auditing |
-| MCP tools | Connect HTTP/STDIO servers, approve tool calls, cancel and reconnect | [Cleanup/session recovery](docs/recovery/rea-mcp-cleanup.md) and [window/user-data ownership](docs/recovery/rea-mcp-ownership.md) checks; broader profile/configuration ownership remains open |
-| Approved memories | Review AI suggestions and legacy memories before saving project rules | [Memory guide](docs/guides/project-memories.md) |
+</td>
+</tr>
+<tr>
+<td valign="top">
 
-The latest [source follow-up](docs/recovery/rea-agent-review-removal.md) keeps edit
-review retryable after cancellation or cleanup failure. It requires a source
-rebuild; the preview.7 portable download retains its published contents.
+### ⚡ Tab completion on your terms
+Pick a separate completion model, accept with Tab, undo, cancel. Completion is off
+until you choose a model.
 
-## Get started
+</td>
+<td valign="top">
 
-**Download:** get **OpenVision-0.2.0-preview.7-win32-x64.zip** from
-[the latest portable release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7).
-Extract the ZIP and double-click **OpenVision.cmd**. Project Home brings together
-recent projects, pinned favorites and open windows. Open a folder or saved
-workspace, then configure your AI provider in **Models** settings.
+### 🧩 MCP, rules and memories
+Connect HTTP and STDIO MCP servers with OAuth, keep project rules, skills and agents
+under `.openvision/`, and approve memories before they are saved.
 
-**From Git:** clone the complete repository and double-click **Run-OpenVision.cmd**:
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+### 🛡️ Local by default
+A local profile with no sign-up. Built-in analytics and crash upload are disabled by
+the build, and captures show project data going only to the providers you configure.
+
+</td>
+<td valign="top">
+
+### 🔎 Search, Git and remote
+Local code search, Git and worktrees, terminals and debugging, Project Home, and
+SSH remote windows to Linux hosts.
+
+</td>
+</tr>
+</table>
+
+<p align="center">
+  <img src="assets/openvision-flow.svg" alt="Your project stays on your machine; OpenVision runs locally with a local profile and keeps keys in the OS keyring; requests go only to the AI provider you configure." width="100%">
+</p>
+
+## Quick start
+
+<details open>
+<summary><b>Windows x64 — portable download</b></summary>
+
+1. Download **OpenVision-0.2.0-preview.7-win32-x64.zip** from
+   [the preview.7 release](https://github.com/RemiPelloux/OpenVision/releases/tag/v0.2.0-preview.7).
+2. Extract it and double-click **OpenVision.cmd**. No Node.js or separate editor needed.
+
+The same payload is in this repository: clone it and double-click **Run-OpenVision.cmd**,
+which verifies and extracts it once (about 327 MiB; allow 2 GiB free).
+
+</details>
+
+<details open>
+<summary><b>Linux x64 — build locally</b></summary>
 
 ```sh
-git clone --depth 1 https://github.com/RemiPelloux/OpenVision.git
-cd OpenVision
-```
-
-The repository launcher verifies and extracts the included payload once, then
-opens **OpenVision-portable/**. It uses built-in Windows tools only, preserves your
-profile on later launches and makes no runtime downloads. GitHub's repository
-ZIP works too. The package is approximately **327 MiB**; allow **2 GiB** free.
-
-| System | Current support |
-| --- | --- |
-| Windows x64 | Complete portable download and repository payload; native package checks passed |
-| Windows ARM64 | Native release package still planned |
-| macOS Intel / Apple Silicon | Native release and desktop verification still planned |
-| Linux x64 | Native local build and portable package; Wayland desktop suite, keyring and sandbox checks passed ([evidence](docs/verification/linux-verification.md)) |
-| Linux ARM64 | Needs a pinned ARM64 input; not yet verified |
-
-### Linux
-
-```sh
-git clone https://github.com/RemiPelloux/OpenVision.git
-cd OpenVision
+git clone https://github.com/RemiPelloux/OpenVision.git && cd OpenVision
 npm ci --prefix tooling
-npm run prepare:desktop   # downloads the pinned Linux input and verifies its SHA-256
+npm run prepare:desktop   # downloads the pinned input and verifies its SHA-256
 npm start                 # builds once, then opens Project Home
 ```
 
-API keys use your desktop keyring (gnome-keyring, KWallet or KeePassXC) on any
-desktop, including Hyprland, Sway and i3. `npm run package:linux` creates a
-portable folder with an `./OpenVision` launcher and an optional launcher entry.
-[Linux guide, requirements and capability differences →](docs/guides/linux.md)
+Keys use your desktop keyring (gnome-keyring, KWallet or KeePassXC), on any desktop
+including Hyprland, Sway and i3. `npm run package:linux` creates a portable folder.
+See the [Linux guide](docs/guides/linux.md).
 
-[Installation, editable code and updates →](docs/guides/native-runtime.md) ·
-[Models, imports and project customization →](docs/guides/user-guide.md)
+</details>
+
+> [!NOTE]
+> preview.7 predates the October fixes. They are in the source today and will ship in
+> **0.2.0-preview.8**, the release candidate of the [next sprint](docs/planning/next-sprint.md).
 
 ## Bring your own AI
 
-Explore [Codex Everywhere](https://codex-everywhere.com/home?aff=KTCCGGAS9R2Q)
-through the project author's affiliate link.
+Open **Settings → Models & integrations → API connections**, choose **Add Provider**,
+enter a base URL and key, keep **Discover Models** on, then pick a model in the Agent.
 
-Open **OpenVision Settings → Models & integrations → API connections**.
-
-1. Choose **Add Provider**, **Add Codex Easy**, or **Add OpenAI**.
-2. Enter the API base URL and your API key. Keep **Discover Models** selected.
-3. Enable models, choose the active connection, and select a model in Agent.
-4. Optionally choose a **Tab autocomplete model** separately; it starts Off.
-
-| Provider | Example API base URL |
+| Provider | Base URL |
 | --- | --- |
-| Codex Easy | `https://codex-easy.ai/v1` |
 | OpenAI | `https://api.openai.com/v1` |
-| Your compatible local server | `http://127.0.0.1:8000/v1` |
+| Codex Easy | `https://codex-easy.ai/v1` |
+| Your server or local model | `http://127.0.0.1:8000/v1` |
 
-Discovery uses `GET /models`; generation uses Chat Completions. API keys belong
-in local secret storage, never in project files. Discovery alone does not prove
-tools, reasoning, image input or completion compatibility.
-For servers requiring extra authentication, use the masked **Additional Headers
-(JSON)** field. Saved values use secret storage; an explicit Authorization header
-overrides default Bearer authentication. [Header configuration and limits →](docs/engineering/provider-authentication-headers.md)
+Discovery uses `GET /models`; generation uses Chat Completions. Reasoning options
+follow each model's declared capabilities, and extra headers are stored as secrets.
+Discovery alone does not prove tool, image or reasoning support — see
+[live provider results](docs/verification/live-provider-compatibility.md).
+Optional ChatGPT/Codex and Claude account sign-in is separate from the local profile
+([accounts guide](docs/guides/account-integrations.md)).
 
-Reasoning choices are per model. **Provider default** omits an explicit effort;
-other choices follow declared capabilities or labeled compatibility hints.
-GPT, DeepSeek and Grok have separate [live verification results](docs/verification/live-provider-compatibility.md).
-Not every displayed model or reasoning tier has passed a live test.
+<sub>The author's affiliate link: [Codex Everywhere](https://codex-everywhere.com/home?aff=KTCCGGAS9R2Q).</sub>
 
-## Local profile, explicit connections
+## Status
 
-Preview.7 includes **Models & integrations**, optional first-launch
-setup, and separate ChatGPT/Codex and Claude/Claude Code account profiles.
-Use **Run setup again** in Settings to replay onboarding.
-Choose **Add account**, complete browser sign-in, then select its model in the
-existing **Agent** picker. Account groups show the returned email. OpenVision
-continues to handle file tools and approvals; official panels are also available.
-The bottom bar shows provider-reported account usage, or **Usage unavailable**.
-Account controls include **Delete account**: isolated credentials and cache are
-removed, while local conversation files are kept in an account history archive.
-[Account sign-in, switching and current verification limits →](docs/guides/account-integrations.md)
-These additions are included in preview.7; provider eligibility and verification
-limits remain as documented.
+**36 of 44 acceptance stories are fully verified (81.8 %)** — every story that Linux x64
+can close without a GPU reference machine, other hardware or a release gate.
 
-Recent source verification also covers MCP session-expiry recovery, shared
-connections across two project windows and isolation between separate user-data
-profiles. See the [source verification summary](docs/verification/release-claims.md#source-additions-after-preview6)
-for the exact scope and unresolved diagnostics. Updating Git does not replace
-an already extracted portable app; install preview.7 into a fresh destination
-using the [update guide](docs/guides/native-runtime.md#update-and-rollback).
+| Platform | State |
+| --- | --- |
+| Linux x64 | Native build and portable package; critical suite 11/11 on X11, Wayland smoke |
+| Windows x64 | Portable preview.7 download; October fixes not yet re-verified ([sprint Track A](docs/planning/next-sprint.md#track-a--windows-x64-ov-901)) |
+| Other Linux, ARM64 | Planned ([#3](https://github.com/RemiPelloux/OpenVision/issues/3)) |
+| macOS | Unverified; packaging not started ([#2](https://github.com/RemiPelloux/OpenVision/issues/2)) |
 
-The optional Node control plane also bounds STDIO response accumulation and
-recovers after malformed output. Request admission is ordered with settings
-saves to prevent stale connections after disable or replacement; see
-[MCP lifecycle verification](docs/performance/control-plane-mcp-lifecycle.md).
-See [validation and scoped RAM measurements](docs/performance/control-plane-stdio-resources.md);
-these do not establish a whole-desktop RAM reduction.
+The score counts complete acceptance gates, not lines of code. The
+[status page](docs/planning/eta-and-definition-of-done.md) lists the 8 remaining
+stories, their gates and the Definition of Done; the
+[next sprint](docs/planning/next-sprint.md) validates Windows first, runs the
+GPU reference budgets and ships preview.8.
 
-**Real Windows checks:** on 16 October, saved Codex Easy `gpt-6.1-sol` completed
-native multi-file editing, review, Undo/Redo and restart persistence
-([live evidence](docs/recovery/rea-agent-live-edit.md)). Signed-in Claude read
-and edited a test file on 15 October. Codex account choices include only GPT-6
-models advertised by its official client; the tested account offered none and
-rejected `gpt-6.1-sol`. Account eligibility is separate from API access, whose
-earlier balance failure did not establish universal unavailability. Packaging
-uses controlled local responses and does not repeat paid inference. Account
-Agent support accepts text/tools; Tab autocomplete uses API connections.
-
-- No OpenVision login or signup. Optional third-party coding-agent sign-in is
-  separate from the local profile; original billing and hosted cloud-agent flows
-  remain outside this project's scope.
-- Built-in analytics and crash-upload implementations are disabled by the build.
-  [Telemetry audit →](docs/recovery/rea-telemetry-audit.md)
-- Configured AI providers receive the context needed for requests. MCP servers
-  and independently installed extensions can also communicate externally.
-- Large chat pastes become local UTF-8 files under `.openvision/paste/`, keeping
-  prompts compact. [Paste behavior →](docs/recovery/rea-large-paste.md)
-- Chat titles are generated locally, avoiding an extra AI request. Preview.7
-  also skips hosted conversation-metadata watchers in local mode;
-  [native restart checks](docs/engineering/local-conversation-metadata.md) preserve titles
-  and history.
-
-## Roadmap and honest progress
-
-**36 of 44 acceptance stories fully verified · 81.82%. The 80 % target is reached.**
-Another **3 are Partial** and **5 Planned**. Partial stories
-already contain working features; this score measures complete acceptance gates,
-not the percentage of code implemented or decompiled. Since 18 October, Windows,
-macOS, other-Linux and live-provider clauses are tracked in dedicated platform/live
-stories, and other stories are judged on Linux x64
-([re-scope](docs/planning/eta-and-definition-of-done.md#re-scope-baseline-v3)).
-
-The 80 % target was reached on 23 October. The
-[status page](docs/planning/eta-and-definition-of-done.md) lists the 8 remaining stories
-with their gaps and gates, and the Definition of Done. The
-[next sprint](docs/planning/next-sprint.md) validates **Windows first**, then runs the GPU
-reference-host budgets (OV-1002, OV-1003), the release gate (OV-1004), live providers,
-the Linux matrix and macOS, and prepares a signed **0.2.0-preview.8** Linux release; the
-Linux ceiling is 39/44. Builds are faster since 24 October (clean build 132 s with a warm
-cache; releases are zstd archives): see
-[build performance](docs/performance/build-performance.md). Platform and live-provider
-stories are tracked in issues #1–#4.
-
-The [feature roadmap](docs/planning/roadmap.md) covers every unfinished story using
-**complexity points, dependencies and acceptance gates**.
-The [critical-first queue](docs/planning/roadmap.md#critical-first-backlog-and-eta)
-is the historical 16 October ordering (36 stories / 322 points under baseline v2); the
-current 11 remaining stories are on the [status page](docs/planning/eta-and-definition-of-done.md#remaining-stories).
-It ordered the work as safety and privacy,
-RAM/request efficiency and daily workflows, independent builds, retrieval,
-distribution/platform completion, then broader modes. Estimates describe scope;
-release readiness requires the named checks. Latest source work includes
-[edit-review recovery](docs/recovery/rea-agent-review-recovery.md#created-review-snapshot-ownership)
-and [storage ownership for discovered models](docs/engineering/storage-write-ownership.md).
-[Native Undo/Redo failure recovery](docs/recovery/rea-agent-undo-retry.md) now
-retains retryable history entries and shows guidance after snapshot-service failures.
-Preview.7 packages these fixes and recent performance changes. The
-[release notes](docs/releases/0.2.0-preview.7.md) and
-[package verification](docs/verification/portable-preview7.md) distinguish working
-flows, controlled checks and remaining gates. No whole-app speedup is claimed.
-
-The [Rust rewrite roadmap](docs/planning/rust/rust-roadmap.md) breaks the architecture track into
-**36 planned packages / 195 provisional points**, with dependencies, migration,
-rollback and release gates. The [component audit](docs/planning/rust/rust-component-audit.md)
-identifies what moves to Rust, what stays external and the compatibility risks.
-The [gain and measurement plan](docs/planning/rust/rust-performance-plan.md) separates expected
-benefits from evidence: replacing the desktop shell is the largest structural
-RAM opportunity, while remote inference and retained tools keep their own costs.
-The rewrite is planned; no Rust speedup or RAM reduction is measured yet.
-The [42-story replacement map](docs/planning/rust/rust-acceptance-map.md) tracks required feature
-coverage, and [migration contracts](docs/planning/rust/rust-migration-contracts.md) define code
-ownership, single-writer data transfer and safe rollback. The plan compares
-native and webview desktop options before choosing a toolkit.
-
-## Develop and verify locally
+## Build from source
 
 ```sh
-npm run check:desktop
-npm run test:accounts
-npm run test:portable
-npm run test:completion
-npm run verify:completion -- --editing --portable ./OpenVision-portable
-npm run verify:welcome -- --portable ./OpenVision-portable
-npm run verify:mcp-session
-npm run verify:mcp-ownership
-npm run verify:mcp-config-ownership
-npm run test:agent-review
-npm run verify:agent
-npm run status:features
+npm ci --prefix tooling
+npm run prepare:desktop
+npm run build:desktop          # clean build ~460 s cold, ~130 s with a warm build cache
+npm run test:desktop           # unit suites
+npm run verify:critical        # native critical suite (Linux: under xvfb-run + dbus-run-session)
+npm run status:features        # recompute the verified-story count
 ```
 
-On Linux, the same native verifiers run against the local build, plus
-`npm run verify:linux-secrets` for keyring selection. See
-[Linux verification](docs/verification/linux-verification.md).
+- **Node.js 24.18.0.** The build runs with a 6 GiB V8 heap.
+- **Build cache.** Customized bundles are kept in `build/cache` (zstd); a clean rebuild
+  with unchanged code restores them byte-identically. `OPENVISION_NO_BUILD_CACHE=1`
+  forces every transform.
+- **Releases.** `npm run release:linux` produces a reproducible `.tar.zst` archive and a
+  signed manifest; [build performance](docs/performance/build-performance.md) has the numbers.
+- **No hosted CI.** GitHub Actions is disabled; every check runs locally.
 
-Development tooling uses **Node.js 24.18.0** and `npm ci --prefix tooling`.
-The desktop build validates generated scripts, manifests and local main-process
-imports. See [build integrity and verification limits](docs/engineering/runtime-build-integrity.md)
-for the latest recovery and shutdown corrections.
+<details>
+<summary><b>Repository layout</b></summary>
 
-The source build also rejects stale search initialization after project changes
-or disposal. See the [retrieval audit and verification limits](docs/recovery/rea-retrieval-ownership.md)
-for the reproduced race, native project regression and remaining indexing gates.
-
-The [Agent review audit](docs/recovery/rea-agent-edit-history.md) tracks native project
-search, multi-file acceptance and editor undo. `verify:agent` uses a local model
-fixture with real application tools; live-provider evidence is reported separately.
-Add `-- --review-recovery` to check repeated edits and pending review across
-normal restarts, or `-- --review-abrupt` to verify rejection/acceptance recovery
-after abrupt app exits; see [review recovery](docs/recovery/rea-agent-review-recovery.md)
-for the exact Windows evidence and remaining failure cases.
-
-The [Agent retry fix](docs/recovery/rea-agent-retry-history.md) prevents failed requests
-from adding an empty assistant reply to subsequent history. The opt-in
-`npm run verify:agent:live -- --live --model deepseek-v4-flash --retry-auth`
-checks real authentication failure and manual recovery through the configured
-provider; it consumes API quota and uses a disposable project.
-
-The portable package contains editable code under
-`electron-host/resources/app/` and helpers under `electron-host/desktop/`;
-changes there load after restarting. Full native-source rebuilds remain planned.
-Native checks use disposable profiles. Live-provider
-checks are opt-in and consume API quota. **GitHub Actions is disabled**; this
-project does not require paid CI to build or verify changes.
-
-| Directory | Responsibility |
+| Path | Contents |
 | --- | --- |
-| `desktop/` | Durable customization code, adapters and verification tools |
-| `scripts/recovery/` | Offline recovery workflows and published-archive verification |
-| `examples/` | Small projects for trying development workflows |
-| `assets/` | Original OpenVision SVG identity and animated README banner |
-| `docs/` | Setup, feature evidence, recovery boundaries and roadmap |
+| `desktop/` | Build customizations, adapters and native verifiers |
+| `docs/` | Guides, engineering notes, verification evidence, planning — also the [documentation site](https://remipelloux.github.io/OpenVision/) |
+| `curs_source/` | Recovered reference code and provenance (see below) |
+| `scripts/` | Recovery workflows and helper scripts |
 | `tooling/` | Locked build and verification dependencies |
-| `downloads/windows-x64/` | Complete portable payload in SHA-256-verified Git parts |
-| `Install-OpenVision.ps1`, `Run-OpenVision.cmd` | Offline extraction and launch |
-| `source/`, `electron-host/` | Generated local runtime; excluded from Git |
-| `data/`, `backups/`, `logs/` | Private local state and evidence; excluded from Git |
+| `assets/` | OpenVision identity and animated artwork |
+| `downloads/windows-x64/` | Complete Windows portable payload in SHA-256-verified parts |
+| `examples/` | Small projects for trying workflows |
+| `source/`, `electron-host/`, `build/` | Generated locally; not in Git |
+| `data/`, `backups/`, `logs/` | Private local state and evidence; not in Git |
 
-[Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) ·
-[Changelog](CHANGELOG.md) · [Install and update](docs/guides/native-runtime.md)
+</details>
 
-Third-party notices are included in the portable app. See [licensing scope](NOTICE.md).
-OpenVision is an independent project; this preview has unfinished acceptance gates.
+<details>
+<summary><b>About the source</b></summary>
+
+OpenVision builds on a recovered desktop application. The full original source has
+not been recovered: [`curs_source`](curs_source/README.md) holds readable application
+code, extracted modules, native pseudocode and provenance next to OpenVision's own
+customization source, and is not an independently buildable original checkout. Native
+hosts, addons and WASM remain compiled implementations. See
+[recovery status](docs/recovery/recovery-status.md) and the
+[licensing notice](NOTICE.md); an independent build (OV-804) awaits an owner and legal
+decision.
+
+</details>
+
+## Contributing and security
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a change and
+[SECURITY.md](SECURITY.md) to report a vulnerability privately. Release history is in
+the [changelog](CHANGELOG.md) and [release notes](docs/releases/README.md).
+
+<sub>OpenVision is an independent project and a development preview with unfinished
+acceptance gates. No project-wide license has been selected; third-party software keeps
+its own terms — see [NOTICE.md](NOTICE.md).</sub>

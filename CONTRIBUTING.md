@@ -31,6 +31,20 @@ distribution authority and an explicit publication scope; preserve the existing
 normal profiles and uncommitted user work. Do not enable GitHub Actions or add
 hosted CI costs.
 
+## Documentation site
+
+The [documentation site](https://remipelloux.github.io/OpenVision/) is GitHub Pages serving
+`docs/` from `main` with Jekyll; every Markdown page renders as is. Keep links relative
+between Markdown files. To preview it locally:
+
+```sh
+gem install jekyll kramdown-parser-gfm jekyll-relative-links jekyll-optional-front-matter \
+  jekyll-titles-from-headings jekyll-default-layout jekyll-readme-index jekyll-seo-tag webrick
+jekyll serve --source docs --baseurl /OpenVision   # http://127.0.0.1:4000/OpenVision/
+```
+
+## Pull requests
+
 Use Conventional Commit subjects. Keep pull requests focused and include exact
 checks run, limitations and steps to reproduce. A human owner must review and
 approve any public contribution; automation cannot attest to that review.

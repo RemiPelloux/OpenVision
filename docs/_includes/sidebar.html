@@ -1,0 +1,29 @@
+<aside id="sidebar" class="sidebar" aria-label="Documentation">
+  <nav>
+    <p class="nav-heading">Start here</p>
+    <ul>
+      <li><a href="{{ '/' | relative_url }}" {% if page.url == '/' %}aria-current="page"{% endif %}>Overview</a></li>
+      <li><a href="{{ '/README.html' | relative_url }}" {% if page.url == '/README.html' %}aria-current="page"{% endif %}>Documentation index</a></li>
+      <li><a href="{{ '/guides/user-guide.html' | relative_url }}" {% if page.url == '/guides/user-guide.html' %}aria-current="page"{% endif %}>User guide</a></li>
+      <li><a href="{{ '/planning/eta-and-definition-of-done.html' | relative_url }}" {% if page.url == '/planning/eta-and-definition-of-done.html' %}aria-current="page"{% endif %}>Status and Definition of Done</a></li>
+      <li><a href="{{ '/planning/next-sprint.html' | relative_url }}" {% if page.url == '/planning/next-sprint.html' %}aria-current="page"{% endif %}>Next sprint</a></li>
+      <li><a href="{{ '/progress.html' | relative_url }}" {% if page.url == '/progress.html' %}aria-current="page"{% endif %}>Progress</a></li>
+    </ul>
+    {% assign docs = site.pages | where_exp: "p", "p.name contains '.md'" %}
+    {% for section in site.sections %}
+      {% assign items = docs | where: "dir", section.dir | sort: "title" %}
+      {% if items.size > 0 %}
+        {% assign open = false %}
+        {% if page.dir == section.dir %}{% assign open = true %}{% endif %}
+        <details class="nav-section" {% if open %}open{% endif %}>
+          <summary>{{ section.label }} <span class="count">{{ items.size }}</span></summary>
+          <ul>
+            {% for item in items %}
+              <li><a href="{{ item.url | relative_url }}" {% if page.url == item.url %}aria-current="page"{% endif %}>{{ item.title | default: item.name }}</a></li>
+            {% endfor %}
+          </ul>
+        </details>
+      {% endif %}
+    {% endfor %}
+  </nav>
+</aside>

@@ -1,0 +1,10 @@
+---
+layout: null
+permalink: /search.json
+---
+{%- assign docs = site.pages | where_exp: "p", "p.name contains '.md'" -%}
+[
+{%- for p in docs -%}
+{"t":{{ p.title | default: p.name | jsonify }},"u":{{ p.url | relative_url | jsonify }},"s":{{ p.dir | jsonify }},"c":{{ p.content | markdownify | strip_html | normalize_whitespace | truncatewords: 70 | jsonify }}}{% unless forloop.last %},{% endunless %}
+{%- endfor -%}
+]

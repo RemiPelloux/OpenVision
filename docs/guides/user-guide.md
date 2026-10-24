@@ -1,4 +1,4 @@
-<img src="../../assets/openvision.svg" alt="OpenVision" width="72" height="72">
+<img src="../assets/img/openvision.svg" alt="OpenVision" width="72" height="72">
 
 # OpenVision user guide
 
@@ -86,7 +86,7 @@ Large chat pastes (10,000 characters or more) automatically become UTF-8 files i
 your project's `.openvision/paste/` folder. The prompt keeps a short file reference;
 the agent reads the text when needed. Files stay available for saved chats and
 can be removed manually when no longer needed. See [paste behavior and live
-verification](rea-large-paste.md).
+verification](../recovery/rea-large-paste.md).
 
 Project rules, plans, agents, skills, commands and MCP configuration use
 `.openvision/`. See [project folders and safe migration](project-configuration.md)

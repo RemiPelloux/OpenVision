@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <title>OpenVision</title>
+  <path fill="#171b1c" d="M48 12h160l36 36v160l-36 36H48l-36-36V48z"/>
+  <path stroke="#354143" stroke-width="4" d="M50 18h156l32 32v156l-32 32H50l-32-32V50z"/>
+  <path stroke="#57dfca" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" d="M38 128c25-36 55-55 90-55s65 19 90 55c-25 36-55 55-90 55s-65-19-90-55z"/>
+  <path fill="#edf7f4" d="m128 93 31 18v34l-31 18-31-18v-34z"/>
+  <path fill="#171b1c" d="m128 112 14 8v16l-14 8-14-8v-16z"/>
+  <path stroke="#eab568" stroke-width="9" stroke-linecap="round" d="M128 42v13m0 146v13"/>
+</svg>

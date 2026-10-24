@@ -1,4 +1,9 @@
+---
+permalink: /README.html
+---
 # OpenVision documentation
+
+Read it as a website at **[remipelloux.github.io/OpenVision](https://remipelloux.github.io/OpenVision/)**, with search, navigation and light and dark themes.
 
 Start with the [project overview](../README.md), then choose the guide for your task.
 

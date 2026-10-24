@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in OpenVision does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. **Never paste API keys, tokens, profile folders or full logs** — redact them first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected and what you saw instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a project…
+        2. …
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options: [Linux x64, Windows x64, Linux ARM64, macOS, Other]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: The release (for example 0.2.0-preview.7) or the commit you built from.
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: AI provider and model (if relevant)
+      placeholder: e.g. OpenAI-compatible, local server, model id
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: A verifier run ID, a redacted log excerpt or a screenshot.

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% include head.html %}
+</head>
+<body class="doc-page">
+  <a class="skip-link" href="#content">Skip to content</a>
+  {% include topbar.html %}
+  <div class="layout">
+    {% include sidebar.html %}
+    <main id="content" class="content">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href="{{ '/' | relative_url }}">Docs</a>
+        {% assign parts = page.dir | split: '/' %}
+        {% assign path = '' %}
+        {% for part in parts %}{% if part != '' %}{% assign path = path | append: '/' | append: part %}
+          <span aria-hidden="true">/</span> <a href="{{ path | append: '/' | relative_url }}">{{ part | replace: '-', ' ' | capitalize }}</a>
+        {% endif %}{% endfor %}
+      </nav>
+      <article class="markdown-body">
+        {% if page.title %}<h1 class="page-title">{{ page.title }}</h1>{% endif %}
+        {{ content }}
+      </article>
+      <footer class="page-footer">
+        <a href="{{ site.repo_url }}/blob/main/docs/{{ page.path }}">View source</a>
+        <span aria-hidden="true">·</span>
+        <a href="{{ site.repo_url }}/edit/main/docs/{{ page.path }}">Edit this page</a>
+        <span aria-hidden="true">·</span>
+        <a href="{{ site.repo_url }}/issues">Report an issue</a>
+      </footer>
+    </main>
+    <aside class="toc" aria-label="On this page">
+      <p class="nav-heading">On this page</p>
+      <ol id="toc-list"></ol>
+    </aside>
+  </div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% include head.html %}
+</head>
+<body class="home-page">
+  <a class="skip-link" href="#content">Skip to content</a>
+  {% include topbar.html %}
+  <main id="content">
+    {{ content }}
+  </main>
+  <footer class="site-footer">
+    <img src="{{ '/assets/img/openvision.svg' | relative_url }}" alt="" width="22" height="22">
+    <span>OpenVision is an independent project and a development preview.</span>
+    <a href="{{ site.repo_url }}">GitHub</a>
+    <a href="{{ '/releases/' | relative_url }}">Releases</a>
+    <a href="{{ site.repo_url }}/blob/main/SECURITY.md">Security</a>
+    <a href="{{ site.repo_url }}/blob/main/NOTICE.md">Notice</a>
+  </footer>
+</body>
+</html>
