@@ -32,3 +32,4 @@ story is on the [status page](../../planning/eta-and-definition-of-done.md#story
 | [upstream-host](upstream-host.md) | OV-802 | Verified |
 | [modes-inventory](modes-inventory.md) | OV-704, OV-604 | Probe passes; scope and next-edit decisions |
 | [remote-ssh](remote-ssh.md) | OV-703 | Verified |
+| [quick-edit-select-all](quick-edit-select-all.md) | #7, retrieval test determinism | Fixed; awaiting merge |
