@@ -39,7 +39,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const result = { directory, success: false, checks: {}, scope: 'Native Windows inline editing with a controlled local HTTP provider; no external AI inference.',
   hashes: { workbench: await fileHash(join(appRoot, 'out/vs/workbench/workbench.desktop.main.js')) } };
 for (const name of ['inline-edit-provider.js', 'inline-edit-context.js', 'inline-edit-http.mjs',
-  'inline-edit-ipc.mjs', 'code-response.mjs', 'verify-inline-edit.mjs'])
+  'inline-edit-ipc.mjs', 'code-response.mjs', 'prompt-focus-customization.mjs', 'verify-inline-edit.mjs'])
   result.hashes[name] = await fileHash(join(root, 'desktop', name));
 let app, page;
 
@@ -83,15 +83,18 @@ async function submit(instruction) {
   await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.press('ControlOrMeta+k');
   const prompt = page.locator('.monaco-editor [contenteditable="true"]').filter({ visible: true }).first();
   await prompt.click(); await prompt.press('ControlOrMeta+a');
-  // A failed submission keeps its instruction in the prompt. Record what the
-  // select-all shortcut actually selected before clearing it.
+  // A failed submission keeps its instruction in the prompt. The click and
+  // Ctrl+K schedule a deferred prompt focus (25 ms); the select-all shortcut
+  // must survive it, so Backspace clears the retained text (#7).
   const existing = (await prompt.innerText()).trim();
   if (existing) {
     const selected = await page.evaluate(() => getSelection().toString().trim());
-    (result.promptClears ??= []).push({ instruction, existing, selectedByShortcut: selected });
-    if (selected !== existing) await prompt.evaluate(element => getSelection().selectAllChildren(element));
-  }
-  await prompt.press('Backspace');
+    await prompt.press('Backspace');
+    const remaining = (await prompt.innerText()).trim();
+    (result.promptClears ??= []).push({ instruction, existing, selectedByShortcut: selected, remaining });
+    assert.equal(selected, existing, 'Ctrl+A selects the retained prompt text');
+    assert.equal(remaining, '', 'Backspace after Ctrl+A clears the retained prompt text');
+  } else await prompt.press('Backspace');
   await page.keyboard.insertText(instruction); await prompt.press('Enter');
 }
 
@@ -187,6 +190,8 @@ try {
     assert.ok(!JSON.stringify(item.payload).includes('HIDDEN_LEGACY_MUST_NOT_SEND'));
   }
   assert.equal(JSON.parse(requests[3].payload.messages[1].content).instruction, 'Recover after failure');
+  assert.deepEqual(result.promptClears?.map(item => item.instruction), ['Recover after failure']);
+  result.checks.selectAllRetainedPrompt = true;
   result.checks.oneRequestPerSubmit = true;
   result.checks.customHeadersAndErrorPrivacy = true;
   await writeFile(join(directory, 'inline-ui.txt'), await page.locator('body').innerText());
