@@ -69,7 +69,7 @@ export async function installAgentRuntime(root) {
     await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
     await writeFile(path, after);
   });
-  console.log(`Agent stream and catalog: ${changed ? 'verified' : 'unchanged (cached)'}`);
+  console.log(`Agent stream and catalog: ${changed === 'restored' ? 'restored from build cache' : changed ? 'verified' : 'unchanged (cached)'}`);
   await installReasoningRuntime(root);
 }
 

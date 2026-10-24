@@ -98,7 +98,7 @@ created by the re-scope and have no size.
 
 These lessons from 18–19 October apply to every Linux run:
 
-- **Build:** Node **24.18.0**. `build:desktop` runs with a 6 GiB V8 heap: the default (~2.2 GiB on a 4-CPU, 15 GiB host) runs out of memory during bundle customization. A clean rebuild removes `build/source-build.json`, `build/namespace-journal.json`, `source/` and `electron-host/`.
+- **Build:** Node **24.18.0**. `build:desktop` runs with a 6 GiB V8 heap: the default (~2.2 GiB on a 4-CPU, 15 GiB host) runs out of memory during bundle customization. A clean rebuild with unchanged code restores customized bundles from `build/cache` (132 s instead of 459 s; see [build performance](../performance/build-performance.md)); `OPENVISION_NO_BUILD_CACHE=1` forces every transform to run. A clean rebuild removes `build/source-build.json`, `build/namespace-journal.json`, `source/` and `electron-host/`.
 - **Native verifiers:**
   - run them as a non-root user under `xvfb-run` and `dbus-run-session`;
   - start gnome-keyring with a plaintext login keyring, otherwise provider Save prompts block;

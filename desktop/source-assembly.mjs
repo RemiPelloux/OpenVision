@@ -5,6 +5,8 @@ import { nativeIdentity, assertNativeHost } from './native-identity.mjs';
 import { fileHash, inside } from './import-files.mjs';
 import { enableLocalMode, productBranding } from './source-branding.mjs';
 
+const assemblyConcurrency = 16;
+
 export const exists = path => lstat(path).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error; });
 
 function ownedPath(base, path) {
@@ -62,10 +64,20 @@ export async function assembleSource(root, recovery) {
   const { layout, inventory, identity } = context;
   if (await exists(join(root, 'source/app')) || await exists(layout.host)) throw new Error('Incomplete source build exists; preserve it for inspection.');
   context.records = [];
-  for (const [index, file] of inventory.files.entries()) {
-    await assembleFile(context, file);
-    if ((index + 1) % 2000 === 0) console.log(`Assembled ${index + 1}/${inventory.files.length} files`);
-  }
+  // Files are independent, so copy and verify them through a small pool; records keep
+  // manifest order so the build manifest stays byte-for-byte deterministic.
+  let next = 0, done = 0;
+  const worker = async () => {
+    while (next < inventory.files.length) {
+      const file = inventory.files[next++];
+      await assembleFile(context, file);
+      if (++done % 2000 === 0) console.log(`Assembled ${done}/${inventory.files.length} files`);
+    }
+  };
+  await Promise.all(Array.from({ length: assemblyConcurrency }, worker));
+  const order = new Map(inventory.files.map((file, index) => [file.path, index]));
+  const position = record => order.get(layout.appPrefix + record.path) ?? order.get(record.path) ?? Infinity;
+  context.records.sort((left, right) => position(left) - position(right));
   for (const path of ['out/main.js', 'out/vs/workbench/workbench.desktop.main.js', 'out/vs/workbench/workbench.glass.main.js'])
     if (!context.records.some(record => record.path === path)) throw new Error(`Local-mode ownership not found in ${path}`);
   const native = layout.bundle ?? layout.host;

@@ -101,9 +101,9 @@ export async function customizeBundles(root) {
       path: join(root, `source/app/out/vs/workbench/workbench.${variant}.main.js`),
       marker: join(root, `build/cache/${variant}.json`), recipe,
     }, () => customize(root, variant));
-    console.log(`${variant} customizations: ${rebuilt ? 'verified' : 'unchanged (cached)'}`);
+    console.log(`${variant} customizations: ${rebuilt === 'restored' ? 'restored from build cache' : rebuilt ? 'verified' : 'unchanged (cached)'}`);
   }
   const reactRebuilt = await cachedFile({ path: join(root, 'source/app', reactDom), marker: join(root, 'build/cache/react-dom.json'), recipe },
     () => customizeReactDom(root));
-  console.log(`React DOM customizations: ${reactRebuilt ? 'verified' : 'unchanged (cached)'}`);
+  console.log(`React DOM customizations: ${reactRebuilt === 'restored' ? 'restored from build cache' : reactRebuilt ? 'verified' : 'unchanged (cached)'}`);
 }

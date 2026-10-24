@@ -129,5 +129,5 @@ export async function installRetrievalTool(root) {
     await copyFile(path, backup, 1).catch(error => { if (error.code !== 'EEXIST') throw error; });
     await writeFile(path, after);
   });
-  console.log(`Agent CodebaseSearch answers from the local OpenVision index: ${changed ? 'verified' : 'unchanged (cached)'}`);
+  console.log(`Agent CodebaseSearch answers from the local OpenVision index: ${changed === 'restored' ? 'restored from build cache' : changed ? 'verified' : 'unchanged (cached)'}`);
 }

@@ -12,6 +12,7 @@ import { installModelSettings } from './custom-models.mjs';
 import { installCursorImport } from './install-import.mjs';
 import { localSettings } from './import-json.mjs';
 import { assembleSource, exists, loadRuntime } from './source-assembly.mjs';
+import { pruneCacheObjects } from './build-cache.mjs';
 import { platformLayout } from './platform.mjs';
 import { signMacBundle } from './native-assets.mjs';
 import { fileHash } from './import-files.mjs';
@@ -221,6 +222,8 @@ if (!await exists(settings)) {
   await writeFile(settings, JSON.stringify(localSettings, null, 2) + '\n', { flag: 'wx' });
 }
 await mkdir(join(root, 'data/local-extensions'), { recursive: true });
+const pruned = await pruneCacheObjects(join(root, 'build/cache'));
+if (pruned.removed) console.log(`Build cache: ${pruned.kept} outputs kept, ${pruned.removed} stale removed`);
 await projectWorkspace(root);
 if (process.platform === 'darwin') await signMacBundle(layout.bundle);
 if (manifest) {
