@@ -93,15 +93,15 @@ merged code. "Gate" is what blocks promotion:
 
 ### Open defects
 
-- [#7](https://github.com/RemiPelloux/OpenVision/issues/7): Quick Edit Ctrl+A.
-- A retrieval unit test failed once while the host's four CPUs were saturated by a
-  compression benchmark; it passes on reruns. To be made deterministic (next sprint,
-  Track G).
-- Fixed on `main`, issues still open on GitHub: [#6](https://github.com/RemiPelloux/OpenVision/issues/6),
-  [#8](https://github.com/RemiPelloux/OpenVision/issues/8), [#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)**
-  and [#10](https://github.com/RemiPelloux/OpenVision/issues/10).
-- Fixed on `main`: the `check:secrets` Node 24 abort, the remote-window Marketplace
-  lookup, the duplicated reply on retry and the unknown-tool hang.
+None known on Linux x64 (24 October). Fixed and closed:
+[#6](https://github.com/RemiPelloux/OpenVision/issues/6), [#7](https://github.com/RemiPelloux/OpenVision/issues/7)
+(Quick Edit Ctrl+A: a deferred prompt focus collapsed the selection; `verify:inline-edit`
+`or5tNH`, `tHc0Ou`), [#8](https://github.com/RemiPelloux/OpenVision/issues/8),
+[#9](https://github.com/RemiPelloux/OpenVision/issues/9) **(security)** and
+[#10](https://github.com/RemiPelloux/OpenVision/issues/10); also the retrieval pause test that
+failed under CPU load (it now waits for the worker's paused state; 3/3 under
+`stress-ng`), the `check:secrets` Node 24 abort, the remote-window Marketplace lookup,
+the duplicated reply on retry and the unknown-tool hang.
 
 ## ETA and next sprint
 

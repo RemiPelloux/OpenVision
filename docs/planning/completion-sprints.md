@@ -573,6 +573,8 @@ explicit recorded decision; it is not proof of original-product parity.
 
 ## Updating this ledger
 
+24 October 2026: no status change (36/44). Merged `ov/quick-edit-select-all`: #7 fixed at its owner (a deferred prompt focus no longer collapses a user selection; `verify:inline-edit` `or5tNH`, `tHc0Ou`, `verify:completion` `iSt29O` on a clean rebuild) and the retrieval pause test made deterministic (3/3 under `stress-ng`). Issues #6–#10 closed; README rewritten and the documentation site added.
+
 24 October 2026: no status change (36/44). Build and release infrastructure: 6 GiB build heap, parallel source assembly, restorable zstd build cache (clean build 132 s warm, byte-identical trees), `.tar.zst` release archives (`verify:upgrade:linux` `0pCpVD` passes). Next sprint: [platform validation, Windows first, and preview.8](next-sprint.md).
 
 23 October 2026, OV-103: merged `ov/agent-editing` (Stop cases and the local retry reset); the disk-full retry passes 5/5 under CPU load and 2/2 without, with the interruption, Agent and review-recovery checks. Verified on Linux x64: **36/44 — the 80 % target**. Also merged: `ov/agent-chat-failures` (unknown and malformed tool calls no longer hang a turn; `verify:agent-tool-calls` ×2, Agent and image input pass).

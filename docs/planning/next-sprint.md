@@ -107,9 +107,9 @@ with packaging for each claimed architecture.
 
 - Move the ~60 remaining customizations onto the restorable build cache (warm clean
   build 132 s → target under 60 s), keeping cold/warm byte-identical trees.
-- Make the retrieval unit test that failed once under full CPU load deterministic.
-- [#7](https://github.com/RemiPelloux/OpenVision/issues/7) Quick Edit Ctrl+A.
-- Close the issues already fixed on `main` (#6, #8, #9, #10).
+- ~~Make the retrieval unit test that failed once under full CPU load deterministic.~~ Done 24 October.
+- ~~[#7](https://github.com/RemiPelloux/OpenVision/issues/7) Quick Edit Ctrl+A.~~ Fixed 24 October.
+- ~~Close the issues already fixed on `main` (#6, #8, #9, #10).~~ Closed 24 October.
 
 ## Sprint Definition of Done
 
