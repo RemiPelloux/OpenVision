@@ -55,6 +55,8 @@ filename-label input and the verification limits.
 | Compare current source changes with the portable download | [Source additions and remaining verification](verification/release-claims.md#source-additions-after-preview6) |
 | Understand the acceptance percentage | [42-story sprint ledger](planning/completion-sprints.md) |
 | Use C/C++ | [Pinned clangd setup](guides/cpp-support.md) |
+| Assess Modelly, Jupyter and search integrations | [Integration assessment and performance baseline](guides/modelly-jupyter-search-integration.md) |
+| Install or remove optional Modelly support | [Modelly plugin contract](guides/modelly-jupyter-search-integration.md#optional-plugin-contract-implemented) |
 | Configure local rules, plans, skills and MCP | [Project configuration](guides/project-configuration.md) |
 | Understand MCP failed-close recovery and remaining checks | [Transport cleanup ownership](recovery/rea-mcp-cleanup.md) · [Acceptance gate owners](planning/acceptance-gate-ownership.md) |
 | Check MCP sharing between windows and isolated user-data profiles | [Native ownership verification](recovery/rea-mcp-ownership.md) |

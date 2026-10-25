@@ -58,6 +58,7 @@ function watchBody(response, operation) {
     async pull(destination) {
       try {
         timer = setTimeout(() => operation.controller.abort(deadlineFailure('body')), operation.inactivityMs);
+        timer.unref?.();
         const result = await reader.read();
         clearTimeout(timer);
         if (closed) return;
@@ -91,6 +92,7 @@ async function fetchProviderWithDeadlines(fetchImpl, url, options, limits = infe
   const controller = new AbortController();
   const signal = options.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
   const timer = setTimeout(() => controller.abort(deadlineFailure('headers')), limits.headersMs);
+  timer.unref?.();
   let response;
   // The extension host preserves this mark through proxy/certificate selection.
   try { response = await fetchImpl(url, { ...options, [deadlinePolicyKey]: true, signal }); }

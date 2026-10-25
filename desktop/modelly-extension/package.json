@@ -1,0 +1,58 @@
+{
+  "name": "openvision-modelly",
+  "displayName": "OpenVision Modelly support",
+  "description": "Optional, local Modelly integration for OpenVision Jupyter notebooks",
+  "publisher": "openvision",
+  "version": "0.1.0",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onCommand:openvision.modelly.install",
+    "onCommand:openvision.modelly.check",
+    "onCommand:openvision.modelly.remove",
+    "onCommand:openvision.modelly.openStarter"
+  ],
+  "capabilities": {
+    "virtualWorkspaces": false,
+    "untrustedWorkspaces": {
+      "supported": false
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "openvision.modelly.install",
+        "title": "Modelly: Install support",
+        "category": "OpenVision"
+      },
+      {
+        "command": "openvision.modelly.check",
+        "title": "Modelly: Check Python environment",
+        "category": "OpenVision"
+      },
+      {
+        "command": "openvision.modelly.remove",
+        "title": "Modelly: Remove support",
+        "category": "OpenVision"
+      },
+      {
+        "command": "openvision.modelly.openStarter",
+        "title": "Modelly: Open starter notebook",
+        "category": "OpenVision"
+      }
+    ],
+    "configuration": {
+      "title": "OpenVision Modelly",
+      "properties": {
+        "openvision.modelly.pythonPath": {
+          "type": "string",
+          "default": "",
+          "description": "Python executable used for the optional Modelly installation."
+        }
+      }
+    }
+  }
+}

@@ -44,6 +44,18 @@ test('interrupts a running cell and releases the kernel', async () => {
   } finally { await session.dispose(); await rm(cwd, { recursive: true, force: true }); }
 });
 
+test('bounds aggregate output from chatty cells instead of retaining unbounded events', async () => {
+  const cwd = await mkdtemp(join(tmpdir(), 'openvision-jupyter-output-'));
+  const session = new JupyterKernelSession({ cwd, pythonPath: 'python', bridgePath });
+  try {
+    const result = await session.execute('for _ in range(1200):\n    print("x" * 3000)');
+    const retainedBytes = result.events.reduce((sum, event) => sum + Buffer.byteLength(JSON.stringify(event)), 0);
+    assert.ok(result.events.some(event => event.type === 'error' && event.ename === 'OutputLimit'));
+    assert.ok(retainedBytes <= maxNotebookOutputBytes + 1024);
+    assert.equal(result.success, false);
+  } finally { await session.dispose(); await rm(cwd, { recursive: true, force: true }); }
+});
+
 test('bridge and extension manifest are packaged inputs with bounded output defaults', async () => {
   const manifest = JSON.parse(await readFile(join(root, 'source/app/extensions/openvision-jupyter/package.json'), 'utf8'));
   assert.equal(manifest.publisher, 'openvision');

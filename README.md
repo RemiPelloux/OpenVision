@@ -160,7 +160,16 @@ Explorer check and missing native-addon Node headers recorded as unavailable.
 (local Python)** to run cells in one persistent local kernelspec. Outputs,
 errors, interrupt/restart/shutdown and a 2 MB per-cell output bound are included;
 there is no hosted execution or telemetry. See the [Jupyter evidence report](docs/recovery/rea-jupyter-notebooks.md)
-and the [example notebook](examples/jupyter/openvision-local.ipynb).
+and the [example notebook](examples/jupyter/openvision-local.ipynb). For a
+reuse review covering external model registries and search/index backends, see
+the [Modelly, Jupyter and search integration assessment](docs/guides/modelly-jupyter-search-integration.md).
+
+**Optional Modelly plugin.** Modelly is downloaded and installed only when you
+run **Modelly: Install support** from the command palette. OpenVision pins the
+upstream commit, verifies the archive SHA-256, installs into the Python
+executable you select, and can check or remove it later. No Modelly code is
+embedded in the desktop runtime and no Python sidecar is started for normal
+Agent requests.
 
 The score counts complete acceptance gates, not lines of code. The
 [status page](docs/planning/eta-and-definition-of-done.md) lists the 8 remaining

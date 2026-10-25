@@ -88,6 +88,9 @@ failed-response history at both Agent producers. DeepSeek authentication retry
 now passes on the rebuilt app after two pre-fix HTTP 400 failures. This advances
 OV-102, a dependency of OV-103. Native header/body timeout recovery now passes;
 remaining history/error cases and editing failures retain priority and points.
+The 25 October watchdog follow-up detaches header/body deadline timers from the
+idle Node event loop without changing production deadlines or cancellation
+semantics; OV-102 remains Partial until its remaining native gates pass.
 
 Agent reliability remains first: the [review-recovery follow-up](../recovery/rea-agent-review-recovery.md)
 retains recovery data on failed restoration and adds repeated-edit/pending-review
@@ -255,6 +258,26 @@ are now implemented. See the [Jupyter evidence report](../recovery/rea-jupyter-n
 Notebook editing round-trip, richer MIME rendering, atomic persistence and the
 cross-platform performance matrix remain follow-up gates; OV-NB1 stays outside
 the 44-story score.
+
+### Post-baseline expansion — optional Modelly plugin (OV-MDL1, Implemented locally)
+
+**User story:** As a local OpenVision developer, I can add Modelly to the Python
+environment used by my Jupyter notebooks when I choose to, inspect its status,
+open a starter notebook and remove it without changing unrelated packages or
+starting a Python sidecar for normal Agent requests.
+
+| Area | Delivered implementation | Acceptance evidence |
+| --- | --- | --- |
+| Pinned source and licensing | Official Modelly commit `627459ae349045ccb525248626d16d030689714c`, package `modelly-abm` 1.3.2, Python 3.12+, Apache-2.0/NOTICE metadata | Manifest and attribution are reviewed in [the integration contract](../guides/modelly-jupyter-search-integration.md#optional-plugin-contract-implemented) |
+| Download safety | GitHub archive redirects are allowlisted, size-bounded and verified against SHA-256 before pip runs | Real 3,720,338-byte archive download matched the pinned digest; tampered archive test passes |
+| Install and remove | User-selected Python executable; idempotent install detection; declared dependencies through pip; removal targets only `modelly-abm` and its pinned cache | Unsupported Python, repeated install, failed pip, package-preserving uninstall and cache cleanup tests pass |
+| OpenVision UX | Lazy extension commands: Install support, Check Python environment, Remove support and Open starter notebook | Extension packaging test and editable desktop build pass |
+| Resource ownership | No automatic installation, no normal Agent routing through Modelly, bounded download and pip output | 12/12 focused Jupyter/Modelly checks pass; desktop syntax and docs checks pass |
+
+OV-MDL1 is outside the 44-story acceptance denominator. It does not claim that
+Modelly replaces OpenVision's local SQLite retrieval or Jupyter kernel owner.
+Those existing owners remain in place until a measured adapter proves equal
+correctness, provenance and lower resource cost.
 
 The next executable slice is **OV-102 native timeout recovery**, because it
 supports the highest-priority OV-103 Agent workflow. Then finish the outstanding

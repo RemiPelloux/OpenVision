@@ -102,6 +102,7 @@ import { installAgentWriteDurability } from './agent-write-durability-customizat
 import { installRetrievalTool } from './retrieval-tool-customization.mjs';
 import { buildUpstreamHost } from './upstream-host-build.mjs';
 import { installJupyterExtension } from './jupyter-extension.mjs';
+import { installModellyExtension } from './modelly-extension.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const marker = join(root, 'build/source-build.json');
@@ -119,6 +120,7 @@ await mkdir(join(root, 'build'), { recursive: true });
 await validateGeneratedArtifacts(root, { preflight: true });
 await restoreNamespaceInputs(root);
 await installJupyterExtension(root);
+await installModellyExtension(root);
 const layout = platformLayout(root);
 await sourceAssets({ root, app: join(root, 'source/app'), executable: layout.executable, layout });
 await customizeBundles(root);

@@ -28,6 +28,31 @@ def execute(request, client, manager, commands):
     request_id = request["id"]
     message_id = client.execute(request.get("code", ""), allow_stdin=False, stop_on_error=False)
     success = True
+    output_bytes = 0
+    output_limited = False
+
+    def emit_event(message):
+        """Emit at most MAX_EVENT_BYTES for the whole cell.
+
+        A per-message cap alone still permits an unbounded number of small
+        stream messages to accumulate in the desktop process. Keep draining
+        the kernel until it reaches idle, but retain only a bounded result.
+        """
+        nonlocal output_bytes, output_limited, success
+        if output_limited:
+            return
+        encoded = json.dumps(message, ensure_ascii=False, separators=(",", ":"))
+        size = len(encoded.encode("utf-8")) + 1
+        if size > MAX_EVENT_BYTES or output_bytes + size > MAX_EVENT_BYTES:
+            output_limited = True
+            success = False
+            emit({"id": request_id, "type": "error", "ename": "OutputLimit",
+                  "evalue": "Notebook output exceeded 2,000,000 bytes", "traceback": []})
+            return
+        output_bytes += size
+        sys.stdout.write(encoded + "\n")
+        sys.stdout.flush()
+
     while True:
         try:
             while True:
@@ -49,12 +74,12 @@ def execute(request, client, manager, commands):
         content = message.get("content", {})
         kind = message.get("msg_type")
         if kind == "stream":
-            emit({"id": request_id, "type": "stream", "name": content.get("name"), "text": content.get("text", "")})
+            emit_event({"id": request_id, "type": "stream", "name": content.get("name"), "text": content.get("text", "")})
         elif kind in ("execute_result", "display_data"):
-            emit({"id": request_id, "type": "result" if kind == "execute_result" else "data", "data": content.get("data", {})})
+            emit_event({"id": request_id, "type": "result" if kind == "execute_result" else "data", "data": content.get("data", {})})
         elif kind == "error":
             success = False
-            emit({"id": request_id, "type": "error", "ename": content.get("ename"), "evalue": content.get("evalue"), "traceback": content.get("traceback", [])})
+            emit_event({"id": request_id, "type": "error", "ename": content.get("ename"), "evalue": content.get("evalue"), "traceback": content.get("traceback", [])})
         elif kind == "status" and content.get("execution_state") == "idle":
             emit({"id": request_id, "type": "done", "success": success})
             return

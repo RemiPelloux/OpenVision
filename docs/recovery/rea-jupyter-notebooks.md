@@ -22,6 +22,10 @@ closes or the user shuts it down.
 - The extension is copied into every source build at
   `source/app/extensions/openvision-jupyter/` and its Python bridge is copied
   into the portable `electron-host/desktop/` support directory.
+- Optional Modelly support is a separate lazy extension at
+  `source/app/extensions/openvision-modelly/`. It downloads the pinned
+  `modelly-abm` archive only after the user chooses **Modelly: Install support**
+  and verifies the archive checksum before invoking pip.
 
 ## Commands and settings
 
@@ -61,3 +65,9 @@ in OpenVision, choose **OpenVision Jupyter (local Python)** as the notebook
 controller, and use **Select Local Kernel** if `python3` is not the desired
 kernelspec. Install `jupyter_client` and `ipykernel` in the selected Python
 environment before running cells.
+
+For Modelly notebooks, run **Modelly: Check Python environment**, then
+**Modelly: Install support** and choose the same Python executable used by the
+Jupyter kernelspec. **Modelly: Remove support** uninstalls only `modelly-abm`
+and leaves shared Python packages and notebook history intact. See the
+[Modelly integration contract](../guides/modelly-jupyter-search-integration.md#optional-plugin-contract-implemented).
