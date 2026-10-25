@@ -141,6 +141,19 @@ therefore uses the previously preserved editable runtime; this is a reproducible
 source-build boundary, not a claim that the fresh input has complete semantic
 parity. The compact MCP lifecycle owner is marked unavailable and fails closed.
 
+The W3 follow-up probes on the same commit add 11 Windows passes:
+`verify:agent-tool-calls`, `verify:agent-history`, `verify:image-input`,
+`verify:browser-automation`, `verify:save-all`, `verify:paste`,
+`verify:project-clone`, `verify:project-themes`, `verify:rules-isolation`,
+`verify:provider-identity` and `verify:catalog-retention`. `verify:agent-timeout`
+still rejects the Windows run's timeout phase, `verify:modes-probe` reports a
+missing Windows computer-use explanation channel, and `verify:statsig-cache`
+still invokes the POSIX `sh` launcher. The customization, OAuth, retrieval,
+corrupt-state, crash-recovery, authority and import-fault probes explicitly
+require Linux `/proc`/namespace or Secret Service facilities. These are recorded
+as porting or prerequisite gates, not Windows passes; the full W3–W6 matrix is
+therefore still open.
+
 ## Remaining gates
 
 OV-901 still owns clean assembly from the retained input, packaging/cache-restore
