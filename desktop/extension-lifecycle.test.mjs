@@ -59,7 +59,8 @@ test('phase plans install only local fixtures and cover every lifecycle transiti
   const plans = phasePlans('/fixtures', '/extensions');
   assert.deepEqual(plans.map(plan => plan.phase), [1, 2, 3, 4, 5]);
   const steps = plans.flatMap(plan => plan.steps);
-  for (const step of steps.filter(item => item.op === 'install')) assert.match(step.vsix, /^\/fixtures\/[\w.-]+\.vsix$/);
+  for (const step of steps.filter(item => item.op === 'install'))
+    assert.match(step.vsix.replaceAll('\\', '/'), /^\/fixtures\/[\w.-]+\.vsix$/);
   const catalogue = fixtureCatalogue({ napi: Buffer.alloc(1), wrongAbi: Buffer.alloc(1), wrongArch: Buffer.alloc(1), translation: { module: 'm', key: 'k' },
     protectedManifest: { name: 'cursor-mcp', publisher: 'anysphere', version: '1.0.0' }, protectedFiles: {} });
   for (const step of steps.filter(item => item.op === 'install')) assert.ok(step.vsix.slice(10, -5) in catalogue, step.vsix);
@@ -67,6 +68,6 @@ test('phase plans install only local fixtures and cover every lifecycle transiti
   for (const name of ['protected', 'protected-full'])
     assert.equal(catalogue[name].manifest.publisher + '.' + catalogue[name].manifest.name, protectedTarget);
   assert.deepEqual(plans.map(plan => plan.locale ?? null), [null, null, 'fr', 'en', null]);
-  assert.deepEqual(steps.filter(item => item.op === 'pathGone').map(item => item.path),
+  assert.deepEqual(steps.filter(item => item.op === 'pathGone').map(item => item.path.replaceAll('\\', '/')),
     ['/extensions/openvision-lifecycle.lifecycle-1.0.0', '/extensions/openvision-lifecycle.language-pack-fr-1.0.0']);
 });

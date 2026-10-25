@@ -42,7 +42,7 @@ await cp(join(root, 'source/app'), join(host, 'resources/app'), copyOptions);
 // above resources/app/out. Materialize that layout rather than shipping junctions.
 await mkdir(join(host, 'desktop'), { recursive: true });
 for (const entry of await readdir(join(root, 'desktop'))) {
-  if (!/\.(mjs|js|cjs)$/.test(entry) || /(?:\.test\.|^verify|^benchmark|^test-)/.test(entry)) continue;
+  if (!/\.(mjs|js|cjs|py)$/.test(entry) || /(?:\.test\.|^verify|^benchmark|^test-)/.test(entry)) continue;
   await cp(join(root, 'desktop', entry), join(host, 'desktop', entry));
 }
 for (const name of ['jsonc-parser', 'vscode-uri'])

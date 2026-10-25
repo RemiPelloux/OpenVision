@@ -59,6 +59,7 @@ const nestedRoot = /\? ([\w$]+) === ([\w$]+)\n(\s+)\? ([\w$]+)\+\+\n\s+: \(\(\4 
 
 export const serviceRootMarker = '/* OpenVision: service roots do not inherit a component context */';
 export const nestedRootMarker = '/* OpenVision: release rootWithNestedUpdates */';
+export const nestedRootUnavailableMarker = '/* OpenVision: React nested-update owner unavailable */';
 export const rowsMarker = '/* OpenVision release disposed transcript rows */';
 export const extensionMarker = '/* OpenVision: no child back reference on shared extensions */';
 
@@ -98,8 +99,9 @@ function detachServiceRoots(text) {
 
 // React DOM production client: clear rootWithNestedUpdates with its counter.
 export function releaseNestedUpdateRoot(text) {
-  if (text.includes(nestedRootMarker)) return text;
+  if (text.includes(nestedRootMarker) || text.includes(nestedRootUnavailableMarker)) return text;
   const found = [...text.matchAll(nestedRoot)];
+  if (found.length === 0) return `${text}\n${nestedRootUnavailableMarker}\n`;
   if (found.length !== 1) throw new Error('React nested-update owner changed');
   const [match, , rootName, , count, indent] = found[0];
   // The same pair is reset together by the infinite-update guard.

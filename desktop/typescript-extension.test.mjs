@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, symlink, readFile, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { createRequire } from 'node:module';
 import { runInNewContext } from 'node:vm';
 import { shareTsserverFileWatches, sharedWatchHelper, growTsserverReader } from './typescript-extension-customization.mjs';
@@ -15,7 +15,7 @@ function harness(folders, excludes = {}) {
   const vscode = {
     Uri: { file: path => ({ fsPath: resolve(path), scheme: 'file' }) },
     workspace: {
-      getWorkspaceFolder: uri => folders.find(folder => uri.fsPath === folder.uri.fsPath || uri.fsPath.startsWith(folder.uri.fsPath + '/')),
+      getWorkspaceFolder: uri => folders.find(folder => uri.fsPath === folder.uri.fsPath || uri.fsPath.startsWith(folder.uri.fsPath + sep)),
       getConfiguration: () => ({ get: key => key === 'watcherExclude' ? excludes : undefined }),
       createFileSystemWatcher: pattern => {
         const handlers = {};
@@ -59,12 +59,13 @@ test('workspace file watches share one workspace-watcher listener and keep tsser
   assert.deepEqual(h.client.closed, [3], 're-registering an id closes its previous watch');
 });
 
-test('paths the workspace watcher may not report keep per-file watchers', async () => {
+test('paths the workspace watcher may not report keep per-file watchers', async t => {
   const base = await mkdtemp(join(tmpdir(), 'ov-tsw-'));
   const project = join(base, 'project'), outside = join(base, 'outside');
   await mkdir(join(project, 'build'), { recursive: true }); await mkdir(outside);
   await writeFile(join(outside, 'x.ts'), '');
-  await symlink(outside, join(project, 'linked'));
+  try { await symlink(outside, join(project, 'linked')); }
+  catch (error) { if (['EPERM', 'EACCES'].includes(error.code)) return t.skip('symlink creation is unavailable on this Windows host'); throw error; }
   const folder = { uri: { fsPath: project, scheme: 'file' } };
   const h = harness([folder], { '**/.git/objects/**': true, '**/build/**': true, '**/disabled/**': false });
   assert.equal(h.share(1, join(project, 'node_modules/dep/index.d.ts')), false);

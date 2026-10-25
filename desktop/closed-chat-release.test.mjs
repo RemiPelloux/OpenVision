@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { parseJavaScript, parseExpressionAt } from '../tooling/dependencies.mjs';
 import { readableApp } from './recovered-source.mjs';
-import { releaseClosedChats, releaseNestedUpdateRoot, marker, rowsMarker, extensionMarker, serviceRootMarker, nestedRootMarker, releaseDelayMs } from './closed-chat-release.mjs';
+import { releaseClosedChats, releaseNestedUpdateRoot, marker, rowsMarker, extensionMarker, serviceRootMarker, nestedRootMarker, nestedRootUnavailableMarker, releaseDelayMs } from './closed-chat-release.mjs';
 
 const variants = Object.fromEntries(await Promise.all(['desktop', 'glass'].map(async variant =>
   [variant, await readFile(new URL(`out/vs/workbench/workbench.${variant}.main.js`, readableApp), 'utf8')])));
+const reactFixture = await access(new URL('out/vs/workbench/react-runtime/react-dom/esm-client-production.js', readableApp))
+  .then(() => true, () => false);
 
 // The injected method's source (it ends at the first closing brace at its own indentation).
 function method(text, name) {
@@ -85,7 +87,7 @@ function nestedUpdate(text) {
   return (state) => { const { t, e, l, Nc, le } = run({ ...state, ae: () => {} }); return { t, e, l, Nc, le }; };
 }
 
-test('React DOM: rootWithNestedUpdates is cleared with its counter; the infinite-update guard is unchanged', async () => {
+test('React DOM: rootWithNestedUpdates is cleared with its counter; the infinite-update guard is unchanged', { skip: !reactFixture }, async () => {
   const original = await readFile(new URL('out/vs/workbench/react-runtime/react-dom/esm-client-production.js', readableApp), 'utf8');
   const patched = releaseNestedUpdateRoot(original);
   assert.equal(patched.split(nestedRootMarker).length, 2); assert.equal(releaseNestedUpdateRoot(patched), patched);
@@ -100,6 +102,13 @@ test('React DOM: rootWithNestedUpdates is cleared with its counter; the infinite
     assert.deepEqual(run({ t: 2, e: 2, l: other, Nc: closedRoot, le: 3 }), { t: 2, e: 2, l: other, Nc: other, le: 0 });
   }
   assert.throws(() => releaseNestedUpdateRoot(original.replace('(Nc = l))', '(Nc = l), (le = 1))')), /nested-update owner changed/);
+});
+
+test('React DOM: an unsupported recovered owner is marked explicitly and remains idempotent', () => {
+  const source = 'export const createRoot = () => {};';
+  const patched = releaseNestedUpdateRoot(source);
+  assert.ok(patched.includes(nestedRootUnavailableMarker));
+  assert.equal(releaseNestedUpdateRoot(patched), patched);
 });
 
 for (const [variant, original] of Object.entries(variants)) {

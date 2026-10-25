@@ -250,7 +250,9 @@ const syscallLine = /^(\d+)\s+(\d+\.\d+)\s+(?:<\.\.\.\s+)?(\w+)(.*)$/;
 // first quoted argument; resumed lines carry no path and are ignored.
 export async function summarizeTrace(lines, { project, tids, entries }) {
   const markers = {}, events = [], startup = { by_kind: {}, entries: new Set() }, watches = {};
-  const prefix = project.endsWith(sep) ? project : project + sep;
+  // Traces use POSIX separators even when the verifier runs on Windows.
+  // Normalize only for the boundary check; keep the caller's project value.
+  const traceProject = project.replaceAll('\\', '/').replace(/\/+$/, '');
   for await (const line of lines) {
     const match = syscallLine.exec(line);
     if (!match || line.includes(' resumed>')) continue;
@@ -261,8 +263,9 @@ export async function summarizeTrace(lines, { project, tids, entries }) {
     if (marker) { (markers[marker[1]] ??= {})[marker[2]] = Number(time); continue; }
     const kind = tids.get(Number(tid)) ?? 'unattributed';
     if (syscall === 'inotify_add_watch') watches[kind] = (watches[kind] ?? 0) + 1;
-    if (!path.startsWith(prefix)) continue;
-    const entry = relative(project, path).split(sep).join('/');
+    const tracePath = path.replaceAll('\\', '/');
+    if (!tracePath.startsWith(`${traceProject}/`)) continue;
+    const entry = tracePath.slice(traceProject.length + 1).replace(/^\/+/, '');
     events.push({ time: Number(time), kind, syscall, entry, directory: /O_DIRECTORY/.test(rest) });
   }
   const firstMarker = Math.min(...Object.values(markers).map(item => item.start ?? Infinity));

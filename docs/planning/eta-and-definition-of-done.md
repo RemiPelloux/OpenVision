@@ -18,7 +18,7 @@ calendar or engineer time.
 | Verified | **36 (81.82%)** |
 | Partial / Planned / Unknown | 3 / 5 / 0 |
 | 80% target | 36 Verified: **reached** |
-| Code on `main` | Every worker branch merged. Every Linux story that needs no reference host, release gate or external input is Verified on the coordinator's clean rebuild (23 October). Build and release infrastructure optimized on 24 October |
+| Code on `main` | Every worker branch merged. The Windows editable runtime now rebuilds and packages successfully with OV-901 and local Jupyter support; the remaining Windows matrix has two unavailable checks |
 | Next sprint | [Platform validation (Windows first) and the preview.8 release candidate](next-sprint.md) |
 | Latest download | 0.2.0-preview.7. **None of the October fixes are in it.** |
 
@@ -81,10 +81,13 @@ merged code. "Gate" is what blocks promotion:
 ### Remaining stories
 
 Windows child story [OV-901.W0A](../recovery/rea-windows-rename-upgrade.md) is
-complete within its declared scope: existing-runtime rebuild corrections and
-bounded rename checks, with two passing native Windows runs. OV-901 remains
-Partial; clean assembly, packaging and the full Windows matrix are still gates.
-The count stays **36/44**.
+complete within its declared scope. The current editable runtime also completes
+`build:desktop`, `check:desktop`, build-integrity checks, Windows packaging and
+the Windows project lifecycle verifier. The critical suite records 16/18
+applicable entries passing: Explorer is a Linux-only verifier and the extension
+native-addon check needs Node headers that are not installed. OV-901 remains
+Partial until those two gates and the remaining W3–W6 matrix are closed. The
+count stays **36/44**.
 
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
 | --- | --- | --- | --- | --- |
@@ -93,7 +96,7 @@ The count stays **36/44**.
 | OV-1002 Responsiveness | Stream, incremental-edit and model-menu budgets pass | Frame and scroll budgets fail without a GPU; software-rendering budgets not adopted | X | A reference-class host with a GPU |
 | OV-804 Independent build | Not started | Distribution rights of the recovered source: owner and legal advice | D | Owner only; outside the 36/44 plan |
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
-| OV-901 Windows | — | Windows x64 host; exit 134 and worker crash | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
+| OV-901 Windows | Partial; W0 build/package and project lifecycle pass; 16/18 critical entries pass | Linux-only Explorer entry, missing Node headers for native-addon lifecycle, full W3–W6 matrix and prior crash/worker diagnosis | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
 | OV-902 macOS | — | A Mac, or drop the claim | X, D | [#2](https://github.com/RemiPelloux/OpenVision/issues/2) |
 | OV-905 Linux matrix | — | Other distributions, real GNOME/KDE, ARM64 | X | [#3](https://github.com/RemiPelloux/OpenVision/issues/3) |
 

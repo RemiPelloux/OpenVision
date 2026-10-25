@@ -1,6 +1,7 @@
 import { parseExpressionAt } from '../tooling/dependencies.mjs';
 
 const marker = '/* OpenVision MCP lifecycle cleanup ownership v1 */';
+export const unavailableMarker = '/* OpenVision MCP lifecycle cleanup unavailable: recovered compact owner */';
 function nodes(node, predicate, found = []) {
   if (!node || typeof node !== 'object') return found;
   if (predicate(node)) found.push(node);
@@ -20,6 +21,13 @@ export function mcpLifecycleOwner(text) {
 }
 
 export function ownMcpLifecycleCleanup(text) {
+  // The current recovered production bundles use a compact class layout that
+  // does not retain the readable lifecycle boundaries this patch relies on.
+  // Keep the transport-attempt ownership patch, record the bounded gap, and
+  // fail closed instead of rewriting an ambiguous minified method.
+  if (!text.includes(marker) && !text.includes('closeCurrentServerInstance(e) {') &&
+    /closeCurrentServerInstance\(\w+\)\{/.test(text) && text.includes('this.serverInstance.client.close()'))
+    return `${text}\n${unavailableMarker}\n`;
   const owner = mcpLifecycleOwner(text);
   const methods = Object.fromEntries(owner.body.body.map(method => [method.key?.name, method]));
   if (text.slice(owner.start, owner.end).includes(marker)) return text;

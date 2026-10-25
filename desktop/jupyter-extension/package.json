@@ -1,0 +1,27 @@
+{
+  "name": "openvision-jupyter",
+  "displayName": "OpenVision Jupyter",
+  "description": "Local Jupyter kernel execution for OpenVision notebooks",
+  "publisher": "openvision",
+  "version": "0.1.0",
+  "license": "MIT",
+  "engines": { "vscode": "*" },
+  "main": "./extension.js",
+  "activationEvents": ["onNotebook:jupyter-notebook", "onCommand:openvision.jupyter.selectKernel", "onCommand:openvision.jupyter.restartKernel", "onCommand:openvision.jupyter.shutdownKernel"],
+  "capabilities": { "virtualWorkspaces": false, "untrustedWorkspaces": { "supported": false } },
+  "contributes": {
+    "commands": [
+      { "command": "openvision.jupyter.selectKernel", "title": "Jupyter: Select Local Kernel", "category": "OpenVision" },
+      { "command": "openvision.jupyter.restartKernel", "title": "Jupyter: Restart Local Kernel", "category": "OpenVision" },
+      { "command": "openvision.jupyter.shutdownKernel", "title": "Jupyter: Shut Down Local Kernel", "category": "OpenVision" }
+    ],
+    "configuration": {
+      "title": "OpenVision Jupyter",
+      "properties": {
+        "openvision.jupyter.pythonPath": { "type": "string", "default": "", "description": "Python executable used to discover and start local Jupyter kernels." },
+        "openvision.jupyter.kernelName": { "type": "string", "default": "python3", "description": "Default local Jupyter kernelspec name." },
+        "openvision.jupyter.maxOutputBytes": { "type": "number", "default": 2000000, "minimum": 1024, "maximum": 10000000, "description": "Maximum retained output bytes per notebook cell." }
+      }
+    }
+  }
+}

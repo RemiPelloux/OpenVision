@@ -30,7 +30,7 @@ const sample = `async function t(s) {
             }
           }`;
 
-test('a symbolic link cycle is reported as a dangling link; other errors still throw', async () => {
+test('a symbolic link cycle is reported as a dangling link; other errors still throw', async t => {
   const patched = treatSymlinkCycleAsDangling(sample);
   assert.equal(treatSymlinkCycleAsDangling(patched), patched, 'idempotent');
   assert.equal(patched.split(symlinkCycleMarker).length, 2);
@@ -42,7 +42,12 @@ test('a symbolic link cycle is reported as a dangling link; other errors still t
   const stat = new Function('ft', 'X', `return (${patched});`)(ft, false);
   const directory = await mkdtemp(join(tmpdir(), 'openvision-symlink-cycle-'));
   try {
-    await symlink('cycle-b', join(directory, 'cycle-a')); await symlink('cycle-a', join(directory, 'cycle-b'));
+    try {
+      await symlink('cycle-b', join(directory, 'cycle-a')); await symlink('cycle-a', join(directory, 'cycle-b'));
+    } catch (error) {
+      if (['EPERM', 'EACCES'].includes(error.code)) return t.skip('symlink creation is unavailable on this Windows host');
+      throw error;
+    }
     await symlink('missing', join(directory, 'broken'));
     const cycle = await stat(join(directory, 'cycle-a'));
     assert.equal(cycle.stat.isSymbolicLink(), true); assert.deepEqual(cycle.symbolicLink, { dangling: true });

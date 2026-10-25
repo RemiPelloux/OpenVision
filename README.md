@@ -146,14 +146,21 @@ can close without a GPU reference machine, other hardware or a release gate.
 | Platform | State |
 | --- | --- |
 | Linux x64 | Native build and portable package; critical suite 11/11 on X11, Wayland smoke |
-| Windows x64 | Portable preview.7 download; October fixes not yet re-verified ([sprint Track A](docs/planning/next-sprint.md#track-a--windows-x64-ov-901)) |
+| Windows x64 | Editable runtime rebuild and `OpenVision-win32-x64-full-ov901` package pass; OV-901 remains Partial ([sprint Track A](docs/planning/next-sprint.md#track-a--windows-x64-ov-901)) |
 | Other Linux, ARM64 | Planned ([#3](https://github.com/RemiPelloux/OpenVision/issues/3)) |
 | macOS | Unverified; packaging not started ([#2](https://github.com/RemiPelloux/OpenVision/issues/2)) |
 
-25 October Windows follow-up: the existing recovered runtime rebuilds again;
+25 October Windows follow-up: the editable runtime rebuilds and packages again;
 rename validation has bounded filesystem concurrency and native conflict/Undo
-checks. [Scoped evidence](docs/recovery/rea-windows-rename-upgrade.md); the full
-Windows gate stays open and preview.7 is unchanged.
+checks. The critical run records 16/18 applicable entries, with the Linux-only
+Explorer check and missing native-addon Node headers recorded as unavailable.
+[Scoped evidence](docs/recovery/rea-windows-rename-upgrade.md); preview.7 is unchanged.
+
+**Local Jupyter notebooks.** Open `.ipynb` files and choose **OpenVision Jupyter
+(local Python)** to run cells in one persistent local kernelspec. Outputs,
+errors, interrupt/restart/shutdown and a 2 MB per-cell output bound are included;
+there is no hosted execution or telemetry. See the [Jupyter evidence report](docs/recovery/rea-jupyter-notebooks.md)
+and the [example notebook](examples/jupyter/openvision-local.ipynb).
 
 The score counts complete acceptance gates, not lines of code. The
 [status page](docs/planning/eta-and-definition-of-done.md) lists the 8 remaining
@@ -168,6 +175,7 @@ npm ci --prefix tooling
 npm run prepare:desktop
 npm run build:desktop          # clean build ~460 s cold, ~130 s with a warm build cache
 npm run test:desktop           # unit suites
+npm run test:jupyter            # real local Python/Jupyter kernel checks
 npm run verify:critical        # native critical suite (Linux: under xvfb-run + dbus-run-session)
 npm run status:features        # recompute the verified-story count
 ```

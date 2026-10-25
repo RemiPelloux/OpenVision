@@ -3,7 +3,8 @@
 25 October 2026. Completed child story **OV-901.W0A**; parent **OV-901 stays
 Partial**. This is scoped Windows evidence, not another top-level Verified story.
 The baseline remains **36/44 (81.82%)**. Cloud and account flows are outside this
-investigation. Changes are source-only and absent from preview.7.
+investigation. The current editable runtime now builds and packages with the
+child fix; it is not yet a promoted public release.
 
 ## Story and acceptance
 
@@ -20,7 +21,7 @@ with bounded filesystem work while preserving concurrent changes.
 | Reject a loaded document changed during disk validation | Version validation runs after filesystem awaits; producer regression rejects the whole result |
 | Protect unopened files changed externally; preserve healthy rename/save/Undo/Redo | Native Windows runs `PYzJiy` and `Yk8mDP`, six scenarios each, both pass first attempt |
 | Keep native non-Linux helpers intact | Defaults leave platform helpers untouched; explicit Linux-only replacement options fail clearly before writes |
-| Rebuild the existing Windows runtime and measure the affected workload | Successful desktop rebuild; real-filesystem comparison below; no fresh-input or independent-build claim |
+| Rebuild the existing Windows runtime and measure the affected workload | `build:desktop`, `check:desktop`, build-integrity checks, `package:windows` and the Windows project lifecycle verifier pass; real-filesystem comparison below; no independent-build claim |
 
 ## Recovered boundary and provenance
 
@@ -122,6 +123,23 @@ Process-cold is not cold disk: OS caches are uncontrolled. Windows CPU accountin
 is coarse relative to these short tasks. Child high-water RSS includes source
 parsing/setup; parent/coordinator memory and broader app costs are unmeasured.
 All stat work is in the measured child, with no descendants during the rename.
+
+## Current Windows build gate
+
+The clean editable runtime completed the desktop build and produced
+`build/packages/OpenVision-win32-x64-full-ov901/electron-host/OpenVision.exe`.
+The Jupyter extension is present in the source tree and in the portable support
+directory. `npm run verify:critical` recorded 16/18 applicable entries passing;
+the Explorer entry is explicitly Linux-only, and the extension lifecycle entry
+requires Node headers that are not installed on this host. Those are recorded as
+unavailable gates rather than passes. `npm run verify:project:lifecycle` passes.
+
+The fresh 25 October recovered input was assembled and preserved under the local
+ignored `build/preserved-incomplete-*` directories, but its compact production
+owners do not match several readable customizer contracts. The release build
+therefore uses the previously preserved editable runtime; this is a reproducible
+source-build boundary, not a claim that the fresh input has complete semantic
+parity. The compact MCP lifecycle owner is marked unavailable and fails closed.
 
 ## Remaining gates
 

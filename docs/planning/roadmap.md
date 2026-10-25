@@ -227,7 +227,7 @@ and detailed evidence links.
 | 35 | OV-703 · SSH, WSL and containers | Local/remote host ownership, filesystem, secrets and provider routing | Declare host matrix; connect/reconnect, terminals/extensions, cancellation and cleanup | 13 |
 | 36 | OV-704 · Image/browser/computer modes | Inventory intended modes and required helper/provider contracts | Implement accepted modes with permissions, result handling and cancellation; explain unavailable capabilities | 13 |
 
-### Post-baseline expansion — Jupyter Notebook support (OV-NB1, Planned)
+### Post-baseline expansion — Jupyter Notebook support (OV-NB1, Implemented locally)
 
 Jupyter support is a new product expansion outside baseline v3. It is deliberately
 not added to the current 44-story acceptance denominator, so the verified score
@@ -249,8 +249,12 @@ account or telemetry.
 
 **Dependencies:** OV-402 language boundaries, OV-403 process ownership,
 OV-1003 idle-resource budgets and OV-1004 release safety. Provisional size is
-**13 complexity points** after the current release gates; it is a roadmap item,
-not a claim that the feature is implemented today.
+**13 complexity points** after the current release gates.
+The controller, bridge, real local-kernel checks and Windows portable packaging
+are now implemented. See the [Jupyter evidence report](../recovery/rea-jupyter-notebooks.md).
+Notebook editing round-trip, richer MIME rendering, atomic persistence and the
+cross-platform performance matrix remain follow-up gates; OV-NB1 stays outside
+the 44-story score.
 
 The next executable slice is **OV-102 native timeout recovery**, because it
 supports the highest-priority OV-103 Agent workflow. Then finish the outstanding
