@@ -1,6 +1,6 @@
 # OpenVision progress, percentages and delivery gates
 
-Updated **24 October 2026**. Start here for the feature backlog, recovery results
+Updated **25 October 2026**. Start here for the feature backlog, recovery results
 and Rust plan. ETA means **remaining acceptance gates and provisional complexity
 points**, without calendar or engineer-time estimates.
 
@@ -20,6 +20,12 @@ statuses. Run `npm run status:features` to recalculate this count.
 | Fully verified local-feature stories | **36/44 · 81.82%** | **8/44** are not fully verified: 3 Partial, 5 Planned |
 | Recorded 80% verification milestone | Requires **36/44** Verified | **Reached** (36/44) |
 | All accepted features | Requires **44/44** Verified | **8** additional stories must pass |
+
+Completed child story [OV-901.W0A](recovery/rea-windows-rename-upgrade.md):
+upgrade legacy rename guards, preserve non-Linux native helpers and bound rename
+filesystem validation to eight in-flight checks. The existing Windows runtime
+rebuild and two native six-scenario rename runs pass. This advances OV-901
+without promoting it or changing **36/44**; it is not yet packaged.
 
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on

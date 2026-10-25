@@ -1,25 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, stat, mkdtemp, mkdir, writeFile, readdir, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { runInNewContext } from 'node:vm';
-import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { tmpdir } from 'node:os';
+import { compileRenameAdapter as adapter } from './rename-adapter-fixture.mjs';
 import { readableAppDirectory } from './recovered-source.mjs';
-import { guardRenameVersions, guardRenameDiskChanges, guardRenameCancellation } from './rename-version-customization.mjs';
-
-function adapter(source, context) {
-  const offset = source.indexOf('async provideRenameEdits(');
-  const owner = parseExpressionAt(source, source.lastIndexOf('class ', offset), { ecmaVersion: 'latest' });
-  let classNode = owner;
-  while (classNode.type === 'SequenceExpression') classNode = classNode.expressions.find(node => node.start <= offset && node.end > offset);
-  while (classNode.type === 'CallExpression' || classNode.type === 'MemberExpression') classNode = classNode.callee ?? classNode.object;
-  const code = source.slice(classNode.start, classNode.end);
-  const converter = code.match(/(\w+)\.from\(/)[1];
-  const position = code.match(/(\w+)\.to\(a\)/)[1];
-  return runInNewContext(`(${code})`, { [position]: { to: value => value },
-    [converter]: { from: (edits, versions) => ({ edits: edits.map(edit => ({ ...edit,
-      versionId: versions?.getTextDocumentVersion(edit.resource) })) }) }, ...context });
-}
+import { guardRenameVersions, guardRenameDiskChanges, guardRenameCancellation, installRenameVersionGuard,
+  renameStatConcurrency } from './rename-version-customization.mjs';
 
 const candidates = [readableAppDirectory(), resolve(import.meta.dirname, '../../cursor/readable/app')];
 let readableRoot;
@@ -32,6 +19,37 @@ if (!readableRoot) throw Error('Complete readable recovery input is required for
 for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWorkerMain.js']) {
   const original = await readFile(new URL(`out/vs/workbench/api/${variant}`, `file:///${readableRoot.replaceAll('\\', '/')}/`), 'utf8');
   const patched = guardRenameVersions(original);
+  test(`${variant}: legacy version-only guards upgrade by parsed owner despite formatting`, () => {
+    const legacy = patched.replace('!before || !current', '!current')
+      .replace('const openvisionRenameVersions =', 'const /* retained metadata */ openvisionRenameVersions =');
+    const upgraded = guardRenameCancellation(guardRenameDiskChanges(legacy));
+    assert.match(upgraded, /rename disk changes v2/);
+    assert.match(upgraded, /!before \|\| !current/);
+    assert.equal(guardRenameCancellation(guardRenameDiskChanges(guardRenameVersions(upgraded))), upgraded);
+    assert.throws(() => guardRenameDiskChanges(legacy.replace('current.version !== before.version', 'current.version === before.version')),
+      /guard shape changed/, 'unrecognized semantic drift fails closed');
+  });
+  test(`${variant}: disk-v1 upgrades retain an already installed cancellation guard`, () => {
+    const oldDiskCheck = `const openvisionRenameFs = globalThis.process?.getBuiltinModule?.("node:fs")?.promises;
+        if (openvisionRenameFs) {
+          const unopened = new Map();
+          for (const edit of openvisionRenameEdit.edits)
+            if (edit.textEdit && typeof edit.versionId !== "number" && edit.resource?.scheme === "file") unopened.set(edit.resource.toString(), edit.resource);
+          const changed = await Promise.all([...unopened.values()].map(uri => openvisionRenameFs.stat(uri.fsPath).then(
+            info => Math.max(info.mtimeMs, info.ctimeMs) >= openvisionRenameStarted - 50, () => true)));
+          if (changed.some(Boolean)) throw new Error("A file changed on disk while computing the rename. Try again.");
+        }`;
+    const legacy = '/* OpenVision rename disk changes v1 */\n' + patched
+      .replace(/(const openvisionRenameVersions[\s\S]*?\]\)\);\n)/, '$1      const openvisionRenameStarted = Date.now();\n')
+      .replace('return openvisionRenameEdit;', `${oldDiskCheck}\n        return openvisionRenameEdit;`);
+    const cancelled = guardRenameCancellation(legacy);
+    const upgraded = guardRenameDiskChanges(cancelled);
+    assert.equal(guardRenameCancellation(upgraded), upgraded);
+    assert.equal(guardRenameDiskChanges(upgraded), upgraded);
+    assert.equal(upgraded.split('rename disk changes v2').length, 2);
+    assert.doesNotMatch(upgraded, /rename disk changes v1|changed\.some\(Boolean\)/);
+    assert.throws(() => guardRenameDiskChanges(cancelled.replace('changed.some(Boolean)', 'false')), /disk guard shape changed/);
+  });
   test(`${variant}: exact adapter snapshot rejects stale multi-file rename and retains versions through delivery`, async () => {
     assert.equal(guardRenameVersions(patched), patched);
     const docs = new Map(['source', 'other', 'unrelated'].map(name => [name, {
@@ -107,6 +125,46 @@ for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWork
     assert.equal((await run([{ resource: target('/new'), textEdit: {} }], {})).edits.length, 1,
       'hosts without node:fs keep the version-only guard');
   });
+  test(`${variant}: disk checks are deduplicated, bounded, cancelled and joined before returning`, async () => {
+    const guarded = guardRenameDiskChanges(patched);
+    const uri = { toString: () => 'source' }, doc = { uri, version: 3 };
+    const documents = { getDocument: () => doc, getAllDocumentData: () => [{ document: doc }],
+      getDocumentData: value => value === uri ? { document: doc } : undefined };
+    const targets = Array.from({ length: 80 }, (_, index) => ({ resource: {
+      toString: () => `file:${index}`, scheme: 'file', fsPath: String(index) }, textEdit: {} }));
+    let active = 0, peak = 0, calls = 0;
+    const run = (token, stat) => new (adapter(guarded, { process: {
+      getBuiltinModule: () => ({ promises: { stat } }) } }))(documents,
+      { provideRenameEdits: async () => [{ resource: uri, textEdit: {} }, ...targets, ...targets] }, {})
+      .provideRenameEdits(uri, {}, 'renamed', token);
+    const healthy = await run({ isCancellationRequested: false }, async () => {
+      calls++; peak = Math.max(peak, ++active);
+      await new Promise(resolve => setImmediate(resolve)); active--;
+      return { mtimeMs: 1, ctimeMs: 1 };
+    });
+    assert.equal(healthy.edits.length, 161);
+    assert.equal(calls, targets.length, 'one stat per unique unopened URI, not per edit');
+    assert.equal(peak, renameStatConcurrency);
+    assert.equal(active, 0);
+    const token = { isCancellationRequested: false }, releases = [];
+    const pending = run(token, () => new Promise(resolve => releases.push(resolve)));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(releases.length, renameStatConcurrency);
+    token.isCancellationRequested = true;
+    releases.forEach(resolve => resolve({ mtimeMs: 1, ctimeMs: 1 }));
+    assert.equal(await pending, undefined);
+    assert.equal(releases.length, renameStatConcurrency, 'cancel does not admit queued stats');
+    let settled = 0;
+    const failed = await run({ isCancellationRequested: false }, async () => {
+      await new Promise(resolve => setImmediate(resolve)); settled++; throw Error('EACCES');
+    });
+    assert.match(failed.rejectReason, /changed on disk/);
+    assert.equal(settled, renameStatConcurrency, 'failure joins every in-flight check');
+    const changed = await run({ isCancellationRequested: false }, async () => {
+      doc.version++; return { mtimeMs: 1, ctimeMs: 1 };
+    });
+    assert.match(changed.rejectReason, /changed while computing/, 'loaded versions are checked after disk awaits');
+  });
 }
 
 for (const variant of ['node/extensionHostProcess.js', 'worker/extensionHostWorkerMain.js']) {
@@ -169,7 +227,31 @@ test('cancellation guard requires the disk guard', () => {
 
 test('disk guard requires the version guard and an unchanged shape', () => {
   assert.throws(() => guardRenameDiskChanges('class Other {}'), /must be installed first/);
-  assert.throws(() => guardRenameDiskChanges('/* OpenVision rename document versions v1 */'), /shape changed/);
+  assert.throws(() => guardRenameDiskChanges('/* OpenVision rename document versions v1 */'), /adapter missing/);
+});
+
+test('installation preserves legacy bytes in first backups and repeat installs make no changes', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'openvision-rename-upgrade-'));
+  try {
+    const paths = ['node/extensionHostProcess.js', 'worker/extensionHostWorkerMain.js'];
+    const before = [];
+    for (const variant of paths) {
+      const original = await readFile(join(readableRoot, 'out/vs/workbench/api', variant), 'utf8');
+      const legacy = guardRenameVersions(original).replace('!before || !current', '!current');
+      const file = join(root, 'source/app/out/vs/workbench/api', variant);
+      await mkdir(resolve(file, '..'), { recursive: true });
+      await writeFile(file, legacy); before.push(legacy);
+    }
+    await installRenameVersionGuard(root);
+    const files = await readdir(join(root, 'backups/rename-versions'));
+    assert.equal(files.length, paths.length);
+    const backups = await Promise.all(files.map(file => readFile(join(root, 'backups/rename-versions', file), 'utf8')));
+    before.forEach(text => assert.ok(backups.includes(text)));
+    const installed = await Promise.all(paths.map(path => readFile(join(root, 'source/app/out/vs/workbench/api', path), 'utf8')));
+    await installRenameVersionGuard(root);
+    assert.deepEqual(await readdir(join(root, 'backups/rename-versions')), files);
+    assert.deepEqual(await Promise.all(paths.map(path => readFile(join(root, 'source/app/out/vs/workbench/api', path), 'utf8'))), installed);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test('changed adapter contract fails closed', () => {

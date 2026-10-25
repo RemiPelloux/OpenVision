@@ -11,6 +11,13 @@ Audit baseline: **12 October 2026**; recovery and implementation updates through
 `27f3a3cceeb80c31200bff48b5152dfdbef972f1`. Original input: **Cursor 3.21.13,
 Windows**, with VS Code version field `1.128.0`.
 
+**Current follow-up, 25 October:**
+[Windows runtime upgrade and bounded rename validation](rea-windows-rename-upgrade.md)
+completes child story OV-901.W0A using the retained 3.21.13 adapter. The
+[current ledger](../planning/eta-and-definition-of-done.md) is **36/44 Verified
+(81.82%)**; the historical 16 October counts below are not the current score.
+The Windows parent remains Partial; the 3.24.18 archive and preview.7 are unchanged.
+
 This revision reconciles the historical audit with the reorganized
 [documentation index](../README.md), current [acceptance ledger](../planning/completion-sprints.md)
 and versioned source publication. The baseline commit identifies the original
@@ -80,7 +87,7 @@ or end-to-end parity suite. Assigning a single completion percentage would hide
 the difference between recovered text, working behavior and replaceable services.
 The tables below give the measurable percentages and the actual feature backlog.
 
-The measurable OpenVision acceptance score is **6/42 Verified (14.29%)**:
+The historical 16 October OpenVision acceptance score was **6/42 Verified (14.29%)**:
 **22 Partial, 12 Planned and 2 Unknown** stories remain. Those **36/42 (85.71%)**
 are not fully verified; they are not all missing implementations. The
 [ranked roadmap](../planning/roadmap.md#ranked-rea-implementation-and-verification-work)

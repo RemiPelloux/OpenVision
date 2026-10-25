@@ -3,12 +3,15 @@
 [Progress, percentages and gate-based ETA](../progress.md) ·
 [Recovery archive](../../curs_source/README.md) · [Recovery limits](../recovery/recovery-status.md)
 
-Updated 24 October 2026; latest portable release **0.2.0-preview.7** (preview.8 is the next sprint's release candidate), with Linux x64 source support. The verified-coverage target is **80%**.
+Updated 25 October 2026; latest portable release **0.2.0-preview.7** (preview.8 is the next sprint's release candidate), with Linux x64 source support. The verified-coverage target is **80%**.
 Baseline v3 (18 October re-scope) moves platform and live clauses into OV-901,
 OV-902, OV-905 and OV-205, so the denominator is **44 acceptance stories** and **36
 must be fully Verified**. Current ledger: **36 Verified, 3 Partial, 5 Planned**,
 or **81.82%**. The 80 % target is reached; no additional story is needed for the
 numeric target. See [status page](eta-and-definition-of-done.md#re-scope-baseline-v3).
+Latest scoped Windows work: [OV-901.W0A](../recovery/rea-windows-rename-upgrade.md)
+completes legacy-runtime rebuild corrections and bounded rename validation;
+OV-901's wider platform matrix stays Partial, with no percentage or point change.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 

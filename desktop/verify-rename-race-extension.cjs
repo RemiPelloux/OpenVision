@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const original = 'alpha source\n', dependent = 'alpha dependent\n';
 const concurrent = '// concurrent edit\n';
+const unopenedOriginal = 'alpha unopened\n', external = 'external writer\n';
 
 async function publish(directory, name, value) {
   const destination = path.join(directory, `${name}.json`);
@@ -22,6 +23,7 @@ async function replace(document, text) {
 
 async function run(context) {
   const project = vscode.workspace.workspaceFolders[0].uri.fsPath, directory = path.dirname(project);
+  const unopened = path.join(project, 'disk-target.ovrace');
   const result = { checks: {}, calls: [], scope: 'Native rename UI and extension-host/bulk-edit boundary with a controlled delayed provider.' };
   let mode = 'dependency';
   try {
@@ -36,6 +38,11 @@ async function run(context) {
           const offset = doc.getText().indexOf('alpha');
           edit.replace(doc.uri, new vscode.Range(doc.positionAt(offset), doc.positionAt(offset + 5)), name);
         }
+        if (mode.startsWith('unopened')) {
+          assert.equal(vscode.workspace.textDocuments.some(doc => doc.uri.fsPath === unopened), false,
+            'disk target must not be a loaded document before the provider returns');
+          edit.replace(vscode.Uri.file(unopened), new vscode.Range(0, 0, 0, 5), name);
+        }
         const call = { mode, name, before: [source.version, other.version], cancelled: false };
         result.calls.push(call);
         const subscription = token.onCancellationRequested(() => { call.cancelled = true; });
@@ -44,21 +51,25 @@ async function run(context) {
           // Simulates a second extension editing a document while this provider
           // retains ranges computed from the old version. Deliberately ignores
           // cancellation to verify the host discards a late result.
-          if (mode !== 'healthy') {
+          if (['dependency', 'source', 'unrelated'].includes(mode)) {
             const changed = mode === 'source' ? source : mode === 'unrelated' ? unrelated : other;
             const mutation = new vscode.WorkspaceEdit();
             mutation.insert(changed.uri, new vscode.Position(0, 0), concurrent);
             assert.equal(await vscode.workspace.applyEdit(mutation), true);
           }
+          if (mode === 'unopened-stale') await fs.writeFile(unopened, external + unopenedOriginal);
           await delay(150);
           call.after = [source.version, other.version];
           return edit;
         } finally { subscription.dispose(); }
       },
     }));
-    for (mode of ['dependency', 'source', 'unrelated', 'healthy']) {
+    for (mode of ['unopened-stale', 'unopened-healthy', 'dependency', 'source', 'unrelated', 'healthy']) {
       await replace(source, original); await replace(other, dependent); await replace(unrelated, 'Unrelated original\n');
+      await fs.writeFile(unopened, unopenedOriginal);
       await vscode.workspace.saveAll(false);
+      // File timestamps must predate the conservative 50 ms rename tolerance.
+      await delay(100);
       const editor = await vscode.window.showTextDocument(source);
       editor.selection = new vscode.Selection(0, 2, 0, 2);
       await publish(directory, 'phase', { mode });
@@ -68,16 +79,21 @@ async function run(context) {
       await delay(500);
       const observed = { source: source.getText(), dependent: other.getText(), unrelated: unrelated.getText() };
       await publish(directory, `observed-${mode}`, observed);
-      if (mode === 'dependency' || mode === 'source') {
+      if (mode === 'dependency' || mode === 'source' || mode === 'unopened-stale') {
         assert.equal(observed.source, (mode === 'source' ? concurrent : '') + original);
         assert.equal(observed.dependent, (mode === 'dependency' ? concurrent : '') + dependent);
         result.checks[`${mode}_change_rejects_entire_stale_rename`] = true;
+        if (mode === 'unopened-stale') assert.equal(await fs.readFile(unopened, 'utf8'), external + unopenedOriginal);
       } else {
         assert.equal(observed.source, original.replace('alpha', 'renamed'));
         assert.equal(observed.dependent, dependent.replace('alpha', 'renamed'));
         await vscode.workspace.saveAll(false);
+        if (mode === 'unopened-healthy') assert.equal(await fs.readFile(unopened, 'utf8'), unopenedOriginal.replace('alpha', 'renamed'));
         await vscode.commands.executeCommand('undo');
         assert.equal(source.getText(), original); assert.equal(other.getText(), dependent);
+        if (mode === 'unopened-healthy') {
+          assert.equal((await vscode.workspace.openTextDocument(unopened)).getText(), unopenedOriginal);
+        }
         await vscode.commands.executeCommand('redo');
         assert.equal(source.getText(), observed.source); assert.equal(other.getText(), observed.dependent);
         result.checks[`${mode}_rename_undo_redo`] = true;

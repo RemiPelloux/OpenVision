@@ -1,21 +1,27 @@
 import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { parseExpressionAt } from '../tooling/dependencies.mjs';
+import { parseExpressionAt, tokenizer } from '../tooling/dependencies.mjs';
 import { digest } from './import-files.mjs';
 
 const marker = '/* OpenVision rename document versions v1 */';
 
-export function guardRenameVersions(text) {
-  if (text.includes(marker)) return text;
+function renameMethod(text) {
   const starts = [...text.matchAll(/async provideRenameEdits\([^)]*\) \{/g)];
   if (starts.length !== 1) throw Error('Extension rename adapter missing or ambiguous');
   const start = starts[0].index;
   let owner = parseExpressionAt(text, text.lastIndexOf('class ', start), { ecmaVersion: 'latest' });
-  while (owner.type === 'SequenceExpression') owner = owner.expressions.find(node => node.start <= start && node.end > start) ?? owner;
+  while (owner?.type === 'SequenceExpression') owner = owner.expressions.find(node => node.start <= start && node.end > start);
+  if (!owner) throw Error('Extension rename owner missing');
   while (owner.type === 'CallExpression' || owner.type === 'MemberExpression') owner = owner.callee ?? owner.object;
-  const method = owner.body.body.find(node => node.key?.name === 'provideRenameEdits');
+  const method = owner.body?.body.find(node => node.key?.name === 'provideRenameEdits');
   if (!method || method.start !== start || method.value.params.length !== 4 ||
       !method.value.params.every(node => node.type === 'Identifier')) throw Error('Extension rename signature changed');
+  return method;
+}
+
+export function guardRenameVersions(text) {
+  if (text.includes(marker)) return text;
+  const method = renameMethod(text);
   const source = text.slice(method.start, method.end);
   const call = source.match(/const (\w+) = await this\._provider\.provideRenameEdits\((\w+), (\w+), (\w+), (\w+)\);/);
   const conversion = source.match(/return (\w+) \? (\w+)\.from\(\1\) : void 0;/);
@@ -23,22 +29,13 @@ export function guardRenameVersions(text) {
       !source.includes('this._documents.getDocument(') || !source.includes('rejectReason:'))
     throw Error('Extension rename conversion contract changed');
   const [, value, converter] = conversion;
-  const snapshot = `
-      const openvisionRenameVersions = new Map(this._documents.getAllDocumentData().map(data =>
-        [data.document.uri.toString(), { document: new WeakRef(data.document), version: data.document.version }]));
-`;
+  const snapshot = `\n      ${versionSnapshot}\n`;
   const replacement = `if (${call[5]}.isCancellationRequested || !${value}) return;
         const openvisionRenameEdit = ${converter}.from(${value}, {
           getTextDocumentVersion: uri => openvisionRenameVersions.get(uri.toString())?.version,
           getNotebookDocumentVersion: () => undefined,
         });
-        for (const edit of openvisionRenameEdit.edits) {
-          if (!edit.textEdit || typeof edit.versionId !== "number") continue;
-          const before = openvisionRenameVersions.get(edit.resource.toString());
-          const current = this._documents.getDocumentData(edit.resource)?.document;
-          if (!before || !current || current !== before.document.deref() || current.version !== before.version)
-            throw new Error("A file changed while computing the rename. Try again.");
-        }
+        ${versionLoop}
         return openvisionRenameEdit;`;
   const patched = source.replace(conversion[0], replacement);
   const bodyStart = patched.indexOf('{') + 1;
@@ -46,13 +43,55 @@ export function guardRenameVersions(text) {
     patched.slice(bodyStart) + text.slice(method.end);
 }
 
-const diskMarker = '/* OpenVision rename disk changes v1 */';
-const versionLoop = `          if (!before || !current || current !== before.document.deref() || current.version !== before.version)
+const previousDiskMarker = '/* OpenVision rename disk changes v1 */';
+const diskMarker = '/* OpenVision rename disk changes v2 */';
+export const renameStatConcurrency = 8;
+const versionLoop = `for (const edit of openvisionRenameEdit.edits) {
+          if (!edit.textEdit || typeof edit.versionId !== "number") continue;
+          const before = openvisionRenameVersions.get(edit.resource.toString());
+          const current = this._documents.getDocumentData(edit.resource)?.document;
+          if (!before || !current || current !== before.document.deref() || current.version !== before.version)
             throw new Error("A file changed while computing the rename. Try again.");
-        }
-        return openvisionRenameEdit;`;
-const versionSnapshot = `[data.document.uri.toString(), { document: new WeakRef(data.document), version: data.document.version }]));
-`;
+        }`;
+const versionSnapshot = `const openvisionRenameVersions = new Map(this._documents.getAllDocumentData().map(data =>
+        [data.document.uri.toString(), { document: new WeakRef(data.document), version: data.document.version }]));`;
+const previousDiskCheck = `const openvisionRenameFs = globalThis.process?.getBuiltinModule?.("node:fs")?.promises;
+        if (openvisionRenameFs) {
+          const unopened = new Map();
+          for (const edit of openvisionRenameEdit.edits)
+            if (edit.textEdit && typeof edit.versionId !== "number" && edit.resource?.scheme === "file") unopened.set(edit.resource.toString(), edit.resource);
+          const changed = await Promise.all([...unopened.values()].map(uri => openvisionRenameFs.stat(uri.fsPath).then(
+            info => Math.max(info.mtimeMs, info.ctimeMs) >= openvisionRenameStarted - 50, () => true)));
+          if (changed.some(Boolean)) throw new Error("A file changed on disk while computing the rename. Try again.");
+        }`;
+
+function tokens(text) {
+  return JSON.stringify([...tokenizer(text, { ecmaVersion: 'latest' })].map(token => [token.type.label, token.value]));
+}
+
+function diskCheck(token) {
+  return `const openvisionRenameFs = globalThis.process?.getBuiltinModule?.("node:fs")?.promises;
+        if (openvisionRenameFs) {
+          const unopened = new Map();
+          for (const edit of openvisionRenameEdit.edits)
+            if (edit.textEdit && typeof edit.versionId !== "number" && edit.resource?.scheme === "file") unopened.set(edit.resource.toString(), edit.resource);
+          const pending = unopened.values();
+          let changed = false;
+          const check = async () => {
+            while (!changed && !${token}.isCancellationRequested) {
+              const next = pending.next();
+              if (next.done) return;
+              try {
+                const info = await openvisionRenameFs.stat(next.value.fsPath);
+                if (Math.max(info.mtimeMs, info.ctimeMs) >= openvisionRenameStarted - 50) changed = true;
+              } catch { changed = true; }
+            }
+          };
+          await Promise.all(Array.from({ length: Math.min(${renameStatConcurrency}, unopened.size) }, check));
+          if (${token}.isCancellationRequested) return;
+          if (changed) throw new Error("A file changed on disk while computing the rename. Try again.");
+        }`;
+}
 
 // Targets that are not loaded documents carry no version, so the version guard
 // cannot see an external writer. Reject the whole rename when such a file:
@@ -61,20 +100,25 @@ const versionSnapshot = `[data.document.uri.toString(), { document: new WeakRef(
 export function guardRenameDiskChanges(text) {
   if (text.includes(diskMarker)) return text;
   if (!text.includes(marker)) throw Error('Rename version guard must be installed first');
-  if (text.split(versionLoop).length !== 2 || text.split(versionSnapshot).length !== 2)
+  const method = renameMethod(text), source = node => text.slice(node.start, node.end);
+  const snapshots = method.value.body.body.filter(node => node.type === 'VariableDeclaration' &&
+    node.declarations.some(item => item.id.name === 'openvisionRenameVersions'));
+  const bodies = method.value.body.body.filter(node => node.type === 'TryStatement').map(node => node.block.body);
+  const body = bodies.find(nodes => nodes.some(node => node.type === 'ReturnStatement' && node.argument?.name === 'openvisionRenameEdit'));
+  const loops = body?.filter(node => node.type === 'ForOfStatement') ?? [];
+  if (snapshots.length !== 1 || loops.length !== 1 || tokens(source(snapshots[0])) !== tokens(versionSnapshot) ||
+      ![versionLoop, versionLoop.replace('!before || ', '')].some(loop => tokens(source(loops[0])) === tokens(loop)))
     throw Error('Rename version guard shape changed');
-  return diskMarker + '\n' + text
-    .replace(versionSnapshot, `${versionSnapshot}      const openvisionRenameStarted = Date.now();\n`)
-    .replace(versionLoop, versionLoop.replace('return openvisionRenameEdit;', `const openvisionRenameFs = globalThis.process?.getBuiltinModule?.("node:fs")?.promises;
-        if (openvisionRenameFs) {
-          const unopened = new Map();
-          for (const edit of openvisionRenameEdit.edits)
-            if (edit.textEdit && typeof edit.versionId !== "number" && edit.resource?.scheme === "file") unopened.set(edit.resource.toString(), edit.resource);
-          const changed = await Promise.all([...unopened.values()].map(uri => openvisionRenameFs.stat(uri.fsPath).then(
-            info => Math.max(info.mtimeMs, info.ctimeMs) >= openvisionRenameStarted - 50, () => true)));
-          if (changed.some(Boolean)) throw new Error("A file changed on disk while computing the rename. Try again.");
-        }
-        return openvisionRenameEdit;`));
+  const loop = loops[0], tail = body.slice(body.indexOf(loop) + 1), result = tail.at(-1);
+  const upgrading = text.includes(previousDiskMarker);
+  if (result?.type !== 'ReturnStatement' || result.argument?.name !== 'openvisionRenameEdit' ||
+      (upgrading ? tokens(text.slice(loop.end, result.start)) !== tokens(previousDiskCheck) : tail.length !== 1))
+    throw Error('Rename disk guard shape changed');
+  const replacement = `${diskCheck(method.value.params[3].name)}\n        ${versionLoop}\n        return openvisionRenameEdit;`;
+  let upgraded = text.slice(0, loop.start) + replacement + text.slice(result.end);
+  if (upgrading) upgraded = upgraded.replace(previousDiskMarker, '');
+  else upgraded = upgraded.slice(0, snapshots[0].end) + '\n' + startedLine + upgraded.slice(snapshots[0].end);
+  return diskMarker + '\n' + upgraded;
 }
 
 const cancellationMarker = '/* OpenVision rename edit cancellation v1 */';
@@ -87,7 +131,7 @@ const startedLine = '      const openvisionRenameStarted = Date.now();\n';
 // version guard still decides whether the late result is applied.
 export function guardRenameCancellation(text) {
   if (text.includes(cancellationMarker)) return text;
-  if (!text.includes(diskMarker)) throw Error('Rename disk guard must be installed first');
+  if (!text.includes(diskMarker) && !text.includes(previousDiskMarker)) throw Error('Rename disk guard must be installed first');
   const calls = [...text.matchAll(/const (\w+) = await this\._provider\.provideRenameEdits\((\w+), (\w+), (\w+), (\w+)\);/g)]
     .filter(match => text.lastIndexOf(startedLine, match.index) > text.lastIndexOf('async provideRenameEdits(', match.index));
   if (calls.length !== 1 || text.split(startedLine).length !== 2) throw Error('Rename provider call shape changed');

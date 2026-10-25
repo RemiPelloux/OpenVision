@@ -94,6 +94,27 @@ test('build options default to the original helpers and reject unknown values', 
   assert.throws(() => helperModes({ OPENVISION_CREPECTL: 'ripgrep' }), /must be one of/);
 });
 
+test('non-Linux builds preserve native helpers and refuse Linux-only replacement options', async () => {
+  const tree = await mkdtemp(join(tmpdir(), 'openvision-helper-platform-'));
+  try {
+    const helpers = join(tree, 'source/app/resources/helpers');
+    await mkdir(helpers, { recursive: true });
+    await writeFile(join(helpers, 'native-helper.exe'), 'platform-native helper');
+    for (const platform of ['win32', 'darwin']) {
+      assert.deepEqual(await installHelperReplacements(tree, {}, platform), {});
+      assert.deepEqual(await installHelperReplacements(tree, {}, platform), {}, 'idempotent without Linux helper paths');
+      for (const env of [{ OPENVISION_SANDBOX_HELPER: 'none' }, { OPENVISION_SANDBOX_HELPER: 'landlock' }, { OPENVISION_CREPECTL: 'none' }])
+        await assert.rejects(installHelperReplacements(tree, env, platform), /supported only on Linux/);
+      await assert.rejects(installHelperReplacements(tree, { OPENVISION_CREPECTL: 'ripgrep' }, platform), /must be one of/);
+    }
+    assert.deepEqual(await readdir(tree), ['source'], 'no irrelevant backup state is created');
+    assert.deepEqual(await readdir(helpers), ['native-helper.exe']);
+    assert.equal(await readFile(join(helpers, 'native-helper.exe'), 'utf8'), 'platform-native helper');
+    await assert.rejects(installHelperReplacements(tree, {}, 'linux'), /missing and no original backup/,
+      'missing Linux inputs must still fail closed');
+  } finally { await rm(tree, { recursive: true, force: true }); }
+});
+
 test('build options switch helpers reversibly and keep the first original', { skip }, async () => {
   const tree = join(work, 'tree'), helpers = join(tree, 'source/app/resources/helpers');
   await mkdir(join(tree, 'desktop/sandbox-helper'), { recursive: true }); await mkdir(helpers, { recursive: true });

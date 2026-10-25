@@ -555,6 +555,16 @@ Outcome: installable OpenVision with platform-specific execution evidence.
 Sprint exit: a platform is supported only when its required native checks pass.
 Record unavailable machines/signing prerequisites as blockers, not successful tests.
 
+### Completed child story OV-901.W0A
+
+25 October 2026: existing Windows runtime upgrades now accept the known legacy
+rename guards and preserve native non-Linux helpers. Rename disk validation is
+limited to eight concurrent checks and revalidates loaded documents afterward.
+Two native Windows runs pass all six rename scenarios, including external-file
+conflicts and healthy Undo/Redo. See the [story and measured evidence](../recovery/rea-windows-rename-upgrade.md).
+OV-901 remains Partial; the accepted baseline stays **36/44 (81.82%)**. Clean
+assembly, packaging and the full Windows workflow matrix remain open.
+
 ## Sprint 10 — Optimize, harden and close the release ledger
 
 Outcome: measured efficiency and all accepted product gates closed with evidence.

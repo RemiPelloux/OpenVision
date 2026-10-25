@@ -1,6 +1,6 @@
 # OpenVision status, gaps, ETA and Definition of Done
 
-Updated **24 October 2026** (`main` at `b64873ba`). This page is the single current view. The acceptance
+Updated **25 October 2026**. This page is the single current view. The acceptance
 clauses are in the [ledger](completion-sprints.md); the priority order is in the
 [roadmap](roadmap.md). Dated checkpoints (16–19 October) are archived in
 [planning history](history/checkpoints-2026-10.md). The next sprint is planned in
@@ -79,6 +79,12 @@ merged code. "Gate" is what blocks promotion:
 - **Workers:** all 25 worker sessions finished and were archived.
 
 ### Remaining stories
+
+Windows child story [OV-901.W0A](../recovery/rea-windows-rename-upgrade.md) is
+complete within its declared scope: existing-runtime rebuild corrections and
+bounded rename checks, with two passing native Windows runs. OV-901 remains
+Partial; clean assembly, packaging and the full Windows matrix are still gates.
+The count stays **36/44**.
 
 | Story | State on `main` | Gap to Verified | Gate | Remaining work |
 | --- | --- | --- | --- | --- |

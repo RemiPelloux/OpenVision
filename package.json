@@ -26,6 +26,7 @@
     "verify:native-provenance": "node desktop/verify-native-provenance.mjs",
     "test:build-integrity": "node --test desktop/generated-artifact-integrity.test.mjs desktop/notification-isolation.test.mjs desktop/telemetry-extensions.test.mjs",
     "test:rename-version": "node --test desktop/rename-version.test.mjs",
+    "benchmark:rename": "node desktop/benchmark-rename.mjs",
     "test:typescript-extension": "node --test desktop/typescript-extension.test.mjs",
     "test:language-status": "node --test desktop/language-status.test.mjs",
     "test:language-matrix": "node --test desktop/language-matrix.test.mjs",

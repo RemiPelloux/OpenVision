@@ -43,6 +43,17 @@ updates the ledger.
 
 ## Track A — Windows x64 (OV-901)
 
+### Completed Child Story OV-901.W0A
+
+25 October: as a Windows user upgrading the existing 3.21.13 recovered runtime,
+I can rebuild safely and rename across files with bounded disk validation.
+[Acceptance and evidence](../recovery/rea-windows-rename-upgrade.md) record
+legacy guard migration/backups, non-Linux helper preservation, cancellation,
+eight-check concurrency, two native six-scenario rename passes and measurements.
+This completes one child story, not W0 or the whole Windows platform story.
+Clean assembly, packaging/cache restoration and W1-W6 stay open; **36/44** is
+unchanged. No new live provider or account work was performed.
+
 Run in order. A phase that fails opens a defect issue with captured diagnostics and
 blocks only the clauses it covers.
 

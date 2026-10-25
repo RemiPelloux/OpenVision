@@ -150,6 +150,11 @@ can close without a GPU reference machine, other hardware or a release gate.
 | Other Linux, ARM64 | Planned ([#3](https://github.com/RemiPelloux/OpenVision/issues/3)) |
 | macOS | Unverified; packaging not started ([#2](https://github.com/RemiPelloux/OpenVision/issues/2)) |
 
+25 October Windows follow-up: the existing recovered runtime rebuilds again;
+rename validation has bounded filesystem concurrency and native conflict/Undo
+checks. [Scoped evidence](docs/recovery/rea-windows-rename-upgrade.md); the full
+Windows gate stays open and preview.7 is unchanged.
+
 The score counts complete acceptance gates, not lines of code. The
 [status page](docs/planning/eta-and-definition-of-done.md) lists the 8 remaining
 stories, their gates and the Definition of Done; the
