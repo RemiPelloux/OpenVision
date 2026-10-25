@@ -122,6 +122,13 @@ with packaging for each claimed architecture.
 - ~~[#7](https://github.com/RemiPelloux/OpenVision/issues/7) Quick Edit Ctrl+A.~~ Fixed 24 October.
 - ~~Close the issues already fixed on `main` (#6, #8, #9, #10).~~ Closed 24 October.
 
+### Post-release product expansion
+
+After the preview.8 gates, start [OV-NB1 Jupyter Notebook support](roadmap.md#post-baseline-expansion--jupyter-notebook-support-ov-nb1-planned).
+This is outside the current 44-story score. Begin with the recovered notebook
+editor/kernel boundary and a local fixture kernel, then add real local Python/
+Jupyter verification, rich outputs, atomic persistence and idle-resource budgets.
+
 ## Sprint Definition of Done
 
 - Every story moved to Verified meets the [story DoD](eta-and-definition-of-done.md#story-dod-promotion-to-verified),

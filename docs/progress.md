@@ -27,6 +27,11 @@ filesystem validation to eight in-flight checks. The existing Windows runtime
 rebuild and two native six-scenario rename runs pass. This advances OV-901
 without promoting it or changing **36/44**; it is not yet packaged.
 
+Roadmap expansion: **OV-NB1 Jupyter Notebook support** is planned outside the
+baseline denominator. Its scope is local `.ipynb` editing, explicit kernel
+lifecycle, rich outputs, cancellation, atomic persistence, privacy and bounded
+idle memory. See the [Jupyter roadmap story](planning/roadmap.md#post-baseline-expansion--jupyter-notebook-support-ov-nb1-planned).
+
 18 October re-scope (baseline v3): Windows, macOS, other-Linux and live-provider
 clauses moved into OV-901, OV-902, OV-905 and OV-205; other stories are judged on
 Linux x64. OV-702, OV-401, OV-403, OV-104, OV-203, OV-301, OV-302, OV-102, OV-204, OV-701, OV-603, OV-602, OV-801, OV-501, OV-1005, OV-304, OV-502, OV-503, OV-504, OV-303, OV-904, OV-903, OV-604 (excluded by owner decision), OV-803, OV-402, OV-1001, OV-704, OV-703, OV-802 and OV-103 are Verified under it. See

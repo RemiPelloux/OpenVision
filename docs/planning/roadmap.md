@@ -227,6 +227,31 @@ and detailed evidence links.
 | 35 | OV-703 · SSH, WSL and containers | Local/remote host ownership, filesystem, secrets and provider routing | Declare host matrix; connect/reconnect, terminals/extensions, cancellation and cleanup | 13 |
 | 36 | OV-704 · Image/browser/computer modes | Inventory intended modes and required helper/provider contracts | Implement accepted modes with permissions, result handling and cancellation; explain unavailable capabilities | 13 |
 
+### Post-baseline expansion — Jupyter Notebook support (OV-NB1, Planned)
+
+Jupyter support is a new product expansion outside baseline v3. It is deliberately
+not added to the current 44-story acceptance denominator, so the verified score
+remains **36/44 (81.82%)** until the existing release gates are closed.
+
+**User story:** As a local developer, I can open and edit `.ipynb` files, run
+selected cells against a local Jupyter kernel, inspect rich outputs, interrupt or
+restart execution, and reopen the notebook with its saved state without a cloud
+account or telemetry.
+
+| Area | REA and implementation work | Acceptance evidence |
+| --- | --- | --- |
+| Notebook model | Recover and document the notebook/editor owner, cell identity, metadata and output contracts; preserve unknown fields and source ordering | Round-trip a notebook byte-safely where fields are unchanged; malformed notebooks report a useful error and remain recoverable |
+| Kernel lifecycle | Implement local kernelspec discovery, explicit start/stop, interrupt, restart and cancellation through the existing owned-process supervisor | Fixture kernel and an installed local Python/Jupyter kernel pass start, execute, interrupt, restart and shutdown without orphan processes |
+| Execution and outputs | Stream stdout/stderr, errors and execution state; render text, JSON, images and other declared MIME outputs with bounded buffering | Cell execution, failure, clear-output, rerun and rich-output cases pass; output limits prevent unbounded retained data |
+| Editing and persistence | Incrementally update cells, preserve undo/redo and save atomically with recovery after a failed write | Multi-cell edit, reorder, delete, save/reopen and interrupted-write checks pass; no whole-project rescan per cell |
+| Security and privacy | Keep kernels local and user-approved; make working directory and environment visible; do not add hosted execution or telemetry | Denied execution, path/permission errors, offline operation and network-destination checks pass |
+| Performance and platforms | Measure startup, execution latency, large-notebook heap, idle kernel memory and disposal on Windows/Linux/macOS | Fixed notebook workload meets declared budgets; idle kernels release resources and the supported platform matrix is recorded |
+
+**Dependencies:** OV-402 language boundaries, OV-403 process ownership,
+OV-1003 idle-resource budgets and OV-1004 release safety. Provisional size is
+**13 complexity points** after the current release gates; it is a roadmap item,
+not a claim that the feature is implemented today.
+
 The next executable slice is **OV-102 native timeout recovery**, because it
 supports the highest-priority OV-103 Agent workflow. Then finish the outstanding
 Agent edit/storage failure gates. The production deadlines are 300 seconds for
