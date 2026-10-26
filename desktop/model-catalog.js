@@ -1,7 +1,7 @@
 import { reasoningChoices, providerDefaultReasoning, reasoningSource, effectiveCapabilities, userSpecified } from './model-reasoning.js';
 import { modelSelectionId } from './model-identity.js';
 
-const reasoningLabels = {
+export const reasoningLabels = {
   none: 'Off', auto: 'Auto', minimal: 'Minimal', low: 'Low', medium: 'Medium', high: 'High',
   xhigh: 'Extra High', 'extra-high': 'Extra High', max: 'Max', ultra: 'Ultra',
 };

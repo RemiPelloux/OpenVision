@@ -26,10 +26,11 @@ import { createLiveEditFixture } from './verify-live-edits.mjs';
 import { createAgentFixtureProvider, fixtureModel } from './agent-fixture-provider.mjs';
 import { createLoopbackProxy } from './network-capture.mjs';
 import { verifyToolCallErrors } from './verify-agent-tool-calls.mjs';
+import { reasoningLabels } from './model-catalog.js';
 
 const fixture = process.argv.includes('--fixture');
 if (!process.argv.includes('--live') && !fixture) {
-  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID|--fixture [--fork-status 401|503] [--reasoning default|high] [--subagent] [--history|--history-failure] [--stop|--retry-auth [--failure-restart]|--timeout headers|body] [--paste|--rules|--memory|--edit] [--capture-payload]\nRuns a native Agent workflow through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key; --failure-restart restarts the app before that retry and requires the saved error and Try again to be restored without a request. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Edit requires real StrReplace calls for two files, review rejection/retry/acceptance, Undo/Redo and restart persistence. Capture saves the first request locally with the transport key redacted. --fixture replaces the saved provider with a deterministic loopback OpenAI-compatible fixture (no quota, not live inference) for --history/--history-failure and --timeout; with --timeout, --failure-restart restarts before Try again.');
+  console.log('Usage: node desktop/verify-live-agent.mjs --live --model SAVED_ID|--fixture [--fork-status 401|503] [--reasoning default|none|low|medium|high|xhigh|max] [--catalog-hints] [--subagent] [--history|--history-failure] [--stop|--retry-auth [--failure-restart]|--timeout headers|body] [--paste|--rules|--memory|--edit] [--capture-payload]\nRuns a native Agent workflow through your saved provider, using real quota and a synthetic disposable project. History checks recall after restart and Fork Chat. History-failure additionally exercises a real 401 and native retry inside the fork, preserving source history. Stop checks real streaming cancellation and same-chat resubmission. Retry-auth sends one deliberately invalid credential, expects a real upstream 401, then retries through the native UI using the saved key; --failure-restart restarts the app before that retry and requires the saved error and Try again to be restored without a request. Timeout stalls the first loopback response at unchanged production deadlines, then retries with real inference; it does not simulate an upstream failure. Paste checks native large clipboard text saved to a file and read on demand. Rules checks persisted user and project rules in the first request after restart. Memory checks real suggestions, approval, restart and on-demand recall. Edit requires real StrReplace calls for two files, review rejection/retry/acceptance, Undo/Redo and restart persistence. Capture saves the first request locally with the transport key redacted. Reasoning selects that level in the native picker and requires it on every request; the loopback catalog offers the effective levels of the saved model, or with --catalog-hints the compatibility hints a provider without declarations shows. --fixture replaces the saved provider with a deterministic loopback OpenAI-compatible fixture (no quota, not live inference) for --history/--history-failure and --timeout; with --timeout, --failure-restart restarts before Try again.');
   process.exit(0);
 }
 const modelIndex = process.argv.indexOf('--model'), model = fixture ? fixtureModel : process.argv[modelIndex + 1];
@@ -62,7 +63,8 @@ assert.ok(!memory || (!rules && !paste && !history && !subagent), '--memory is a
 assert.ok(!paste || (!history && !subagent), '--paste is a separate clipboard-to-Read probe');
 assert.ok(!rules || (!paste && !history && !subagent), '--rules is a separate persisted-rules probe');
 assert.ok(!edit || (!rules && !paste && !history && !subagent && !stop && !retryAuth && !timeoutPhase && !memory), '--edit is a separate live multi-file editing probe');
-assert.ok(['default', 'high'].includes(reasoning), 'Reasoning must be default or high');
+assert.ok(['default', 'none', 'low', 'medium', 'high', 'xhigh', 'max'].includes(reasoning), 'Reasoning must be default or an explicit level');
+const catalogHints = process.argv.includes('--catalog-hints');
 assert.ok(!toolCallErrors || (fixture && !history && !timeoutPhase), '--tool-call-errors is a separate fixture probe');
 assert.ok(!fixture || ((history || timeoutPhase || toolCallErrors) && !subagent && !edit && !stop && !retryAuth && !paste && !rules && !memory && reasoning === 'default'),
   '--fixture covers only the history/Fork Chat, timeout and tool-call error cells');
@@ -118,7 +120,7 @@ const chromiumProxy = process.argv.some(value => value.startsWith('--chromium-pr
 assert.ok(!chromiumProxy || fixture, '--chromium-proxy is a fixture-only connectivity probe');
 if (fixture) provider = { name: 'Controlled Agent fixture', url: fixtureProvider.url, models: [{ id: model, enabled: true }] };
 const platformLabel = { win32: 'Windows', linux: 'Linux', darwin: 'macOS' }[process.platform] ?? process.platform;
-const result = { checkedAt: new Date().toISOString(), fixture, model, reasoning, subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, failureRestartRequested: failureRestart, provider: { name: provider.name, url: provider.url },
+const result = { checkedAt: new Date().toISOString(), fixture, model, reasoning, catalog: catalogHints ? 'compatibility hints' : 'saved effective capabilities', subagent, editRequested: edit, historyRequested: history, stopRequested: stop, retryAuthRequested: retryAuth, failureRestartRequested: failureRestart, provider: { name: provider.name, url: provider.url },
   commit: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(), platform: process.platform, arch: process.arch,
   scope: edit
     ? `${platformLabel} native Agent selection and real provider multi-file StrReplace, review rejection/retry, acceptance, Undo/Redo and restart persistence in a disposable project. Loopback catalog mirrors saved capability hints; inference bodies are forwarded unchanged to the real provider.`
@@ -171,7 +173,7 @@ if (timeoutPhase) {
   result.hashes.execErrorPolicy = await fileHash(join(root, 'source/app/extensions/cursor-agent-exec/dist/openvision-provider-errors.cjs'));
   result.timeout.packagedUndiciVersion = JSON.parse(await readFile(join(root, 'source/app/node_modules/undici/package.json'), 'utf8')).version;
 }
-const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, allowDownstreamCancellation: stop,
+const relay = await createLiveAgentRelay({ provider, model, marker, captureRequest, allowDownstreamCancellation: stop, catalog: catalogHints ? 'hints' : 'saved',
   requestLimit: edit ? 12 : undefined, forwardProviderFailures: retryAuth,
   expectInitialUnauthorized: retryAuth, initialStall: timeoutPhase, inspectRequest: body => {
   if (retryAuth) inspectRetryPrompt(body, result.liveRetry);
@@ -296,7 +298,7 @@ try {
     await item.focus(); await item.press('ArrowRight');
     await page.getByTestId('parameter-submenu').filter({ visible: true }).first().waitFor();
     await page.getByText('Reasoning', { exact: true }).filter({ visible: true }).last().hover();
-    await page.getByText('High', { exact: true }).filter({ visible: true }).last().click();
+    await page.getByText(reasoningLabels[reasoning], { exact: true }).filter({ visible: true }).last().click();
     await page.keyboard.press('Escape');
   }
   await dismissMenu();

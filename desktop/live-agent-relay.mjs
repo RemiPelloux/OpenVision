@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { once } from 'node:events';
-import { fallbackReasoningValues } from './model-reasoning.js';
+import { effectiveCapabilities, fallbackReasoningValues } from './model-reasoning.js';
 import { stallInitialResponse, timeoutLimit } from './verify-live-timeout.mjs';
 
 const defaultRequestLimit = 6;
@@ -90,37 +90,68 @@ async function providerFailureBody(upstream, record, redact) {
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
 }
 
-export async function createLiveAgentRelay({ provider, model, marker, captureRequest, inspectRequest,
-  allowDownstreamCancellation = false, expectInitialUnauthorized = false, initialStall,
-  requestLimit = defaultRequestLimit, forwardProviderFailures = false }) {
-  if (!Number.isInteger(requestLimit) || requestLimit < 1 || requestLimit > 32)
-    throw new Error('Live verification request limit must be an integer from 1 to 32');
-  if (initialStall !== undefined) {
-    timeoutLimit(initialStall);
-    if (expectInitialUnauthorized) throw new Error('Controlled timeout and real authentication failure are separate probes');
+// Image parts in an outgoing Chat Completions or Responses body (count only, never the bytes).
+function imagePartCount(payload) {
+  const parts = [...(payload.messages ?? []), ...(Array.isArray(payload.input) ? payload.input : [])]
+    .flatMap(message => Array.isArray(message?.content) ? message.content : []);
+  return parts.filter(part => ['image_url', 'input_image', 'image'].includes(part?.type)).length;
+}
+
+// One loopback relay per verification. A combined session runs several scenarios
+// through the same relay (one app provider): `begin` starts a scenario with its
+// own marker, request list, limit, armed failure and hooks, and `use` returns to an
+// earlier scenario after a shared restart. `routes` adds more saved models, each
+// forwarded to its own provider with its own key (for example a child override).
+export async function createLiveAgentRelay({ provider, model, routes = [], catalog = 'saved', ...scenario }) {
+  if (!['saved', 'hints'].includes(catalog)) throw new Error('Live verification catalog must be saved or hints');
+  const controllers = new Set(), pending = new Set(), keys = new Map();
+  const targets = new Map([[model, provider], ...routes.map(route => [route.model, route.provider])]);
+  // The saved model's effective levels (user-specified over discovered), as the app
+  // offers them; 'hints' mirrors a provider saved without declarations instead
+  // (compatibility hints, for example Add Codex Easy without an import).
+  const levels = (id, target) => catalog === 'hints' ? fallbackReasoningValues(target.url, id)
+    : effectiveCapabilities(target.models?.find(entry => entry.id === id))?.reasoningEffortValues ?? fallbackReasoningValues(target.url, id);
+  const redact = value => [...keys.values()].reduce((text, key) => key ? text.replaceAll(key, '[redacted]') : text, String(value));
+  let state;
+  function begin({ marker, captureRequest, inspectRequest, allowDownstreamCancellation = false, expectInitialUnauthorized = false,
+    initialStall, requestLimit = defaultRequestLimit, forwardProviderFailures = false, models = [model], name } = {}) {
+    if (!Number.isInteger(requestLimit) || requestLimit < 1 || requestLimit > 32)
+      throw new Error('Live verification request limit must be an integer from 1 to 32');
+    if (initialStall !== undefined) {
+      timeoutLimit(initialStall);
+      if (expectInitialUnauthorized) throw new Error('Controlled timeout and real authentication failure are separate probes');
+    }
+    if (models.some(id => !targets.has(id))) throw new Error('Scenario model is not routed by this relay');
+    if (pending.size) throw new Error('A scenario may begin only between completed requests');
+    state = { name, marker, captureRequest, inspectRequest, allowDownstreamCancellation, initialStall, requestLimit, forwardProviderFailures,
+      models: new Set(models), requests: [], failed: Promise.withResolvers(),
+      // One armed upstream failure that is forwarded to the app instead of failing the probe.
+      expectedFailure: expectInitialUnauthorized ? { index: 0, status: 401 } : undefined };
+    return state;
   }
-  const requests = [], controllers = new Set(), pending = new Set();
-  const failed = Promise.withResolvers();
-  // One armed upstream failure that is forwarded to the app instead of failing the probe.
-  let key, expectedFailure = expectInitialUnauthorized ? { index: 0, status: 401 } : undefined;
-  const saved = provider.models?.find(entry => entry.id === model);
-  const efforts = saved?.capabilities?.reasoningEffortValues ?? fallbackReasoningValues(provider.url, model);
-  const redact = value => key ? String(value).replaceAll(key, '[redacted]') : String(value);
-  async function handle(request, response) {
+  begin(scenario);
+  const efforts = levels(model, provider);
+  async function handle(request, response, current) {
     if (request.headers.authorization !== 'Bearer native-probe-key') {
       response.writeHead(401); response.end(); return;
     }
     if (request.url === '/v1/models' && request.method === 'GET') {
       response.setHeader('content-type', 'application/json');
-      response.end(JSON.stringify({ data: [{ id: model, ...(efforts ? { capabilities: { reasoning_effort: efforts.map(item => typeof item === 'string' ? item : item.value ?? item.id) } } : {}) }] })); return;
+      response.end(JSON.stringify({ data: [...targets].map(([id, target]) => {
+        const values = levels(id, target);
+        return { id, ...(values ? { capabilities: { reasoning_effort: values.map(item => typeof item === 'string' ? item : item.value ?? item.id) } } : {}) };
+      }) })); return;
     }
     if (!['/v1/chat/completions', '/v1/responses'].includes(request.url) || request.method !== 'POST') {
       response.writeHead(404); response.end(); return;
     }
+    const { marker, requests } = current;
     const body = await requestBody(request), payload = JSON.parse(body);
-    if (!key || payload.model !== model || requests.length >= requestLimit) throw new Error('Native request violates probe connection or request limit');
+    const key = keys.get(payload.model), target = targets.get(payload.model);
+    if (!key || !current.models.has(payload.model) || requests.length >= current.requestLimit) throw new Error('Native request violates probe connection or request limit');
     const record = { endpoint: request.url, model: payload.model, reasoning: payload.reasoning ?? payload.reasoning_effort,
       thinking: payload.thinking, stream: payload.stream, maxTokens: payload.max_tokens ?? payload.max_output_tokens,
+      imageParts: imagePartCount(payload),
       roles: payload.messages?.map(message => message.role),
       messageShapes: payload.messages?.map(message => ({ role: message.role, content: message.content === null ? 'null' : typeof message.content,
         textLength: typeof message.content === 'string' ? message.content.length : undefined,
@@ -136,10 +167,10 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       actualFileInToolResult: payload.messages?.some(message => message.role === 'tool' && JSON.stringify(message.content).includes(marker)) ||
         payload.input?.some(item => item.type === 'function_call_output' && JSON.stringify(item.output).includes(marker)) || false };
     requests.push(record);
-    if (inspectRequest) await inspectRequest(redact(body));
-    if (requests.length === 1 && captureRequest) await captureRequest(redact(body));
-    if (initialStall && record === requests[0]) {
-      await stallInitialResponse(response, initialStall, record);
+    if (current.inspectRequest) await current.inspectRequest(redact(body), record);
+    if (requests.length === 1 && current.captureRequest) await current.captureRequest(redact(body));
+    if (current.initialStall && record === requests[0]) {
+      await stallInitialResponse(response, current.initialStall, record);
       return;
     }
     const controller = new AbortController(); controllers.add(controller);
@@ -151,8 +182,9 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       }
     };
     response.once('close', cancel);
+    const expectedFailure = current.expectedFailure;
     try {
-      const upstream = await fetch(provider.url + request.url.slice('/v1'.length), { method: 'POST', redirect: 'error',
+      const upstream = await fetch(target.url + request.url.slice('/v1'.length), { method: 'POST', redirect: 'error',
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body, signal: controller.signal });
       record.httpStatus = upstream.status; record.headersMs = Math.round(performance.now() - started);
       record.requestId = redact(upstream.headers.get('x-request-id') ?? '');
@@ -167,7 +199,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
         }
         // Opt-in: show the native app the real (redacted) provider failure so its
         // error UI can be inspected. The probe still fails on this request.
-        if (forwardProviderFailures && !record.errorTruncated) {
+        if (current.forwardProviderFailures && !record.errorTruncated) {
           record.forwardedToNative = true;
           response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'text/plain',
             'x-request-id': record.requestId });
@@ -191,7 +223,7 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
       }
       record.streamCompleted = true; response.end();
     } catch (error) {
-      if (!allowDownstreamCancellation || record.downstreamClosedAt === undefined) throw error;
+      if (!current.allowDownstreamCancellation || record.downstreamClosedAt === undefined) throw error;
       record.cancelled = true;
       record.abortSettledMs = Math.round(performance.now() - record.downstreamClosedAt);
     } finally {
@@ -200,25 +232,35 @@ export async function createLiveAgentRelay({ provider, model, marker, captureReq
     }
   }
   const server = createServer((request, response) => {
-    const work = handle(request, response).catch(error => {
-      failed.resolve(redact(error.message));
+    const current = state;
+    const work = handle(request, response, current).catch(error => {
+      current.failed.resolve(redact(error.message));
       if (!response.headersSent) { response.writeHead(502, { 'content-type': 'application/json' }); response.end(JSON.stringify({ error: { message: 'Live verification request failed; see the sanitized evidence.' } })); }
       else if (!response.writableEnded) response.destroy();
     }).finally(() => pending.delete(work));
     pending.add(work);
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-  return { requests, catalogEfforts: efforts, failure: failed.promise, setKey(value) { key = value; },
+  return { catalogEfforts: efforts,
+    get requests() { return state.requests; },
+    get failure() { return state.failed.promise; },
+    get scenario() { return state; },
+    begin, use(previous) {
+      if (pending.size) throw new Error('A scenario may resume only between completed requests');
+      state = previous;
+    },
+    // Without a model, the key applies to the primary model.
+    setKey(value, id = model) { if (value === undefined) keys.delete(id); else keys.set(id, value); },
     expectUnauthorizedOnNextRequest() { this.expectFailureOnNextRequest(401); },
     expectFailureOnNextRequest(status) {
-      if (expectedFailure !== undefined || initialStall || pending.size)
+      if (state.expectedFailure !== undefined || state.initialStall || pending.size)
         throw new Error('A single provider failure may be armed only between completed requests');
-      expectedFailure = { index: requests.length, status };
+      state.expectedFailure = { index: state.requests.length, status };
     },
     url: `http://127.0.0.1:${server.address().port}/v1`,
     async close() {
       for (const controller of controllers) controller.abort();
       server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
-      await Promise.allSettled([...pending]); key = undefined;
+      await Promise.allSettled([...pending]); keys.clear();
     } };
 }

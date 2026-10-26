@@ -118,6 +118,26 @@ test('relay forwards both inference bodies unchanged and swaps only transport au
   assert.deepEqual(catalog.data, [{ id: model, capabilities: { reasoning_effort: ['high'] } }]);
 });
 
+test('catalog mirrors user-specified levels over discovered ones, or compatibility hints on request', async t => {
+  const upstream = createServer((_request, response) => response.end());
+  await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
+  t.after(async () => { upstream.closeAllConnections(); await new Promise(resolve => upstream.close(resolve)); });
+  const provider = url => ({ url, models: [{ id: 'gpt-6.1-sol', capabilities: { reasoningEffortValues: [{ id: 'high', value: 'high' }] },
+    userCapabilities: { reasoningEffortValues: [{ id: 'low', value: 'low' }, { id: 'medium', value: 'medium' }] } }] });
+  const levels = async options => {
+    const relay = await createLiveAgentRelay({ model: 'gpt-6.1-sol', marker, ...options });
+    t.after(() => relay.close());
+    return [relay.catalogEfforts, (await (await fetch(`${relay.url}/models`, { headers })).json()).data[0].capabilities?.reasoning_effort];
+  };
+  const local = `http://127.0.0.1:${upstream.address().port}/v1`;
+  const low = [{ id: 'low', value: 'low' }, { id: 'medium', value: 'medium' }];
+  assert.deepEqual(await levels({ provider: provider(local) }), [low, ['low', 'medium']]);
+  assert.deepEqual(await levels({ provider: provider('https://codex-easy.ai/v1'), catalog: 'hints' }),
+    [['low', 'medium', 'high', 'xhigh', 'max'], ['low', 'medium', 'high', 'xhigh', 'max']]);
+  assert.deepEqual(await levels({ provider: provider(local), catalog: 'hints' }), [undefined, undefined]);
+  await assert.rejects(createLiveAgentRelay({ model, marker, provider: provider(local), catalog: 'other' }), /saved or hints/);
+});
+
 test('catalog authentication and selected model are checked before contacting a provider', async t => {
   let calls = 0;
   const relay = await fixture(t, (_request, response) => { calls++; response.end(); });

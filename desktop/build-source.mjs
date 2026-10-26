@@ -30,6 +30,7 @@ import { installBrowserAutomationExplanation } from './browser-automation-custom
 import { installImageInputExplanations } from './image-input-customization.mjs';
 import { installImageGenerationHidden } from './image-generation-customization.mjs';
 import { installToolCallErrors } from './agent-tool-call-customization.mjs';
+import { installRequestCompat } from './agent-request-compat-customization.mjs';
 import { installToolRowStatus } from './tool-row-status-customization.mjs';
 import { installRemoteSsh } from './remote-ssh-customization.mjs';
 import { installCompletion } from './completion-customization.mjs';
@@ -173,6 +174,7 @@ await installBrowserAutomationExplanation(root);
 await installImageInputExplanations(root);
 await installImageGenerationHidden(root);
 await installToolCallErrors(root);
+await installRequestCompat(root);
 await installToolRowStatus(root);
 await installRemoteSsh(root);
 await installRetrievalOwnership(root);
