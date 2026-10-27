@@ -1,0 +1,15 @@
+# Debian 13 (trixie) with the runtime libraries Electron needs, Xvfb, D-Bus and gnome-keyring.
+ARG BASE=docker.io/library/debian:trixie
+FROM $BASE
+# extra-ca.crt (optional, git-ignored): a TLS-inspecting proxy's CA for package downloads.
+COPY Containerfile.debian extra-ca.cr[t] /tmp/context/
+# Behind such a proxy (CONNECT only), apt uses the HTTPS mirrors.
+RUN if [ -f /tmp/context/extra-ca.crt ]; then o='-o Acquire::https::CAInfo=/tmp/context/extra-ca.crt'; \
+      sed -i 's|http://|https://|g' /etc/apt/sources.list.d/debian.sources; fi \
+    && apt-get $o update && DEBIAN_FRONTEND=noninteractive apt-get $o install -y --no-install-recommends ca-certificates \
+    && if [ -f /tmp/context/extra-ca.crt ]; then cp /tmp/context/extra-ca.crt /usr/local/share/ca-certificates/ && update-ca-certificates; fi \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      xvfb xauth x11-utils xdotool dbus dbus-x11 gnome-keyring libsecret-1-0 libgtk-3-0t64 libnss3 libasound2t64 \
+      libxss1 libgbm1 libdrm2 libxkbcommon0 libxshmfence1 libatk-bridge2.0-0t64 libcups2t64 git python3 procps \
+      findutils util-linux openssh-client openssh-server gcc g++ make tar zstd xz-utils diffutils hostname strace \
+    && rm -rf /var/lib/apt/lists/*

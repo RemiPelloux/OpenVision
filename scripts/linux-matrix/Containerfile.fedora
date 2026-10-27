@@ -1,0 +1,11 @@
+# Fedora 42 with the runtime libraries Electron needs, Xvfb, D-Bus and gnome-keyring.
+ARG BASE=quay.io/fedora/fedora:42
+FROM $BASE
+# extra-ca.crt (optional, git-ignored): a TLS-inspecting proxy's CA for package downloads.
+COPY Containerfile.fedora extra-ca.cr[t] /tmp/context/
+RUN if [ -f /tmp/context/extra-ca.crt ]; then cp /tmp/context/extra-ca.crt /etc/pki/ca-trust/source/anchors/ && update-ca-trust; fi \
+    && dnf -y install --setopt=install_weak_deps=False xorg-x11-server-Xvfb xorg-x11-xauth xprop xdotool \
+      dbus-daemon dbus-tools gnome-keyring libsecret gtk3 nss alsa-lib libXScrnSaver mesa-libgbm libdrm \
+      libxkbcommon libxshmfence at-spi2-atk cups-libs git python3 procps-ng which findutils util-linux \
+      openssh-clients openssh-server gcc gcc-c++ make tar zstd xz diffutils hostname strace \
+    && dnf clean all

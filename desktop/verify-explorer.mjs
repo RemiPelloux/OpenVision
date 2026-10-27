@@ -3,6 +3,7 @@ import { once } from 'node:events';
 import { mkdtemp, mkdir, readFile, writeFile, readdir, symlink, unlink, rename, lstat, stat, readlink,
   chmod, appendFile, realpath } from 'node:fs/promises';
 import { createReadStream } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { basename, dirname, join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -216,6 +217,7 @@ async function launch(label, { trace } = {}) {
   const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
   let executablePath = layout.executable;
   if (trace) {
+    if (spawnSync('strace', ['-V']).error) throw Error('strace is not installed; the measurement launch traces the host from start');
     // The tracer is the launched program and therefore the ancestor of every
     // traced process (works with yama ptrace_scope=1); nothing is attached by PID.
     executablePath = join(directory, 'traced-openvision.sh');
@@ -313,6 +315,14 @@ async function errorSurface(pattern, timeout = 15000) {
   const dialog = page.locator('.monaco-dialog-box');
   if (await dialog.isVisible()) { await dialog.getByRole('button', { name: /Cancel|Close|OK/ }).first().click(); await dialog.waitFor({ state: 'hidden' }); }
   return text;
+}
+// A context menu that does not fit below the pointer is moved up after it opens (window height and
+// font metrics decide), and a click during that layout is lost. Hovering until the item takes focus
+// proves the menu is placed and handling the pointer.
+async function menuItem(label) {
+  const item = page.locator('.context-view .monaco-menu .action-item').filter({ has: page.locator('.action-label', { hasText: label }) }).first();
+  await until('context menu ready', async () => { await item.hover(); return (await item.getAttribute('class')).includes('focused'); });
+  await item.click();
 }
 async function confirmDialog(button) {
   const dialog = page.locator('.monaco-dialog-box'); await dialog.waitFor();
@@ -418,7 +428,7 @@ async function symlinks() {
   await reveal(join(links, 'anchor.txt'));
   // A click would open the link (error dialog); the context menu selects it without opening.
   await row('cycle-b').click({ button: 'right' });
-  await page.locator('.context-view .monaco-menu .action-label').filter({ hasText: /^Delete( Permanently)?$/ }).first().click();
+  await menuItem(/^Delete( Permanently)?$/);
   await confirmDialog(/Delete/);
   await until('cycle link delete', async () => !await exists(join(links, 'cycle-b')));
   assert.equal(await readlink(join(links, 'cycle-a')), 'cycle-b');

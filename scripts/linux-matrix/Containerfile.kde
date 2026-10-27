@@ -1,0 +1,5 @@
+# Fedora 42 KDE Plasma: KWin with Xwayland and KWallet (ksecretd); no gnome-keyring, as on the KDE edition.
+FROM openvision-matrix:fedora
+RUN dnf -y install --setopt=install_weak_deps=False kwin-wayland xorg-x11-server-Xwayland kf6-kwallet \
+      plasma-workspace mesa-dri-drivers python3-dbusmock \
+    && dnf -y remove gnome-keyring && dnf clean all

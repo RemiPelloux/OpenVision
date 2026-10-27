@@ -1,0 +1,5 @@
+# Fedora 42 Workstation's desktop: GNOME Shell with Xwayland. logind is mocked by python-dbusmock.
+FROM openvision-matrix:fedora
+RUN dnf -y install --setopt=install_weak_deps=False gnome-shell mutter xorg-x11-server-Xwayland \
+      gsettings-desktop-schemas mesa-dri-drivers python3-dbusmock upower accountsservice \
+    && dnf clean all

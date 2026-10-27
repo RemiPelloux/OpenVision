@@ -98,7 +98,19 @@ async function providerSaveWithoutSecretService(name, dialogStyle) {
       : await page.locator('.monaco-dialog-box').filter({ visible: true }).count();
     if (dialogStyle === 'custom') assert.equal(output.promptsBeforeSave, 0, 'Save must raise the first keyring choice');
     await page.locator('dialog.openvision-model-dialog').getByRole('button', { name: 'Save', exact: true }).click();
-    if (dialogStyle === 'native') {
+    if (!weakerChoiceOffered()) {
+      // GNOME and Plasma keep their own keyring even when it is unreachable, so there is no
+      // weaker-storage choice to raise: Save completes for this session and says how to keep the key.
+      await panel.getByText(/^Saved for this session only: no Secret Service is available/).waitFor({ timeout: 20000 }).catch(async error => {
+        await page.screenshot({ path: join(directory, `${name}-failure.png`) }).catch(() => {});
+        output.failureText = (await page.locator('body').innerText().catch(() => '')).slice(0, 1500);
+        throw error;
+      });
+      output.prompts = dialogStyle === 'native' ? await app.evaluate(() => globalThis.keyringPrompts)
+        : await page.locator('.monaco-dialog-box').filter({ visible: true }).allInnerTexts();
+      assert.deepEqual(output.prompts, [], 'No weaker-storage choice is raised for a desktop keyring');
+      output.sessionOnly = true;
+    } else if (dialogStyle === 'native') {
       for (let attempt = 0; attempt < 200 && !await app.evaluate(() => globalThis.keyringPrompts.length); attempt++)
         await page.waitForTimeout(100);
       output.prompts = await app.evaluate(() => globalThis.keyringPrompts);
@@ -119,7 +131,7 @@ async function providerSaveWithoutSecretService(name, dialogStyle) {
       await page.screenshot({ path: join(directory, `${name}-keyring-prompt.png`) });
       await prompt.getByRole('button', { name: /weaker encryption/i }).click();
     }
-    await panel.getByText('Saved', { exact: true }).waitFor({ timeout: 20000 });
+    if (!output.sessionOnly) await panel.getByText('Saved', { exact: true }).waitFor({ timeout: 20000 });
     await panel.locator('option', { hasText: 'No Keyring Provider' }).first().waitFor({ state: 'attached' });
     output.saved = true;
   } finally { await closeApp(app, child, name); }
@@ -136,11 +148,24 @@ async function providerSaveWithoutSecretService(name, dialogStyle) {
   return output;
 }
 const prefix = value => Buffer.from(value, 'base64').subarray(0, 3).toString();
+const weakerChoiceOffered = () => !kdeSession && !gnomeFamily;
+// The session's desktop decides what Chromium selects on its own: KWallet on KDE Plasma, libsecret on
+// the GNOME family, basic_text elsewhere (Xvfb, Hyprland, Sway ...), where OpenVision selects libsecret.
+const desktops = `${process.env.XDG_CURRENT_DESKTOP ?? ''}:${process.env.DESKTOP_SESSION ?? ''}`.toLowerCase().split(':');
+const kdeSession = desktops.some(name => name === 'kde' || name.startsWith('plasma'));
+const gnomeFamily = !kdeSession && desktops.some(name => ['gnome', 'unity', 'pantheon', 'cinnamon', 'xfce', 'budgie-desktop', 'ubuntu'].includes(name));
+const sessionBackend = kdeSession ? /^kwallet/ : gnomeFamily ? /^gnome_libsecret$/ : /^basic_text$/;
+result.session = { kde: kdeSession, gnomeFamily };
 
 try {
   const first = await run('default', { act: { encrypt: 'openvision-linux-secret' } });
-  assert.equal(first.switch, 'gnome-libsecret', 'Unrecognized desktops must select the Secret Service');
-  assert.equal(first.backend, 'gnome_libsecret');
+  if (kdeSession) {
+    assert.equal(first.switch, null, 'KDE keeps Chromium\'s own KWallet selection');
+    assert.match(first.backend, /^kwallet/); assert.equal(first.available, true, 'KWallet must hold the key');
+  } else {
+    assert.equal(first.switch, 'gnome-libsecret', 'Without KWallet, a reachable Secret Service must be selected');
+    assert.equal(first.backend, 'gnome_libsecret');
+  }
   assert.equal(prefix(first.cipher), 'v11', 'Secrets must use the keyring-held key, not the basic_text key');
   result.checks.defaultUsesSecretService = first;
 
@@ -152,19 +177,22 @@ try {
   assert.equal(legacy.backend, 'basic_text', 'An explicit password store must be respected');
   assert.equal(prefix(legacy.cipher), 'v10');
   const migrated = await run('basic', { act: { decrypt: legacy.cipher } });
-  assert.equal(migrated.backend, 'gnome_libsecret');
+  assert.equal(migrated.backend, first.backend);
   assert.equal(migrated.plain, 'saved-before-keyring-fix', 'Secrets saved with basic_text must remain readable');
   result.checks.explicitChoiceAndMigration = { legacy: legacy.backend, migrated: migrated.backend };
 
-  const kde = await run('kde', { env: { XDG_CURRENT_DESKTOP: 'KDE', DESKTOP_SESSION: 'plasma' }, act: {} });
-  assert.equal(kde.switch, null, 'KDE keeps Chromium\'s own KWallet selection');
-  result.checks.kdeUsesChromiumSelection = kde;
+  // Outside Plasma, the KDE variables alone must still leave the selection to Chromium.
+  if (!kdeSession) {
+    const kde = await run('kde', { env: { XDG_CURRENT_DESKTOP: 'KDE', DESKTOP_SESSION: 'plasma' }, act: {} });
+    assert.equal(kde.switch, null, 'KDE keeps Chromium\'s own KWallet selection');
+    result.checks.kdeUsesChromiumSelection = kde;
+  }
 
   // Without a Secret Service, keep Chromium's selection. Electron then reports
   // basic_text as unavailable, and the native prompt asks before weaker storage.
   const offline = await run('no-secret-service', { env: { DBUS_SESSION_BUS_ADDRESS: 'unix:path=/nonexistent/openvision-bus' }, act: {} });
   assert.equal(offline.switch, null, 'Without a Secret Service, libsecret must not be forced');
-  assert.equal(offline.backend, 'basic_text');
+  assert.match(offline.backend, sessionBackend, 'Without a Secret Service, the desktop\'s own selection stays');
   assert.equal(offline.available, false, 'Weaker storage requires the user\'s explicit choice');
   result.checks.missingSecretServiceFallsBack = offline;
 
@@ -172,9 +200,14 @@ try {
     const name = `provider-save-no-secret-service-${style}`;
     const providerSave = await providerSaveWithoutSecretService(name, style);
     assert.equal(providerSave.saved, true, 'Add Provider Save must complete after the keyring choice');
-    assert.equal(providerSave.passwordStore, 'basic', 'Choosing weaker encryption records the profile-scoped password store');
-    assert.equal(providerSave.afterRestart.backend, 'basic_text');
-    assert.equal(providerSave.afterRestart.available, true, 'The chosen weaker storage must persist across restart');
+    if (weakerChoiceOffered()) {
+      assert.equal(providerSave.passwordStore, 'basic', 'Choosing weaker encryption records the profile-scoped password store');
+      assert.equal(providerSave.afterRestart.backend, 'basic_text');
+      assert.equal(providerSave.afterRestart.available, true, 'The chosen weaker storage must persist across restart');
+    } else {
+      assert.equal(providerSave.passwordStore, null, 'No password store is written without a choice');
+      assert.match(providerSave.afterRestart.backend, sessionBackend);
+    }
     result.checks[name] = providerSave;
   }
 

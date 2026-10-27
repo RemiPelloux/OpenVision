@@ -20,3 +20,4 @@ tooling/node_modules/
 *.pem
 *.pfx
 *.p12
+scripts/linux-matrix/extra-ca.crt
