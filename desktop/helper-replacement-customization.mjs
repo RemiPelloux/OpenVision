@@ -60,8 +60,13 @@ async function original(root, name, relative) {
   return value;
 }
 
-export async function installHelperReplacements(root, env = process.env) {
+export async function installHelperReplacements(root, env = process.env, platform = process.platform) {
   const modes = helperModes(env), applied = {};
+  if (platform !== 'linux') {
+    if (Object.values(modes).some(mode => mode !== 'original'))
+      throw Error(`Helper replacement options are supported only on Linux, not ${platform}`);
+    return applied;
+  }
   for (const [name, { file }] of Object.entries(helperOptions)) {
     const mode = modes[name], path = join(root, file);
     const source = await original(root, name, file), current = await read(path);

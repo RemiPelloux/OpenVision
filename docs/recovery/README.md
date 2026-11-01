@@ -30,6 +30,7 @@ Shipped-artifact observations, recovered contracts, provenance and unknowns. Sta
 - [Autocomplete quality harness and live editor acceptance](rea-autocomplete-quality.md)
 - [OpenVision Quick Edit](rea-inline-edit.md)
 - [Native language workflow evidence](rea-language-workflows.md)
+- [Windows runtime upgrade and bounded rename validation (OV-901.W0A)](rea-windows-rename-upgrade.md)
 - [Large clipboard pastes](rea-large-paste.md)
 - [Local chat titles](rea-local-chat-titles.md)
 - [REA follow-up: local user rules and subagent reasoning](rea-local-rules.md)

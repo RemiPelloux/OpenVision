@@ -43,14 +43,28 @@ updates the ledger.
 
 ## Track A — Windows x64 (OV-901)
 
+### Completed Child Story OV-901.W0A
+
+25 October: as a Windows user upgrading the existing 3.21.13 recovered runtime,
+I can rebuild safely and rename across files with bounded disk validation.
+[Acceptance and evidence](../recovery/rea-windows-rename-upgrade.md) record
+legacy guard migration/backups, non-Linux helper preservation, cancellation,
+eight-check concurrency, two native six-scenario rename passes and measurements.
+This completes one child story, not W0 or the whole Windows platform story.
+The current editable runtime now passes the desktop build, build-integrity
+checks, Windows packaging and `verify:project:lifecycle`; the critical run has
+16/18 applicable entries. Explorer is Linux-only and the extension native-addon
+check is blocked by missing Node headers. W1 and W3-W6 stay open; **36/44** is
+unchanged. No new live provider or account work was performed.
+
 Run in order. A phase that fails opens a defect issue with captured diagnostics and
 blocks only the clauses it covers.
 
 | Phase | Work | Exit |
 | --- | --- | --- |
-| W0 Build | `npm ci` (root and `tooling/`), `npm run prepare:desktop`, `npm run build:desktop` twice (the second run must restore from `build/cache`; checks the zstd cache and atomic renames on NTFS), `npm run package:windows`, `npm run test:desktop` | Clean build and package; the cache restores; unit suites green |
+| W0 Build | `npm run build:desktop`, `npm run check:desktop`, `npm run test:build-integrity`, `npm run package:windows`, `npm run verify:project:lifecycle`; repeat cache/clean-build evidence still required | **Current run:** build, checks, package and project lifecycle pass; repeat cache restore and full `test:desktop` remain |
 | W1 Crash triage | Diagnose the intermittent host exit 134 (`AYXW1r`) and the `UtilityProcessWorker` `0xC0000005` with native stderr and a local crash dump | Root cause fixed, or a defect with dump and stack |
-| W2 Critical suite | `npm run verify:critical` with every entry that lists `win32-x64` (18 of 20: welcome, project-home, project, explorer, development, git, agent, completion, extensions, review-storage, model-discovery, model-discovery-host, mcp-session, local-metadata, local-startup, onboarding, account-switch, account-picker) | 18/18 twice, first time, no retries counted |
+| W2 Critical suite | `npm run verify:critical` with the Windows entries | **Current run:** 16/18 applicable entries pass; Explorer is Linux-only and extension lifecycle needs Node headers. Re-run after prerequisites and close the remaining applicable gates |
 | W3 October reruns | The Windows step-3 list in the [test plan](platform-and-live-test-plan.md#ov-901--windows-x64), plus the verifiers added since: `verify:agent-tool-calls`, `verify:agent-timeout`, `verify:agent-history`, `verify:image-input`, `verify:browser-automation`, `verify:modes-probe`, `verify:customization-lifecycle` (`--precedence`, `--invalid`, `--watchers`), `verify:mcp-auth` (and `--secrets` with DPAPI), `verify:retrieval` (`-incremental`, `-recovery`), `verify:corrupt-state`, `verify:crash-recovery`, `verify:authority`, `verify:import-faults`, `verify:save-all`, `verify:paste`, `verify:project-clone`, `verify:project-themes`, `verify:rules-isolation`, `verify:statsig-cache`, `verify:provider-identity`, `verify:catalog-retention` | Each passes first time, or has a defect |
 | W4 Ports | Linux-only verifiers that need a Windows version: `verify:explorer` probes, `verify:shutdown-cycles`, `verify:global-paths` (USERPROFILE, APPDATA, LOCALAPPDATA), `verify:mcp-config-ownership` (no `/proc`), `verify:data-destinations` and `verify:telemetry:extended` (owned proxy plus ETW or `netsh trace`), `verify:idle-memory` (private working set, ConPTY release), `verify:startup-traversal`, `verify:profile-io-faults` (VHD full and read-only volume), `verify:helper-contracts` and `verify:native-inventory` / `verify:native-loaded` (PE images) | Port committed with unit tests; Windows run passes |
 | W5 Install and update | `Install-OpenVision.ps1`, `npm run test:installer`, OpenVision identity in dialogs, launchers and PE metadata; Windows upgrade, rollback and uninstall cells (OV-904) | Install, upgrade, rollback and uninstall keep the profile |
@@ -112,6 +126,15 @@ with packaging for each claimed architecture.
 - ~~Make the retrieval unit test that failed once under full CPU load deterministic.~~ Done 24 October.
 - ~~[#7](https://github.com/RemiPelloux/OpenVision/issues/7) Quick Edit Ctrl+A.~~ Fixed 24 October.
 - ~~Close the issues already fixed on `main` (#6, #8, #9, #10).~~ Closed 24 October.
+
+### Post-release product expansion
+
+OV-NB1 is now implemented locally outside the current 44-story score. The
+controller, persistent local Python kernel, rich text/result/error outputs,
+interrupt/restart/shutdown commands, bounded output and Windows package wiring
+are verified in [the Jupyter evidence report](../recovery/rea-jupyter-notebooks.md).
+The next notebook gates are cell-document round-trip/atomic persistence, full
+MIME rendering and Windows/Linux/macOS performance measurements.
 
 ## Sprint Definition of Done
 

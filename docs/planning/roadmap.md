@@ -3,12 +3,15 @@
 [Progress, percentages and gate-based ETA](../progress.md) ·
 [Recovery archive](../../curs_source/README.md) · [Recovery limits](../recovery/recovery-status.md)
 
-Updated 24 October 2026; latest portable release **0.2.0-preview.7** (preview.8 is the next sprint's release candidate), with Linux x64 source support. The verified-coverage target is **80%**.
+Updated 25 October 2026; latest portable release **0.2.0-preview.7** (preview.8 is the next sprint's release candidate), with Linux x64 source support. The verified-coverage target is **80%**.
 Baseline v3 (18 October re-scope) moves platform and live clauses into OV-901,
 OV-902, OV-905 and OV-205, so the denominator is **44 acceptance stories** and **36
 must be fully Verified**. Current ledger: **36 Verified, 4 Partial, 4 Planned**,
 or **81.82%**. The 80 % target is reached; no additional story is needed for the
 numeric target. See [status page](eta-and-definition-of-done.md#re-scope-baseline-v3).
+Latest scoped Windows work: [OV-901.W0A](../recovery/rea-windows-rename-upgrade.md)
+completes legacy-runtime rebuild corrections and bounded rename validation;
+OV-901's wider platform matrix stays Partial, with no percentage or point change.
 This percentage measures complete acceptance stories, not how much of the app
 runs, source recovery, test count, implementation effort or original parity.
 
@@ -85,6 +88,9 @@ failed-response history at both Agent producers. DeepSeek authentication retry
 now passes on the rebuilt app after two pre-fix HTTP 400 failures. This advances
 OV-102, a dependency of OV-103. Native header/body timeout recovery now passes;
 remaining history/error cases and editing failures retain priority and points.
+The 25 October watchdog follow-up detaches header/body deadline timers from the
+idle Node event loop without changing production deadlines or cancellation
+semantics; OV-102 remains Partial until its remaining native gates pass.
 
 Agent reliability remains first: the [review-recovery follow-up](../recovery/rea-agent-review-recovery.md)
 retains recovery data on failed restoration and adds repeated-edit/pending-review
@@ -223,6 +229,55 @@ and detailed evidence links.
 | ---: | --- | --- | --- | ---: |
 | 35 | OV-703 · SSH, WSL and containers | Local/remote host ownership, filesystem, secrets and provider routing | Declare host matrix; connect/reconnect, terminals/extensions, cancellation and cleanup | 13 |
 | 36 | OV-704 · Image/browser/computer modes | Inventory intended modes and required helper/provider contracts | Implement accepted modes with permissions, result handling and cancellation; explain unavailable capabilities | 13 |
+
+### Post-baseline expansion — Jupyter Notebook support (OV-NB1, Implemented locally)
+
+Jupyter support is a new product expansion outside baseline v3. It is deliberately
+not added to the current 44-story acceptance denominator, so the verified score
+remains **36/44 (81.82%)** until the existing release gates are closed.
+
+**User story:** As a local developer, I can open and edit `.ipynb` files, run
+selected cells against a local Jupyter kernel, inspect rich outputs, interrupt or
+restart execution, and reopen the notebook with its saved state without a cloud
+account or telemetry.
+
+| Area | REA and implementation work | Acceptance evidence |
+| --- | --- | --- |
+| Notebook model | Recover and document the notebook/editor owner, cell identity, metadata and output contracts; preserve unknown fields and source ordering | Round-trip a notebook byte-safely where fields are unchanged; malformed notebooks report a useful error and remain recoverable |
+| Kernel lifecycle | Implement local kernelspec discovery, explicit start/stop, interrupt, restart and cancellation through the existing owned-process supervisor | Fixture kernel and an installed local Python/Jupyter kernel pass start, execute, interrupt, restart and shutdown without orphan processes |
+| Execution and outputs | Stream stdout/stderr, errors and execution state; render text, JSON, images and other declared MIME outputs with bounded buffering | Cell execution, failure, clear-output, rerun and rich-output cases pass; output limits prevent unbounded retained data |
+| Editing and persistence | Incrementally update cells, preserve undo/redo and save atomically with recovery after a failed write | Multi-cell edit, reorder, delete, save/reopen and interrupted-write checks pass; no whole-project rescan per cell |
+| Security and privacy | Keep kernels local and user-approved; make working directory and environment visible; do not add hosted execution or telemetry | Denied execution, path/permission errors, offline operation and network-destination checks pass |
+| Performance and platforms | Measure startup, execution latency, large-notebook heap, idle kernel memory and disposal on Windows/Linux/macOS | Fixed notebook workload meets declared budgets; idle kernels release resources and the supported platform matrix is recorded |
+
+**Dependencies:** OV-402 language boundaries, OV-403 process ownership,
+OV-1003 idle-resource budgets and OV-1004 release safety. Provisional size is
+**13 complexity points** after the current release gates.
+The controller, bridge, real local-kernel checks and Windows portable packaging
+are now implemented. See the [Jupyter evidence report](../recovery/rea-jupyter-notebooks.md).
+Notebook editing round-trip, richer MIME rendering, atomic persistence and the
+cross-platform performance matrix remain follow-up gates; OV-NB1 stays outside
+the 44-story score.
+
+### Post-baseline expansion — optional Modelly plugin (OV-MDL1, Implemented locally)
+
+**User story:** As a local OpenVision developer, I can add Modelly to the Python
+environment used by my Jupyter notebooks when I choose to, inspect its status,
+open a starter notebook and remove it without changing unrelated packages or
+starting a Python sidecar for normal Agent requests.
+
+| Area | Delivered implementation | Acceptance evidence |
+| --- | --- | --- |
+| Pinned source and licensing | Official Modelly commit `627459ae349045ccb525248626d16d030689714c`, package `modelly-abm` 1.3.2, Python 3.12+, Apache-2.0/NOTICE metadata | Manifest and attribution are reviewed in [the integration contract](../guides/modelly-jupyter-search-integration.md#optional-plugin-contract-implemented) |
+| Download safety | GitHub archive redirects are allowlisted, size-bounded and verified against SHA-256 before pip runs | Real 3,720,338-byte archive download matched the pinned digest; tampered archive test passes |
+| Install and remove | User-selected Python executable; idempotent install detection; declared dependencies through pip; removal targets only `modelly-abm` and its pinned cache | Unsupported Python, repeated install, failed pip, package-preserving uninstall and cache cleanup tests pass |
+| OpenVision UX | Lazy extension commands: Install support, Check Python environment, Remove support and Open starter notebook | Extension packaging test and editable desktop build pass |
+| Resource ownership | No automatic installation, no normal Agent routing through Modelly, bounded download and pip output | 12/12 focused Jupyter/Modelly checks pass; desktop syntax and docs checks pass |
+
+OV-MDL1 is outside the 44-story acceptance denominator. It does not claim that
+Modelly replaces OpenVision's local SQLite retrieval or Jupyter kernel owner.
+Those existing owners remain in place until a measured adapter proves equal
+correctness, provenance and lower resource cost.
 
 The next executable slice is **OV-102 native timeout recovery**, because it
 supports the highest-priority OV-103 Agent workflow. Then finish the outstanding

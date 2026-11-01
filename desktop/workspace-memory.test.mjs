@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, lstat, readdir, rm, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { parseMemoryProposal, memoryRuleText, captureMemoryWorkspace, saveApprovedMemory } from './workspace-memory.js';
 import { reviewLegacyMemory, legacyMemories } from './legacy-memory.js';
 
@@ -104,7 +104,7 @@ test('a failed memory write leaves no partial file and a torn earlier file of th
   f.context.files.createFile = create;
   const saved = await saveApprovedMemory(text, f.folder, f.context);
   assert.equal(await readFile(saved.fsPath, 'utf8'), memoryRuleText(proposal));
-  assert.deepEqual(await readdir(join(f.path, '.openvision/rules')), [saved.fsPath.split('/').pop()]);
+  assert.deepEqual(await readdir(join(f.path, '.openvision/rules')), [basename(saved.fsPath)]);
 
   // Files left by the earlier in-place writer: empty and partial prefixes are repaired.
   for (const torn of ['', memoryRuleText(proposal).slice(0, 20)]) {

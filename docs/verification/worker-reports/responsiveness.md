@@ -295,3 +295,89 @@ marker).**
 
 The failure reproduced in 1 of 2 runs before the fix and 0 of 4 after it. Four
 passes make a recurrence at that rate unlikely, but do not rule it out.
+
+## Follow-up, 20–23 October 2026: duplicate reply under load is a local-retry defect
+
+The coordinator's rerun of the merged v2 code failed once under heavy CPU load
+(`PYDvyh`: two chat requests, "A chat reply finished after freeing space survives
+restart") and passed once (`TNZHVG`). This was investigated on a fresh branch
+from `origin/main` `c6d747c3`, with Node 24.18.0, a non-root user, `xvfb-run`,
+`dbus-run-session` and `XDG_RUNTIME_DIR`. Load came from
+`stress-ng --cpu $(nproc)` for the length of each run (package `stress-ng`
+installed for this).
+
+**Diagnostic method.** Temporary instrumentation, not committed, was added to
+the built bundles. Every probe was removed and the original built files restored
+afterwards.
+
+- Extension host: timestamped markers written to `/tmp`, outside the full
+  volume, at these points:
+  - when each step's model stream is created;
+  - around `sendUpdate(textDelta)`, the token update and `recordText`;
+  - around every checkpoint;
+  - at each step's failure;
+  - at each retry, with its action and whether a checkpoint existed.
+- Renderer: a record in `globalThis` whenever the chat's retry reset
+  (`replayCurrentAction`) runs, read by a temporary copy of the verifier.
+
+**Observed** (each run under load; logs in `logs/diag-*.log`, git-ignored):
+
+| Run | Build | Result | What the markers show |
+| --- | --- | --- | --- |
+| `GbgzYv` | v2 coalescing | Fail (chat requests 1 / 2) | Reply delivered at +41 ms, step failed `SQLITE_FULL` at +127 ms, retry streamed it again |
+| `5bteRb` | **coalescing removed** (control) | **Fail** (1 / 2) | Same: delivered at +43 ms, failed at +135 ms |
+| `pin-1` | control | Fail | Text delivered, token sent and text recorded, all succeeded; a later step of the same attempt failed |
+| `G3JSsU` | control | Fail | Failed attempt delivered and recorded the reply, then failed at +38 ms with no checkpoint. Retries 1–4 were all `userMessageAction` replays (`checkpoint=false`) |
+| `pyLYkC` | control, renderer probe | Pass | Failed attempts delivered nothing. The renderer reset `replayCurrentAction` ran **0 times** across 4 retries |
+
+**Cause.** This is recovered behaviour, not the coalescing. The control build
+with no coalescing fails the same way. For local Agent turns, the turn retry loop
+runs in the extension host (`[local_agent_retries]`).
+
+- On a replay it calls `runOptions.onRetryStarting`. The renderer's
+  implementation of that runs `replayCurrentAction`, which deletes every bubble
+  after the last human message (`deleteComposerBubbles`).
+- But the local run options carry no `onRetryStarting`. The bundle only calls
+  it, at line 135255; nothing supplies it, and the renderer reset never ran
+  (`pyLYkC`).
+- So when an attempt has already shown its reply and then fails on storage, the
+  replay appends the reply again into the same in-flight bubble.
+- Whether the failed attempt shows anything is a race. The storage failure
+  usually lands before the request is sent (0 requests), and CPU load widens
+  the window. That is why the failure appears intermittent (v1: 1 of 2; v2
+  unloaded: 0 of 4; loaded: 4 of 5 series failed in their first run).
+
+**Not fixed here.** A correct fix belongs to the local Agent retry owner
+(OV-103 / profile I/O), not to the stream-delivery customization. It needs an
+owner decision between:
+
+- **A (recommended).** Give the local retry loop an `onRetryStarting` that
+  reaches the renderer's `replayCurrentAction`, the same reset the hosted path
+  uses. This needs an extension-host → renderer route for the retry
+  notification.
+- **B.** Do not auto-replay an attempt that already delivered assistant text;
+  end the turn with Try again. This avoids the duplicate but loses the automatic
+  recovery that `verify:profile-io-faults` expects.
+
+Changing the coalescing would not help. The v2 helper is kept: it is not
+involved, and the last-chunk measurements above depend on it.
+
+**Requested runs not done.** These need the fix above:
+
+- `verify:profile-io-faults` 5/5 under load;
+- 2/2 without load;
+- the stream smoke and `verify:agent` on the fixed build.
+
+Without load on the v2 build, 4/4 passed earlier (`OfRARQ`, `1FKdQC`, `dGnmPd`,
+`MMD8pS`).
+
+**Deterministic reproduction recipe.** Run `stress-ng --cpu $(nproc)` alongside
+`npm run verify:profile-io-faults` (non-root, `xvfb-run` and
+`dbus-run-session`). Four of five loaded series failed in their first run here;
+the fifth, `pyLYkC`, passed.
+
+An injected delay between the persistence failure and the retry would not make
+it deterministic: what matters is whether the failed attempt delivers text
+*before* its storage write fails. A fully deterministic variant needs a fault
+point that fails `recordText` or the step-completion write after the first
+delivered text. That is a verifier change for the OV-103 owner.

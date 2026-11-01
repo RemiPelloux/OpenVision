@@ -18,3 +18,13 @@ Editable application JavaScript is included. Native hosts, addons and WASM remai
 compiled implementations; this release does not claim their original source or
 an independent source rebuild. See the [installation guide](docs/guides/native-runtime.md)
 and [Rust roadmap](docs/planning/rust/rust-roadmap.md).
+
+## Optional Modelly plugin
+
+OpenVision can download the pinned `modelly-abm` source archive from the official
+[Modelly repository](https://github.com/RemiPelloux/Modelly) after an explicit
+user action. The plugin records commit `627459ae349045ccb525248626d16d030689714c`,
+Apache-2.0 licensing and the upstream `NOTICE` requirement, and verifies the
+archive SHA-256 before installation. Modelly is not bundled in the desktop
+runtime; when installed, its own license, copyright and dependency notices
+remain applicable in the selected Python environment.

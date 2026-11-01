@@ -84,6 +84,22 @@ test('production policy bounds header wait and read inactivity, not total infere
   assert.ok(patched.includes('openvisionProviderErrors.fetchProviderWithDeadlines(i, e,'));
 });
 
+test('deadline watchdogs are detached from the Node event loop', async () => {
+  const originalSetTimeout = globalThis.setTimeout;
+  let unrefCalls = 0;
+  globalThis.setTimeout = (...args) => {
+    const timer = originalSetTimeout(...args);
+    const unref = timer.unref?.bind(timer);
+    timer.unref = () => { unrefCalls++; return unref?.(); };
+    return timer;
+  };
+  try {
+    const response = await fetchProviderWithDeadlines(async () => new Response('ok'), 'https://provider.invalid', {}, limits);
+    await response.text();
+  } finally { globalThis.setTimeout = originalSetTimeout; }
+  assert.ok(unrefCalls >= 2, `expected header and body watchdogs to be unref'd, saw ${unrefCalls}`);
+});
+
 test('native fetch transport timeout is reproduced and the selected dispatcher delegates deadline ownership', { timeout: 10000 }, async () => {
   const agent = new Agent(), observed = [];
   // Compress only positive transport timers; retain their real HTTP/parser path.

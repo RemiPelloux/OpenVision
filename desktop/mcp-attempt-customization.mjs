@@ -7,12 +7,31 @@ import { closeMcpAttempt, retryMcpCleanup } from './mcp-attempt-runtime.mjs';
 import { ownMcpLifecycleCleanup } from './mcp-lifecycle-cleanup-customization.mjs';
 
 const marker = '/* OpenVision MCP transport close ownership v4 */';
+function classContaining(node, index) {
+  if (!node || typeof node !== 'object' || index < node.start || index >= node.end) return undefined;
+  if (['ClassExpression', 'ClassDeclaration'].includes(node.type)) return node;
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value)) for (const child of value) {
+      const found = classContaining(child, index);
+      if (found) return found;
+    } else {
+      const found = classContaining(value, index);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
 export function mcpAttemptOwner(text) {
-  const anchor = 'this.closePromises = new WeakMap()';
-  const index = text.indexOf(anchor);
-  if (index < 0 || text.indexOf(anchor, index + anchor.length) !== -1) throw new Error('MCP attempt owner missing or ambiguous');
-  const node = parseExpressionAt(text, text.lastIndexOf('class ', index), { ecmaVersion: 'latest' });
-  if (node.type !== 'ClassExpression' || node.end <= index) throw new Error('MCP attempt class changed');
+  // Recovery may retain the readable form or a minified production bundle.
+  // Match both spellings, then let the parser own class and method boundaries.
+  const matches = [...text.matchAll(/this\.closePromises\s*=\s*new WeakMap(?:\(\))?/g)];
+  if (matches.length !== 1) throw new Error('MCP attempt owner missing or ambiguous');
+  const index = matches[0].index;
+  const parsed = parseExpressionAt(text, text.lastIndexOf('class', index), { ecmaVersion: 'latest' });
+  const node = classContaining(parsed, index);
+  if (!node || !['ClassExpression', 'ClassDeclaration'].includes(node.type) || node.end <= index)
+    throw new Error('MCP attempt class changed');
   for (const name of ['setClient', 'requestClose', 'commit', 'closeCurrent'])
     if (!node.body.body.some(method => method.key?.name === name)) throw new Error(`MCP attempt contract missing: ${name}`);
   return node;

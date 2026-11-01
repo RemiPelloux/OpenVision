@@ -135,3 +135,12 @@ do not manufacture an upstream provider timeout or verify every proxy/TLS path.
 Full-duration header/body checks on this transport path now pass. OV-102/204 remain
 Partial until their remaining interruption, history, certificate/input/error
 and malformed-stream gates pass. The 42-story denominator is unchanged.
+
+## 25 October follow-up: watchdog resource ownership
+
+The header and body inactivity watchdogs now call `unref()` when the Node
+runtime provides it. Their deadlines and cancellation reasons are unchanged;
+the timers no longer keep an otherwise idle extension-host process alive after
+the request has released its socket and stream. The focused transport suite
+verifies both watchdogs are detached while retaining the existing stalled,
+progressing, cancellation and SSE-limit cases.
