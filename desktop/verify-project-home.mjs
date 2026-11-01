@@ -33,7 +33,7 @@ async function launch(args) {
     args: ['--user-data-dir', profile, '--extensions-dir', join(directory, 'extensions'), '--new-window',
       '--disable-updates', '--skip-release-notes', ...args] });
   page = await app.firstWindow(); page.setDefaultTimeout(20000);
-  page.on('pageerror', error => result.errors.push(error.message));
+  page.on('pageerror', error => { result.errors.push(error.message); (result.errorStacks ??= []).push(error.stack); });
   await page.waitForFunction(() => !!window.openvisionProjectHome, { timeout: 60000 });
   return started;
 }
@@ -204,11 +204,11 @@ try {
       args: ['--user-data-dir', glassProfile, '--extensions-dir', join(directory, `${label}-extensions`), '--new-window',
         '--disable-updates', '--skip-release-notes', ...args] });
     page = await app.firstWindow(); page.setDefaultTimeout(20000);
-    page.on('pageerror', error => result.errors.push(error.message));
+    page.on('pageerror', error => { result.errors.push(error.message); (result.errorStacks ??= []).push(error.stack); });
     const opened = app.waitForEvent('window', { timeout: 30000 });
     await screen().getByRole('button', { name: 'Enter workspace', exact: true }).click({ timeout: 60000 });
     const editor = await opened; editor.setDefaultTimeout(20000);
-    editor.on('pageerror', error => result.errors.push(error.message));
+    editor.on('pageerror', error => { result.errors.push(error.message); (result.errorStacks ??= []).push(error.stack); });
     await editor.locator('.monaco-workbench').waitFor({ state: 'attached', timeout: 60000 });
     const check = { windows: app.windows().length };
     if (label === 'glassEmpty') {

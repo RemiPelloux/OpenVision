@@ -94,6 +94,9 @@ async function openEdit() {
   await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
   await page.getByTestId('model-picker-menu').filter({ visible: true })
     .locator('[data-model-picker-item-name]').filter({ hasText: 'fixture-review' }).click();
+  // The picker keeps keyboard handling until it has closed; a chord pressed
+  // before that is lost (seen in the KDE cell).
+  await page.getByTestId('model-picker-menu').filter({ visible: true }).waitFor({ state: 'detached' });
   result.modelSelection = await page.evaluate(() => {
     const { ai, reactive } = globalThis.__openvisionReviewModelBridge;
     return { global: ai.modelConfigService.getModelConfig('composer'),

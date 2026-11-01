@@ -76,6 +76,8 @@ async function configure() {
   await page.locator('.vscode-model-picker__trigger-markdown').filter({ visible: true }).first().click();
   await page.getByTestId('model-picker-menu').filter({ visible: true })
     .locator('[data-model-picker-item-name]').filter({ hasText: 'fixture-editor' }).click();
+  // A chord pressed before the picker has closed is lost (verify-review-storage.mjs).
+  await page.getByTestId('model-picker-menu').filter({ visible: true }).waitFor({ state: 'detached' });
 }
 
 async function submit(instruction) {

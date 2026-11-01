@@ -624,10 +624,20 @@ async function parseTrace(path, windows, tasks) {
   const relativePath = item => item.replace(`${directory}/`, '');
   const probe = item => /^[^/]+\/\.(vscode|claude|openvision|cursor|git)(\/|$)/.test(relativePath(item));
   for (const name of Object.keys(windows)) out[name] = { projectSyscalls: 0, distinctProjectPaths: new Set(), projectDirectoryListings: 0,
-    inotifyAddWatch: 0, probeSyscalls: 0, probePaths: new Set(), allSyscalls: 0, byCall: {}, byRole: {}, samples: [] };
+    inotifyAddWatch: 0, inotifyAddWatchFailed: 0, probeSyscalls: 0, probePaths: new Set(), allSyscalls: 0, byCall: {}, byRole: {}, samples: [] };
   let total = 0;
-  const startup = { fixtureSyscalls: 0, fixtureDirectoryListings: 0, inotifyAddWatch: 0, byRole: {}, listingsByRole: {} };
+  const startup = { fixtureSyscalls: 0, fixtureDirectoryListings: 0, inotifyAddWatch: 0, inotifyAddWatchFailed: 0, byRole: {}, listingsByRole: {} };
   const firstWindow = Math.min(...Object.values(windows).map(item => item.start));
+  // Budgets count watches added. A call that fails (GLib's keyfile settings
+  // backend retries a missing ~/.config/glib-2.0/settings every 4 s where dconf
+  // is absent) adds none and is reported apart; an interrupted call is counted
+  // at its start once its resumed line gives the result.
+  const pendingWatches = new Map();
+  const countWatch = (at, failed) => {
+    const key = failed ? 'inotifyAddWatchFailed' : 'inotifyAddWatch';
+    if (at < firstWindow) { startup[key]++; return; }
+    for (const [name, span] of Object.entries(windows)) if (at >= span.start && at <= span.end) out[name][key]++;
+  };
   // Short-lived children (for example file search) exit before /proc sampling:
   // label them from traced clone/execve lines, inheriting the parent's role.
   const parents = new Map(), executables = new Map();
@@ -638,23 +648,26 @@ async function parseTrace(path, windows, tasks) {
     total++;
     const created = /^(clone3?|v?fork)$/.test(match[3]) && line.match(/= (\d+)(?:<[^>]*>)?$/);
     if (created && Number(created[1]) > 0) parents.set(Number(created[1]), Number(match[1]));
-    if (line.includes('resumed>')) continue;
+    if (line.includes('resumed>')) {
+      const started = match[3] === 'inotify_add_watch' && pendingWatches.get(match[1]);
+      if (started !== undefined && started !== false) { pendingWatches.delete(match[1]); countWatch(started, /= -1 /.test(line)); }
+      continue;
+    }
     if (match[3] === 'execve' && !/= -1 /.test(line)) {
       const program = line.match(/execve\("([^"]+)"/)?.[1];
       if (program) executables.set(Number(match[1]), `exec:${basename(program)}`);
     }
     const [, tid, time, call] = match, at = Number(time), paths = touches(line);
+    if (call === 'inotify_add_watch') { if (line.includes('<unfinished')) pendingWatches.set(tid, at); else countWatch(at, /= -1 /.test(line)); }
     if (at < firstWindow) {
       const owner = ownerOf(Number(tid));
       if (paths.length) { startup.fixtureSyscalls++; startup.byRole[owner] = (startup.byRole[owner] ?? 0) + 1; }
       if (call === 'getdents64' && paths.length) { startup.fixtureDirectoryListings++; startup.listingsByRole[owner] = (startup.listingsByRole[owner] ?? 0) + 1; }
-      if (call === 'inotify_add_watch') startup.inotifyAddWatch++;
       continue;
     }
     for (const [name, span] of Object.entries(windows)) {
       if (at < span.start || at > span.end) continue;
       const bucket = out[name]; bucket.allSyscalls++;
-      if (call === 'inotify_add_watch') bucket.inotifyAddWatch++;
       if (!paths.length) continue;
       if (paths.every(probe)) { bucket.probeSyscalls++; for (const item of paths) bucket.probePaths.add(relativePath(item)); continue; }
       bucket.projectSyscalls++; for (const item of paths) bucket.distinctProjectPaths.add(relativePath(item));
@@ -736,5 +749,5 @@ try {
     watches: result.watches, measurements: result.measurements && { startup: result.measurements.startup,
       windows: Object.fromEntries(Object.entries(result.measurements.windows).map(([name, item]) => [name,
         { projectSyscalls: item.projectSyscalls, distinctProjectPaths: item.distinctProjectPathList, projectDirectoryListings: item.projectDirectoryListings,
-          inotifyAddWatch: item.inotifyAddWatch, probeSyscalls: item.probeSyscalls, probesPerRootPerSecond: item.probesPerRootPerSecond, probesPerRootPerWindowSecond: item.probesPerRootPerWindowSecond, byCall: item.byCall, byRole: item.byRole }])) }, hostExits: result.hostExits }, null, 2));
+          inotifyAddWatch: item.inotifyAddWatch, inotifyAddWatchFailed: item.inotifyAddWatchFailed, probeSyscalls: item.probeSyscalls, probesPerRootPerSecond: item.probesPerRootPerSecond, probesPerRootPerWindowSecond: item.probesPerRootPerWindowSecond, byCall: item.byCall, byRole: item.byRole }])) }, hostExits: result.hostExits }, null, 2));
 }
