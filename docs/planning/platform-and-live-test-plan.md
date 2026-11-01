@@ -82,10 +82,19 @@ not to claim macOS (which removes this story). macOS packaging does not exist ye
 ## OV-905 — other Linux distributions, displays and architectures
 
 Verified so far: Arch/Omarchy on Hyprland Wayland (owner host) and Ubuntu 24.04 on
-Xvfb X11 (cloud container). Still needed: run `npm run verify:critical` (added by
-`ov/linux-completion`) on each claimed cell:
+Xvfb X11 (cloud container). On 1 November the `linux-critical` suite passed 20/20 first
+time in four container cells ([evidence](../verification/linux-matrix-2026-11-01.md),
+`scripts/linux-matrix/run.sh`):
 
-- Fedora, Debian and any other claimed distribution.
-- Real GNOME and KDE sessions, including KWallet (`verify:linux-secrets`).
-- Ubuntu desktop with its AppArmor unprivileged user-namespace policy (23.10+).
-- ARM64, with its own pinned input.
+- ~~Fedora, Debian and any other claimed distribution.~~ Fedora 42 (`O4w4Sz`) and
+  Debian 13 (`3zR1Ow`).
+- ~~Real GNOME and KDE sessions, including KWallet (`verify:linux-secrets`).~~ GNOME
+  Shell 48 on Wayland (`sTspiH`) and KDE Plasma 6.6 KWin on Wayland with KWallet
+  (`rgNjFl`). Both are headless compositors in containers.
+
+Still needed, on owner machines:
+
+- Ubuntu desktop with its AppArmor unprivileged user-namespace policy (23.10+). The
+  container kernel has no AppArmor and no KVM.
+- ARM64, with its own pinned input (identified: 301,828,616 bytes, SHA-256
+  `f6453aae…0296`); qemu-user breaks Chromium's sandbox.

@@ -89,7 +89,7 @@ merged code. "Gate" is what blocks promotion:
 | OV-205 Live providers | — | Codex Easy balance | X | [#4](https://github.com/RemiPelloux/OpenVision/issues/4) |
 | OV-901 Windows | — | Windows x64 host; exit 134 and worker crash | X | [#1](https://github.com/RemiPelloux/OpenVision/issues/1) |
 | OV-902 macOS | — | A Mac, or drop the claim | X, D | [#2](https://github.com/RemiPelloux/OpenVision/issues/2) |
-| OV-905 Linux matrix | — | Other distributions, real GNOME/KDE, ARM64 | X | [#3](https://github.com/RemiPelloux/OpenVision/issues/3) |
+| OV-905 Linux matrix | Fedora 42, Debian 13, GNOME and KDE/KWallet cells 20/20 first time ([1 November](../verification/linux-matrix-2026-11-01.md)) | Ubuntu 23.10+ AppArmor cell, ARM64 | X | [#3](https://github.com/RemiPelloux/OpenVision/issues/3) |
 
 ### Open defects
 
@@ -113,7 +113,7 @@ the duplicated reply on retry and the unknown-tool hang.
 | Nothing new | Signed 0.2.0-preview.8 Linux release; build and test follow-ups | 36/44 |
 | + GPU reference host | + OV-1002, OV-1003, then OV-1004 | 39/44 (Linux ceiling) |
 | + Windows x64 host | + OV-901 | 40/44 |
-| + provider balance and Linux matrix machines | + OV-205, OV-905 | 42/44 |
+| + provider balance, Ubuntu AppArmor and ARM64 machines | + OV-205, OV-905 | 42/44 |
 | + Mac, or the decision to drop it | + OV-902 | 43/44 (or 43/43) |
 | + OV-804 rights decision | + OV-804 | 44/44 |
 

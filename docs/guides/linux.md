@@ -271,3 +271,10 @@ gnome-keyring unless `--no-keyring` is given, refuses root, and sets
 `OPENVISION_OZONE_PLATFORM`, which adds `--ozone-platform=<x11|wayland>` to
 every verifier launch. Install `xvfb`, `dbus`, `gnome-keyring`, `weston`,
 `xdotool` and `x11-utils` (Ubuntu names) for the full set.
+
+`gnome` and `kde` cells start a private headless GNOME Shell or KWin (Wayland,
+with Xwayland) and the desktop's session variables; the `kde` cell opens a
+disposable KWallet the way a Plasma login does instead of gnome-keyring.
+`scripts/linux-matrix/run.sh fedora|debian|gnome|kde -- <command>` runs a
+command in one of these cells inside a Fedora 42 or Debian 13 container
+(Docker or Podman); see the [matrix evidence](../verification/linux-matrix-2026-11-01.md).

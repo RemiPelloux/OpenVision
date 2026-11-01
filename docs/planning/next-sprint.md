@@ -31,8 +31,8 @@ sprint.
   40 GB free. The Windows Cursor 3.21.13 input used by earlier Windows evidence.
 - **Reference-class Linux host with a GPU** for OV-1002 and OV-1003.
 - **Codex Easy balance** (or another funded provider for each claimed model) for OV-205.
-- **Fedora, Debian, real GNOME and KDE sessions, an Ubuntu 23.10+ desktop and an ARM64
-  machine** for OV-905 (VMs are acceptable where the clause allows).
+- **An Ubuntu 23.10+ desktop and an ARM64 machine** for OV-905 (Fedora, Debian, GNOME
+  and KDE are done; a VM is acceptable for Ubuntu if AppArmor is enabled).
 - **A Mac** per claimed architecture, or a decision not to claim macOS (#2).
 - **The release signing key**, used by the owner offline; it never enters the
   repository or a worker session.
@@ -93,9 +93,11 @@ and next-edit prediction excluded unless an owner decision reopens them.
 
 ## Track E — Linux matrix (OV-905)
 
-`npm run verify:critical` on Fedora, Debian, real GNOME and KDE (with KWallet for
-`verify:linux-secrets`), an Ubuntu 23.10+ desktop (AppArmor user-namespace policy) and
-ARM64 with its own pinned input.
+Done 1 November in containers ([evidence](../verification/linux-matrix-2026-11-01.md)):
+Fedora 42, Debian 13, GNOME Shell and KDE Plasma with KWallet, each 20/20 first time.
+OV-905 is Partial. Left for owner machines: an Ubuntu 23.10+ desktop (AppArmor
+user-namespace policy, `scripts/linux-cell.sh x11 -- npm run verify:critical -- --subset
+linux-critical`) and an ARM64 machine with its own pinned input.
 
 ## Track F — macOS (OV-902)
 
@@ -129,7 +131,7 @@ with packaging for each claimed architecture.
 | Nothing new | preview.8 signed Linux release (release DoD), Track G | 36/44 |
 | + GPU reference host | + OV-1002, OV-1003, then OV-1004 | 39/44 (Linux ceiling) |
 | + Windows host | + OV-901 | 40/44 |
-| + provider balance, Linux matrix machines | + OV-205, OV-905 | 42/44 |
+| + provider balance, Ubuntu AppArmor and ARM64 machines | + OV-205, OV-905 | 42/44 |
 | + Mac (or the decision to drop it) | + OV-902 | 43/44 (or 43/43) |
 | + OV-804 rights decision | + OV-804 | 44/44 |
 

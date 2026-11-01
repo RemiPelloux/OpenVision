@@ -17,7 +17,7 @@ statuses. Run `npm run status:features` to recalculate this count.
 
 | Measure | Current result | Remaining |
 | --- | --- | --- |
-| Fully verified local-feature stories | **36/44 · 81.82%** | **8/44** are not fully verified: 3 Partial, 5 Planned |
+| Fully verified local-feature stories | **36/44 · 81.82%** | **8/44** are not fully verified: 4 Partial, 4 Planned |
 | Recorded 80% verification milestone | Requires **36/44** Verified | **Reached** (36/44) |
 | All accepted features | Requires **44/44** Verified | **8** additional stories must pass |
 
