@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/@tkmremi/smarttest/schemas/config.v1.schema.json",
+  "include": [
+    "desktop/**/*.{js,mjs,cjs}",
+    "src/**/*.{js,mjs,cjs,ts}",
+    "test/**/*.{js,mjs,cjs}",
+    "scripts/**/*.{js,mjs,cjs}",
+    "tooling/*.mjs"
+  ],
+  "exclude": [
+    "desktop/fixtures/**",
+    "curs_source/**",
+    "source/**",
+    "build/**",
+    "electron-host/**",
+    "logs/**",
+    "backups/**",
+    "downloads/**",
+    "data/**",
+    "tooling/*/**"
+  ],
+  "runners": [
+    {
+      "adapter": "node",
+      "dir": "",
+      "patterns": [
+        "desktop/*.test.mjs",
+        "scripts/**/*.test.mjs",
+        "test/config-*.mjs",
+        "test/mcp*.mjs",
+        "test/control-plane-mcp.mjs"
+      ]
+    }
+  ],
+  "tests": {
+    "match": [
+      "desktop/*.test.mjs",
+      "scripts/**/*.test.mjs",
+      "test/config-*.mjs",
+      "test/mcp*.mjs",
+      "test/control-plane-mcp.mjs"
+    ]
+  }
+}

@@ -21,3 +21,4 @@ tooling/node_modules/
 *.pfx
 *.p12
 scripts/linux-matrix/extra-ca.crt
+.smarttest/
