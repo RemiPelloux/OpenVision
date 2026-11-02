@@ -19,6 +19,23 @@ npm run build:desktop
 npm run docs:check
 ```
 
+`npm install` adds [SmartTest](https://www.npmjs.com/package/@tkmremi/smarttest),
+which runs the unit tests (`node:test`, 226 files) a change can reach and says why
+each one was selected or skipped (`smarttest.config.json`):
+
+```sh
+npm run test:affected            # uncommitted changes
+npm run test:affected:branch     # this branch against origin/main
+npm run test:all                 # every unit test through the same pipeline
+npm run test:explain -- desktop/textmate-worker.test.mjs
+npx smarttest hook install       # optional: affected tests before each commit
+```
+
+A change to `package.json` or the SmartTest config selects every test. Tests that
+load code dynamically (`spawn`, `require(variable)`, the built `source/app`) are
+kept whenever they cannot be ruled out. Browser tests need Chromium
+(`OPENVISION_BROWSER_PATH`). Native verifiers (`verify:*`) are not selected.
+
 Run the relevant native verifier for behavioral changes. State whether evidence
 comes from source inspection, controlled HTTP fixtures, the actual desktop or a
 live AI provider. Passing discovery is not proof of model capabilities. Do not
